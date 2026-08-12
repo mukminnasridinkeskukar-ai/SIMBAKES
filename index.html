@@ -1079,9 +1079,10 @@
 
         // ===== HARDCODED SUPABASE CREDENTIALS =====
         // Ganti nilai di bawah dengan URL dan Anon Key Supabase Anda
+        // ===== SUPABASE CREDENTIALS =====
         let supabaseConfig = {
-            url: 'https://boeknpvlfamjmddsdopd.supabase.co',  // ← Ganti dengan Project URL Supabase Anda
-            key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZWtucHZsZmFtam1kZHNkb3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NzYwNjIsImV4cCI6MjEwMjA1MjA2Mn0.kHj7xEY7Wa4zSJwH0rjhiB3Qf0IHriyPlWoh4rdlv3U'  // ← Ganti dengan Anon/Public Key Supabase Anda
+            url: 'https://boeknpvlfamjmddsdopd.supabase.co',
+            key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZWtucHZsZmFtam1kZHNkb3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NzYwNjIsImV4cCI6MjEwMjA1MjA2Mn0.kHj7xEY7Wa4zSJwH0rjhiB3Qf0IHriyPlWoh4rdlv3U'
         };
 
         // Initialize Supabase client
@@ -1096,7 +1097,7 @@
         }
 
                 // Test connection
-        // Test connection - IMPROVED VERSION with Storage API check
+        // Test connection - CORS-AWARE VERSION
         async function testConnection() {
             const url = document.getElementById('configUrl').value.trim();
             const key = document.getElementById('configKey').value.trim();
@@ -1108,96 +1109,94 @@
 
             // Validasi format URL
             if (!url.includes('supabase.co') && !url.includes('supabase.in')) {
-                showToast('❌ Format URL tidak valid! Harus: https://xxxxx.supabase.co', 'error');
+                showToast('❌ Format URL tidak valid!', 'error');
                 return false;
             }
 
-            // Validasi format JWT (basic check)
+            // Validasi format JWT
             if (key.length < 50 || !key.includes('.')) {
-                showToast('❌ Format Anon Key tidak valid! Harus JWT token yang panjang', 'error');
+                showToast('❌ Format Anon Key tidak valid!', 'error');
                 return false;
             }
 
             showToast('Menguji koneksi...', 'info');
             
+            // Cek protocol
+            const isLocalFile = window.location.protocol === 'file:';
+            if (isLocalFile) {
+                console.warn('[CORS] ⚠️ file:// protocol detected!');
+            }
+            
             if (initSupabase(url, key)) {
                 try {
                     let testPassed = false;
+                    let corsIssue = false;
 
-                    // METHOD 1: Test via Storage API (always works if key is valid)
+                    // METHOD 1: Storage API (CORS-friendly endpoint)
                     try {
-                        console.log('[TEST] Trying Storage endpoint...');
+                        console.log('[TEST] Method 1: Storage API...');
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 10000);
+                        
                         const storageResponse = await fetch(url + '/storage/v1/bucket', {
                             method: 'GET',
+                            mode: 'cors',
                             headers: { 
                                 'apikey': key,
                                 'Authorization': 'Bearer ' + key
-                            }
+                            },
+                            signal: controller.signal
                         });
+                        
+                        clearTimeout(timeoutId);
                         
                         console.log('[TEST] Storage status:', storageResponse.status);
                         
                         if (storageResponse.status === 200 || storageResponse.ok) {
                             testPassed = true;
-                            console.log('[TEST] ✅ Storage endpoint OK - Key valid!');
+                            console.log('[TEST] ✅ Storage OK - Connection verified!');
                         } else if (storageResponse.status === 401) {
-                            throw new Error('STORAGE_401');
+                            throw new Error('AUTH_FAILED');
                         }
-                    } catch (storageError) {
-                        console.log('[TEST] Storage failed, trying table query...', storageError.message);
+                    } catch (err) {
+                        console.warn('[TEST] Storage failed:', err.message);
                         
-                        // METHOD 2: Try direct table query
-                        try {
-                            console.log('[TEST] Trying roadmap_kebutuhan table...');
-                            const { data: testData, error: testError } = await supabaseClient
-                                .from('roadmap_kebutuhan')
-                                .select('*')
-                                .limit(1);
-                            
-                            if (testError) {
-                                const errorMsg = testError.message || '';
-                                console.log('[TEST] Table error:', errorMsg);
-                                
-                                // If error is "table doesn't exist", still count as success
-                                if (errorMsg.includes('does not exist') || 
-                                    errorMsg.includes('42P01') ||
-                                    errorMsg.includes('relation')) {
-                                    console.log('[TEST] ⚠️ Table missing but connection OK!');
-                                    testPassed = true;
-                                } else if (errorMsg.includes('permission') || errorMsg.includes('42501')) {
-                                    console.log('[TEST] ⚠️ RLS issue but connection OK!');
-                                    testPassed = true;
-                                } else {
-                                    throw new Error(errorMsg);
-                                }
-                            } else {
-                                testPassed = true;
-                                console.log('[TEST] ✅ Table query succeeded!');
-                            }
-                        } catch (tableError) {
-                            console.error('[TEST] Table query failed:', tableError);
-                            
-                            // METHOD 3: Last resort - POST to root
+                        // Detect CORS error specifically
+                        if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
+                            corsIssue = true;
+                            console.error('[CORS] ❌ CORS Error detected!');
+                        }
+                        
+                        // METHOD 2: Direct table query via Supabase client
+                        if (!testPassed && !corsIssue) {
                             try {
-                                console.log('[TEST] Trying POST method...');
-                                const postResponse = await fetch(url + '/rest/v1/', {
-                                    method: 'POST',
-                                    headers: { 
-                                        'apikey': key,
-                                        'Authorization': 'Bearer ' + key,
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({})
-                                });
+                                console.log('[TEST] Method 2: Table query...');
+                                const { data, error } = await supabaseClient
+                                    .from('roadmap_kebutuhan')
+                                    .select('*')
+                                    .limit(1);
                                 
-                                if (postResponse.status === 401 || postResponse.status === 405 || postResponse.status === 406) {
-                                    testPassed = true;
-                                    console.log('[TEST] ✅ Response received (connection exists)');
+                                if (error) {
+                                    const msg = error.message || '';
+                                    console.log('[TEST] Table error:', msg);
+                                    
+                                    // These errors mean connection works, just table/RLS issues
+                                    if (msg.includes('does not exist') || msg.includes('42P01') ||
+                                        msg.includes('relation') || msg.includes('permission') || 
+                                        msg.includes('42501')) {
+                                        testPassed = true;
+                                        console.log('[TEST] ⚠️ Connection OK, table/RLS issue');
+                                    }
                                 } else {
-                                    throw new Error('HTTP_' + postResponse.status);
+                                    testPassed = true;
+                                    console.log('[TEST] ✅ Query succeeded!');
                                 }
-                            } catch (postError) {
-                                throw postError;
+                            } catch (tableErr) {
+                                console.error('[TEST] Query failed:', tableErr.message);
+                                
+                                if (tableErr.name === 'TypeError' && tableErr.message.includes('Failed to fetch')) {
+                                    corsIssue = true;
+                                }
                             }
                         }
                     }
@@ -1205,29 +1204,50 @@
                     if (testPassed) {
                         isConnected = true;
                         useDemo = false;
-                        showToast('✅ Koneksi ke Supabase berhasil!', 'success');
+                        showToast('✅ Koneksi Supabase berhasil!', 'success');
                         updateConnectionStatus(true);
-                        console.log('%c✅ SIMBAKES: Supabase connection SUCCESSFUL!', 
-                            'color: #16a34a; font-weight: bold; font-size: 14px;');
+                        console.log('%c✅ SIMBAKES: Supabase CONNECTED!', 'color:#16a34a;font-weight:bold;font-size:14px;');
                         return true;
                     }
                     
-                    throw new Error('Connection could not be verified');
-                    
-                } catch (error) {
-                    console.error('[ERROR] Connection test failed:', error);
-                    let userMessage = error.message || String(error);
-                    
-                    if (userMessage.includes('401')) {
-                        userMessage = 'Auth failed (401). Check: Project paused? Key expired? Wrong key copied?';
-                    } else if (userMessage.includes('403')) {
-                        userMessage = 'Access denied (403). IP may be blocked.';
-                    } else if (userMessage.includes('network') || userMessage.includes('fetch')) {
-                        userMessage = 'No internet or wrong URL.';
+                    // Handle CORS error with helpful message
+                    if (corsIssue) {
+                        throw new Error('CORS_BLOCKED');
                     }
                     
-                    showToast('❌ Gagal terhubung: ' + userMessage, 'error');
-                    updateConnectionStatus(false, userMessage);
+                    throw new Error('CONNECTION_FAILED');
+                    
+                } catch (error) {
+                    console.error('[ERROR]', error);
+                    let userMsg = '';
+                    
+                    if (error.message === 'CORS_BLOCKED') {
+                        userMsg = `🚫 CORS ERROR DETECTED!
+
+SOLUSI (pilih salah satu):
+
+1️⃣ DEPLOY ke GitHub Pages (Recommended):
+   • Upload ke repository GitHub
+   • Settings → Pages → Deploy from main
+   • Buka URL github.io Anda
+
+2️⃣ Gunakan Local Server:
+   Python: python -m http.server 8000
+   Lalu buka: http://localhost:8000/simbakes-v4.html
+
+3️⃣ VS Code Live Server extension
+
+❌ Jangan buka langsung file HTML!`;
+                    } else if (error.message === 'AUTH_FAILED' || error.message.includes('401')) {
+                        userMsg = 'Auth failed! Check: Project paused? Key expired? Wrong key?';
+                    } else if (error.message.includes('abort') || error.message.includes('timeout')) {
+                        userMsg = 'Timeout! Check internet connection.';
+                    } else {
+                        userMsg = 'Error: ' + error.message;
+                    }
+                    
+                    showToast('❌ ' + userMsg, 'error');
+                    updateConnectionStatus(false, userMsg);
                     return false;
                 }
             }
