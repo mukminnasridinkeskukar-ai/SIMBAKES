@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen User - SIMBAKES</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../index.html" class="navbar-brand">
+                <div class="navbar-logo"><i class="fas fa-user-md"></i></div>
+                <div class="navbar-title">
+                    <h1>SIMBAKES</h1>
+                    <span>Manajemen User</span>
+                </div>
+            </a>
+
+            <div class="navbar-user">
+                <div class="user-info">
+                    <div class="user-name" id="currentUserName">Loading...</div>
+                    <div class="user-role" id="currentUserRole">-</div>
+                </div>
+                <button class="btn-logout" onclick="handleLogout()">
+                    <i class="fas fa-sign-out-alt"></i><span>Keluar</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="main-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-users-cog"></i>
+                <div>
+                    <h2>Manajemen Pengguna Sistem</h2>
+                    <p>Kelola akun pengguna dan hak akses SIMBAKES</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <!-- Role Distribution -->
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+                <h4><i class="fas fa-shield-alt"></i> Distribusi Per Role</h4>
+            </div>
+            <div class="card-body">
+                <div class="role-grid" id="roleGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;"></div>
+            </div>
+        </div>
+
+        <!-- Data Table Section -->
+        <div class="table-section">
+            <div class="table-header">
+                <div class="table-title">
+                    <i class="fas fa-table"></i><h3>Daftar Pengguna Terdaftar</h3>
+                </div>
+                <div class="table-actions">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Cari nama, username, email...">
+                    </div>
+                    <select class="filter-select" id="filterStatus">
+                        <option value="">Semua Status</option>
+                        <option value="aktif">Aktif</option>
+                        <option value="non-aktif">Non-Aktif</option>
+                        <option value="blokir">Blokir</option>
+                    </select>
+                    <select class="filter-select" id="filterRole">
+                        <option value="">Semua Role</option>
+                        <option value="super_admin">Super Admin</option>
+                        <option value="admin">Admin</option>
+                        <option value="approver">Approver</option>
+                        <option value="operator">Operator</option>
+                        <option value="viewer">Viewer</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <!-- Loading State -->
+                <div class="state-container loading-state" id="loadingState">
+                    <div class="state-icon"><div class="spinner"></div></div>
+                    <h3>Memuat Data...</h3>
+                    <p>Mengambil data pengguna dari server</p>
+                </div>
+
+                <!-- Error State -->
+                <div class="state-container error-state" id="errorState" style="display: none;">
+                    <div class="state-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <h3>Gagal Memuat Data</h3>
+                    <p id="errorMessage">Terjadi kesalahan saat mengambil data</p>
+                    <button class="btn-retry" onclick="loadData()"><i class="fas fa-redo"></i>Coba Lagi</button>
+                </div>
+
+                <!-- Empty State -->
+                <div class="state-container empty-state" id="emptyState" style="display: none;">
+                    <div class="state-icon"><i class="fas fa-users-slash"></i></div>
+                    <h3>Belum Ada Data</h3>
+                    <p>Tidak ada pengguna terdaftar dalam sistem</p>
+                </div>
+
+                <!-- Data Table -->
+                <table class="data-table" id="dataTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>User</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Role</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config/supabase-config.js"></script>
+    <script src="../assets/js/supabase-client.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/utils.js"></script>
+    
+    <script>
+        // ============================================================
+        // Multiuser Management Module (using shared auth)
+        // ============================================================
+
+        let allUsers = [];
+        let filteredUsers = [];
+
+        const statsGrid = document.getElementById('statsGrid');
+        const roleGrid = document.getElementById('roleGrid');
+        const searchInput = document.getElementById('searchInput');
+        const filterStatus = document.getElementById('filterStatus');
+        const filterRole = document.getElementById('filterRole');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await simbakesAuth.init();
+                
+                if (!simbakesAuth.isAuthenticated()) {
+                    window.location.href = '../login.html';
+                    return;
+                }
+                
+                // Check role permission
+                if (!simbakesAuth.hasMinRoleLevel(4)) { // Admin or Super Admin only
+                    alert('Anda tidak memiliki akses ke halaman ini.');
+                    window.location.href = 'roadmap_kebutuhan.html';
+                    return;
+                }
+                
+                UI.updateUserInfo();
+                
+                await loadData();
+                
+                setupEventListeners();
+                
+            } catch (error) {
+                console.error('Init error:', error);
+                UI.showError(error.message);
+            }
+        });
+
+        /**
+         * Load user data from Supabase
+         */
+        async function loadData() {
+            UI.showLoading();
+
+            try {
+                const { data, error } = await Multiusers.getAll({
+                    orderBy: { column: 'nama_lengkap', ascending: true }
+                });
+
+                if (error) throw error;
+
+                allUsers = data || [];
+                filteredUsers = [...allUsers];
+
+                if (filteredUsers.length === 0) {
+                    UI.showEmpty();
+                } else {
+                    UI.showData();
+                    renderTable();
+                    renderStats();
+                    renderRoleStats();
+                }
+
+            } catch (error) {
+                console.error('Load error:', error);
+                document.getElementById('errorMessage').textContent = 
+                    error.message || 'Terjadi kesalahan saat mengambil data pengguna';
+                UI.showError(error.message);
+            }
+        }
+
+        /**
+         * Render statistics cards
+         */
+        function renderStats() {
+            const total = allUsers.length;
+            const aktif = allUsers.filter(u => u.status === 'aktif').length;
+            const nonAktif = allUsers.filter(u => u.status === 'non-aktif').length;
+            const blokir = allUsers.filter(u => u.status === 'blokir').length;
+
+            statsGrid.innerHTML = `
+                <div class="stat-card primary">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-info"><h3>${total}</h3><p>Total Pengguna</p></div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-info"><h3>${aktif}</h3><p>Aktif</p></div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-icon"><i class="fas fa-pause-circle"></i></div>
+                    <div class="stat-info"><h3>${nonAktif}</h3><p>Non-Aktif</p></div>
+                </div>
+                <div class="stat-card danger">
+                    <div class="stat-icon"><i class="fas fa-ban"></i></div>
+                    <div class="stat-info"><h3>${blokir}</h3><p>Diblokir</p></div>
+                </div>
+            `;
+        }
+
+        /**
+         * Render role distribution
+         */
+        function renderRoleStats() {
+            const roles = ['super_admin', 'admin', 'approver', 'operator', 'viewer'];
+            
+            roleGrid.innerHTML = roles.map(role => {
+                const count = allUsers.filter(u => u.role === role).length;
+                return `
+                    <div class="role-item" style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-main); border-radius: var(--radius-sm);">
+                        ${getRoleBadge(role)}
+                        <span style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin-left: auto;">${count}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        /**
+         * Render user table
+         */
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            if (filteredUsers.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            <i class="fas fa-search" style="font-size: 32px; margin-bottom: 12px; display: block; opacity: 0.5;"></i>
+                            Tidak ada data yang cocok dengan filter
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filteredUsers.forEach((user, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar">${Format.initials(user.nama_lengkap)}</div>
+                            <div class="user-details">
+                                <h4>${Format.escapeHtml(user.nama_lengkap || '-')}</h4>
+                                <p>ID: ${user.id ? user.id.substring(0, 8) + '...' : '-'}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td><strong>@${Format.escapeHtml(user.username || '-')}</strong></td>
+                    <td>${Format.escapeHtml(user.email || '-')}</td>
+                    <td>${getStatusBadge(user.status)}</td>
+                    <td>${getRoleBadge(user.role)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        /**
+         * Apply search and filters
+         */
+        function applyFilters() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const statusValue = filterStatus.value;
+            const roleValue = filterRole.value;
+
+            filteredUsers = allUsers.filter(user => {
+                const matchesSearch = !searchTerm || 
+                    (user.nama_lengkap && user.nama_lengkap.toLowerCase().includes(searchTerm)) ||
+                    (user.username && user.username.toLowerCase().includes(searchTerm)) ||
+                    (user.email && user.email.toLowerCase().includes(searchTerm));
+
+                const matchesStatus = !statusValue || user.status === statusValue;
+                const matchesRole = !roleValue || user.role === roleValue;
+
+                return matchesSearch && matchesStatus && matchesRole;
+            });
+
+            renderTable();
+        }
+
+        /**
+         * Setup event listeners
+         */
+        function setupEventListeners() {
+            searchInput.addEventListener('input', debounce(applyFilters, 300));
+            filterStatus.addEventListener('change', applyFilters);
+            filterRole.addEventListener('change', applyFilters);
+        }
+
+        /**
+         * Handle logout
+         */
+        async function handleLogout() {
+            if (confirm('Apakah Anda yakin ingin keluar?')) {
+                await simbakesAuth.logout();
+                window.location.href = '../login.html';
+            }
+        }
+    </script>
+</body>
+</html>

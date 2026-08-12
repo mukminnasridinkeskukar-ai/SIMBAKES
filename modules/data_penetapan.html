@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Penetapan - SIMBAKES</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../index.html" class="navbar-brand">
+                <div class="navbar-logo"><i class="fas fa-user-md"></i></div>
+                <div class="navbar-title">
+                    <h1>SIMBAKES</h1>
+                    <span>Data Penetapan Beasiswa</span>
+                </div>
+            </a>
+
+            <div class="navbar-user">
+                <div class="user-info">
+                    <div class="user-name" id="currentUserName">Loading...</div>
+                    <div class="user-role" id="currentUserRole">-</div>
+                </div>
+                <button class="btn-logout" onclick="handleLogout()">
+                    <i class="fas fa-sign-out-alt"></i><span>Keluar</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="main-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="fas fa-check-double"></i>
+                <div>
+                    <h2>Data Penetapan Beasiswa</h2>
+                    <p>Daftar penerima beasiswa yang telah ditetapkan dengan SK resmi</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <!-- Data Table Section -->
+        <div class="table-section">
+            <div class="table-header">
+                <div class="table-title">
+                    <i class="fas fa-table"></i><h3>Daftar Penerima Beasiswa</h3>
+                </div>
+                <div class="table-actions">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Cari nama, NIK, jurusan...">
+                    </div>
+                    <select class="filter-select" id="filterStatus">
+                        <option value="">Semua Status</option>
+                        <option value="aktif">Aktif</option>
+                        <option value="selesai">Selesai</option>
+                        <option value="ditunda">Ditunda</option>
+                        <option value="dibatalkan">Dibatalkan</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <!-- Loading State -->
+                <div class="state-container loading-state" id="loadingState">
+                    <div class="state-icon"><div class="spinner"></div></div>
+                    <h3>Memuat Data...</h3>
+                    <p>Mengambil data penetapan dari server</p>
+                </div>
+
+                <!-- Error State -->
+                <div class="state-container error-state" id="errorState" style="display: none;">
+                    <div class="state-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <h3>Gagal Memuat Data</h3>
+                    <p id="errorMessage">Terjadi kesalahan saat mengambil data</p>
+                    <button class="btn-retry" onclick="loadData()"><i class="fas fa-redo"></i>Coba Lagi</button>
+                </div>
+
+                <!-- Empty State -->
+                <div class="state-container empty-state" id="emptyState" style="display: none;">
+                    <div class="state-icon"><i class="fas fa-clipboard-list"></i></div>
+                    <h3>Belum Ada Data Penetapan</h3>
+                    <p>Tidak ada data penetapan beasiswa yang tersedia</p>
+                </div>
+
+                <!-- Data Table (13 Columns) -->
+                <table class="data-table" id="dataTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>NIK</th>
+                            <th>Nama Lengkap</th>
+                            <th>Jurusan Tujuan</th>
+                            <th>Jenjang</th>
+                            <th>Unit Tujuan</th>
+                            <th>Tahun Studi</th>
+                            <th>No SK</th>
+                            <th>Tanggal SK</th>
+                            <th>Status</th>
+                            <th>Foto</th>
+                            <th>Dokumen</th>
+                            <th>Periode</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Image Preview Modal -->
+    <div class="modal-overlay" id="imageModal" style="display: none;" onclick="closeImageModal(event)">
+        <div class="modal" style="max-width: 600px;" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h4>Foto Pasfoto</h4>
+                <button class="modal-close" onclick="closeImageModal()">&times;</button>
+            </div>
+            <div class="card-body" style="text-align: center; padding: 24px;">
+                <img id="previewImage" src="" alt="Preview" style="max-width: 100%; max-height: 400px; border-radius: var(--radius-sm);">
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config/supabase-config.js"></script>
+    <script src="../assets/js/supabase-client.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/utils.js"></script>
+    
+    <script>
+        // ============================================================
+        // Data Penetapan Module (Standalone - Option B)
+        // ============================================================
+
+        let allData = [];
+        let filteredData = [];
+
+        const statsGrid = document.getElementById('statsGrid');
+        const searchInput = document.getElementById('searchInput');
+        const filterStatus = document.getElementById('filterStatus');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await simbakesAuth.init();
+                
+                if (!simbakesAuth.isAuthenticated()) {
+                    window.location.href = '../login.html';
+                    return;
+                }
+                
+                UI.updateUserInfo();
+                
+                await loadData();
+                
+                setupEventListeners();
+                
+            } catch (error) {
+                console.error('Init error:', error);
+                UI.showError(error.message);
+            }
+        });
+
+        /**
+         * Load penetration data from Supabase
+         */
+        async function loadData() {
+            UI.showLoading();
+
+            try {
+                const { data, error } = await DataPenetapan.getAll({
+                    orderBy: { column: 'tanggal_penetapan', ascending: false }
+                });
+
+                if (error) throw error;
+
+                allData = data || [];
+                filteredData = [...allData];
+
+                if (filteredData.length === 0) {
+                    UI.showEmpty();
+                } else {
+                    UI.showData();
+                    renderTable();
+                    renderStats();
+                }
+
+            } catch (error) {
+                console.error('Load error:', error);
+                document.getElementById('errorMessage').textContent = 
+                    error.message || 'Terjadi kesalahan saat mengambil data';
+                UI.showError(error.message);
+            }
+        }
+
+        /**
+         * Render statistics cards
+         */
+        function renderStats() {
+            const total = allData.length;
+            const aktif = allData.filter(d => d.status_penetapan === 'aktif').length;
+            const selesai = allData.filter(d => d.status_penetapan === 'selesai').length;
+            const lainnya = total - aktif - selesai;
+
+            statsGrid.innerHTML = `
+                <div class="stat-card primary">
+                    <div class="stat-icon"><i class="fas fa-clipboard-check"></i></div>
+                    <div class="stat-info"><h3>${total}</h3><p>Total Penetapan</p></div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-info"><h3>${aktif}</h3><p>Aktif</p></div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-icon"><i class="fas fa-flag-checkered"></i></div>
+                    <div class="stat-info"><h3>${selesai}</h3><p>Selesai</p></div>
+                </div>
+                <div class="stat-card danger">
+                    <div class="stat-icon"><i class="fas fa-pause-circle"></i></div>
+                    <div class="stat-info"><h3>${lainnya}</h3><p>Ditunda/Dibatalkan</p></div>
+                </div>
+            `;
+        }
+
+        /**
+         * Render data table (13 columns)
+         */
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="13" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            <i class="fas fa-search" style="font-size: 32px; margin-bottom: 12px; display: block; opacity: 0.5;"></i>
+                            Tidak ada data yang cocok dengan filter
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filteredData.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><strong>${Format.escapeHtml(item.nik)}</strong></td>
+                    <td>${Format.escapeHtml(item.nama_lengkap)}</td>
+                    <td>${Format.escapeHtml(item.jurusan_tujuan)}</td>
+                    <td>${Format.escapeHtml(item.jenjang_pendidikan)}</td>
+                    <td>${Format.truncate(item.unit_tujuan_pemanfaatan, 20)}</td>
+                    <td style="text-align: center;">${item.rencana_tahun_studi || '-'}</td>
+                    <td><strong>${Format.escapeHtml(item.no_sk_penetapan)}</strong></td>
+                    <td>${Format.dateShort(item.tanggal_penetapan)}</td>
+                    <td>${getStatusBadge(item.status_penetapan, 'status_penetapan')}</td>
+                    <td>
+                        ${item.link_foto_pasfoto ? `
+                            <button class="btn btn-sm btn-primary" onclick="showImagePreview('${item.link_foto_pasfoto}')" title="Lihat Foto">
+                                <i class="fas fa-image"></i>
+                            </button>
+                        ` : '<em style="color: var(--text-disabled);">-</em>'}
+                    </td>
+                    <td>
+                        ${item.link_dokumen_pdf ? `
+                            <a href="${item.link_dokumen_pdf}" target="_blank" class="btn btn-sm btn-secondary" title="Download Dokumen">
+                                <i class="fas fa-file-pdf"></i>
+                            </a>
+                        ` : '<em style="color: var(--text-disabled);">-</em>'}
+                    </td>
+                    <td>${Format.escapeHtml(item.periode_pemberian) || '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        /**
+         * Apply search and filters
+         */
+        function applyFilters() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const statusValue = filterStatus.value;
+
+            filteredData = allData.filter(item => {
+                const matchesSearch = !searchTerm || 
+                    (item.nama_lengkap && item.nama_lengkap.toLowerCase().includes(searchTerm)) ||
+                    (item.nik && item.nik.includes(searchTerm)) ||
+                    (item.jurusan_tujuan && item.jurusan_tujuan.toLowerCase().includes(searchTerm)) ||
+                    (item.no_sk_penetapan && item.no_sk_penetapan.toLowerCase().includes(searchTerm));
+
+                const matchesStatus = !statusValue || item.status_penetapan === statusValue;
+
+                return matchesSearch && matchesStatus;
+            });
+
+            renderTable();
+        }
+
+        /**
+         * Setup event listeners
+         */
+        function setupEventListeners() {
+            searchInput.addEventListener('input', debounce(applyFilters, 300));
+            filterStatus.addEventListener('change', applyFilters);
+        }
+
+        /**
+         * Show image preview modal
+         */
+        function showImagePreview(url) {
+            if (!url) return;
+            
+            document.getElementById('previewImage').src = url;
+            document.getElementById('imageModal').style.display = 'flex';
+        }
+
+        function closeImageModal(event) {
+            if (!event || event.target === event.currentTarget) {
+                document.getElementById('imageModal').style.display = 'none';
+            }
+        }
+
+        /**
+         * Handle logout
+         */
+        async function handleLogout() {
+            if (confirm('Apakah Anda yakin ingin keluar?')) {
+                await simbakesAuth.logout();
+                window.location.href = '../login.html';
+            }
+        }
+    </script>
+</body>
+</html>
