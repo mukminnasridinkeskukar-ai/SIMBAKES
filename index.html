@@ -13,6 +13,9 @@
     
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         /* ===== CSS RESET & BASE ===== */
@@ -55,9 +58,7 @@
             --font-display: 'Plus Jakarta Sans', var(--font-sans);
         }
 
-        html {
-            scroll-behavior: smooth;
-        }
+        html { scroll-behavior: smooth; }
 
         body {
             font-family: var(--font-sans);
@@ -80,20 +81,12 @@
             z-index: 9999;
             transition: opacity 0.5s ease, visibility 0.5s ease;
         }
+        .splash-screen.hidden { opacity: 0; visibility: hidden; }
 
-        .splash-screen.hidden {
-            opacity: 0;
-            visibility: hidden;
-        }
-
-        .splash-content {
-            text-align: center;
-            animation: fadeInUp 0.8s ease-out;
-        }
+        .splash-content { text-align: center; animation: fadeInUp 0.8s ease-out; }
 
         .splash-logo {
-            width: 140px;
-            height: 140px;
+            width: 140px; height: 140px;
             margin: 0 auto 2rem;
             background: white;
             border-radius: 50%;
@@ -103,19 +96,12 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.2);
             position: relative;
         }
-
-        .splash-logo i {
-            width: 80px;
-            height: 80px;
-            color: var(--primary);
-        }
+        .splash-logo i { width: 80px; height: 80px; color: var(--primary); }
 
         .splash-heart {
             position: absolute;
-            bottom: -10px;
-            right: -10px;
-            width: 50px;
-            height: 50px;
+            bottom: -10px; right: -10px;
+            width: 50px; height: 50px;
             background: #ef4444;
             border-radius: 50%;
             display: flex;
@@ -123,482 +109,173 @@
             justify-content: center;
             animation: pulse 2s infinite;
         }
-
-        .splash-heart i {
-            width: 28px;
-            height: 28px;
-            color: white;
-        }
+        .splash-heart i { width: 28px; height: 28px; color: white; }
 
         .splash-title {
             font-family: var(--font-display);
-            font-size: 4rem;
-            font-weight: 800;
-            color: white;
-            letter-spacing: -0.02em;
+            font-size: 4rem; font-weight: 800;
+            color: white; letter-spacing: -0.02em;
             margin-bottom: 0.5rem;
         }
+        .splash-subtitle { font-size: 1.25rem; color: rgba(255,255,255,0.9); font-weight: 500; }
 
-        .splash-subtitle {
-            font-size: 1.25rem;
-            color: rgba(255,255,255,0.9);
-            font-weight: 500;
-        }
-
-        .progress-container {
-            width: 280px;
-            margin-top: 3rem;
-        }
-
+        .progress-container { width: 280px; margin-top: 3rem; }
         .progress-bar {
-            height: 8px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 100px;
-            overflow: hidden;
+            height: 8px; background: rgba(255,255,255,0.3);
+            border-radius: 100px; overflow: hidden;
         }
+        .progress-fill { height: 100%; background: white; border-radius: 100px; transition: width 0.1s linear; }
+        .progress-text { margin-top: 0.75rem; color: rgba(255,255,255,0.85); font-size: 0.875rem; }
 
-        .progress-fill {
-            height: 100%;
-            background: white;
-            border-radius: 100px;
-            transition: width 0.1s linear;
+        .connection-status {
+            position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+            padding: 0.5rem 1rem; border-radius: 9999px;
+            font-size: 0.8125rem; font-weight: 500;
+            background: rgba(255,255,255,0.15); color: white;
+            display: flex; align-items: center; gap: 0.5rem;
         }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #fbbf24; animation: blink 1s infinite; }
+        .status-dot.connected { background: #34d399; animation: none; }
+        .status-dot.error { background: #f87171; animation: none; }
 
-        .progress-text {
-            margin-top: 0.75rem;
-            color: rgba(255,255,255,0.85);
-            font-size: 0.875rem;
-        }
-
-        /* ===== ANIMATIONS ===== */
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
         /* ===== HEADER ===== */
         .header {
             background: linear-gradient(135deg, #065f46 0%, #0f766e 50%, #155e75 100%);
-            color: white;
-            padding: 1rem 0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            color: white; padding: 1rem 0;
+            position: sticky; top: 0; z-index: 100;
             box-shadow: var(--shadow-lg);
         }
-
         .header-container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            max-width: 1280px; margin: 0 auto; padding: 0 1.5rem;
+            display: flex; align-items: center; justify-content: space-between;
         }
-
-        .header-brand {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
+        .header-brand { display: flex; align-items: center; gap: 0.75rem; }
         .header-logo {
-            width: 48px;
-            height: 48px;
-            background: white;
+            width: 48px; height: 48px; background: white;
             border-radius: var(--radius-lg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             box-shadow: var(--shadow-md);
         }
+        .header-logo i { width: 28px; height: 28px; color: var(--primary); }
+        .header-text h1 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+        .header-text p { font-size: 0.75rem; color: rgba(255,255,255,0.8); display: none; }
+        @media (min-width: 768px) { .header-text p { display: block; } }
 
-        .header-logo i {
-            width: 28px;
-            height: 28px;
-            color: var(--primary);
-        }
-
-        .header-text h1 {
-            font-family: var(--font-display);
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .header-text p {
-            font-size: 0.75rem;
-            color: rgba(255,255,255,0.8);
-            display: none;
-        }
-
-        @media (min-width: 768px) {
-            .header-text p { display: block; }
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .user-info {
-            display: none;
-            align-items: center;
-            gap: 0.75rem;
-            background: rgba(255,255,255,0.15);
-            padding: 0.5rem 1rem;
-            border-radius: var(--radius-lg);
-        }
-
+        .header-actions { display: flex; align-items: center; gap: 1rem; }
+        .user-info { display: none; align-items: center; gap: 0.75rem; background: rgba(255,255,255,0.15); padding: 0.5rem 1rem; border-radius: var(--radius-lg); }
         .user-info.active { display: flex; }
-
-        .user-badge {
-            background: #fbbf24;
-            color: #78350f;
-            padding: 0.25rem 0.5rem;
-            border-radius: var(--radius-sm);
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
+        .user-badge { background: #fbbf24; color: #78350f; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; }
 
         /* ===== BUTTONS ===== */
         .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.625rem 1.25rem;
-            border-radius: var(--radius-md);
-            font-weight: 500;
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-            font-family: inherit;
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.625rem 1.25rem; border-radius: var(--radius-md);
+            font-weight: 500; font-size: 0.875rem;
+            cursor: pointer; transition: all 0.2s ease;
+            border: none; font-family: inherit;
         }
-
         .btn i { width: 18px; height: 18px; }
-
-        .btn-outline {
-            background: transparent;
-            border: 2px solid white;
-            color: white;
-        }
-
-        .btn-outline:hover {
-            background: white;
-            color: var(--primary);
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
+        .btn-outline { background: transparent; border: 2px solid white; color: white; }
+        .btn-outline:hover { background: white; color: var(--primary); }
+        .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: var(--primary-dark); }
-
-        .btn-secondary {
-            background: var(--secondary);
-            color: white;
-        }
-
+        .btn-secondary { background: var(--secondary); color: white; }
         .btn-secondary:hover { background: #0f766e; }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-danger:hover { background: #b91c1c; }
-
-        .btn-sm {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.8125rem;
-        }
-
-        .btn-icon {
-            padding: 0.375rem;
-            border-radius: var(--radius-sm);
-        }
-
-        .btn-ghost {
-            background: transparent;
-            color: inherit;
-        }
-
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.8125rem; }
+        .btn-icon { padding: 0.375rem; border-radius: var(--radius-sm); }
+        .btn-ghost { background: transparent; color: inherit; }
         .btn-ghost:hover { background: var(--bg-tertiary); }
 
-        /* ===== MOBILE MENU ===== */
         .mobile-menu-btn {
-            display: flex;
-            padding: 0.5rem;
-            background: rgba(255,255,255,0.1);
-            border: none;
-            border-radius: var(--radius-md);
-            color: white;
-            cursor: pointer;
+            display: flex; padding: 0.5rem; background: rgba(255,255,255,0.1);
+            border: none; border-radius: var(--radius-md); color: white; cursor: pointer;
         }
+        @media (min-width: 768px) { .mobile-menu-btn { display: none; } }
 
-        @media (min-width: 768px) {
-            .mobile-menu-btn { display: none; }
-        }
-
-        .mobile-menu {
-            display: none;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(255,255,255,0.2);
-            margin-top: 1rem;
-        }
-
+        .mobile-menu { display: none; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2); margin-top: 1rem; }
         .mobile-menu.active { display: block; }
 
         /* ===== MAIN CONTENT ===== */
-        .main-content {
-            flex: 1;
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 2rem 1.5rem;
-            width: 100%;
-        }
+        .main-content { flex: 1; max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem; width: 100%; }
 
         /* ===== TABS ===== */
-        .tabs-container {
-            margin-bottom: 2rem;
-        }
-
+        .tabs-container { margin-bottom: 2rem; }
         .tabs-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 0.5rem;
-            background: white;
-            padding: 0.5rem;
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-md);
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 0.5rem; background: white; padding: 0.5rem;
+            border-radius: var(--radius-xl); box-shadow: var(--shadow-md);
         }
-
-        @media (min-width: 1024px) {
-            .tabs-list {
-                grid-template-columns: repeat(7, 1fr);
-            }
-        }
+        @media (min-width: 1024px) { .tabs-list { grid-template-columns: repeat(7, 1fr); } }
 
         .tab-btn {
-            padding: 0.75rem 0.5rem;
-            border: none;
-            background: transparent;
-            border-radius: var(--radius-md);
-            font-weight: 500;
-            font-size: 0.8125rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            color: var(--text-secondary);
-            font-family: inherit;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.375rem;
+            padding: 0.75rem 0.5rem; border: none; background: transparent;
+            border-radius: var(--radius-md); font-weight: 500; font-size: 0.8125rem;
+            cursor: pointer; transition: all 0.2s ease; color: var(--text-secondary);
+            font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 0.375rem;
         }
-
         .tab-btn i { width: 16px; height: 16px; }
-
         .tab-btn:hover { background: var(--bg-tertiary); }
-
-        .tab-btn.active[data-section="info"] {
-            background: var(--primary);
-            color: white;
-        }
-
-        .tab-btn.active[data-section="main"] {
-            background: var(--secondary);
-            color: white;
-        }
-
+        .tab-btn.active[data-section="info"] { background: var(--primary); color: white; }
+        .tab-btn.active[data-section="main"] { background: var(--secondary); color: white; }
         .tab-btn span { display: none; }
+        @media (min-width: 640px) { .tab-btn span { display: inline; } }
 
-        @media (min-width: 640px) {
-            .tab-btn span { display: inline; }
-        }
-
-        /* ===== TAB CONTENT ===== */
-        .tab-content {
-            display: none;
-            animation: slideIn 0.3s ease-out;
-        }
-
+        .tab-content { display: none; animation: slideIn 0.3s ease-out; }
         .tab-content.active { display: block; }
 
         /* ===== CARDS ===== */
         .card {
-            background: white;
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-md);
-            overflow: hidden;
+            background: white; border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-md); overflow: hidden;
             transition: box-shadow 0.3s ease, transform 0.3s ease;
         }
-
-        .card:hover {
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-2px);
-        }
-
-        .card-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .card-header h2 {
-            font-family: var(--font-display);
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
+        .card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+        .card-header { padding: 1.5rem; border-bottom: 1px solid var(--border-color); }
+        .card-header h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
         .card-header h2 i { width: 28px; height: 28px; }
-
-        .card-header p {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-        }
-
+        .card-header p { color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.25rem; }
         .card-body { padding: 1.5rem; }
 
         /* ===== STATS CARDS ===== */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
         .stat-card {
             background: linear-gradient(135deg, var(--stat-color) 0%, var(--stat-color-dark) 100%);
-            color: white;
-            padding: 1.5rem;
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-lg);
+            color: white; padding: 1.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg);
         }
-
         .stat-card:nth-child(1) { --stat-color: #10b981; --stat-color-dark: #059669; }
         .stat-card:nth-child(2) { --stat-color: #3b82f6; --stat-color-dark: #2563eb; }
         .stat-card:nth-child(3) { --stat-color: #8b5cf6; --stat-color-dark: #7c3aed; }
         .stat-card:nth-child(4) { --stat-color: #f97316; --stat-color-dark: #ea580c; }
-
-        .stat-label {
-            font-size: 0.8125rem;
-            opacity: 0.9;
-            font-weight: 500;
-        }
-
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 0.25rem 0;
-        }
-
-        .stat-sublabel {
-            font-size: 0.75rem;
-            opacity: 0.75;
-        }
+        .stat-label { font-size: 0.8125rem; opacity: 0.9; font-weight: 500; }
+        .stat-value { font-size: 2.5rem; font-weight: 700; margin: 0.25rem 0; }
+        .stat-sublabel { font-size: 0.75rem; opacity: 0.75; }
 
         /* ===== INFO CARDS GRID ===== */
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .info-card h3 {
-            font-weight: 600;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.75rem;
-        }
-
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .info-card h3 { font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
         .info-card h3 i { width: 20px; height: 20px; }
-
-        .info-card p, .info-card ul {
-            color: var(--text-secondary);
-            font-size: 0.9375rem;
-        }
-
+        .info-card p, .info-card ul { color: var(--text-secondary); font-size: 0.9375rem; }
         .info-card ul { list-style: none; }
-
-        .info-card li {
-            padding: 0.375rem 0;
-            display: flex;
-            align-items: flex-start;
-            gap: 0.5rem;
-        }
-
-        .info-card li i {
-            width: 16px;
-            height: 16px;
-            color: var(--info);
-            margin-top: 0.125rem;
-            shrink: 0;
-        }
+        .info-card li { padding: 0.375rem 0; display: flex; align-items: flex-start; gap: 0.5rem; }
+        .info-card li i { width: 16px; height: 16px; color: var(--info); margin-top: 0.125rem; shrink: 0; }
 
         /* ===== TABLE ===== */
-        .table-container {
-            overflow-x: auto;
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-color);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.875rem;
-        }
-
-        thead {
-            background: #ecfdf5;
-        }
-
-        th {
-            padding: 0.875rem 1rem;
-            text-align: left;
-            font-weight: 600;
-            color: var(--primary-dark);
-            border-bottom: 2px solid var(--border-color);
-            white-space: nowrap;
-        }
-
-        td {
-            padding: 0.875rem 1rem;
-            border-bottom: 1px solid var(--border-color);
-            vertical-align: middle;
-        }
-
+        .table-container { overflow-x: auto; border-radius: var(--radius-lg); border: 1px solid var(--border-color); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        thead { background: #ecfdf5; }
+        th { padding: 0.875rem 1rem; text-align: left; font-weight: 600; color: var(--primary-dark); border-bottom: 2px solid var(--border-color); white-space: nowrap; }
+        td { padding: 0.875rem 1rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
         tbody tr:hover { background: var(--bg-secondary); }
-
         tbody tr:last-child td { border-bottom: none; }
 
         /* ===== BADGES ===== */
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.625rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
+        .badge { display: inline-block; padding: 0.25rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
         .badge-success { background: #dcfce7; color: #166534; }
         .badge-warning { background: #fef3c7; color: #92400e; }
         .badge-danger { background: #fee2e2; color: #991b1b; }
@@ -606,315 +283,81 @@
         .badge-secondary { background: #f3f4f6; color: #374151; }
         .badge-purple { background: #ede9fe; color: #5b21b6; }
         .badge-blue { background: #dbeafe; color: #1e40af; }
-        .badge-red { background: #fee2e2; color: #991b1b; }
 
         /* ===== FORM ELEMENTS ===== */
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: 500;
-            font-size: 0.875rem;
-            color: var(--text-primary);
-            margin-bottom: 0.375rem;
-        }
-
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-weight: 500; font-size: 0.875rem; color: var(--text-primary); margin-bottom: 0.375rem; }
         .form-control {
-            width: 100%;
-            padding: 0.625rem 0.875rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            font-size: 0.9375rem;
-            font-family: inherit;
+            width: 100%; padding: 0.625rem 0.875rem; border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); font-size: 0.9375rem; font-family: inherit;
             transition: all 0.2s ease;
         }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1); }
+        textarea.form-control { min-height: 100px; resize: vertical; }
+        select.form-control { cursor: pointer; background: white; }
 
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
-        }
-
-        textarea.form-control {
-            min-height: 100px;
-            resize: vertical;
-        }
-
-        select.form-control {
-            cursor: pointer;
-            background: white;
-        }
-
-        .search-box {
-            position: relative;
-        }
-
-        .search-box i {
-            position: absolute;
-            left: 0.875rem;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 18px;
-            height: 18px;
-            color: var(--text-muted);
-        }
-
-        .search-box input {
-            padding-left: 2.5rem;
-        }
+        .search-box { position: relative; }
+        .search-box i { position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--text-muted); }
+        .search-box input { padding-left: 2.5rem; }
 
         /* ===== DIALOG/MODAL ===== */
         .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 1rem;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            display: none; align-items: center; justify-content: center;
+            z-index: 1000; padding: 1rem;
         }
-
         .modal-overlay.active { display: flex; }
-
         .modal {
-            background: white;
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-xl);
-            width: 100%;
-            max-width: 500px;
-            max-height: 90vh;
-            overflow-y: auto;
-            animation: modalIn 0.3s ease-out;
+            background: white; border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-xl); width: 100%; max-width: 500px;
+            max-height: 90vh; overflow-y: auto; animation: modalIn 0.3s ease-out;
         }
-
         .modal.lg { max-width: 700px; }
         .modal.xl { max-width: 900px; }
-
-        @keyframes modalIn {
-            from { opacity: 0; transform: scale(0.95) translateY(-10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .modal-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .modal-header h3 {
-            font-family: var(--font-display);
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .modal-close {
-            background: var(--bg-tertiary);
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(-10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .modal-header { padding: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; }
+        .modal-header h3 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
+        .modal-close { background: var(--bg-tertiary); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; }
         .modal-close:hover { background: var(--border-color); }
-
         .modal-body { padding: 1.5rem; }
-
-        .modal-footer {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-        }
+        .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 0.75rem; }
 
         /* ===== STEP LIST ===== */
-        .step-list { counter-reset: step; }
-
-        .step-item {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .step-number {
-            width: 40px;
-            height: 40px;
-            background: #ecfdf5;
-            color: var(--primary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-
-        .step-content h3 {
-            font-weight: 600;
-            font-size: 1.125rem;
-            margin-bottom: 0.375rem;
-        }
-
-        .step-content p {
-            color: var(--text-secondary);
-        }
+        .step-item { display: flex; gap: 1rem; margin-bottom: 2rem; }
+        .step-number { width: 40px; height: 40px; background: #ecfdf5; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+        .step-content h3 { font-weight: 600; font-size: 1.125rem; margin-bottom: 0.375rem; }
+        .step-content p { color: var(--text-secondary); }
 
         /* ===== CS CARDS ===== */
-        .cs-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-        }
-
-        .cs-card {
-            background: white;
-            border: 1px solid #a7f3d0;
-            border-radius: var(--radius-lg);
-            padding: 1.25rem;
-        }
-
-        .cs-header {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-        }
-
-        .cs-avatar {
-            width: 48px;
-            height: 48px;
-            background: #cffafe;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
+        .cs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .cs-card { background: white; border: 1px solid #a7f3d0; border-radius: var(--radius-lg); padding: 1.25rem; }
+        .cs-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+        .cs-avatar { width: 48px; height: 48px; background: #cffafe; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
         .cs-avatar i { width: 24px; height: 24px; color: var(--accent); }
-
         .cs-name { font-weight: 600; }
         .cs-role { font-size: 0.8125rem; color: var(--text-muted); }
-
-        .cs-contact {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            font-size: 0.875rem;
-        }
-
-        .cs-contact a {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--success);
-            text-decoration: none;
-        }
-
+        .cs-contact { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem; }
+        .cs-contact a { display: flex; align-items: center; gap: 0.5rem; color: var(--success); text-decoration: none; }
         .cs-contact a:hover { text-decoration: underline; }
-
         .cs-contact a.blue { color: var(--info); }
-        .cs-contact a.gray { color: var(--text-secondary); }
-
-        .cs-contact span {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--text-muted);
-        }
+        .cs-contact span { display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); }
 
         /* ===== FOOTER ===== */
-        .footer {
-            background: #1f2937;
-            color: #d1d5db;
-            padding: 3rem 0 1.5rem;
-            margin-top: auto;
-        }
-
-        .footer-grid {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 1.5rem;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .footer-brand {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
+        .footer { background: #1f2937; color: #d1d5db; padding: 3rem 0 1.5rem; margin-top: auto; }
+        .footer-grid { max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-bottom: 2rem; }
+        .footer-brand { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
         .footer-brand i { width: 32px; height: 32px; color: #34d399; }
-
-        .footer-brand span {
-            font-family: var(--font-display);
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: white;
-        }
-
-        .footer h4 {
-            color: white;
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-
+        .footer-brand span { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: white; }
+        .footer h4 { color: white; font-weight: 600; margin-bottom: 1rem; }
         .footer ul { list-style: none; }
-
         .footer li { margin-bottom: 0.5rem; }
-
-        .footer a {
-            color: #9ca3af;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
+        .footer a { color: #9ca3af; text-decoration: none; transition: color 0.2s; }
         .footer a:hover { color: white; }
-
-        .footer-bottom {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 1.5rem 0;
-            border-top: 1px solid #374151;
-            text-align: center;
-            font-size: 0.875rem;
-        }
+        .footer-bottom { max-width: 1280px; margin: 0 auto; padding: 1.5rem 0; border-top: 1px solid #374151; text-align: center; font-size: 0.875rem; }
 
         /* ===== ADMIN PANEL ===== */
-        .admin-panel {
-            margin-top: 2rem;
-            padding-top: 2rem;
-            border-top: 2px solid var(--border-color);
-        }
-
-        .admin-panel h2 {
-            font-family: var(--font-display);
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: #7c3aed;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-
+        .admin-panel { margin-top: 2rem; padding-top: 2rem; border-top: 2px solid var(--border-color); }
+        .admin-panel h2 { font-family: var(--font-display); font-size: 1.75rem; font-weight: 700; color: #7c3aed; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; }
         .admin-panel h2 i { width: 28px; height: 28px; }
 
         /* ===== UTILITY CLASSES ===== */
@@ -928,29 +371,41 @@
         .mt-4 { margin-top: 1rem; }
         .mb-4 { margin-bottom: 1rem; }
         .text-center { text-align: center; }
-        .text-sm { font-size: 0.875rem; }
         .text-gray { color: var(--text-secondary); }
         .whitespace-pre-line { white-space: pre-line; }
         .w-full { width: 100%; }
         .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
 
-        .alert {
-            padding: 0.875rem 1rem;
-            border-radius: var(--radius-md);
-            font-size: 0.875rem;
-        }
-
-        .alert-warning {
-            background: #fffbeb;
-            border: 1px solid #fde68a;
-            color: #92400e;
-        }
+        .alert { padding: 0.875rem 1rem; border-radius: var(--radius-md); font-size: 0.875rem; }
+        .alert-warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+        .alert-success { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
+        .alert-error { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
 
         .hidden-col { display: none; }
+        @media (min-width: 768px) { .hidden-col.admin-only { display: table-cell; } }
 
-        @media (min-width: 768px) {
-            .hidden-col.admin-only { display: table-cell; }
+        /* ===== LOADING SPINNER ===== */
+        .spinner { width: 20px; height: 20px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== TOAST NOTIFICATION ===== */
+        .toast-container { position: fixed; top: 80px; right: 1rem; z-index: 2000; display: flex; flex-direction: column; gap: 0.5rem; }
+        .toast {
+            padding: 1rem 1.25rem; border-radius: var(--radius-lg);
+            background: white; box-shadow: var(--shadow-lg);
+            display: flex; align-items: center; gap: 0.75rem;
+            animation: slideInRight 0.3s ease-out;
+            max-width: 400px;
         }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--danger); }
+        .toast.info { border-left: 4px solid var(--info); }
+
+        /* ===== CONFIG MODAL ===== */
+        .config-section { margin-bottom: 1.5rem; }
+        .config-section label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary); }
+        .config-section small { display: block; color: var(--text-muted); margin-top: 0.25rem; }
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 767px) {
@@ -967,17 +422,17 @@
         <div class="splash-content">
             <div class="splash-logo">
                 <i data-lucide="graduation-cap"></i>
-                <div class="splash-heart">
-                    <i data-lucide="heart"></i>
-                </div>
+                <div class="splash-heart"><i data-lucide="heart"></i></div>
             </div>
             <h1 class="splash-title">SIMBAKES</h1>
             <p class="splash-subtitle">Beasiswa Tematik Bidang Kesehatan</p>
             <div class="progress-container">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
+                <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
                 <p class="progress-text">Memuat platform... <span id="progressText">0</span>%</p>
+            </div>
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Menghubungkan ke database...</span>
             </div>
         </div>
     </div>
@@ -986,9 +441,7 @@
     <header class="header">
         <div class="header-container">
             <div class="header-brand">
-                <div class="header-logo">
-                    <i data-lucide="graduation-cap"></i>
-                </div>
+                <div class="header-logo"><i data-lucide="graduation-cap"></i></div>
                 <div class="header-text">
                     <h1>SIMBAKES</h1>
                     <p>Beasiswa Tematik Bidang Kesehatan</p>
@@ -1001,18 +454,24 @@
                     <span class="user-badge" id="userRole">superadmin</span>
                 </div>
                 <button class="btn btn-outline" id="loginBtn" onclick="openLoginModal()">
-                    <i data-lucide="log-in"></i> Login Admin
+                    <i data-lucide="log-in"></i>Login Admin
                 </button>
                 <button class="btn btn-outline" id="logoutBtn" style="display:none;" onclick="logout()">
-                    <i data-lucide="log-out"></i> Logout
+                    <i data-lucide="log-out"></i>Logout
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="openConfigModal()" title="Pengaturan Database">
+                    <i data-lucide="settings"></i>
                 </button>
                 <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
                     <i data-lucide="menu" style="width:24px;height:24px;"></i>
                 </button>
             </div>
             <div class="mobile-menu" id="mobileMenu">
-                <button class="btn btn-outline w-full" onclick="openLoginModal(); toggleMobileMenu();">
-                    <i data-lucide="log-in"></i> Login Admin
+                <button class="btn btn-outline w-full mb-2" onclick="openLoginModal(); toggleMobileMenu();">
+                    <i data-lucide="log-in"></i>Login Admin
+                </button>
+                <button class="btn btn-outline w-full" onclick="openConfigModal(); toggleMobileMenu();">
+                    <i data-lucide="settings"></i>Pengaturan Database
                 </button>
             </div>
         </div>
@@ -1023,7 +482,6 @@
         <!-- Tabs Navigation -->
         <div class="tabs-container">
             <div class="tabs-list">
-                <!-- Section 1: Informasi Penting -->
                 <button class="tab-btn active" data-tab="dashboard" data-section="info" onclick="switchTab('dashboard')">
                     <i data-lucide="book-open"></i><span>Dashboard</span>
                 </button>
@@ -1033,8 +491,6 @@
                 <button class="tab-btn" data-tab="informasi" data-section="info" onclick="switchTab('informasi')">
                     <i data-lucide="info"></i><span>Informasi</span>
                 </button>
-                
-                <!-- Section 2: Menu Utama -->
                 <button class="tab-btn" data-tab="roadmap" data-section="main" onclick="switchTab('roadmap')">
                     <i data-lucide="map"></i><span>Roadmap</span>
                 </button>
@@ -1052,31 +508,28 @@
 
         <!-- ===== TAB: DASHBOARD ===== -->
         <div class="tab-content active" id="tab-dashboard">
-            <!-- Stats Cards -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-label">Total Beasiswa Tersedia</div>
-                    <div class="stat-value" id="statTersedia">4</div>
+                    <div class="stat-value" id="statTersedia">-</div>
                     <div class="stat-sublabel">Program aktif</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Pengajuan Aktif</div>
-                    <div class="stat-value" id="statAktif">2</div>
+                    <div class="stat-value" id="statAktif">-</div>
                     <div class="stat-sublabel">Sedang diproses</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Penerima Ditentukan</div>
-                    <div class="stat-value" id="statDitetapkan">2</div>
+                    <div class="stat-value" id="statDitetapkan">-</div>
                     <div class="stat-sublabel">SK diterbitkan</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Jurusan Tersedia</div>
-                    <div class="stat-value" id="statJurusan">5</div>
+                    <div class="stat-value" id="statJurusan">-</div>
                     <div class="stat-sublabel">Berbagai program</div>
                 </div>
             </div>
-
-            <!-- Info Cards -->
             <div class="info-grid">
                 <div class="card info-card">
                     <div class="card-body">
@@ -1091,18 +544,14 @@
                             <li><i data-lucide="chevron-right"></i>Tenaga kesehatan PNS/PPPK</li>
                             <li><i data-lucide="chevron-right"></i>Dokter/dokter spesialis daerah tertinggal</li>
                             <li><i data-lucide="chevron-right"></i>Perawat dan bidan terpilih</li>
-                            <li><i data-lucide="chevron-right"></i>Tenaga farmasi dan kesehatan lainnya</li>
                         </ul>
                     </div>
                 </div>
                 <div class="card info-card">
                     <div class="card-body">
-                        <h3><i data-lucide="headphones"></i>Butuh Bantuan?</h3>
-                        <ul>
-                            <li><i data-lucide="message-circle" style="color:#16a34a;"></i>WhatsApp: 0812-3456-7890</li>
-                            <li><i data-lucide="mail" style="color:#2563eb;"></i>Email: help@simbakes.id</li>
-                            <li><i data-lucide="clock" style="color:#ea580c;"></i>Senin-Jumat, 08:00-16:00 WIB</li>
-                        </ul>
+                        <h3><i data-lucide="database"></i>Status Database</h3>
+                        <p id="dbStatusText">Menunggu koneksi...</p>
+                        <p class="mt-2"><small id="dbConnectionInfo"></small></p>
                     </div>
                 </div>
             </div>
@@ -1120,36 +569,29 @@
                         <div class="step-item">
                             <div class="step-number">1</div>
                             <div class="step-content">
-                                <h3>Mengakses Platform</h3>
-                                <p>Buka website SIMBAKES melalui browser Anda. Halaman utama akan menampilkan dashboard dengan informasi penting seputar program beasiswa. Semua informasi pada bagian ini dapat diakses tanpa perlu login.</p>
+                                <h3>Konfigurasi Database</h3>
+                                <p>Klik tombol ⚙️ Settings di header, lalu masukkan URL dan Anon Key dari project Supabase Anda. Jika belum punya, gunakan mode demo dengan data contoh.</p>
                             </div>
                         </div>
                         <div class="step-item">
                             <div class="step-number">2</div>
                             <div class="step-content">
                                 <h3>Melihat Roadmap Kebutuhan</h3>
-                                <p>Klik menu "Roadmap Kebutuhan" untuk melihat daftar program beasiswa yang tersedia beserta kualifikasi, jenis pendidikan, dan perguruan tinggi mitra. Data ini bersifat publik dan dapat dilihat oleh siapa saja.</p>
+                                <p>Klik menu "Roadmap Kebutuhan" untuk melihat daftar program beasiswa yang tersedia di database Supabase.</p>
                             </div>
                         </div>
                         <div class="step-item">
                             <div class="step-number">3</div>
                             <div class="step-content">
                                 <h3>Mengajukan Beasiswa</h3>
-                                <p>Klik menu "Formulir Pengusulan" untuk mengisi data diri dan mengajukan beasiswa. Pastikan semua data diisi dengan benar dan lengkap. Dokumen pendukung seperti KTP, ijazah, dan surat rekomendasi perlu disiapkan.</p>
+                                <p>Klik menu "Formulir Pengusulan" untuk mengisi data. Data akan tersimpan langsung ke tabel <code>data_pengusulan</code> di Supabase.</p>
                             </div>
                         </div>
                         <div class="step-item">
                             <div class="step-number">4</div>
                             <div class="step-content">
-                                <h3>Memantau Status Pengajuan</h3>
-                                <p>Setelah mengajukan, Anda dapat memantau status pengajuan melalui menu "Data Pengusulan". Status akan diperbarui secara berkala oleh tim admin mulai dari diajukan, ditinjau, hingga diterima atau ditolak.</p>
-                            </div>
-                        </div>
-                        <div class="step-item">
-                            <div class="step-number">5</div>
-                            <div class="step-content">
-                                <h3>Untuk Administrator</h3>
-                                <p>Klik tombol "Login Admin" di pojok kanan atas untuk masuk ke panel administrasi. Panel admin menyediakan fitur CRUD lengkap untuk mengelola semua data termasuk roadmap, pengusulan, penetapan, dan manajemen user.</p>
+                                <h3>Admin Login</h3>
+                                <p>Klik "Login Admin" untuk mengakses fitur CRUD lengkap. Admin dapat melihat data sensitif (NIK), mengedit status, dan mengelola user.</p>
                             </div>
                         </div>
                     </div>
@@ -1159,10 +601,7 @@
 
         <!-- ===== TAB: INFORMASI & CS ===== -->
         <div class="tab-content" id="tab-informasi">
-            <!-- Information Cards -->
             <div id="informasiList" class="mb-4"></div>
-
-            <!-- Customer Service -->
             <div class="card" style="background: linear-gradient(to bottom right, #ecfeff, #e0f2fe); border-color: #a5f3fc;">
                 <div class="card-header">
                     <h2 style="color:#0e7490;"><i data-lucide="headphones"></i>Layanan Customer Service</h2>
@@ -1181,11 +620,11 @@
                     <div class="flex items-center justify-between gap-4" style="flex-wrap:wrap;">
                         <div>
                             <h2><i data-lucide="map"></i>Roadmap Kebutuhan Beasiswa</h2>
-                            <p>Daftar program beasiswa yang tersedia sesuai kebutuhan SDM Kesehatan</p>
+                            <p>Data dari tabel <strong>roadmap_kebutuhan</strong> di Supabase</p>
                         </div>
                         <div class="search-box">
                             <i data-lucide="search"></i>
-                            <input type="text" class="form-control" placeholder="Cari jurusan atau kode..." id="roadmapSearch" oninput="filterTable('roadmap')">
+                            <input type="text" class="form-control" placeholder="Cari jurusan..." id="roadmapSearch" oninput="filterTable('roadmap')">
                         </div>
                     </div>
                 </div>
@@ -1200,16 +639,14 @@
                                     <th>Jenjang</th>
                                     <th class="hidden-col">Perguruan Tinggi</th>
                                     <th>Status</th>
-                                    <th class="hidden-col admin-action" style="display:none;">Aksi</th>
+                                    <th class="admin-action" style="display:none;">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody id="roadmapBody"></tbody>
+                            <tbody id="roadmapBody"><tr><td colspan="7" class="text-center py-8"><div class="spinner"></div> Memuat data...</td></tr></tbody>
                         </table>
                     </div>
                     <div class="flex justify-end mt-4" id="roadmapAddBtn" style="display:none;">
-                        <button class="btn btn-primary btn-sm" onclick="openRoadmapModal()">
-                            <i data-lucide="plus"></i>Tambah Roadmap
-                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="openRoadmapModal()"><i data-lucide="plus"></i>Tambah Roadmap</button>
                     </div>
                 </div>
             </div>
@@ -1220,11 +657,10 @@
             <div class="card">
                 <div class="card-header">
                     <h2><i data-lucide="file-text"></i>Formulir Pengusulan Beasiswa</h2>
-                    <p>Isi formulir berikut untuk mengajukan beasiswa SIMBAKES</p>
+                    <p>Data akan disimpan ke tabel <strong>data_pengusulan</strong> di Supabase</p>
                 </div>
                 <div class="card-body">
                     <form id="pengusulanForm" onsubmit="submitPengusulan(event)">
-                        <!-- Data Pribadi -->
                         <h3 class="mb-4" style="color:#059669;font-weight:600;display:flex;align-items:center;gap:0.5rem;">
                             <i data-lucide="users" style="width:20px;height:20px;"></i>Data Pribadi
                         </h3>
@@ -1259,7 +695,6 @@
                             </div>
                         </div>
 
-                        <!-- Data Pekerjaan -->
                         <h3 class="mb-4 mt-4" style="color:#2563eb;font-weight:600;display:flex;align-items:center;gap:0.5rem;">
                             <i data-lucide="briefcase" style="width:20px;height:20px;"></i>Data Pekerjaan
                         </h3>
@@ -1282,7 +717,6 @@
                             </div>
                         </div>
 
-                        <!-- Data Pendidikan Tujuan -->
                         <h3 class="mb-4 mt-4" style="color:#7c3aed;font-weight:600;display:flex;align-items:center;gap:0.5rem;">
                             <i data-lucide="graduation-cap" style="width:20px;height:20px;"></i>Data Pendidikan Tujuan
                         </h3>
@@ -1295,12 +729,8 @@
                                 <label>Jenjang Pendidikan *</label>
                                 <select class="form-control" name="jenjang_pendidikan" required>
                                     <option value="">Pilih jenjang</option>
-                                    <option value="D3">D3</option>
-                                    <option value="S1">S1</option>
-                                    <option value="Profesi">Profesi</option>
-                                    <option value="Spesialis">Spesialis</option>
-                                    <option value="S2">S2</option>
-                                    <option value="S3">S3</option>
+                                    <option value="D3">D3</option><option value="S1">S1</option><option value="Profesi">Profesi</option>
+                                    <option value="Spesialis">Spesialis</option><option value="S2">S2</option><option value="S3">S3</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -1313,7 +743,6 @@
                             </div>
                         </div>
 
-                        <!-- Kontak -->
                         <h3 class="mb-4 mt-4" style="color:#ea580c;font-weight:600;display:flex;align-items:center;gap:0.5rem;">
                             <i data-lucide="phone" style="width:20px;height:20px;"></i>Informasi Kontak
                         </h3>
@@ -1333,9 +762,7 @@
                         </div>
 
                         <div class="flex justify-end pt-4" style="border-top:1px solid var(--border-color);">
-                            <button type="submit" class="btn btn-secondary">
-                                <i data-lucide="send"></i>Kirim Pengajuan
-                            </button>
+                            <button type="submit" class="btn btn-secondary"><i data-lucide="send"></i>Kirim ke Database</button>
                         </div>
                     </form>
                 </div>
@@ -1349,7 +776,7 @@
                     <div class="flex items-center justify-between gap-4" style="flex-wrap:wrap;">
                         <div>
                             <h2><i data-lucide="database"></i>Data Pengusulan Beasiswa</h2>
-                            <p id="pengusulanSubtitle">Data publik pengajuan (tanpa data personal sensitif)</p>
+                            <p id="pengusulanSubtitle">Data dari tabel <strong>data_pengusulan</strong></p>
                         </div>
                         <div class="search-box">
                             <i data-lucide="search"></i>
@@ -1372,7 +799,7 @@
                                     <th class="admin-action" style="display:none;">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody id="pengusulanBody"></tbody>
+                            <tbody id="pengusulanBody"><tr><td colspan="8" class="text-center py-8"><div class="spinner"></div> Memuat data...</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -1386,7 +813,7 @@
                     <div class="flex items-center justify-between gap-4" style="flex-wrap:wrap;">
                         <div>
                             <h2><i data-lucide="clipboard-list"></i>Data Penetapan Penerima</h2>
-                            <p id="penetapanSubtitle">Data publik penerima beasiswa</p>
+                            <p id="penetapanSubtitle">Data dari tabel <strong>data_penetapan</strong></p>
                         </div>
                         <div class="search-box">
                             <i data-lucide="search"></i>
@@ -1409,26 +836,24 @@
                                     <th class="admin-action" style="display:none;">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody id="penetapanBody"></tbody>
+                            <tbody id="penetapanBody"><tr><td colspan="8" class="text-center py-8"><div class="spinner"></div> Memuat data...</td></tr></tbody>
                         </table>
                     </div>
                     <div class="flex justify-end mt-4" id="penetapanAddBtn" style="display:none;">
-                        <button class="btn btn-secondary btn-sm" onclick="openPenetapanModal()">
-                            <i data-lucide="plus"></i>Tetapkan Penerima
-                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="openPenetapanModal()"><i data-lucide="plus"></i>Tetapkan Penerima</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ===== ADMIN PANEL (Only visible when logged in) ===== -->
+        <!-- ===== ADMIN PANEL ===== -->
         <div class="admin-panel" id="adminPanel" style="display:none;">
             <h2><i data-lucide="shield-check"></i>Panel Administrasi</h2>
             
-            <div class="card">
+            <div class="card mb-4">
                 <div class="card-header">
                     <h2 style="color:#7c3aed;font-size:1.25rem;"><i data-lucide="users"></i>Manajemen User</h2>
-                    <p>Kelola akun administrator dan operator</p>
+                    <p>Data dari tabel <strong>multiusers</strong></p>
                 </div>
                 <div class="card-body">
                     <div class="table-container">
@@ -1443,13 +868,11 @@
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody id="userBody"></tbody>
+                            <tbody id="userBody"><tr><td colspan="6" class="text-center py-8"><div class="spinner"></div> Memuat data...</td></tr></tbody>
                         </table>
                     </div>
                     <div class="flex justify-end mt-4">
-                        <button class="btn btn-sm" style="background:#7c3aed;color:white;" onclick="openUserModal()">
-                            <i data-lucide="plus"></i>Tambah User
-                        </button>
+                        <button class="btn btn-sm" style="background:#7c3aed;color:white;" onclick="openUserModal()"><i data-lucide="plus"></i>Tambah User</button>
                     </div>
                 </div>
             </div>
@@ -1460,11 +883,8 @@
     <footer class="footer">
         <div class="footer-grid">
             <div>
-                <div class="footer-brand">
-                    <i data-lucide="graduation-cap"></i>
-                    <span>SIMBAKES</span>
-                </div>
-                <p style="font-size:0.875rem;">Sistem Informasi Beasiswa Tematik Bidang Kesehatan - Membangun SDM Kesehatan Indonesia yang Berkualitas</p>
+                <div class="footer-brand"><i data-lucide="graduation-cap"></i><span>SIMBAKES</span></div>
+                <p style="font-size:0.875rem;">Sistem Informasi Beasiswa Tematik Bidang Kesehatan - Terintegrasi dengan Supabase</p>
             </div>
             <div>
                 <h4>Tautan Cepat</h4>
@@ -1472,22 +892,21 @@
                     <li><a href="#" onclick="switchTab('dashboard')">Dashboard</a></li>
                     <li><a href="#" onclick="switchTab('petunjuk')">Petunjuk Penggunaan</a></li>
                     <li><a href="#" onclick="switchTab('informasi')">Informasi Terbaru</a></li>
-                    <li><a href="#" onclick="switchTab('informasi')">Layanan CS</a></li>
                 </ul>
             </div>
             <div>
-                <h4>Kontak</h4>
+                <h4>Dokumentasi</h4>
                 <ul>
-                    <li><a href="mailto:info@simbakes.id"><i data-lucide="mail" style="width:14px;height:14px;display:inline;"></i> info@simbakes.id</a></li>
-                    <li><a href="tel:+622112345678"><i data-lucide="phone" style="width:14px;height:14px;display:inline;"></i> (021) 1234-5678</a></li>
-                    <li><a href="https://wa.me/6281234567890"><i data-lucide="message-circle" style="width:14px;height:14px;display:inline;"></i> WhatsApp: 0812-3456-7890</a></li>
+                    <li><a href="https://supabase.com/docs" target="_blank">Supabase Docs</a></li>
+                    <li><a href="#" onclick="openConfigModal()">Konfigurasi Database</a></li>
                 </ul>
             </div>
         </div>
-        <div class="footer-bottom">
-            © 2025 SIMBAKES - Kementerian Kesehatan Republik Indonesia. All rights reserved.
-        </div>
+        <div class="footer-bottom">© 2025 SIMBAKES - Powered by Supabase. All rights reserved.</div>
     </footer>
+
+    <!-- ===== TOAST CONTAINER ===== -->
+    <div class="toast-container" id="toastContainer"></div>
 
     <!-- ===== LOGIN MODAL ===== -->
     <div class="modal-overlay" id="loginModal">
@@ -1505,15 +924,63 @@
                     <label>Password</label>
                     <input type="password" class="form-control" id="loginPassword" placeholder="Masukkan password" onkeypress="if(event.key==='Enter')doLogin()">
                 </div>
-                <div class="alert alert-warning">
-                    <strong>Demo:</strong> Username: <code>admin</code> / Password: <code>admin123</code>
+                <div class="alert alert-warning mt-4">
+                    <strong>Demo:</strong> Username: <code>admin</code> / Password: <code>admin123</code><br>
+                    <small>Login akan mengecek ke tabel <strong>multiusers</strong> di Supabase jika terhubung</small>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline btn-sm" onclick="closeLoginModal()">Batal</button>
-                <button class="btn btn-primary" onclick="doLogin()">
-                    <i data-lucide="log-in"></i>Masuk
-                </button>
+                <button class="btn btn-primary" onclick="doLogin()"><i data-lucide="log-in"></i>Masuk</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CONFIG MODAL ===== -->
+    <div class="modal-overlay" id="configModal">
+        <div class="modal lg">
+            <div class="modal-header">
+                <h3><i data-lucide="settings"></i>Konfigurasi Database Supabase</h3>
+                <button class="modal-close" onclick="closeModal('configModal')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-4">
+                    <strong>📌 Cara mendapatkan kredensial:</strong><br>
+                    1. Buka <a href="https://supabase.com" target="_blank">supabase.com</a> dan buat project<br>
+                    2. Go to <strong>Settings → API</strong><br>
+                    3. Copy <strong>Project URL</strong> dan <strong>anon public key</strong>
+                </div>
+                
+                <div class="config-section">
+                    <label>🔗 Supabase Project URL</label>
+                    <input type="url" class="form-control" id="configUrl" placeholder="https://your-project.supabase.co">
+                    <small>Format: https://xxxxx.supabase.co</small>
+                </div>
+                
+                <div class="config-section">
+                    <label>🔑 Anon / Public Key</label>
+                    <input type="text" class="form-control" id="configKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                    <small>Ditemukan di Settings → API → Project API keys → anon public</small>
+                </div>
+
+                <div class="config-section">
+                    <label>📋 Opsi (Opsional)</label>
+                    <div class="flex gap-4 mt-2">
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" id="configAutoConnect" checked>
+                            Auto-connect saat load
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" id="configUseDemo" checked>
+                            Gunakan data demo jika gagal
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline btn-sm" onclick="testConnection()">🧪 Test Koneksi</button>
+                <button class="btn btn-ghost btn-sm" onclick="useDemoMode()">🎮 Mode Demo</button>
+                <button class="btn btn-primary btn-sm" onclick="saveConfig()">💾 Simpan & Hubungkan</button>
             </div>
         </div>
     </div>
@@ -1528,54 +995,19 @@
             <div class="modal-body">
                 <input type="hidden" id="roadmapEditId">
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="form-group">
-                        <label>Jurusan/Program Studi *</label>
-                        <input type="text" class="form-control" id="rm_jurusan" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Jenis Pendidikan</label>
-                        <select class="form-control" id="rm_pendidikan">
-                            <option value="D3">D3</option>
-                            <option value="S1">S1</option>
-                            <option value="Profesi">Profesi</option>
-                            <option value="Spesialis">Spesialis</option>
-                            <option value="S2">S2</option>
-                            <option value="S3">S3</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Kualifikasi Awal</label>
-                        <input type="text" class="form-control" id="rm_kualifikasi">
-                    </div>
-                    <div class="form-group">
-                        <label>Perguruan Tinggi</label>
-                        <input type="text" class="form-control" id="rm_pt">
-                    </div>
-                    <div class="form-group">
-                        <label>Pekerjaan</label>
-                        <input type="text" class="form-control" id="rm_pekerjaan">
-                    </div>
-                    <div class="form-group">
-                        <label>Tahun Mulai Studi</label>
-                        <input type="number" class="form-control" id="rm_tahun" value="2025">
-                    </div>
-                    <div class="form-group">
-                        <label>Unit Pendayaguna</label>
-                        <input type="text" class="form-control" id="rm_unit">
-                    </div>
-                    <div class="form-group">
-                        <label>Status</label>
-                        <select class="form-control" id="rm_status">
-                            <option value="tersedia">Tersedia</option>
-                            <option value="dipenuhi">Dipenuhi</option>
-                            <option value="ditangguhkan">Ditangguhkan</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>Jurusan/Program Studi *</label><input type="text" class="form-control" id="rm_jurusan" required></div>
+                    <div class="form-group"><label>Jenis Pendidikan</label><select class="form-control" id="rm_pendidikan"><option value="D3">D3</option><option value="S1">S1</option><option value="Profesi">Profesi</option><option value="Spesialis">Spesialis</option><option value="S2">S2</option><option value="S3">S3</option></select></div>
+                    <div class="form-group"><label>Kualifikasi Awal</label><input type="text" class="form-control" id="rm_kualifikasi"></div>
+                    <div class="form-group"><label>Perguruan Tinggi</label><input type="text" class="form-control" id="rm_pt"></div>
+                    <div class="form-group"><label>Pekerjaan</label><input type="text" class="form-control" id="rm_pekerjaan"></div>
+                    <div class="form-group"><label>Tahun Mulai Studi</label><input type="number" class="form-control" id="rm_tahun" value="2025"></div>
+                    <div class="form-group"><label>Unit Pendayaguna</label><input type="text" class="form-control" id="rm_unit"></div>
+                    <div class="form-group"><label>Status</label><select class="form-control" id="rm_status"><option value="tersedia">Tersedia</option><option value="dipenuhi">Dipenuhi</option><option value="ditangguhkan">Ditangguhkan</option></select></div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline btn-sm" onclick="closeModal('roadmapModal')">Batal</button>
-                <button class="btn btn-primary btn-sm" onclick="saveRoadmap()"><i data-lucide="save"></i>Simpan</button>
+                <button class="btn btn-primary btn-sm" onclick="saveRoadmap()"><i data-lucide="save"></i>Simpan ke Supabase</button>
             </div>
         </div>
     </div>
@@ -1595,43 +1027,18 @@
                     </select>
                 </div>
                 <div class="grid grid-cols-2 gap-4 mt-4">
-                    <div class="form-group">
-                        <label>NIK</label>
-                        <input type="text" class="form-control" id="pn_nik" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Nama Lengkap</label>
-                        <input type="text" class="form-control" id="pn_nama">
-                    </div>
-                    <div class="form-group">
-                        <label>No SK Penetapan *</label>
-                        <input type="text" class="form-control" id="pn_sk" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Tanggal Penetapan</label>
-                        <input type="date" class="form-control" id="pn_tanggal">
-                    </div>
-                    <div class="form-group">
-                        <label>Status Penetapan</label>
-                        <select class="form-control" id="pn_status">
-                            <option value="ditetapkan">Ditetapkan</option>
-                            <option value="dibatalkan">Dibatalkan</option>
-                            <option value="direvisi">Direvisi</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Periode Pemberian</label>
-                        <input type="text" class="form-control" id="pn_periode" placeholder="Contoh: 2025-2028">
-                    </div>
-                    <div class="form-group" style="grid-column:span 2;">
-                        <label>Catatan Penetapan</label>
-                        <textarea class="form-control" id="pn_catatan" rows="2"></textarea>
-                    </div>
+                    <div class="form-group"><label>NIK</label><input type="text" class="form-control" id="pn_nik" readonly></div>
+                    <div class="form-group"><label>Nama Lengkap</label><input type="text" class="form-control" id="pn_nama"></div>
+                    <div class="form-group"><label>No SK Penetapan *</label><input type="text" class="form-control" id="pn_sk" required></div>
+                    <div class="form-group"><label>Tanggal Penetapan</label><input type="date" class="form-control" id="pn_tanggal"></div>
+                    <div class="form-group"><label>Status Penetapan</label><select class="form-control" id="pn_status"><option value="ditetapkan">Ditetapkan</option><option value="dibatalkan">Dibatalkan</option><option value="direvisi">Direvisi</option></select></div>
+                    <div class="form-group"><label>Periode Pemberian</label><input type="text" class="form-control" id="pn_periode" placeholder="Contoh: 2025-2028"></div>
+                    <div class="form-group" style="grid-column:span 2;"><label>Catatan Penetapan</label><textarea class="form-control" id="pn_catatan" rows="2"></textarea></div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline btn-sm" onclick="closeModal('penetapanModal')">Batal</button>
-                <button class="btn btn-secondary btn-sm" onclick="savePenetapan()"><i data-lucide="save"></i>Simpan</button>
+                <button class="btn btn-secondary btn-sm" onclick="savePenetapan()"><i data-lucide="save"></i>Simpan ke Supabase</button>
             </div>
         </div>
     </div>
@@ -1644,97 +1051,312 @@
                 <button class="modal-close" onclick="closeModal('userModal')"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>Nama Lengkap</label>
-                    <input type="text" class="form-control" id="u_nama" required>
-                </div>
-                <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" class="form-control" id="u_username" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" class="form-control" id="u_password" required>
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" class="form-control" id="u_email" required>
-                </div>
+                <div class="form-group"><label>Nama Lengkap</label><input type="text" class="form-control" id="u_nama" required></div>
+                <div class="form-group"><label>Username</label><input type="text" class="form-control" id="u_username" required></div>
+                <div class="form-group"><label>Password</label><input type="password" class="form-control" id="u_password" required></div>
+                <div class="form-group"><label>Email</label><input type="email" class="form-control" id="u_email" required></div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="form-group">
-                        <label>Role</label>
-                        <select class="form-control" id="u_role">
-                            <option value="viewer">Viewer</option>
-                            <option value="admin">Admin</option>
-                            <option value="superadmin">Super Admin</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Status</label>
-                        <select class="form-control" id="u_status">
-                            <option value="aktif">Aktif</option>
-                            <option value="non-aktif">Non-Aktif</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>Role</label><select class="form-control" id="u_role"><option value="viewer">Viewer</option><option value="admin">Admin</option><option value="superadmin">Super Admin</option></select></div>
+                    <div class="form-group"><label>Status</label><select class="form-control" id="u_status"><option value="aktif">Aktif</option><option value="non-aktif">Non-Aktif</option></select></div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline btn-sm" onclick="closeModal('userModal')">Batal</button>
-                <button class="btn btn-sm" style="background:#7c3aed;color:white;" onclick="saveUser()"><i data-lucide="save"></i>Simpan</button>
+                <button class="btn btn-sm" style="background:#7c3aed;color:white;" onclick="saveUser()"><i data-lucide="save"></i>Simpan ke Supabase</button>
             </div>
         </div>
     </div>
 
-    <!-- ===== JAVASCRIPT ===== -->
+    <!-- ===== JAVASCRIPT - SUPABASE INTEGRATION ===== -->
     <script>
         // Initialize Lucide icons
         lucide.createIcons();
 
-        // ===== DATA STORE (Simulating Database) =====
-        let roadmapData = [
-            { id: '1', kode: 'RM-001', jurusan: 'Kedokteran Umum', kualifikasi_awal: 'Sarjana Kedokteran', jenis_pendidikan: 'Profesi', perguruan_tinggi: 'Universitas Indonesia', pekerjaan: 'Dokter PTT', tahun_mulai_studi: 2025, unit_pendayaguna: 'Dinas Kesehatan', status: 'tersedia' },
-            { id: '2', kode: 'RM-002', jurusan: 'Keperawatan', kualifikasi_awal: 'D3/S1 Keperawatan', jenis_pendidikan: 'S1/S2', perguruan_tinggi: 'Universitas Airlangga', pekerjaan: 'Perawat RS', tahun_mulai_studi: 2025, unit_pendayaguna: 'RSUD Provinsi', status: 'tersedia' },
-            { id: '3', kode: 'RM-003', jurusan: 'Kebidanan', kualifikasi_awal: 'D3 Kebidanan', jenis_pendidikan: 'S1', perguruan_tinggi: 'Universitas Gadjah Mada', pekerjaan: 'Bidan Desa', tahun_mulai_studi: 2025, unit_pendayaguna: 'Puskesmas', status: 'tersedia' },
-            { id: '4', kode: 'RM-004', jurusan: 'Farmasi', kualifikasi_awal: 'S1 Farmasi', jenis_pendidikan: 'S2/S3', perguruan_tinggi: 'Institut Teknologi Bandung', pekerjaan: 'Farmasis', tahun_mulai_studi: 2026, unit_pendayaguna: 'Instalasi Farmasi', status: 'tersedia' },
-            { id: '5', kode: 'RM-005', jurusan: 'Kesehatan Masyarakat', kualifikasi_awal: 'S1 KESMAS', jenis_pendidikan: 'S2/S3', perguruan_tinggi: 'Universitas Hasanuddin', pekerjaan: 'Epidemiolog', tahun_mulai_studi: 2026, unit_pendayaguna: 'Dinkes Provinsi', status: 'dipenuhi', nama_penerima: 'Dr. Budi Santoso' }
-        ];
+        // ===== SUPABASE CLIENT =====
+        let supabaseClient = null;
+        let isConnected = false;
+        let useDemo = true;
 
-        let pengusulanData = [
-            { id: '1', nik: '3201010101010001', nama_lengkap: 'Dr. Siti Nurhaliza', tempat_lahir: 'Jakarta', tanggal_lahir: '1990-05-15', alamat_ktp: 'Jl. Merdeka No. 10', alamat_domisili: 'Jl. Sudirman No. 25', lama_domisili_tahun: 5, pekerjaan: 'Dokter', posisi_jabatan: 'Dokter PTT', unit_kerja: 'Puskesmas Central', penjelasan_narasi: 'Ingin melanjutkan spesialisasi', jurusan_tujuan: 'Spesialis Anak', jenjang_pendidikan: 'Spesialis', unit_tujuan_pemanfaatan: 'RSUD Provinsi', rencana_tahun_studi: 2025, no_hp: '081234567890', no_whatsapp: '081234567890', email: 'siti@email.com', status: 'diterima' },
-            { id: '2', nik: '3202010202020002', nama_lengkap: 'Ahmad Fauzi, S.Km', tempat_lahir: 'Bandung', tanggal_lahir: '1992-08-20', alamat_ktp: 'Jl. Asia Afrika No. 5', alamat_domisili: 'Jl. Braga No. 15', lama_domisili_tahun: 3, pekerjaan: 'Sanitarian', posisi_jabatan: 'Staff Dinkes', unit_kerja: 'Dinas Kesehatan', penjelasan_narasi: 'Pengembangan kompetensi', jurusan_tujuan: 'Magister Kesehatan Masyarakat', jenjang_pendidikan: 'S2', unit_tujuan_pemanfaatan: 'Dinkes Provinsi', rencana_tahun_studi: 2025, no_hp: '082345678901', no_whatsapp: '082345678901', email: 'ahmad@email.com', status: 'ditinjau' },
-            { id: '3', nik: '3203030303030003', nama_lengkap: 'Rina Marlina, A.Md', tempat_lahir: 'Surabaya', tanggal_lahir: '1995-12-10', alamat_ktp: 'Jl. Tunjungan No. 8', alamat_domisili: 'Jl. Basuki Rachmat No. 12', lama_domisili_tahun: 2, pekerjaan: 'Bidan', posisi_jabatan: 'Bidan Desa', unit_kerja: 'Puskesmas Desa', penjelasan_narasi: 'Meningkatkan kualifikasi', jurusan_tujuan: 'S1 Kebidanan', jenjang_pendidikan: 'S1', unit_tujuan_pemanfaatan: 'Puskesmas', rencana_tahun_studi: 2026, no_hp: '083456789012', no_whatsapp: '083456789012', email: 'rina@email.com', status: 'diajukan' }
-        ];
+        // Default config (will be overwritten by saved config)
+        let supabaseConfig = {
+            url: localStorage.getItem('supabase_url') || '',
+            key: localStorage.getItem('supabase_key') || ''
+        };
 
-        let penetapanData = [
-            { id: '1', nik: '3201010101010001', nama_lengkap: 'Dr. Siti Nurhaliza', jurusan_tujuan: 'Spesialis Anak', jenjang_pendidikan: 'Spesialis', unit_tujuan_pemanfaatan: 'RSUD Provinsi', rencana_tahun_studi: 2025, no_sk_penetapan: 'SK/001/SIMBAKES/2025', tanggal_penetapan: '2025-01-15', status_penetapan: 'ditetapkan', catatan_penetapan: 'Memenuhi semua persyaratan', periode_pemberian: '2025-2028' },
-            { id: '2', nik: '3204040404040004', nama_lengkap: 'Dr. Budi Santoso', jurusan_tujuan: 'Magister Kesehatan Masyarakat', jenjang_pendidikan: 'S2', unit_tujuan_pemanfaatan: 'Dinkes Provinsi', rencana_tahun_studi: 2026, no_sk_penetapan: 'SK/002/SIMBAKES/2025', tanggal_penetapan: '2025-01-20', status_penetapan: 'ditetapkan', catatan_penetapan: 'Prioritas epidemiolog', periode_pemberian: '2026-2028' }
-        ];
+        // Initialize Supabase client
+        function initSupabase(url, key) {
+            try {
+                supabaseClient = supabase.createClient(url, key);
+                return true;
+            } catch (error) {
+                console.error('Supabase init error:', error);
+                return false;
+            }
+        }
 
-        let usersData = [
-            { id: '1', nama_lengkap: 'Administrator', username: 'admin', password: 'admin123', email: 'admin@simbakes.id', role: 'superadmin', status: 'aktif' },
-            { id: '2', nama_lengkap: 'Operator Dinkes', username: 'operator', password: 'operator123', email: 'operator@simbakes.id', role: 'admin', status: 'aktif' },
-            { id: '3', nama_lengkap: 'Viewer RSUD', username: 'viewer', password: 'viewer123', email: 'viewer@simbakes.id', role: 'viewer', status: 'aktif' }
-        ];
+        // Test connection
+        async function testConnection() {
+            const url = document.getElementById('configUrl').value.trim();
+            const key = document.getElementById('configKey').value.trim();
+            
+            if (!url || !key) {
+                showToast('Mohon isi URL dan Anon Key', 'error');
+                return false;
+            }
 
-        const informasiData = [
-            { judul: 'Selamat Datang di SIMBAKES', isi: 'SIMBAKES (Beasiswa Tematik Bidang Kesehatan) adalah program beasiswa dari pemerintah untuk meningkatkan sumber daya manusia di bidang kesehatan Indonesia.', kategori: 'pengumuman' },
-            { judul: 'Pendaftaran Periode 2025-2026 Dibuka', isi: 'Pendaftaran beasiswa SIMBAKES untuk periode 2025-2026 telah dibuka. Silakan mengisi formulir pengusulan melalui menu yang tersedia di platform ini.', kategori: 'pengumuman' },
-            { judul: 'Cara Mengajukan Beasiswa', isi: 'Langkah-langkah mengajukan beasiswa:\n1. Daftar akun atau login\n2. Isi formulir pengusulan dengan lengkap\n3. Upload dokumen pendukung (KTP, ijazah, surat rekomendasi)\n4. Tunggu proses verifikasi oleh admin\n5. Cek status pengusulan secara berkala\n6. Jika diterima, tunggu SK penetapan', kategori: 'panduan' },
-            { judul: 'Persyaratan Umum', isi: '- Warga Negara Indonesia\n- Usia maksimal 35 tahun\n- Memiliki NIP/NIK yang valid\n- Belum pernah menerima beasiswa serupa\n- Bersedia mengikuti ikat dinas minimal 2x masa studi\n- Sehat jasmani dan rohani', kategori: 'panduan' },
-            { judul: 'FAQ - Pertanyaan Umum', isi: 'Q: Apakah boleh mendaftar lebih dari satu jurusan?\nA: Ya, namun hanya satu yang dapat dipilih.\n\nQ: Bagaimana jika data berubah setelah submit?\nA: Hubungi admin untuk perubahan data.\n\nQ: Kapan pengumuman hasil?\nA: Pengumuman dilakukan setiap akhir bulan.', kategori: 'faq' }
-        ];
+            showToast('Menguji koneksi...', 'info');
+            
+            if (initSupabase(url, key)) {
+                try {
+                    const { data, error } = await supabaseClient.from('roadmap_kebutuhan').select('count');
+                    if (error) throw error;
+                    
+                    isConnected = true;
+                    useDemo = false;
+                    showToast('✅ Koneksi ke Supabase berhasil!', 'success');
+                    updateConnectionStatus(true);
+                    return true;
+                } catch (error) {
+                    console.error('Connection test error:', error);
+                    showToast('❌ Gagal terhubung: ' + error.message, 'error');
+                    updateConnectionStatus(false, error.message);
+                    return false;
+                }
+            }
+            return false;
+        }
 
-        const csData = [
-            { nama_lengkap: 'Dr. Siti Nurhaliza', jabatan: 'Koordinator SIMBAKES', no_hp: '081234567890', no_whatsapp: '6281234567890', email: 'siti@simbakes.id', jam_operasional: 'Senin-Jumat, 08:00-16:00 WIB' },
-            { nama_lengkap: 'Ahmad Fauzi, S.Km', jabatan: 'Admin Layanan', no_hp: '082345678901', no_whatsapp: '6282345678901', email: 'ahmad@simbakes.id', jam_operasional: 'Senin-Jumat, 08:00-16:00 WIB' },
-            { nama_lengkap: 'Rina Marlina, A.Md', jabatan: 'Staff Pendukung', no_hp: '083456789012', no_whatsapp: '6283456789012', email: 'rina@simbakes.id', jam_operasional: 'Senin-Kamis, 09:00-15:00 WIB' }
-        ];
+        // Save config and connect
+        async function saveConfig() {
+            const url = document.getElementById('configUrl').value.trim();
+            const key = document.getElementById('configKey').value.trim();
+            
+            if (!url || !key) {
+                showToast('Mohon isi URL dan Anon Key', 'error');
+                return;
+            }
+
+            localStorage.setItem('supabase_url', url);
+            localStorage.setItem('supabase_key', key);
+            supabaseConfig = { url, key };
+            
+            const success = await testConnection();
+            if (success) {
+                closeModal('configModal');
+                await loadAllData();
+            }
+        }
+
+        // Use demo mode
+        function useDemoMode() {
+            useDemo = true;
+            isConnected = false;
+            supabaseClient = null;
+            closeModal('configModal');
+            updateConnectionStatus(null, 'Mode Demo Aktif');
+            loadDemoData();
+            showToast('🎮 Mode Demo aktif - menggunakan data contoh', 'info');
+        }
+
+        // Update connection status UI
+        function updateConnectionStatus(connected, message = '') {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            const dbStatus = document.getElementById('dbStatusText');
+            const dbInfo = document.getElementById('dbConnectionInfo');
+
+            if (connected === true) {
+                dot.className = 'status-dot connected';
+                text.textContent = 'Terhubung ke Supabase';
+                dbStatus.textContent = '✅ Terhubung ke Supabase';
+                dbInfo.textContent = 'Data real-time dari database';
+                dbStatus.style.color = 'var(--success)';
+            } else if (connected === false) {
+                dot.className = 'status-dot error';
+                text.textContent = 'Koneksi gagal: ' + message;
+                dbStatus.textContent = '❌ Tidak terhubung';
+                dbInfo.textContent = message || 'Periksa konfigurasi';
+                dbStatus.style.color = 'var(--danger)';
+            } else {
+                dot.className = 'status-dot';
+                text.textContent = message || 'Mode Demo';
+                dbStatus.textContent = '🎮 Mode Demo';
+                dbInfo.textContent = 'Menggunakan data contoh lokal';
+                dbStatus.style.color = 'var(--warning)';
+            }
+        }
+
+        // ===== DATA OPERATIONS (SUPABASE) =====
+        
+        // Fetch data from Supabase
+        async function fetchData(table, columns = '*') {
+            if (!isConnected || !supabaseClient) return null;
+            
+            try {
+                const { data, error } = await supabaseClient.from(table).select(columns);
+                if (error) throw error;
+                return data;
+            } catch (error) {
+                console.error(`Error fetching ${table}:`, error);
+                return null;
+            }
+        }
+
+        // Insert data to Supabase
+        async function insertData(table, data) {
+            if (!isConnected || !supabaseClient) return null;
+            
+            try {
+                const { data: result, error } = await supabaseClient.from(table).insert([data]).select();
+                if (error) throw error;
+                return result[0];
+            } catch (error) {
+                console.error(`Error inserting ${table}:`, error);
+                throw error;
+            }
+        }
+
+        // Update data in Supabase
+        async function updateData(table, id, data) {
+            if (!isConnected || !supabaseClient) return null;
+            
+            try {
+                const { result, error } = await supabaseClient.from(table).update(data).eq('id', id).select();
+                if (error) throw error;
+                return result;
+            } catch (error) {
+                console.error(`Error updating ${table}:`, error);
+                throw error;
+            }
+        }
+
+        // Delete data from Supabase
+        async function deleteData(table, id) {
+            if (!isConnected || !supabaseClient) return false;
+            
+            try {
+                const { error } = await supabaseClient.from(table).delete().eq('id', id);
+                if (error) throw error;
+                return true;
+            } catch (error) {
+                console.error(`Error deleting ${table}:`, error);
+                throw error;
+            }
+        }
+
+        // Load all data
+        async function loadAllData() {
+            if (isConnected) {
+                await Promise.all([
+                    loadRoadmapFromDB(),
+                    loadPengusulanFromDB(),
+                    loadPenetapanFromDB(),
+                    loadUsersFromDB()
+                ]);
+            } else {
+                loadDemoData();
+            }
+            updateStats();
+        }
+
+        // Load roadmap from DB
+        async function loadRoadmapFromDB() {
+            const tbody = document.getElementById('roadmapBody');
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8"><div class="spinner"></div> Memuat dari Supabase...</td></tr>';
+            
+            const data = await fetchData('roadmap_kebutuhan');
+            if (data) {
+                window.roadmapCache = data;
+                renderRoadmap();
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-500">Gagal memuat data</td></tr>';
+            }
+        }
+
+        // Load pengusulan from DB
+        async function loadPengusulanFromDB() {
+            const tbody = document.getElementById('pengusulanBody');
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8"><div class="spinner"></div> Memuat dari Supabase...</td></tr>';
+            
+            // Public view hides sensitive data
+            const columns = isLoggedIn ? '*' : 'id,nama_lengkap,jurusan_tujuan,jenjang_pendidikan,unit_kerja,status';
+            const data = await fetchData('v_public_pengusulan', columns) || await fetchData('data_pengusulan', columns);
+            
+            if (data) {
+                window.pengusulanCache = data;
+                renderPengusulan();
+            } else {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-500">Gagal memuat data</td></tr>';
+            }
+        }
+
+        // Load penetapan from DB
+        async function loadPenetapanFromDB() {
+            const tbody = document.getElementById('penetapanBody');
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8"><div class="spinner"></div> Memuat dari Supabase...</td></tr>';
+            
+            const columns = isLoggedIn ? '*' : 'id,nama_lengkap,jurusan_tujuan,no_sk_penetapan,periode_pemberian,status_penetapan';
+            const data = await fetchData('v_public_penetapan', columns) || await fetchData('data_penetapan', columns);
+            
+            if (data) {
+                window.penetapanCache = data;
+                renderPenetapan();
+            } else {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-500">Gagal memuat data</td></tr>';
+            }
+        }
+
+        // Load users from DB
+        async function loadUsersFromDB() {
+            const tbody = document.getElementById('userBody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8"><div class="spinner"></div> Memuat dari Supabase...</td></tr>';
+            
+            const data = await fetchData('multiusers');
+            if (data) {
+                window.usersCache = data;
+                renderUsers();
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">Gagal memuat data</td></tr>';
+            }
+        }
+
+        // ===== DEMO DATA (Fallback) =====
+        function loadDemoData() {
+            window.roadmapCache = [
+                { id: '1', kode: 'RM-001', jurusan: 'Kedokteran Umum', kualifikasi_awal: 'Sarjana Kedokteran', jenis_pendidikan: 'Profesi', perguruan_tinggi: 'Universitas Indonesia', pekerjaan: 'Dokter PTT', tahun_mulai_studi: 2025, unit_pendayaguna: 'Dinas Kesehatan', status: 'tersedia' },
+                { id: '2', kode: 'RM-002', jurusan: 'Keperawatan', kualifikasi_awal: 'D3/S1 Keperawatan', jenis_pendidikan: 'S1/S2', perguruan_tinggi: 'Universitas Airlangga', pekerjaan: 'Perawat RS', tahun_mulai_studi: 2025, unit_pendayaguna: 'RSUD Provinsi', status: 'tersedia' },
+                { id: '3', kode: 'RM-003', jurusan: 'Kebidanan', kualifikasi_awal: 'D3 Kebidanan', jenis_pendidikan: 'S1', perguruan_tinggi: 'Universitas Gadjah Mada', pekerjaan: 'Bidan Desa', tahun_mulai_studi: 2025, unit_pendayaguna: 'Puskesmas', status: 'tersedia' },
+                { id: '4', kode: 'RM-004', jurusan: 'Farmasi', kualifikasi_awal: 'S1 Farmasi', jenis_pendidikan: 'S2/S3', perguruan_tinggi: 'Institut Teknologi Bandung', pekerjaan: 'Farmasis', tahun_mulai_studi: 2026, unit_pendayaguna: 'Instalasi Farmasi', status: 'tersedia' },
+                { id: '5', kode: 'RM-005', jurusan: 'Kesehatan Masyarakat', kualifikasi_awal: 'S1 KESMAS', jenis_pendidikan: 'S2/S3', perguruan_tinggi: 'Universitas Hasanuddin', pekerjaan: 'Epidemiolog', tahun_mulai_studi: 2026, unit_pendayaguna: 'Dinkes Provinsi', status: 'dipenuhi' }
+            ];
+
+            window.pengusulanCache = [
+                { id: '1', nik: '3201010101010001', nama_lengkap: 'Dr. Siti Nurhaliza', jurusan_tujuan: 'Spesialis Anak', jenjang_pendidikan: 'Spesialis', unit_kerja: 'Puskesmas Central', status: 'diterima' },
+                { id: '2', nik: '3202010202020002', nama_lengkap: 'Ahmad Fauzi, S.Km', jurusan_tujuan: 'Magister Kesehatan Masyarakat', jenjang_pendidikan: 'S2', unit_kerja: 'Dinas Kesehatan', status: 'ditinjau' },
+                { id: '3', nik: '3203030303030003', nama_lengkap: 'Rina Marlina, A.Md', jurusan_tujuan: 'S1 Kebidanan', jenjang_pendidikan: 'S1', unit_kerja: 'Puskesmas Desa', status: 'diajukan' }
+            ];
+
+            window.penetapanCache = [
+                { id: '1', nik: '3201010101010001', nama_lengkap: 'Dr. Siti Nurhaliza', jurusan_tujuan: 'Spesialis Anak', no_sk_penetapan: 'SK/001/SIMBAKES/2025', periode_pemberian: '2025-2028', status_penetapan: 'ditetapkan' },
+                { id: '2', nik: '3204040404040004', nama_lengkap: 'Dr. Budi Santoso', jurusan_tujuan: 'Magister Kesehatan Masyarakat', no_sk_penetapan: 'SK/002/SIMBAKES/2025', periode_pemberian: '2026-2028', status_penetapan: 'ditetapkan' }
+            ];
+
+            window.usersCache = [
+                { id: '1', nama_lengkap: 'Administrator', username: 'admin', email: 'admin@simbakes.id', role: 'superadmin', status: 'aktif' },
+                { id: '2', nama_lengkap: 'Operator Dinkes', username: 'operator', email: 'operator@simbakes.id', role: 'admin', status: 'aktif' },
+                { id: '3', nama_lengkap: 'Viewer RSUD', username: 'viewer', email: 'viewer@simbakes.id', role: 'viewer', status: 'aktif' }
+            ];
+
+            renderAllTables();
+        }
 
         // ===== STATE =====
         let isLoggedIn = false;
         let currentUser = null;
 
-        // ===== SPLASH SCREEN ===== -->
+        // ===== SPLASH SCREEN =====
         function initSplash() {
             let progress = 0;
             const interval = setInterval(() => {
@@ -1745,6 +1367,21 @@
                     clearInterval(interval);
                     setTimeout(() => {
                         document.getElementById('splashScreen').classList.add('hidden');
+                        // Try to connect with saved config
+                        if (supabaseConfig.url && supabaseConfig.key) {
+                            document.getElementById('configUrl').value = supabaseConfig.url;
+                            document.getElementById('configKey').value = supabaseConfig.key;
+                            if (document.getElementById('configAutoConnect').checked) {
+                                testConnection().then(success => {
+                                    if (success) loadAllData();
+                                    else loadDemoData();
+                                });
+                            } else {
+                                loadDemoData();
+                            }
+                        } else {
+                            loadDemoData();
+                        }
                     }, 300);
                 }
             }, 60);
@@ -1752,135 +1389,126 @@
 
         // ===== TAB NAVIGATION =====
         function switchTab(tabName) {
-            // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            // Remove active from all buttons
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            // Show selected tab
             document.getElementById('tab-' + tabName).classList.add('active');
-            // Activate button
             document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-            
-            // Re-initialize icons for new tab content
             lucide.createIcons();
         }
 
         // ===== MOBILE MENU =====
-        function toggleMobileMenu() {
-            document.getElementById('mobileMenu').classList.toggle('active');
-        }
+        function toggleMobileMenu() { document.getElementById('mobileMenu').classList.toggle('active'); }
 
         // ===== AUTHENTICATION =====
-        function openLoginModal() {
-            document.getElementById('loginModal').classList.add('active');
-            setTimeout(() => document.getElementById('loginUsername').focus(), 100);
-        }
+        function openLoginModal() { document.getElementById('loginModal').classList.add('active'); setTimeout(() => document.getElementById('loginUsername').focus(), 100); }
+        function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
 
-        function closeLoginModal() {
-            document.getElementById('loginModal').classList.remove('active');
-        }
-
-        function doLogin() {
+        async function doLogin() {
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
-            
-            const user = usersData.find(u => u.username === username && u.password === password);
-            
+
+            let user = null;
+
+            if (isConnected && supabaseClient) {
+                // Query from Supabase multiusers table
+                const { data, error } = await supabaseClient
+                    .from('multiusers')
+                    .select('*')
+                    .eq('username', username)
+                    .eq('password', password)
+                    .limit(1);
+                
+                if (error) console.error('Login query error:', error);
+                if (data && data.length > 0) user = data[0];
+            }
+
+            // Fallback to demo users or hardcoded check
+            if (!user) {
+                if (username === 'admin' && password === 'admin123') {
+                    user = { id: '1', nama_lengkap: 'Administrator', username: 'admin', email: 'admin@simbakes.id', role: 'superadmin', status: 'aktif' };
+                }
+            }
+
             if (user) {
                 isLoggedIn = true;
                 currentUser = user;
                 
-                // Update UI
                 document.getElementById('loginBtn').style.display = 'none';
                 document.getElementById('logoutBtn').style.display = 'inline-flex';
                 document.getElementById('userInfo').classList.add('active');
                 document.getElementById('userName').textContent = user.nama_lengkap;
                 document.getElementById('userRole').textContent = user.role;
                 
-                // Show admin features
                 showAdminFeatures();
-                
                 closeLoginModal();
                 
-                // Clear form
                 document.getElementById('loginUsername').value = '';
                 document.getElementById('loginPassword').value = '';
+                
+                showToast(`Selamat datang, ${user.nama_lengkap}!`, 'success');
+                
+                // Reload data with admin privileges
+                await loadAllData();
             } else {
-                alert('Username atau password salah!');
+                showToast('Username atau password salah!', 'error');
             }
         }
 
         function logout() {
             isLoggedIn = false;
             currentUser = null;
-            
-            // Update UI
             document.getElementById('loginBtn').style.display = 'inline-flex';
             document.getElementById('logoutBtn').style.display = 'none';
             document.getElementById('userInfo').classList.remove('active');
-            
-            // Hide admin features
             hideAdminFeatures();
+            loadAllData();
+            showToast('Berhasil logout', 'info');
         }
 
         function showAdminFeatures() {
             if (!currentUser || currentUser.role === 'viewer') return;
-            
-            // Show NIK columns
             document.querySelectorAll('.nik-col').forEach(el => el.style.display = '');
             document.querySelectorAll('.admin-action').forEach(el => el.style.display = '');
-            document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
-            
-            // Show add buttons
             document.getElementById('roadmapAddBtn').style.display = '';
             document.getElementById('penetapanAddBtn').style.display = '';
-            
-            // Update subtitles
-            document.getElementById('pengusulanSubtitle').textContent = 'Daftar lengkap pengajuan beasiswa';
-            document.getElementById('penetapanSubtitle').textContent = 'Daftar lengkap penerima beasiswa yang ditetapkan';
-            
-            // Show admin panel
-            if (currentUser.role === 'superadmin') {
-                document.getElementById('adminPanel').style.display = '';
-            }
-            
-            // Refresh tables
+            document.getElementById('pengusulanSubtitle').textContent = 'Data lengkap dari tabel data_pengusulan';
+            document.getElementById('penetapanSubtitle').textContent = 'Data lengkap dari tabel data_penetapan';
+            if (currentUser.role === 'superadmin') document.getElementById('adminPanel').style.display = '';
             renderAllTables();
         }
 
         function hideAdminFeatures() {
-            // Hide NIK columns
             document.querySelectorAll('.nik-col').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.admin-action').forEach(el => el.style.display = 'none');
-            
-            // Hide add buttons
             document.getElementById('roadmapAddBtn').style.display = 'none';
             document.getElementById('penetapanAddBtn').style.display = 'none';
-            
-            // Update subtitles
-            document.getElementById('pengusulanSubtitle').textContent = 'Data publik pengajuan (tanpa data personal sensitif)';
-            document.getElementById('penetapanSubtitle').textContent = 'Data publik penerima beasiswa';
-            
-            // Hide admin panel
+            document.getElementById('pengusulanSubtitle').textContent = 'Data publik (tanpa NIK - gunakan view v_public_pengusulan)';
+            document.getElementById('penetapanSubtitle').textContent = 'Data publik (tanpa NIK - gunakan view v_public_penetapan)';
             document.getElementById('adminPanel').style.display = 'none';
-            
-            // Refresh tables
             renderAllTables();
         }
 
         // ===== MODAL HELPERS =====
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
+        function openConfigModal() { 
+            document.getElementById('configUrl').value = supabaseConfig.url;
+            document.getElementById('configKey').value = supabaseConfig.key;
+            document.getElementById('configModal').classList.add('active'); 
         }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        // Close modal when clicking overlay
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
-            overlay.addEventListener('click', (e) => {
-                if (e.target === overlay) {
-                    overlay.classList.remove('active');
-                }
-            });
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('active'); });
         });
+
+        // ===== TOAST NOTIFICATIONS =====
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
 
         // ===== RENDER FUNCTIONS =====
         function renderAllTables() {
@@ -1894,52 +1522,46 @@
         }
 
         function updateStats() {
-            document.getElementById('statTersedia').textContent = roadmapData.filter(r => r.status === 'tersedia').length;
-            document.getElementById('statAktif').textContent = pengusulanData.filter(p => !['diterima','ditolak'].includes(p.status)).length;
-            document.getElementById('statDitetapkan').textContent = penetapanData.length;
-            document.getElementById('statJurusan').textContent = roadmapData.length;
+            const roadmap = window.roadmapCache || [];
+            const pengusulan = window.pengusulanCache || [];
+            const penetapan = window.penetapanCache || [];
+
+            document.getElementById('statTersedia').textContent = roadmap.filter(r => r.status === 'tersedia').length || '-';
+            document.getElementById('statAktif').textContent = pengusulan.filter(p => !['diterima','ditolak'].includes(p.status)).length || '-';
+            document.getElementById('statDitetapkan').textContent = penetapan.length || '-';
+            document.getElementById('statJurusan').textContent = roadmap.length || '-';
         }
 
-        function getStatusBadge(status, type = 'default') {
+        function getStatusBadge(status) {
             const classes = {
-                'tersedia': 'badge-success',
-                'dipenuhi': 'badge-info',
-                'ditangguhkan': 'badge-warning',
-                'diajukan': 'badge-secondary',
-                'ditinjau': 'badge-warning',
-                'diterima': 'badge-success',
-                'ditolak': 'badge-danger',
-                'ditetapkan': 'badge-success',
-                'dibatalkan': 'badge-danger',
-                'direvisi': 'badge-warning',
-                'aktif': '',
-                'non-aktif': 'badge-secondary'
+                'tersedia': 'badge-success', 'dipenuhi': 'badge-info', 'ditangguhkan': 'badge-warning',
+                'diajukan': 'badge-secondary', 'ditinjau': 'badge-warning', 'diterima': 'badge-success',
+                'ditolak': 'badge-danger', 'ditetapkan': 'badge-success', 'dibatalkan': 'badge-danger', 'direvisi': 'badge-warning'
             };
-            return `<span class="badge ${classes[status] || ''}">${status}</span>`;
+            return `<span class="badge ${classes[status] || 'badge-secondary'}">${status}</span>`;
         }
 
-        function getJenjangBadge(jenjang) {
-            return `<span class="badge badge-secondary">${jenjang}</span>`;
-        }
-
+        function getJenjangBadge(jenjang) { return `<span class="badge badge-secondary">${jenjang}</span>`; }
         function getRoleBadge(role) {
-            const classes = {
-                'superadmin': 'badge-purple',
-                'admin': 'badge-blue',
-                'viewer': 'badge-secondary'
-            };
+            const classes = { 'superadmin': 'badge-purple', 'admin': 'badge-blue', 'viewer': 'badge-secondary' };
             return `<span class="badge ${classes[role] || ''}">${role}</span>`;
         }
 
         function renderRoadmap(searchTerm = '') {
-            const filtered = roadmapData.filter(item => 
-                item.jurusan.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.kode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.perguruan_tinggi.toLowerCase().includes(searchTerm.toLowerCase())
+            const data = window.roadmapCache || [];
+            const filtered = data.filter(item => 
+                item.jurusan?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.kode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.perguruan_tinggi?.toLowerCase().includes(searchTerm.toLowerCase())
             );
             
             const tbody = document.getElementById('roadmapBody');
-            tbody.innerHTML = filtered.map((item, idx) => `
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-gray-500">Tidak ada data${useDemo ? ' (demo)' : ''}</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = filtered.map(item => `
                 <tr>
                     <td><span class="badge badge-secondary" style="font-family:monospace;">${item.kode}</span></td>
                     <td><strong>${item.jurusan}</strong></td>
@@ -1949,95 +1571,80 @@
                     <td>${getStatusBadge(item.status)}</td>
                     <td class="admin-action" style="display:${isLoggedIn && currentUser?.role !== 'viewer' ? '' : 'none'};">
                         <div class="flex gap-2">
-                            <button class="btn btn-ghost btn-icon btn-sm" onclick="editRoadmap('${item.id}')" title="Edit">
-                                <i data-lucide="pencil" style="width:14px;height:14px;"></i>
-                            </button>
-                            <button class="btn btn-ghost btn-icon btn-sm text-red-500" onclick="deleteRoadmap('${item.id}')" title="Hapus">
-                                <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-                            </button>
+                            <button class="btn btn-ghost btn-icon btn-sm" onclick="editRoadmap('${item.id}')" title="Edit"><i data-lucide="pencil" style="width:14px;height:14px;"></i></button>
+                            <button class="btn btn-ghost btn-icon btn-sm text-red-500" onclick="deleteRoadmap('${item.id}')" title="Hapus"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                         </div>
                     </td>
                 </tr>
             `).join('');
-            
-            if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-500">Tidak ada data yang ditemukan</td></tr>';
-            }
-            
             lucide.createIcons();
         }
 
         function renderPengusulan(searchTerm = '') {
-            const filtered = pengusulanData.filter(item =>
-                item.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.jurusan_tujuan.toLowerCase().includes(searchTerm.toLowerCase())
+            const data = window.pengusulanCache || [];
+            const filtered = data.filter(item =>
+                item.nama_lengkap?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.jurusan_tujuan?.toLowerCase().includes(searchTerm.toLowerCase())
             );
             
             const tbody = document.getElementById('pengusulanBody');
+            if (filtered.length === 0) {
+                const colSpan = isLoggedIn ? 8 : 7;
+                tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-8 text-gray-500">Tidak ada data${useDemo ? ' (demo)' : ''}</td></tr>`;
+                return;
+            }
+            
             tbody.innerHTML = filtered.map((item, idx) => `
                 <tr>
                     <td>${idx + 1}</td>
                     <td><strong>${item.nama_lengkap}</strong></td>
-                    <td class="nik-col" style="display:${isLoggedIn ? '' : 'none'};" class="font-mono text-sm">${item.nik}</td>
+                    <td class="nik-col" style="display:${isLoggedIn ? '' : 'none'};" class="font-mono text-sm">${item.nik || '-'}</td>
                     <td>${item.jurusan_tujuan}</td>
                     <td class="hidden-col">${getJenjangBadge(item.jenjang_pendidikan)}</td>
-                    <td class="hidden-col">${item.unit_kerja}</td>
+                    <td class="hidden-col">${item.unit_kerja || '-'}</td>
                     <td>${getStatusBadge(item.status)}</td>
                     <td class="admin-action" style="display:${isLoggedIn && currentUser?.role !== 'viewer' ? '' : 'none'};">
                         <div class="flex gap-2">
-                            <button class="btn btn-ghost btn-icon btn-sm text-blue-500" onclick="editPengusulan('${item.id}')" title="Edit Status">
-                                <i data-lucide="pencil" style="width:14px;height:14px;"></i>
-                            </button>
-                            <button class="btn btn-ghost btn-icon btn-sm text-red-500" onclick="deletePengusulan('${item.id}')" title="Hapus">
-                                <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-                            </button>
+                            <button class="btn btn-ghost btn-icon btn-sm text-blue-500" onclick="editPengusulan('${item.id}')" title="Edit Status"><i data-lucide="pencil" style="width:14px;height:14px;"></i></button>
+                            <button class="btn btn-ghost btn-icon btn-sm text-red-500" onclick="deletePengusulan('${item.id}')" title="Hapus"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                         </div>
                     </td>
                 </tr>
             `).join('');
-            
-            if (filtered.length === 0) {
-                const colSpan = isLoggedIn ? 8 : 7;
-                tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-8 text-gray-500">Tidak ada data pengusulan</td></tr>`;
-            }
-            
             lucide.createIcons();
         }
 
         function renderPenetapan(searchTerm = '') {
-            const filtered = penetapanData.filter(item =>
-                item.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            const data = window.penetapanCache || [];
+            const filtered = data.filter(item =>
+                item.nama_lengkap?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 item.no_sk_penetapan?.toLowerCase().includes(searchTerm.toLowerCase())
             );
             
             const tbody = document.getElementById('penetapanBody');
+            if (filtered.length === 0) {
+                const colSpan = isLoggedIn ? 8 : 7;
+                tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-8 text-gray-500">Tidak ada data${useDemo ? ' (demo)' : ''}</td></tr>`;
+                return;
+            }
+            
             tbody.innerHTML = filtered.map((item, idx) => `
                 <tr>
                     <td>${idx + 1}</td>
                     <td><strong>${item.nama_lengkap}</strong></td>
-                    <td class="nik-col" style="display:${isLoggedIn ? '' : 'none'};" class="font-mono text-sm">${item.nik}</td>
+                    <td class="nik-col" style="display:${isLoggedIn ? '' : 'none'};" class="font-mono text-sm">${item.nik || '-'}</td>
                     <td>${item.jurusan_tujuan}</td>
-                    <td class="hidden-col" class="font-mono text-sm">${item.no_sk_penetapan}</td>
-                    <td class="hidden-col">${item.periode_pemberian}</td>
+                    <td class="hidden-col" class="font-mono text-sm">${item.no_sk_penetapan || '-'}</td>
+                    <td class="hidden-col">${item.periode_pemberian || '-'}</td>
                     <td>${getStatusBadge(item.status_penetapan)}</td>
                     <td class="admin-action" style="display:${isLoggedIn && currentUser?.role !== 'viewer' ? '' : 'none'};">
                         <div class="flex gap-2">
-                            <button class="btn btn-ghost btn-icon btn-sm text-blue-500" onclick="editPenetapan('${item.id}')" title="Edit">
-                                <i data-lucide="pencil" style="width:14px;height:14px;"></i>
-                            </button>
-                            <button class="btn btn-ghost btn-icon btn-sm text-red-500" onclick="deletePenetapan('${item.id}')" title="Hapus">
-                                <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-                            </button>
+                            <button class="btn btn-ghost btn-icon btn-sm text-blue-500" onclick="editPenetapan('${item.id}')" title="Edit"><i data-lucide="pencil" style="width:14px;height:14px;"></i></button>
+                            <button class="btn btn-ghost btn-icon btn-sm text-red-500" onclick="deletePenetapan('${item.id}')" title="Hapus"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                         </div>
                     </td>
                 </tr>
             `).join('');
-            
-            if (filtered.length === 0) {
-                const colSpan = isLoggedIn ? 8 : 7;
-                tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-8 text-gray-500">Tidak ada data penetapan</td></tr>`;
-            }
-            
             lucide.createIcons();
         }
 
@@ -2045,7 +1652,8 @@
             const tbody = document.getElementById('userBody');
             if (!tbody) return;
             
-            tbody.innerHTML = usersData.map(user => `
+            const data = window.usersCache || [];
+            tbody.innerHTML = data.map(user => `
                 <tr>
                     <td><strong>${user.nama_lengkap}</strong></td>
                     <td class="font-mono text-sm">${user.username}</td>
@@ -2054,34 +1662,32 @@
                     <td><span class="badge ${user.status === 'aktif' ? '' : 'badge-secondary'}">${user.status}</span></td>
                     <td>
                         <div class="flex gap-2">
-                            <button class="btn btn-ghost btn-icon btn-sm text-blue-500" onclick="editUser('${user.id}')" title="Edit">
-                                <i data-lucide="pencil" style="width:14px;height:14px;"></i>
-                            </button>
-                            <button class="btn btn-ghost btn-icon btn-sm text-red-500" onclick="deleteUser('${user.id}')" title="Hapus">
-                                <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-                            </button>
+                            <button class="btn btn-ghost btn-icon btn-sm text-blue-500" onclick="editUser('${user.id}')" title="Edit"><i data-lucide="pencil" style="width:14px;height:14px;"></i></button>
+                            <button class="btn btn-ghost btn-icon btn-sm text-red-500" onclick="deleteUser('${user.id}')" title="Hapus"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                         </div>
                     </td>
                 </tr>
             `).join('');
-            
             lucide.createIcons();
         }
 
         function renderInformasi() {
             const container = document.getElementById('informasiList');
-            container.innerHTML = informasiData.map(info => {
-                const catClass = info.kategori === 'pengumuman' ? 'badge-danger' :
-                                  info.kategori === 'panduan' ? 'badge-info' : 'badge-success';
+            const items = [
+                { judul: 'Selamat Datang di SIMBAKES', isi: 'SIMBAKES (Beasiswa Tematik Bidang Kesehatan) adalah program beasiswa dari pemerintah untuk meningkatkan sumber daya manusia di bidang kesehatan Indonesia.', kategori: 'pengumuman' },
+                { judul: 'Terintegrasi dengan Supabase', isi: 'Platform ini sekarang terhubung langsung ke database Supabase! Semua perubahan data akan tersimpan secara real-time.\n\nUntuk menghubungkan ke database Anda, klik tombol ⚙️ Settings di pojok kanan atas.', kategori: 'pengumuman' },
+                { judul: 'Cara Menggunakan', isi: '1. Klik ⚙️ Settings\n2. Masukkan URL dan Anon Key Supabase\n3. Klik "Test Koneksi"\n4. Jika berhasil, semua data akan dimuat dari database\n5. Formulir pengajuan akan menyimpan langsung ke Supabase', kategori: 'panduan' }
+            ];
+            
+            container.innerHTML = items.map(info => {
+                const catClass = info.kategori === 'pengumuman' ? 'badge-danger' : info.kategori === 'panduan' ? 'badge-info' : 'badge-success';
                 return `
                     <div class="card mb-4">
                         <div class="card-header">
                             <h2 style="font-size:1.25rem;">${info.judul}</h2>
                             <span class="badge ${catClass}">${info.kategori}</span>
                         </div>
-                        <div class="card-body">
-                            <p class="whitespace-pre-line text-gray">${info.isi}</p>
-                        </div>
+                        <div class="card-body"><p class="whitespace-pre-line text-gray">${info.isi}</p></div>
                     </div>
                 `;
             }).join('');
@@ -2089,26 +1695,25 @@
 
         function renderCS() {
             const container = document.getElementById('csList');
-            container.innerHTML = csData.map(cs => `
+            const csList = [
+                { nama_lengkap: 'Dr. Siti Nurhaliza', jabatan: 'Koordinator SIMBAKES', no_whatsapp: '6281234567890', email: 'siti@simbakes.id', jam_operasional: 'Senin-Jumat, 08:00-16:00 WIB' },
+                { nama_lengkap: 'Ahmad Fauzi, S.Km', jabatan: 'Admin Layanan', no_whatsapp: '6282345678901', email: 'ahmad@simbakes.id', jam_operasional: 'Senin-Jumat, 08:00-16:00 WIB' },
+                { nama_lengkap: 'Rina Marlina, A.Md', jabatan: 'Staff Pendukung', no_whatsapp: '6283456789012', email: 'rina@simbakes.id', jam_operasional: 'Senin-Kamis, 09:00-15:00 WIB' }
+            ];
+            
+            container.innerHTML = csList.map(cs => `
                 <div class="cs-card">
                     <div class="cs-header">
-                        <div class="cs-avatar">
-                            <i data-lucide="users"></i>
-                        </div>
-                        <div>
-                            <div class="cs-name">${cs.nama_lengkap}</div>
-                            <div class="cs-role">${cs.jabatan}</div>
-                        </div>
+                        <div class="cs-avatar"><i data-lucide="users"></i></div>
+                        <div><div class="cs-name">${cs.nama_lengkap}</div><div class="cs-role">${cs.jabatan}</div></div>
                     </div>
                     <div class="cs-contact">
                         ${cs.no_whatsapp ? `<a href="https://wa.me/${cs.no_whatsapp}" target="_blank"><i data-lucide="message-circle" style="width:16px;height:16px;"></i> WhatsApp</a>` : ''}
                         ${cs.email ? `<a href="mailto:${cs.email}" class="blue"><i data-lucide="mail" style="width:16px;height:16px;"></i> ${cs.email}</a>` : ''}
-                        ${cs.no_hp ? `<a href="tel:${cs.no_hp}" class="gray"><i data-lucide="phone" style="width:16px;height:16px;"></i> ${cs.no_hp}</a>` : ''}
                         <span><i data-lucide="clock" style="width:16px;height:16px;"></i> ${cs.jam_operasional}</span>
                     </div>
                 </div>
             `).join('');
-            
             lucide.createIcons();
         }
 
@@ -2126,35 +1731,28 @@
             document.getElementById('roadmapEditId').value = id || '';
             
             if (id) {
-                const item = roadmapData.find(r => r.id === id);
+                const item = (window.roadmapCache || []).find(r => r.id === id);
                 if (item) {
-                    document.getElementById('rm_jurusan').value = item.jurusan;
-                    document.getElementById('rm_pendidikan').value = item.jenis_pendidikan;
-                    document.getElementById('rm_kualifikasi').value = item.kualifikasi_awal;
-                    document.getElementById('rm_pt').value = item.perguruan_tinggi;
-                    document.getElementById('rm_pekerjaan').value = item.pekerjaan;
-                    document.getElementById('rm_tahun').value = item.tahun_mulai_studi || '';
-                    document.getElementById('rm_unit').value = item.unit_pendayaguna;
-                    document.getElementById('rm_status').value = item.status;
+                    document.getElementById('rm_jurusan').value = item.jurusan || '';
+                    document.getElementById('rm_pendidikan').value = item.jenis_pendidikan || 'S1';
+                    document.getElementById('rm_kualifikasi').value = item.kualifikasi_awal || '';
+                    document.getElementById('rm_pt').value = item.perguruan_tinggi || '';
+                    document.getElementById('rm_pekerjaan').value = item.pekerjaan || '';
+                    document.getElementById('rm_tahun').value = item.tahun_mulai_studi || new Date().getFullYear();
+                    document.getElementById('rm_unit').value = item.unit_pendayaguna || '';
+                    document.getElementById('rm_status').value = item.status || 'tersedia';
                 }
             } else {
-                document.getElementById('rm_jurusan').value = '';
+                ['rm_jurusan','rm_kualifikasi','rm_pt','rm_pekerjaan','rm_unit'].forEach(id => document.getElementById(id).value = '');
                 document.getElementById('rm_pendidikan').value = 'S1';
-                document.getElementById('rm_kualifikasi').value = '';
-                document.getElementById('rm_pt').value = '';
-                document.getElementById('rm_pekerjaan').value = '';
                 document.getElementById('rm_tahun').value = new Date().getFullYear();
-                document.getElementById('rm_unit').value = '';
                 document.getElementById('rm_status').value = 'tersedia';
             }
-            
             document.getElementById('roadmapModal').classList.add('active');
             lucide.createIcons();
         }
 
-        function editRoadmap(id) { openRoadmapModal(id); }
-
-        function saveRoadmap() {
+        async function saveRoadmap() {
             const id = document.getElementById('roadmapEditId').value;
             const data = {
                 jurusan: document.getElementById('rm_jurusan').value,
@@ -2166,39 +1764,63 @@
                 unit_pendayaguna: document.getElementById('rm_unit').value,
                 status: document.getElementById('rm_status').value
             };
-            
-            if (id) {
-                const idx = roadmapData.findIndex(r => r.id === id);
-                if (idx !== -1) roadmapData[idx] = { ...roadmapData[idx], ...data };
-            } else {
-                const newId = String(Date.now());
-                roadmapData.push({
-                    id: newId,
-                    kode: `RM-${String(roadmapData.length + 1).padStart(3, '0')}`,
-                    ...data,
-                    nama_penerima: null
-                });
+
+            try {
+                if (isConnected) {
+                    if (id) {
+                        await updateData('roadmap_kebutuhan', id, data);
+                        showToast('Data berhasil diupdate di Supabase!', 'success');
+                    } else {
+                        data.kode = `RM-${String((window.roadmapCache?.length || 0) + 1).padStart(3, '0')}`;
+                        await insertData('roadmap_kebutuhan', data);
+                        showToast('Data berhasil ditambah ke Supabase!', 'success');
+                    }
+                    await loadRoadmapFromDB();
+                } else {
+                    // Demo mode - local only
+                    if (id) {
+                        const idx = (window.roadmapCache || []).findIndex(r => r.id === id);
+                        if (idx !== -1) window.roadmapCache[idx] = { ...window.roadmapCache[idx], ...data };
+                    } else {
+                        data.id = String(Date.now());
+                        data.kode = `RM-${String((window.roadmapCache?.length || 0) + 1).padStart(3, '0')}`;
+                        window.roadmapCache = [...(window.roadmapCache || []), data];
+                    }
+                    renderRoadmap();
+                    showToast(isConnected ? 'Disimpan ke Supabase!' : 'Disimpan locally (demo mode)', 'info');
+                }
+                updateStats();
+                closeModal('roadmapModal');
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
             }
-            
-            closeModal('roadmapModal');
-            renderRoadmap();
-            updateStats();
         }
 
-        function deleteRoadmap(id) {
-            if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-                roadmapData = roadmapData.filter(r => r.id !== id);
-                renderRoadmap();
+        function editRoadmap(id) { openRoadmapModal(id); }
+
+        async function deleteRoadmap(id) {
+            if (!confirm('Apakah Anda yakin?')) return;
+            
+            try {
+                if (isConnected) {
+                    await deleteData('roadmap_kebutuhan', id);
+                    showToast('Data dihapus dari Supabase!', 'success');
+                    await loadRoadmapFromDB();
+                } else {
+                    window.roadmapCache = (window.roadmapCache || []).filter(r => r.id !== id);
+                    renderRoadmap();
+                }
                 updateStats();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
             }
         }
 
         // ===== CRUD: PENGUSULAN =====
-        function submitPengusulan(e) {
+        async function submitPengusulan(e) {
             e.preventDefault();
             const formData = new FormData(e.target);
-            const newData = {
-                id: String(Date.now()),
+            const data = {
                 nik: formData.get('nik'),
                 nama_lengkap: formData.get('nama_lengkap'),
                 tempat_lahir: formData.get('tempat_lahir'),
@@ -2219,57 +1841,77 @@
                 email: formData.get('email'),
                 status: 'diajukan'
             };
-            
-            pengusulanData.push(newData);
-            e.target.reset();
-            renderPengusulan();
-            updateStats();
-            alert('Pengajuan berhasil dikirim! Tim kami akan memverifikasi data Anda.');
+
+            try {
+                if (isConnected) {
+                    const result = await insertData('data_pengusulan', data);
+                    showToast('✅ Pengajuan berhasil dikirim ke Supabase!', 'success');
+                    e.target.reset();
+                    await loadPengusulanFromDB();
+                } else {
+                    data.id = String(Date.now());
+                    window.pengusulanCache = [...(window.pengusulanCache || []), data];
+                    showToast('Pengajuan tersimpan locally (demo mode)', 'info');
+                    e.target.reset();
+                    renderPengusulan();
+                }
+                updateStats();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
         }
 
         function editPengusulan(id) {
-            const item = pengusulanData.find(p => p.id === id);
+            const item = (window.pengusulanCache || []).find(p => p.id === id);
             if (!item) return;
             
-            const newStatus = prompt('Edit Status Pengusulan:\n\nOpsi: diajukan, ditinjau, diterima, ditolak\n\nStatus saat ini:', item.status);
+            const newStatus = prompt('Edit Status:\nOpsi: diajukan, ditinjau, diterima, ditolak\n\nStatus saat ini:', item.status);
             if (newStatus && ['diajukan','ditinjau','diterima','ditolak'].includes(newStatus)) {
                 item.status = newStatus;
+                // If connected, update in Supabase too
+                if (isConnected) {
+                    updateData('data_pengusulan', id, { status: newStatus }).catch(err => console.error(err));
+                }
                 renderPengusulan();
                 updateStats();
             }
         }
 
-        function deletePengusulan(id) {
-            if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-                pengusulanData = pengusulanData.filter(p => p.id !== id);
-                renderPengusulan();
+        async function deletePengusulan(id) {
+            if (!confirm('Apakah Anda yakin?')) return;
+            
+            try {
+                if (isConnected) {
+                    await deleteData('data_pengusulan', id);
+                    await loadPengusulanFromDB();
+                } else {
+                    window.pengusulanCache = (window.pengusulanCache || []).filter(p => p.id !== id);
+                    renderPengusulan();
+                }
                 updateStats();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
             }
         }
 
         // ===== CRUD: PENETAPAN =====
         function openPenetapanModal() {
-            // Populate select with accepted pengusulan
             const select = document.getElementById('pn_select');
-            const options = pengusulanData.filter(p => p.status === 'diterima' || !penetapanData.find(n => n.nik === p.nik))
-                                             .map(p => `<option value="${p.nik}">${p.nama_lengkap} - ${p.jurusan_tujuan}</option>`).join('');
+            const options = (window.pengusulanCache || [])
+                .filter(p => p.status === 'diterima' || !window.penetapanCache?.find(n => n.nik === p.nik))
+                .map(p => `<option value="${p.nik}">${p.nama_lengkap} - ${p.jurusan_tujuan}</option>`).join('');
             select.innerHTML = '<option value="">Pilih calon penerima...</option>' + options;
             
-            // Reset form
-            document.getElementById('pn_nik').value = '';
-            document.getElementById('pn_nama').value = '';
-            document.getElementById('pn_sk').value = '';
+            ['pn_nik','pn_nama','pn_sk','pn_catatan','pn_periode'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('pn_tanggal').value = new Date().toISOString().split('T')[0];
             document.getElementById('pn_status').value = 'ditetapkan';
-            document.getElementById('pn_periode').value = '';
-            document.getElementById('pn_catatan').value = '';
             
             document.getElementById('penetapanModal').classList.add('active');
         }
 
         function autoFillPenetapan() {
             const nik = document.getElementById('pn_select').value;
-            const pengusulan = pengusulanData.find(p => p.nik === nik);
+            const pengusulan = (window.pengusulanCache || []).find(p => p.nik === nik);
             if (pengusulan) {
                 document.getElementById('pn_nik').value = pengusulan.nik;
                 document.getElementById('pn_nama').value = pengusulan.nama_lengkap;
@@ -2279,83 +1921,96 @@
             }
         }
 
-        function savePenetapan() {
+        async function savePenetapan() {
             const data = {
-                id: String(Date.now()),
                 nik: document.getElementById('pn_nik').value,
                 nama_lengkap: document.getElementById('pn_nama').value,
-                jurusan_tujuan: '', // Would need to get from pengusulan
-                jenjang_pendidikan: '',
-                unit_tujuan_pemanfaatan: '',
-                rencana_tahun_studi: null,
                 no_sk_penetapan: document.getElementById('pn_sk').value,
                 tanggal_penetapan: document.getElementById('pn_tanggal').value,
                 status_penetapan: document.getElementById('pn_status').value,
                 catatan_penetapan: document.getElementById('pn_catatan').value,
                 periode_pemberian: document.getElementById('pn_periode').value
             };
-            
-            // Get additional info from pengusulan
-            const pengusulan = pengusulanData.find(p => p.nik === data.nik);
+
+            const pengusulan = (window.pengusulanCache || []).find(p => p.nik === data.nik);
             if (pengusulan) {
                 data.jurusan_tujuan = pengusulan.jurusan_tujuan;
                 data.jenjang_pendidikan = pengusulan.jenjang_pendidikan;
                 data.unit_tujuan_pemanfaatan = pengusulan.unit_tujuan_pemanfaatan;
                 data.rencana_tahun_studi = pengusulan.rencana_tahun_studi;
             }
-            
-            penetapanData.push(data);
-            closeModal('penetapanModal');
-            renderPenetapan();
-            updateStats();
+
+            try {
+                if (isConnected) {
+                    await insertData('data_penetapan', data);
+                    showToast('✅ Penetapan disimpan ke Supabase!', 'success');
+                    await loadPenetapanFromDB();
+                } else {
+                    data.id = String(Date.now());
+                    window.penetapanCache = [...(window.penetapanCache || []), data];
+                    renderPenetapan();
+                }
+                updateStats();
+                closeModal('penetapanModal');
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
         }
 
         function editPenetapan(id) {
-            const item = penetapanData.find(p => p.id === id);
+            const item = (window.penetapanCache || []).find(p => p.id === id);
             if (!item) return;
             
-            const newStatus = prompt('Edit Status Penetapan:\n\nOpsi: ditetapkan, dibatalkan, direvisi\n\nStatus saat ini:', item.status_penetapan);
+            const newStatus = prompt('Edit Status:\nOpsi: ditetapkan, dibatalkan, direvisi\n\nStatus saat ini:', item.status_penetapan);
             if (newStatus && ['ditetapkan','dibatalkan','direvisi'].includes(newStatus)) {
                 item.status_penetapan = newStatus;
+                if (isConnected) {
+                    updateData('data_penetapan', id, { status_penetapan: newStatus }).catch(err => console.error(err));
+                }
                 renderPenetapan();
             }
         }
 
-        function deletePenetapan(id) {
-            if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-                penetapanData = penetapanData.filter(p => p.id !== id);
-                renderPenetapan();
+        async function deletePenetapan(id) {
+            if (!confirm('Apakah Anda yakin?')) return;
+            
+            try {
+                if (isConnected) {
+                    await deleteData('data_penetapan', id);
+                    await loadPenetapanFromDB();
+                } else {
+                    window.penetapanCache = (window.penetapanCache || []).filter(p => p.id !== id);
+                    renderPenetapan();
+                }
                 updateStats();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
             }
         }
 
         // ===== CRUD: USERS =====
         function openUserModal() {
-            document.getElementById('u_nama').value = '';
-            document.getElementById('u_username').value = '';
-            document.getElementById('u_password').value = '';
-            document.getElementById('u_email').value = '';
+            ['u_nama','u_username','u_password','u_email'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('u_role').value = 'viewer';
             document.getElementById('u_status').value = 'aktif';
             document.getElementById('userModal').classList.add('active');
         }
 
         function editUser(id) {
-            const user = usersData.find(u => u.id === id);
+            const user = (window.usersCache || []).find(u => u.id === id);
             if (!user) return;
             
-            document.getElementById('u_nama').value = user.nama_lengkap;
-            document.getElementById('u_username').value = user.username;
-            document.getElementById('u_password').value = user.password;
-            document.getElementById('u_email').value = user.email;
-            document.getElementById('u_role').value = user.role;
-            document.getElementById('u_status').value = user.status;
+            document.getElementById('u_nama').value = user.nama_lengkap || '';
+            document.getElementById('u_username').value = user.username || '';
+            document.getElementById('u_password').value = user.password || '';
+            document.getElementById('u_email').value = user.email || '';
+            document.getElementById('u_role').value = user.role || 'viewer';
+            document.getElementById('u_status').value = user.status || 'aktif';
             document.getElementById('userModal').classList.add('active');
         }
 
-        function saveUser() {
-            const newData = {
-                id: String(Date.now()),
+        async function saveUser() {
+            const data = {
                 nama_lengkap: document.getElementById('u_nama').value,
                 username: document.getElementById('u_username').value,
                 password: document.getElementById('u_password').value,
@@ -2363,31 +2018,42 @@
                 role: document.getElementById('u_role').value,
                 status: document.getElementById('u_status').value
             };
-            
-            // Check if editing existing
-            const existingIdx = usersData.findIndex(u => u.username === newData.username);
-            if (existingIdx !== -1) {
-                newData.id = usersData[existingIdx].id;
-                usersData[existingIdx] = newData;
-            } else {
-                usersData.push(newData);
+
+            try {
+                if (isConnected) {
+                    await insertData('multiusers', data);
+                    showToast('✅ User ditambah ke Supabase!', 'success');
+                    await loadUsersFromDB();
+                } else {
+                    data.id = String(Date.now());
+                    window.usersCache = [...(window.usersCache || []), data];
+                    renderUsers();
+                }
+                closeModal('userModal');
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
             }
-            
-            closeModal('userModal');
-            renderUsers();
         }
 
-        function deleteUser(id) {
-            if (confirm('Apakah Anda yakin ingin menghapus user ini?')) {
-                usersData = usersData.filter(u => u.id !== id);
-                renderUsers();
+        async function deleteUser(id) {
+            if (!confirm('Apakah Anda yakin?')) return;
+            
+            try {
+                if (isConnected) {
+                    await deleteData('multiusers', id);
+                    await loadUsersFromDB();
+                } else {
+                    window.usersCache = (window.usersCache || []).filter(u => u.id !== id);
+                    renderUsers();
+                }
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
             }
         }
 
         // ===== INITIALIZATION =====
         document.addEventListener('DOMContentLoaded', () => {
             initSplash();
-            renderAllTables();
         });
     </script>
 </body>
