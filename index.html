@@ -15,7 +15,7 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     
     <!-- Supabase JS Client -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         /* ===== CSS RESET & BASE ===== */
@@ -113,410 +113,307 @@
 
         .splash-title {
             font-family: var(--font-display);
-            font-size: 4rem;
-            font-weight: 800;
-            color: white;
-            letter-spacing: -0.02em;
+            font-size: 4rem; font-weight: 800;
+            color: white; letter-spacing: -0.02em;
             margin-bottom: 0.5rem;
         }
         .splash-subtitle { font-size: 1.25rem; color: rgba(255,255,255,0.9); font-weight: 500; }
 
         .progress-container { width: 280px; margin-top: 3rem; }
         .progress-bar {
-            height: 8px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 100px;
-            overflow: hidden;
+            height: 8px; background: rgba(255,255,255,0.3);
+            border-radius: 100px; overflow: hidden;
         }
         .progress-fill { height: 100%; background: white; border-radius: 100px; transition: width 0.1s linear; }
         .progress-text { margin-top: 0.75rem; color: rgba(255,255,255,0.85); font-size: 0.875rem; }
 
-        /* ===== ANIMATIONS ===== */
+        .connection-status {
+            position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+            padding: 0.5rem 1rem; border-radius: 9999px;
+            font-size: 0.8125rem; font-weight: 500;
+            background: rgba(255,255,255,0.15); color: white;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #fbbf24; animation: blink 1s infinite; }
+        .status-dot.connected { background: #34d399; animation: none; }
+        .status-dot.error { background: #f87171; animation: none; }
+
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
         @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
         /* ===== HEADER ===== */
         .header {
             background: linear-gradient(135deg, #065f46 0%, #0f766e 50%, #155e75 100%);
-            color: white;
-            padding: 1rem 0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            color: white; padding: 1rem 0;
+            position: sticky; top: 0; z-index: 100;
             box-shadow: var(--shadow-lg);
         }
         .header-container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            max-width: 1280px; margin: 0 auto; padding: 0 1.5rem;
+            display: flex; align-items: center; justify-content: space-between;
         }
         .header-brand { display: flex; align-items: center; gap: 0.75rem; }
         .header-logo {
-            width: 45px; height: 45px;
-            background: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .header-logo i { width: 26px; height: 26px; color: var(--primary); }
-        .header-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; }
-        .header-subtitle { font-size: 0.75rem; opacity: 0.85; }
-        .header-actions { display: flex; align-items: center; gap: 1rem; }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            background: rgba(255,255,255,0.15);
-            padding: 0.5rem 1rem;
+            width: 48px; height: 48px; background: white;
             border-radius: var(--radius-lg);
-            backdrop-filter: blur(10px);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: var(--shadow-md);
         }
-        .user-info.active { display: flex !important; }
-        .user-avatar {
-            width: 36px; height: 36px;
-            background: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary);
-            font-weight: 600;
-            font-size: 0.875rem;
-        }
-        .user-details { line-height: 1.3; }
-        .user-name { font-weight: 600; font-size: 0.875rem; }
-        .user-role { font-size: 0.7rem; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.05em; }
+        .header-logo i { width: 28px; height: 28px; color: var(--primary); }
+        .header-text h1 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+        .header-text p { font-size: 0.75rem; color: rgba(255,255,255,0.8); display: none; }
+        @media (min-width: 768px) { .header-text p { display: block; } }
+
+        .header-actions { display: flex; align-items: center; gap: 1rem; }
+        .user-info { display: none; align-items: center; gap: 0.75rem; background: rgba(255,255,255,0.15); padding: 0.5rem 1rem; border-radius: var(--radius-lg); }
+        .user-info.active { display: flex; }
+        .user-badge { background: #fbbf24; color: #78350f; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; }
 
         /* ===== BUTTONS ===== */
         .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.625rem 1.25rem;
-            border: none;
-            border-radius: var(--radius-md);
-            font-weight: 500;
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            font-family: inherit;
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.625rem 1.25rem; border-radius: var(--radius-md);
+            font-weight: 500; font-size: 0.875rem;
+            cursor: pointer; transition: all 0.2s ease;
+            border: none; font-family: inherit;
         }
-        .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
-        .btn:active { transform: translateY(0); }
-        .btn-primary { background: white; color: var(--primary); }
-        .btn-primary:hover { background: var(--bg-secondary); }
-        .btn-outline { background: transparent; border: 2px solid rgba(255,255,255,0.3); color: white; }
-        .btn-outline:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.5); }
-        .btn-secondary { background: var(--primary); color: white; }
-        .btn-secondary:hover { background: var(--primary-dark); }
+        .btn i { width: 18px; height: 18px; }
+        .btn-outline { background: transparent; border: 2px solid white; color: white; }
+        .btn-outline:hover { background: white; color: var(--primary); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-secondary { background: var(--secondary); color: white; }
+        .btn-secondary:hover { background: #0f766e; }
         .btn-danger { background: var(--danger); color: white; }
-        .btn-ghost { background: transparent; color: var(--text-secondary); }
-        .btn-ghost:hover { background: var(--bg-tertiary); color: var(--text-primary); }
-        .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.813rem; }
-        .btn-icon { padding: 0.375rem; }
+        .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.8125rem; }
+        .btn-icon { padding: 0.375rem; border-radius: var(--radius-sm); }
+        .btn-ghost { background: transparent; color: inherit; }
+        .btn-ghost:hover { background: var(--bg-tertiary); }
 
-        /* ===== MOBILE MENU ===== */
-        .mobile-menu-btn { display: none; background: transparent; border: none; color: white; cursor: pointer; padding: 0.5rem; }
-        .mobile-menu {
-            display: none;
-            position: fixed;
-            top: 73px; left: 0; right: 0;
-            background: white;
-            box-shadow: var(--shadow-xl);
-            z-index: 99;
-            padding: 1rem;
-            transform: translateY(-100%);
-            opacity: 0;
-            transition: all 0.3s ease;
+        .mobile-menu-btn {
+            display: flex; padding: 0.5rem; background: rgba(255,255,255,0.1);
+            border: none; border-radius: var(--radius-md); color: white; cursor: pointer;
         }
-        .mobile-menu.active { transform: translateY(0); opacity: 1; }
+        @media (min-width: 768px) { .mobile-menu-btn { display: none; } }
+
+        .mobile-menu { display: none; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2); margin-top: 1rem; }
+        .mobile-menu.active { display: block; }
 
         /* ===== MAIN CONTENT ===== */
-        .main-content { flex: 1; max-width: 1280px; margin: 0 auto; padding: 1.5rem 1rem; width: 100%; }
-
-        /* ===== STATS SECTION ===== */
-        .stats-section { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-        .stat-card {
-            background: white;
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
-            box-shadow: var(--shadow-sm);
-            border-left: 4px solid var(--primary);
-            transition: all 0.3s ease;
-        }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-        .stat-card:nth-child(1) { border-left-color: var(--success); }
-        .stat-card:nth-child(2) { border-left-color: var(--info); }
-        .stat-card:nth-child(3) { border-left-color: var(--primary); }
-        .stat-card:nth-child(4) { border-left-color: var(--secondary); }
-        .stat-label { font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
-        .stat-value { font-size: 2rem; font-weight: 700; color: var(--text-primary); }
-        .stat-icon {
-            float: right;
-            width: 48px; height: 48px;
-            background: var(--bg-tertiary);
-            border-radius: var(--radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary);
-        }
+        .main-content { flex: 1; max-width: 1280px; margin: 0 auto; padding: 2rem 1.5rem; width: 100%; }
 
         /* ===== TABS ===== */
-        .tabs-container { background: white; border-radius: var(--radius-xl); box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 2rem; }
-        .tabs-header { display: flex; border-bottom: 2px solid var(--bg-tertiary); overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .tab-btn {
-            flex-shrink: 0;
-            padding: 1rem 1.5rem;
-            background: transparent;
-            border: none;
-            font-weight: 500;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-            border-bottom: 3px solid transparent;
-            margin-bottom: -2px;
-            font-family: inherit;
+        .tabs-container { margin-bottom: 2rem; }
+        .tabs-list {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 0.5rem; background: white; padding: 0.5rem;
+            border-radius: var(--radius-xl); box-shadow: var(--shadow-md);
         }
-        .tab-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
-        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: var(--bg-secondary); }
-        .tab-content { display: none; padding: 1.5rem; animation: fadeInUp 0.3s ease; }
+        @media (min-width: 1024px) { .tabs-list { grid-template-columns: repeat(7, 1fr); } }
+
+        .tab-btn {
+            padding: 0.75rem 0.5rem; border: none; background: transparent;
+            border-radius: var(--radius-md); font-weight: 500; font-size: 0.8125rem;
+            cursor: pointer; transition: all 0.2s ease; color: var(--text-secondary);
+            font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 0.375rem;
+        }
+        .tab-btn i { width: 16px; height: 16px; }
+        .tab-btn:hover { background: var(--bg-tertiary); }
+        .tab-btn.active[data-section="info"] { background: var(--primary); color: white; }
+        .tab-btn.active[data-section="main"] { background: var(--secondary); color: white; }
+        .tab-btn span { display: none; }
+        @media (min-width: 640px) { .tab-btn span { display: inline; } }
+
+        .tab-content { display: none; animation: slideIn 0.3s ease-out; }
         .tab-content.active { display: block; }
 
         /* ===== CARDS ===== */
-        .card { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
-        .card-header {
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
+        .card {
+            background: white; border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-md); overflow: hidden;
+            transition: box-shadow 0.3s ease, transform 0.3s ease;
         }
-        .card-header h2 { font-size: 1.125rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
-        .card-header p { font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem; }
+        .card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+        .card-header { padding: 1.5rem; border-bottom: 1px solid var(--border-color); }
+        .card-header h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
+        .card-header h2 i { width: 28px; height: 28px; }
+        .card-header p { color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.25rem; }
         .card-body { padding: 1.5rem; }
 
-        /* ===== TABLES ===== */
-        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-        thead { background: var(--bg-tertiary); }
-        th {
-            padding: 0.875rem 1rem;
-            text-align: left;
-            font-weight: 600;
-            color: var(--text-secondary);
-            font-size: 0.813rem;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            white-space: nowrap;
+        /* ===== STATS CARDS ===== */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card {
+            background: linear-gradient(135deg, var(--stat-color) 0%, var(--stat-color-dark) 100%);
+            color: white; padding: 1.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg);
         }
+        .stat-card:nth-child(1) { --stat-color: #10b981; --stat-color-dark: #059669; }
+        .stat-card:nth-child(2) { --stat-color: #3b82f6; --stat-color-dark: #2563eb; }
+        .stat-card:nth-child(3) { --stat-color: #8b5cf6; --stat-color-dark: #7c3aed; }
+        .stat-card:nth-child(4) { --stat-color: #f97316; --stat-color-dark: #ea580c; }
+        .stat-label { font-size: 0.8125rem; opacity: 0.9; font-weight: 500; }
+        .stat-value { font-size: 2.5rem; font-weight: 700; margin: 0.25rem 0; }
+        .stat-sublabel { font-size: 0.75rem; opacity: 0.75; }
+
+        /* ===== INFO CARDS GRID ===== */
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .info-card h3 { font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
+        .info-card h3 i { width: 20px; height: 20px; }
+        .info-card p, .info-card ul { color: var(--text-secondary); font-size: 0.9375rem; }
+        .info-card ul { list-style: none; }
+        .info-card li { padding: 0.375rem 0; display: flex; align-items: flex-start; gap: 0.5rem; }
+        .info-card li i { width: 16px; height: 16px; color: var(--info); margin-top: 0.125rem; shrink: 0; }
+
+        /* ===== TABLE ===== */
+        .table-container { overflow-x: auto; border-radius: var(--radius-lg); border: 1px solid var(--border-color); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        thead { background: #ecfdf5; }
+        th { padding: 0.875rem 1rem; text-align: left; font-weight: 600; color: var(--primary-dark); border-bottom: 2px solid var(--border-color); white-space: nowrap; }
         td { padding: 0.875rem 1rem; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
         tbody tr:hover { background: var(--bg-secondary); }
         tbody tr:last-child td { border-bottom: none; }
 
         /* ===== BADGES ===== */
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.625rem;
-            border-radius: 100px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            text-transform: capitalize;
-        }
+        .badge { display: inline-block; padding: 0.25rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
         .badge-success { background: #dcfce7; color: #166534; }
         .badge-warning { background: #fef3c7; color: #92400e; }
         .badge-danger { background: #fee2e2; color: #991b1b; }
         .badge-info { background: #dbeafe; color: #1e40af; }
-        .badge-secondary { background: var(--bg-tertiary); color: var(--text-secondary); }
-        .badge-purple { background: #f3e8ff; color: #7c3aed; }
-        .badge-blue { background: #dbeafe; color: #2563eb; }
+        .badge-secondary { background: #f3f4f6; color: #374151; }
+        .badge-purple { background: #ede9fe; color: #5b21b6; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
 
-        /* ===== FORMS ===== */
-        .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.375rem; color: var(--text-primary); }
+        /* ===== FORM ELEMENTS ===== */
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-weight: 500; font-size: 0.875rem; color: var(--text-primary); margin-bottom: 0.375rem; }
         .form-control {
-            width: 100%;
-            padding: 0.625rem 0.875rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            font-size: 0.875rem;
-            font-family: inherit;
+            width: 100%; padding: 0.625rem 0.875rem; border: 1px solid var(--border-color);
+            border-radius: var(--radius-md); font-size: 0.9375rem; font-family: inherit;
             transition: all 0.2s ease;
-            background: white;
         }
         .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1); }
-        textarea.form-control { resize: vertical; min-height: 80px; }
-        select.form-control { cursor: pointer; }
+        textarea.form-control { min-height: 100px; resize: vertical; }
+        select.form-control { cursor: pointer; background: white; }
 
-        /* ===== SEARCH BOX ===== */
-        .search-box { position: relative; max-width: 300px; }
+        .search-box { position: relative; }
+        .search-box i { position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--text-muted); }
         .search-box input { padding-left: 2.5rem; }
-        .search-box i { position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 18px; height: 18px; }
 
-        /* ===== MODALS ===== */
+        /* ===== DIALOG/MODAL ===== */
         .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-            backdrop-filter: blur(4px);
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            display: none; align-items: center; justify-content: center;
+            z-index: 1000; padding: 1rem;
         }
         .modal-overlay.active { display: flex; }
         .modal {
-            background: white;
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-xl);
-            width: 100%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            animation: fadeInUp 0.3s ease;
+            background: white; border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-xl); width: 100%; max-width: 500px;
+            max-height: 90vh; overflow-y: auto; animation: modalIn 0.3s ease-out;
         }
-        .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        .modal-header h3 { font-size: 1.125rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
-        .modal-close {
-            background: var(--bg-tertiary);
-            border: none;
-            width: 32px; height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-        }
+        .modal.lg { max-width: 700px; }
+        .modal.xl { max-width: 900px; }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(-10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .modal-header { padding: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; }
+        .modal-header h3 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
+        .modal-close { background: var(--bg-tertiary); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; }
         .modal-close:hover { background: var(--border-color); }
         .modal-body { padding: 1.5rem; }
         .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 0.75rem; }
 
-        /* ===== GRID UTILITIES ===== */
-        .grid { display: grid; }
-        .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-        .gap-4 { gap: 1rem; }
-        .flex { display: flex; }
-        .justify-end { justify-content: flex-end; }
-        .justify-between { justify-content: space-between; }
-        .items-center { align-items: center; }
-        .gap-2 { gap: 0.5rem; }
+        /* ===== STEP LIST ===== */
+        .step-item { display: flex; gap: 1rem; margin-bottom: 2rem; }
+        .step-number { width: 40px; height: 40px; background: #ecfdf5; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+        .step-content h3 { font-weight: 600; font-size: 1.125rem; margin-bottom: 0.375rem; }
+        .step-content p { color: var(--text-secondary); }
 
-        /* ===== INFORMASI CARDS ===== */
-        .informasi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
-        .informasi-card {
-            background: white;
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
-            box-shadow: var(--shadow-sm);
-            border-left: 4px solid var(--primary);
-            transition: all 0.3s ease;
-        }
-        .informasi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-        .informasi-card.pengumuman { border-left-color: var(--info); }
-        .informasi-card.panduan { border-left-color: var(--success); }
-        .informasi-card.faq { border-left-color: var(--warning); }
-        .informasi-category {
-            display: inline-block;
-            padding: 0.125rem 0.5rem;
-            background: var(--bg-tertiary);
-            border-radius: 100px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            margin-bottom: 0.75rem;
-            color: var(--text-secondary);
-        }
-        .informasi-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary); }
-        .informasi-content { font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; white-space: pre-line; }
+        /* ===== CS CARDS ===== */
+        .cs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .cs-card { background: white; border: 1px solid #a7f3d0; border-radius: var(--radius-lg); padding: 1.25rem; }
+        .cs-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+        .cs-avatar { width: 48px; height: 48px; background: #cffafe; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .cs-avatar i { width: 24px; height: 24px; color: var(--accent); }
+        .cs-name { font-weight: 600; }
+        .cs-role { font-size: 0.8125rem; color: var(--text-muted); }
+        .cs-contact { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem; }
+        .cs-contact a { display: flex; align-items: center; gap: 0.5rem; color: var(--success); text-decoration: none; }
+        .cs-contact a:hover { text-decoration: underline; }
+        .cs-contact a.blue { color: var(--info); }
+        .cs-contact span { display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); }
 
-        /* ===== CS SECTION ===== */
-        .cs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
-        .cs-card {
-            background: white;
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
-            box-shadow: var(--shadow-sm);
-            transition: all 0.3s ease;
-        }
-        .cs-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-        .cs-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
-        .cs-avatar {
-            width: 56px; height: 56px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 1.25rem;
-        }
-        .cs-info h4 { font-size: 1rem; font-weight: 600; }
-        .cs-contact { display: flex; flex-direction: column; gap: 0.5rem; }
-        .cs-contact a { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); text-decoration: none; font-size: 0.875rem; transition: color 0.2s ease; }
-        .cs-contact a:hover { color: var(--primary); }
-        .cs-contact span { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-size: 0.875rem; }
+        /* ===== FOOTER ===== */
+        .footer { background: #1f2937; color: #d1d5db; padding: 3rem 0 1.5rem; margin-top: auto; }
+        .footer-grid { max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-bottom: 2rem; }
+        .footer-brand { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+        .footer-brand i { width: 32px; height: 32px; color: #34d399; }
+        .footer-brand span { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: white; }
+        .footer h4 { color: white; font-weight: 600; margin-bottom: 1rem; }
+        .footer ul { list-style: none; }
+        .footer li { margin-bottom: 0.5rem; }
+        .footer a { color: #9ca3af; text-decoration: none; transition: color 0.2s; }
+        .footer a:hover { color: white; }
+        .footer-bottom { max-width: 1280px; margin: 0 auto; padding: 1.5rem 0; border-top: 1px solid #374151; text-align: center; font-size: 0.875rem; }
 
         /* ===== ADMIN PANEL ===== */
-        .admin-panel { margin-top: 2rem; }
-        .admin-panel > h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; color: #7c3aed; }
+        .admin-panel { margin-top: 2rem; padding-top: 2rem; border-top: 2px solid var(--border-color); }
+        .admin-panel h2 { font-family: var(--font-display); font-size: 1.75rem; font-weight: 700; color: #7c3aed; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .admin-panel h2 i { width: 28px; height: 28px; }
 
-        /* ===== LOADING STATE ===== */
-        .loading-spinner {
-            display: inline-block;
-            width: 20px; height: 20px;
-            border: 2px solid var(--border-color);
-            border-radius: 50%;
-            border-top-color: var(--primary);
-            animation: spin 0.8s linear infinite;
-        }
+        /* ===== UTILITY CLASSES ===== */
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-end { justify-content: flex-end; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-4 { gap: 1rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .text-center { text-align: center; }
+        .text-gray { color: var(--text-secondary); }
+        .whitespace-pre-line { white-space: pre-line; }
+        .w-full { width: 100%; }
+        .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+
+        .alert { padding: 0.875rem 1rem; border-radius: var(--radius-md); font-size: 0.875rem; }
+        .alert-warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+        .alert-success { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
+        .alert-error { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
+
+        .hidden-col { display: none; }
+        @media (min-width: 768px) { .hidden-col.admin-only { display: table-cell; } }
+
+        /* ===== LOADING SPINNER ===== */
+        .spinner { width: 20px; height: 20px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-state { text-align: center; padding: 3rem; color: var(--text-muted); }
 
-        /* ===== ERROR STATE ===== */
-        .error-state { text-align: center; padding: 2rem; background: #fee2e2; border-radius: var(--radius-lg); color: #991b1b; margin: 1rem 0; }
+        /* ===== TOAST NOTIFICATION ===== */
+        .toast-container { position: fixed; top: 80px; right: 1rem; z-index: 2000; display: flex; flex-direction: column; gap: 0.5rem; }
+        .toast {
+            padding: 1rem 1.25rem; border-radius: var(--radius-lg);
+            background: white; box-shadow: var(--shadow-lg);
+            display: flex; align-items: center; gap: 0.75rem;
+            animation: slideInRight 0.3s ease-out;
+            max-width: 400px;
+        }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--danger); }
+        .toast.info { border-left: 4px solid var(--info); }
+
+        /* ===== CONFIG MODAL ===== */
+        .config-section { margin-bottom: 1.5rem; }
+        .config-section label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary); }
+        .config-section small { display: block; color: var(--text-muted); margin-top: 0.25rem; }
 
         /* ===== RESPONSIVE ===== */
-        @media (max-width: 768px) {
+        @media (max-width: 767px) {
             .splash-title { font-size: 2.5rem; }
-            .mobile-menu-btn { display: block; }
-            .header-actions .btn:not(.mobile-menu-btn):not(.user-info) { display: none; }
-            .mobile-menu { display: block; }
-            .tabs-header { padding: 0.5rem; }
-            .tab-btn { padding: 0.75rem 1rem; font-size: 0.813rem; }
-            .stats-section { grid-template-columns: repeat(2, 1fr); }
-            .modal { max-width: 100%; margin: 0.5rem; }
-            .hidden-col { display: none !important; }
+            .stat-value { font-size: 2rem; }
+            .card-header h2 { font-size: 1.25rem; }
+            th, td { padding: 0.625rem 0.75rem; font-size: 0.8125rem; }
         }
-        @media (max-width: 480px) {
-            .stats-section { grid-template-columns: 1fr; }
-            .stat-value { font-size: 1.5rem; }
-        }
-
-        /* Text utilities */
-        .text-center { text-align: center; }
-        .text-red-500 { color: #ef4444; }
-        .text-blue-500 { color: #3b82f6; }
-        .text-green-500 { color: #22c55e; }
-        .text-gray-500 { color: #6b7280; }
-        .font-mono { font-family: monospace; }
-        .py-8 { padding-top: 2rem; padding-bottom: 2rem; }
     </style>
 </head>
 <body>
@@ -524,14 +421,18 @@
     <div class="splash-screen" id="splashScreen">
         <div class="splash-content">
             <div class="splash-logo">
-                <i data-lucide="heart-pulse"></i>
+                <i data-lucide="graduation-cap"></i>
                 <div class="splash-heart"><i data-lucide="heart"></i></div>
             </div>
             <h1 class="splash-title">SIMBAKES</h1>
             <p class="splash-subtitle">Beasiswa Tematik Bidang Kesehatan</p>
             <div class="progress-container">
-                <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width: 0%"></div></div>
-                <p class="progress-text"><span id="progressText">0</span>%</p>
+                <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                <p class="progress-text">Memuat platform... <span id="progressText">0</span>%</p>
+            </div>
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Menghubungkan ke database...</span>
             </div>
         </div>
     </div>
@@ -540,186 +441,241 @@
     <header class="header">
         <div class="header-container">
             <div class="header-brand">
-                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
-                    <i data-lucide="menu" style="width:24px;height:24px;"></i>
-                </button>
-                <div class="header-logo"><i data-lucide="heart-pulse"></i></div>
-                <div>
-                    <h1 class="header-title">SIMBAKES</h1>
-                    <p class="header-subtitle">Beasiswa Kesehatan Indonesia</p>
+                <div class="header-logo"><i data-lucide="graduation-cap"></i></div>
+                <div class="header-text">
+                    <h1>SIMBAKES</h1>
+                    <p>Beasiswa Tematik Bidang Kesehatan</p>
                 </div>
             </div>
             <div class="header-actions">
-                <button class="btn btn-primary btn-sm" id="loginBtn" onclick="openLoginModal()">
-                    <i data-lucide="log-in" style="width:16px;height:16px;"></i>Login Admin
-                </button>
-                <button class="btn btn-outline btn-sm" id="logoutBtn" onclick="logout()" style="display:none;">
-                    <i data-lucide="log-out" style="width:16px;height:16px;"></i>Logout
-                </button>
-                <div class="user-info" id="userInfo" style="display:none;">
-                    <div class="user-avatar" id="userAvatar">A</div>
-                    <div class="user-details">
-                        <div class="user-name" id="userName">Admin</div>
-                        <div class="user-role" id="userRole">Superadmin</div>
-                    </div>
+                <div class="user-info" id="userInfo">
+                    <i data-lucide="shield-check" style="width:20px;height:20px;"></i>
+                    <span id="userName">Admin</span>
+                    <span class="user-badge" id="userRole">superadmin</span>
                 </div>
+                <button class="btn btn-outline" id="loginBtn" onclick="openLoginModal()">
+                    <i data-lucide="log-in"></i>Login Admin
+                </button>
+                <button class="btn btn-outline" id="logoutBtn" style="display:none;" onclick="logout()">
+                    <i data-lucide="log-out"></i>Logout
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="openConfigModal()" title="Pengaturan Database">
+                    <i data-lucide="settings"></i>
+                </button>
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                    <i data-lucide="menu" style="width:24px;height:24px;"></i>
+                </button>
+            </div>
+            <div class="mobile-menu" id="mobileMenu">
+                <button class="btn btn-outline w-full mb-2" onclick="openLoginModal(); toggleMobileMenu();">
+                    <i data-lucide="log-in"></i>Login Admin
+                </button>
+                <button class="btn btn-outline w-full" onclick="openConfigModal(); toggleMobileMenu();">
+                    <i data-lucide="settings"></i>Pengaturan Database
+                </button>
             </div>
         </div>
     </header>
 
-    <!-- Mobile Menu -->
-    <nav class="mobile-menu" id="mobileMenu">
-        <button class="btn btn-primary btn-sm" onclick="openLoginModal(); toggleMobileMenu();" style="width:100%;margin-bottom:0.5rem;">
-            <i data-lucide="log-in" style="width:16px;height:16px;"></i>Login
-        </button>
-        <a href="#informasi" onclick="switchTab('informasi');toggleMobileMenu();" style="display:block;padding:0.75rem;color:var(--text-secondary);text-decoration:none;">Informasi Penting</a>
-        <a href="#cs" onclick="switchTab('cs');toggleMobileMenu();" style="display:block;padding:0.75rem;color:var(--text-secondary);text-decoration:none;">Customer Service</a>
-    </nav>
-
     <!-- ===== MAIN CONTENT ===== -->
     <main class="main-content">
-        <!-- STATS -->
-        <section class="stats-section">
-            <div class="stat-card">
-                <div class="stat-icon"><i data-lucide="map-pin"></i></div>
-                <div class="stat-label">Roadmap Tersedia</div>
-                <div class="stat-value" id="statTersedia">-</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i data-lucide="file-text"></i></div>
-                <div class="stat-label">Pengusulan Aktif</div>
-                <div class="stat-value" id="statAktif">-</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i data-lucide="check-circle"></i></div>
-                <div class="stat-label">Ditetapkan</div>
-                <div class="stat-value" id="statDitetapkan">-</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i data-lucide="graduation-cap"></i></div>
-                <div class="stat-label">Total Jurusan</div>
-                <div class="stat-value" id="statJurusan">-</div>
-            </div>
-        </section>
-
-        <!-- TABS -->
+        <!-- Tabs Navigation -->
         <div class="tabs-container">
-            <div class="tabs-header">
-                <button class="tab-btn active" data-tab="roadmap" onclick="switchTab('roadmap')">
-                    <i data-lucide="map" style="width:18px;height:18px;"></i>Roadmap
+            <div class="tabs-list">
+                <button class="tab-btn active" data-tab="dashboard" data-section="info" onclick="switchTab('dashboard')">
+                    <i data-lucide="book-open"></i><span>Dashboard</span>
                 </button>
-                <button class="tab-btn" data-tab="pengusulan" onclick="switchTab('pengusulan')">
-                    <i data-lucide="send" style="width:18px;height:18px;"></i>Pengusulan
+                <button class="tab-btn" data-tab="petunjuk" data-section="info" onclick="switchTab('petunjuk')">
+                    <i data-lucide="help-circle"></i><span>Petunjuk</span>
                 </button>
-                <button class="tab-btn" data-tab="penetapan" onclick="switchTab('penetapan')">
-                    <i data-lucide="check-square" style="width:18px;height:18px;"></i>Penetapan
+                <button class="tab-btn" data-tab="informasi" data-section="info" onclick="switchTab('informasi')">
+                    <i data-lucide="info"></i><span>Informasi</span>
                 </button>
-                <button class="tab-btn" data-tab="informasi" onclick="switchTab('informasi')">
-                    <i data-lucide="info" style="width:18px;height:18px;"></i>Informasi
+                <button class="tab-btn" data-tab="roadmap" data-section="main" onclick="switchTab('roadmap')">
+                    <i data-lucide="map"></i><span>Roadmap</span>
                 </button>
-                <button class="tab-btn" data-tab="cs" onclick="switchTab('cs')">
-                    <i data-lucide="headphones" style="width:18px;height:18px;"></i>CS
+                <button class="tab-btn" data-tab="formulir" data-section="main" onclick="switchTab('formulir')">
+                    <i data-lucide="file-text"></i><span>Formulir</span>
                 </button>
-                <button class="tab-btn admin-only" data-tab="admin" onclick="switchTab('admin')" style="display:none;">
-                    <i data-lucide="shield" style="width:18px;height:18px;"></i>Admin
+                <button class="tab-btn" data-tab="pengusulan" data-section="main" onclick="switchTab('pengusulan')">
+                    <i data-lucide="database"></i><span>Pengusulan</span>
+                </button>
+                <button class="tab-btn" data-tab="penetapan" data-section="main" onclick="switchTab('penetapan')">
+                    <i data-lucide="clipboard-list"></i><span>Penetapan</span>
                 </button>
             </div>
+        </div>
 
-            <!-- TAB: ROADMAP -->
-            <div class="tab-content active" id="tab-roadmap">
-                <div class="card">
-                    <div class="card-header">
-                        <div>
-                            <h2><i data-lucide="map"></i>Roadmap Kebutuhan Beasiswa</h2>
-                            <p>Daftar kebutuhan tenaga kesehatan yang dapat diajukan beasiswa</p>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="search-box">
-                                <i data-lucide="search"></i>
-                                <input type="text" class="form-control" placeholder="Cari roadmap..." id="roadmapSearch" oninput="filterTable('roadmap')">
-                            </div>
-                            <button class="btn btn-secondary btn-sm admin-action" id="roadmapAddBtn" style="display:none;" onclick="openRoadmapModal()">
-                                <i data-lucide="plus"></i>Tambah
-                            </button>
-                        </div>
+        <!-- ===== TAB: DASHBOARD ===== -->
+        <div class="tab-content active" id="tab-dashboard">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Beasiswa Tersedia</div>
+                    <div class="stat-value" id="statTersedia">-</div>
+                    <div class="stat-sublabel">Program aktif</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Pengajuan Aktif</div>
+                    <div class="stat-value" id="statAktif">-</div>
+                    <div class="stat-sublabel">Sedang diproses</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Penerima Ditentukan</div>
+                    <div class="stat-value" id="statDitetapkan">-</div>
+                    <div class="stat-sublabel">SK diterbitkan</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Jurusan Tersedia</div>
+                    <div class="stat-value" id="statJurusan">-</div>
+                    <div class="stat-sublabel">Berbagai program</div>
+                </div>
+            </div>
+            <div class="info-grid">
+                <div class="card info-card">
+                    <div class="card-body">
+                        <h3><i data-lucide="graduation-cap"></i>Tentang SIMBAKES</h3>
+                        <p>SIMBAKES adalah sistem informasi beasiswa tematik bidang kesehatan yang dikelola oleh Kementerian Kesehatan RI. Program ini bertujuan untuk meningkatkan kualitas sumber daya manusia kesehatan Indonesia melalui pendidikan yang berkualitas.</p>
                     </div>
-                    <div class="card-body" style="padding:0;">
-                        <div class="table-responsive">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Kode</th>
-                                        <th>Jurusan/Program Studi</th>
-                                        <th class="hidden-col">Kualifikasi Awal</th>
-                                        <th>Jenjang</th>
-                                        <th class="hidden-col">Perguruan Tinggi</th>
-                                        <th>Status</th>
-                                        <th class="admin-action" style="display:none;">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="roadmapBody">
-                                    <tr><td colspan="7" class="loading-state"><div class="loading-spinner"></div> Memuat data...</td></tr>
-                                </tbody>
-                            </table>
+                </div>
+                <div class="card info-card">
+                    <div class="card-body">
+                        <h3><i data-lucide="users"></i>Sasaran Penerima</h3>
+                        <ul>
+                            <li><i data-lucide="chevron-right"></i>Tenaga kesehatan PNS/PPPK</li>
+                            <li><i data-lucide="chevron-right"></i>Dokter/dokter spesialis daerah tertinggal</li>
+                            <li><i data-lucide="chevron-right"></i>Perawat dan bidan terpilih</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card info-card">
+                    <div class="card-body">
+                        <h3><i data-lucide="database"></i>Status Database</h3>
+                        <p id="dbStatusText">Menunggu koneksi...</p>
+                        <p class="mt-2"><small id="dbConnectionInfo"></small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TAB: PETUNJUK PENGGUNAAN ===== -->
+        <div class="tab-content" id="tab-petunjuk">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i data-lucide="help-circle"></i>Petunjuk Penggunaan Platform SIMBAKES</h2>
+                    <p>Panduan lengkap menggunakan fitur-fitur yang tersedia</p>
+                </div>
+                <div class="card-body">
+                    <div class="step-list">
+                        <div class="step-item">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h3>Konfigurasi Database</h3>
+                                <p>Klik tombol ⚙️ Settings di header, lalu masukkan URL dan Anon Key dari project Supabase Anda. Jika belum punya, gunakan mode demo dengan data contoh.</p>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h3>Melihat Roadmap Kebutuhan</h3>
+                                <p>Klik menu "Roadmap Kebutuhan" untuk melihat daftar program beasiswa yang tersedia di database Supabase.</p>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h3>Mengajukan Beasiswa</h3>
+                                <p>Klik menu "Formulir Pengusulan" untuk mengisi data. Data akan tersimpan langsung ke tabel <code>data_pengusulan</code> di Supabase.</p>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h3>Admin Login</h3>
+                                <p>Klik "Login Admin" untuk mengakses fitur CRUD lengkap. Admin dapat melihat data sensitif (NIK), mengedit status, dan mengelola user.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- TAB: PENGUSULAN -->
-            <div class="tab-content" id="tab-pengusulan">
-                <div class="card">
-                    <div class="card-header">
+        <!-- ===== TAB: INFORMASI & CS ===== -->
+        <div class="tab-content" id="tab-informasi">
+            <div id="informasiList" class="mb-4"></div>
+            <div class="card" style="background: linear-gradient(to bottom right, #ecfeff, #e0f2fe); border-color: #a5f3fc;">
+                <div class="card-header">
+                    <h2 style="color:#0e7490;"><i data-lucide="headphones"></i>Layanan Customer Service</h2>
+                    <p>Hubungi tim kami jika membutuhkan bantuan lebih lanjut</p>
+                </div>
+                <div class="card-body">
+                    <div class="cs-grid" id="csList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TAB: ROADMAP KEBUTUHAN ===== -->
+        <div class="tab-content" id="tab-roadmap">
+            <div class="card">
+                <div class="card-header">
+                    <div class="flex items-center justify-between gap-4" style="flex-wrap:wrap;">
                         <div>
-                            <h2><i data-lucide="send"></i>Data Pengusulan Beasiswa</h2>
-                            <p id="pengusulanSubtitle">Data publik pengajuan (tanpa data personal sensitif)</p>
+                            <h2><i data-lucide="map"></i>Roadmap Kebutuhan Beasiswa</h2>
+                            <p>Data dari tabel <strong>roadmap_kebutuhan</strong> di Supabase</p>
                         </div>
                         <div class="search-box">
                             <i data-lucide="search"></i>
-                            <input type="text" class="form-control" placeholder="Cari pengusulan..." id="pengusulanSearch" oninput="filterTable('pengusulan')">
-                        </div>
-                    </div>
-                    <div class="card-body" style="padding:0;">
-                        <div class="table-responsive">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>No</th>
-                                        <th>Nama Lengkap</th>
-                                        <th class="nik-col" style="display:none;">NIK</th>
-                                        <th>Jurusan Tujuan</th>
-                                        <th class="hidden-col">Jenjang</th>
-                                        <th class="hidden-col">Unit Kerja</th>
-                                        <th>Status</th>
-                                        <th class="admin-action" style="display:none;">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="pengusulanBody">
-                                    <tr><td colspan="8" class="loading-state"><div class="loading-spinner"></div> Memuat data...</td></tr>
-                                </tbody>
-                            </table>
+                            <input type="text" class="form-control" placeholder="Cari jurusan..." id="roadmapSearch" oninput="filterTable('roadmap')">
                         </div>
                     </div>
                 </div>
-
-                <!-- Form Pengusulan Baru -->
-                <div class="card" style="margin-top:1.5rem;">
-                    <div class="card-header">
-                        <h2><i data-lucide="file-plus"></i>Formulir Pengusulan Baru</h2>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table id="roadmapTable">
+                            <thead>
+                                <tr>
+                                    <th>Kode</th>
+                                    <th>Jurusan/Program Studi</th>
+                                    <th class="hidden-col">Kualifikasi</th>
+                                    <th>Jenjang</th>
+                                    <th class="hidden-col">Perguruan Tinggi</th>
+                                    <th>Status</th>
+                                    <th class="admin-action" style="display:none;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="roadmapBody"><tr><td colspan="7" class="text-center py-8"><div class="spinner"></div> Memuat data...</td></tr></tbody>
+                        </table>
                     </div>
-                    <form id="pengusulanForm" onsubmit="submitPengusulan(event)" style="padding:1.5rem;">
-                        <div class="grid grid-cols-2 gap-4">
+                    <div class="flex justify-end mt-4" id="roadmapAddBtn" style="display:none;">
+                        <button class="btn btn-primary btn-sm" onclick="openRoadmapModal()"><i data-lucide="plus"></i>Tambah Roadmap</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TAB: FORMULIR PENGUSULAN ===== -->
+        <div class="tab-content" id="tab-formulir">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i data-lucide="file-text"></i>Formulir Pengusulan Beasiswa</h2>
+                    <p>Data akan disimpan ke tabel <strong>data_pengusulan</strong> di Supabase</p>
+                </div>
+                <div class="card-body">
+                    <form id="pengusulanForm" onsubmit="submitPengusulan(event)">
+                        <h3 class="mb-4" style="color:#059669;font-weight:600;display:flex;align-items:center;gap:0.5rem;">
+                            <i data-lucide="users" style="width:20px;height:20px;"></i>Data Pribadi
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
                             <div class="form-group">
                                 <label>NIK *</label>
-                                <input type="text" class="form-control" name="nik" maxlength="16" required placeholder="16 digit NIK">
+                                <input type="text" class="form-control" maxlength="16" name="nik" required placeholder="Nomor Induk Kependudukan (16 digit)">
                             </div>
                             <div class="form-group">
                                 <label>Nama Lengkap *</label>
-                                <input type="text" class="form-control" name="nama_lengkap" required>
+                                <input type="text" class="form-control" name="nama_lengkap" required placeholder="Nama lengkap sesuai KTP">
                             </div>
                             <div class="form-group">
                                 <label>Tempat Lahir</label>
-                                <input type="text" class="form-control" name="tempat_lahir">
+                                <input type="text" class="form-control" name="tempat_lahir" placeholder="Kota kelahiran">
                             </div>
                             <div class="form-group">
                                 <label>Tanggal Lahir</label>
@@ -727,228 +683,311 @@
                             </div>
                             <div class="form-group" style="grid-column:span 2;">
                                 <label>Alamat KTP</label>
-                                <textarea class="form-control" name="alamat_ktp" rows="2"></textarea>
+                                <textarea class="form-control" name="alamat_ktp" rows="2" placeholder="Alamat sesuai KTP"></textarea>
                             </div>
                             <div class="form-group" style="grid-column:span 2;">
                                 <label>Alamat Domisili</label>
-                                <textarea class="form-control" name="alamat_domisili" rows="2"></textarea>
+                                <textarea class="form-control" name="alamat_domisili" rows="2" placeholder="Alamat domisili saat ini"></textarea>
                             </div>
                             <div class="form-group">
                                 <label>Lama Domisili (tahun)</label>
-                                <input type="number" class="form-control" name="lama_domisili_tahun" min="0">
+                                <input type="number" class="form-control" name="lama_domisili_tahun" placeholder="0">
                             </div>
+                        </div>
+
+                        <h3 class="mb-4 mt-4" style="color:#2563eb;font-weight:600;display:flex;align-items:center;gap:0.5rem;">
+                            <i data-lucide="briefcase" style="width:20px;height:20px;"></i>Data Pekerjaan
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
                             <div class="form-group">
-                                <label>Pekerjaan Saat Ini</label>
-                                <input type="text" class="form-control" name="pekerjaan">
+                                <label>Pekerjaan *</label>
+                                <input type="text" class="form-control" name="pekerjaan" required placeholder="Pekerjaan saat ini">
                             </div>
                             <div class="form-group">
                                 <label>Posisi/Jabatan</label>
-                                <input type="text" class="form-control" name="posisi_jabatan">
-                            </div>
-                            <div class="form-group">
-                                <label>Unit Kerja</label>
-                                <input type="text" class="form-control" name="unit_kerja">
+                                <input type="text" class="form-control" name="posisi_jabatan" placeholder="Jabatan saat ini">
                             </div>
                             <div class="form-group" style="grid-column:span 2;">
-                                <label>Penjelasan/Narasi</label>
+                                <label>Unit Kerja</label>
+                                <input type="text" class="form-control" name="unit_kerja" placeholder="Instansi/tempat kerja">
+                            </div>
+                            <div class="form-group" style="grid-column:span 2;">
+                                <label>Narasi/Penjelasan</label>
                                 <textarea class="form-control" name="penjelasan_narasi" rows="3" placeholder="Jelaskan alasan mengajukan beasiswa..."></textarea>
                             </div>
+                        </div>
+
+                        <h3 class="mb-4 mt-4" style="color:#7c3aed;font-weight:600;display:flex;align-items:center;gap:0.5rem;">
+                            <i data-lucide="graduation-cap" style="width:20px;height:20px;"></i>Data Pendidikan Tujuan
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
                             <div class="form-group">
                                 <label>Jurusan Tujuan *</label>
-                                <select class="form-control" name="jurusan_tujuan" required>
-                                    <option value="">Pilih Jurusan</option>
-                                    <option value="Kedokteran Umum">Kedokteran Umum</option>
-                                    <option value="Keperawatan">Keperawatan</option>
-                                    <option value="Kebidanan">Kebidanan</option>
-                                    <option value="Farmasi">Farmasi</option>
-                                    <option value="Kesehatan Masyarakat">Kesehatan Masyarakat</option>
-                                    <option value="Gigi">Kedokteran Gigi</option>
-                                    <option value="Fisioterapi">Fisioterapi</option>
-                                    <option value="Gizi">Ilmu Gizi</option>
-                                    <option value="Psikologi Klinis">Psikologi Klinis</option>
-                                    <option value="Lainnya">Lainnya</option>
-                                </select>
+                                <input type="text" class="form-control" name="jurusan_tujuan" required placeholder="Program studi yang dituju">
                             </div>
                             <div class="form-group">
                                 <label>Jenjang Pendidikan *</label>
                                 <select class="form-control" name="jenjang_pendidikan" required>
-                                    <option value="">Pilih Jenjang</option>
-                                    <option value="Diploma">Diploma (D3/D4)</option>
-                                    <option value="S1">Sarjana (S1)</option>
-                                    <option value="Profesi">Profesi</option>
-                                    <option value="S2">Magister (S2)</option>
-                                    <option value="S3">Doktor (S3)</option>
-                                    <option value="Spesialis">Spesialis</option>
+                                    <option value="">Pilih jenjang</option>
+                                    <option value="D3">D3</option><option value="S1">S1</option><option value="Profesi">Profesi</option>
+                                    <option value="Spesialis">Spesialis</option><option value="S2">S2</option><option value="S3">S3</option>
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label>Unit Tujuan Pemanfaatan</label>
-                                <input type="text" class="form-control" name="unit_tujuan_pemanfaatan" placeholder="Contoh: RSUD Provinsi">
+                                <input type="text" class="form-control" name="unit_tujuan_pemanfaatan" placeholder="Unit/tempat tugas setelah studi">
                             </div>
                             <div class="form-group">
-                                <label>Rencana Tahun Studi</label>
-                                <input type="number" class="form-control" name="rencana_tahun_studi" min="2024" max="2030">
+                                <label>Rencana Tahun Mulai Studi</label>
+                                <input type="number" class="form-control" name="rencana_tahun_studi" value="2025">
                             </div>
+                        </div>
+
+                        <h3 class="mb-4 mt-4" style="color:#ea580c;font-weight:600;display:flex;align-items:center;gap:0.5rem;">
+                            <i data-lucide="phone" style="width:20px;height:20px;"></i>Informasi Kontak
+                        </h3>
+                        <div class="grid grid-cols-3 gap-4 mb-4">
                             <div class="form-group">
-                                <label>No. HP</label>
-                                <input type="tel" class="form-control" name="no_hp" placeholder="08xxxxxxxxxx">
+                                <label>No. HP *</label>
+                                <input type="tel" class="form-control" name="no_hp" required placeholder="08xxxxxxxxxx">
                             </div>
                             <div class="form-group">
                                 <label>No. WhatsApp</label>
                                 <input type="tel" class="form-control" name="no_whatsapp" placeholder="08xxxxxxxxxx">
                             </div>
                             <div class="form-group">
-                                <label>Email</label>
-                                <input type="email" class="form-control" name="email" placeholder="email@example.com">
+                                <label>Email *</label>
+                                <input type="email" class="form-control" name="email" required placeholder="email@example.com">
                             </div>
                         </div>
-                        <div style="margin-top:1.5rem;text-align:right;">
-                            <button type="submit" class="btn btn-secondary">
-                                <i data-lucide="send" style="width:16px;height:16px;"></i>Kirim Pengusulan
-                            </button>
+
+                        <div class="flex justify-end pt-4" style="border-top:1px solid var(--border-color);">
+                            <button type="submit" class="btn btn-secondary"><i data-lucide="send"></i>Kirim ke Database</button>
                         </div>
                     </form>
                 </div>
             </div>
+        </div>
 
-            <!-- TAB: PENETAPAN -->
-            <div class="tab-content" id="tab-penetapan">
-                <div class="card">
-                    <div class="card-header">
+        <!-- ===== TAB: DATA PENGUSULAN ===== -->
+        <div class="tab-content" id="tab-pengusulan">
+            <div class="card">
+                <div class="card-header">
+                    <div class="flex items-center justify-between gap-4" style="flex-wrap:wrap;">
                         <div>
-                            <h2><i data-lucide="check-square"></i>Data Penetapan Penerima</h2>
-                            <p id="penetapanSubtitle">Data publik penerima beasiswa</p>
+                            <h2><i data-lucide="database"></i>Data Pengusulan Beasiswa</h2>
+                            <p id="pengusulanSubtitle">Data dari tabel <strong>data_pengusulan</strong></p>
                         </div>
-                        <div class="flex items-center gap-4">
-                            <div class="search-box">
-                                <i data-lucide="search"></i>
-                                <input type="text" class="form-control" placeholder="Cari penetapan..." id="penetapanSearch" oninput="filterTable('penetapan')">
-                            </div>
-                            <button class="btn btn-secondary btn-sm admin-action" id="penetapanAddBtn" style="display:none;" onclick="openPenetapanModal()">
-                                <i data-lucide="plus"></i>Tetapkan Penerima
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body" style="padding:0;">
-                        <div class="table-responsive">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>No</th>
-                                        <th>Nama Lengkap</th>
-                                        <th class="nik-col" style="display:none;">NIK</th>
-                                        <th>Jurusan</th>
-                                        <th class="hidden-col">No SK</th>
-                                        <th class="hidden-col">Periode</th>
-                                        <th>Status</th>
-                                        <th class="admin-action" style="display:none;">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="penetapanBody">
-                                    <tr><td colspan="8" class="loading-state"><div class="loading-spinner"></div> Memuat data...</td></tr>
-                                </tbody>
-                            </table>
+                        <div class="search-box">
+                            <i data-lucide="search"></i>
+                            <input type="text" class="form-control" placeholder="Cari nama..." id="pengusulanSearch" oninput="filterTable('pengusulan')">
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- TAB: INFORMASI -->
-            <div class="tab-content" id="tab-informasi">
-                <div class="card">
-                    <div class="card-header">
-                        <h2><i data-lucide="info"></i>Informasi Penting</h2>
-                        <p>Pengumuman, panduan, dan informasi terkait SIMBAKES</p>
-                    </div>
-                    <div class="card-body">
-                        <div class="informasi-grid" id="informasiGrid">
-                            <div class="loading-state" style="grid-column:1/-1;"><div class="loading-spinner"></div> Memuat data...</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB: CUSTOMER SERVICE -->
-            <div class="tab-content" id="tab-cs">
-                <div class="card">
-                    <div class="card-header">
-                        <h2><i data-lucide="headphones"></i>Customer Service</h2>
-                        <p>Hubungi tim kami untuk bantuan dan informasi lebih lanjut</p>
-                    </div>
-                    <div class="card-body">
-                        <div class="cs-grid" id="csGrid">
-                            <div class="loading-state" style="grid-column:1/-1;"><div class="loading-spinner"></div> Memuat data...</div>
-                        </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table id="pengusulanTable">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Nama Lengkap</th>
+                                    <th class="nik-col" style="display:none;">NIK</th>
+                                    <th>Jurusan Tujuan</th>
+                                    <th class="hidden-col">Jenjang</th>
+                                    <th class="hidden-col">Unit Kerja</th>
+                                    <th>Status</th>
+                                    <th class="admin-action" style="display:none;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pengusulanBody"><tr><td colspan="8" class="text-center py-8"><div class="spinner"></div> Memuat data...</td></tr></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- TAB: ADMIN PANEL -->
-            <div class="tab-content" id="tab-admin">
-                <div class="admin-panel" id="adminPanel">
-                    <h2><i data-lucide="shield-check"></i>Panel Administrasi</h2>
-                    
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 style="color:#7c3aed;font-size:1.25rem;"><i data-lucide="users"></i>Manajemen User</h2>
-                            <p>Kelola akun administrator dan operator</p>
-                            <button class="btn btn-sm" style="background:#7c3aed;color:white;margin-left:auto;" onclick="openUserModal()">
-                                <i data-lucide="user-plus"></i>Tambah User
-                            </button>
+        <!-- ===== TAB: DATA PENETAPAN ===== -->
+        <div class="tab-content" id="tab-penetapan">
+            <div class="card">
+                <div class="card-header">
+                    <div class="flex items-center justify-between gap-4" style="flex-wrap:wrap;">
+                        <div>
+                            <h2><i data-lucide="clipboard-list"></i>Data Penetapan Penerima</h2>
+                            <p id="penetapanSubtitle">Data dari tabel <strong>data_penetapan</strong></p>
                         </div>
-                        <div class="card-body" style="padding:0;">
-                            <div class="table-responsive">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Nama</th>
-                                            <th>Username</th>
-                                            <th>Email</th>
-                                            <th>Role</th>
-                                            <th>Status</th>
-                                            <th>Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="usersBody">
-                                        <tr><td colspan="6" class="loading-state"><div class="loading-spinner"></div> Memuat data...</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div class="search-box">
+                            <i data-lucide="search"></i>
+                            <input type="text" class="form-control" placeholder="Cari nama atau SK..." id="penetapanSearch" oninput="filterTable('penetapan')">
                         </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table id="penetapanTable">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Nama Lengkap</th>
+                                    <th class="nik-col" style="display:none;">NIK</th>
+                                    <th>Jurusan</th>
+                                    <th class="hidden-col">No SK</th>
+                                    <th class="hidden-col">Periode</th>
+                                    <th>Status</th>
+                                    <th class="admin-action" style="display:none;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="penetapanBody"><tr><td colspan="8" class="text-center py-8"><div class="spinner"></div> Memuat data...</td></tr></tbody>
+                        </table>
+                    </div>
+                    <div class="flex justify-end mt-4" id="penetapanAddBtn" style="display:none;">
+                        <button class="btn btn-secondary btn-sm" onclick="openPenetapanModal()"><i data-lucide="plus"></i>Tetapkan Penerima</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== ADMIN PANEL ===== -->
+        <div class="admin-panel" id="adminPanel" style="display:none;">
+            <h2><i data-lucide="shield-check"></i>Panel Administrasi</h2>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2 style="color:#7c3aed;font-size:1.25rem;"><i data-lucide="users"></i>Manajemen User</h2>
+                    <p>Data dari tabel <strong>multiusers</strong></p>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table id="userTable">
+                            <thead>
+                                <tr>
+                                    <th>Nama Lengkap</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userBody"><tr><td colspan="6" class="text-center py-8"><div class="spinner"></div> Memuat data...</td></tr></tbody>
+                        </table>
+                    </div>
+                    <div class="flex justify-end mt-4">
+                        <button class="btn btn-sm" style="background:#7c3aed;color:white;" onclick="openUserModal()"><i data-lucide="plus"></i>Tambah User</button>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        <div class="footer-grid">
+            <div>
+                <div class="footer-brand"><i data-lucide="graduation-cap"></i><span>SIMBAKES</span></div>
+                <p style="font-size:0.875rem;">Sistem Informasi Beasiswa Tematik Bidang Kesehatan - Terintegrasi dengan Supabase</p>
+            </div>
+            <div>
+                <h4>Tautan Cepat</h4>
+                <ul>
+                    <li><a href="#" onclick="switchTab('dashboard')">Dashboard</a></li>
+                    <li><a href="#" onclick="switchTab('petunjuk')">Petunjuk Penggunaan</a></li>
+                    <li><a href="#" onclick="switchTab('informasi')">Informasi Terbaru</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Dokumentasi</h4>
+                <ul>
+                    <li><a href="https://supabase.com/docs" target="_blank">Supabase Docs</a></li>
+                    <li><a href="#" onclick="openConfigModal()">Konfigurasi Database</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">© 2025 SIMBAKES - Powered by Supabase. All rights reserved.</div>
+    </footer>
+
+    <!-- ===== TOAST CONTAINER ===== -->
+    <div class="toast-container" id="toastContainer"></div>
+
     <!-- ===== LOGIN MODAL ===== -->
     <div class="modal-overlay" id="loginModal">
-        <div class="modal" style="max-width:400px;">
+        <div class="modal">
             <div class="modal-header">
-                <h3><i data-lucide="lock"></i>Login Administrator</h3>
+                <h3><i data-lucide="shield-check"></i>Login Administrator</h3>
                 <button class="modal-close" onclick="closeLoginModal()"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>Username / Email</label>
-                    <input type="text" class="form-control" id="loginUsername" placeholder="Masukkan username atau email">
+                    <label>Username</label>
+                    <input type="text" class="form-control" id="loginUsername" placeholder="Masukkan username">
                 </div>
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" class="form-control" id="loginPassword" placeholder="Masukkan password">
+                    <input type="password" class="form-control" id="loginPassword" placeholder="Masukkan password" onkeypress="if(event.key==='Enter')doLogin()">
                 </div>
-                <div id="loginError" class="error-state" style="display:none;"></div>
+                <div class="alert alert-warning mt-4">
+                    <strong>Demo:</strong> Username: <code>admin</code> / Password: <code>admin123</code><br>
+                    <small>Login akan mengecek ke tabel <strong>multiusers</strong> di Supabase jika terhubung</small>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline btn-sm" onclick="closeLoginModal()">Batal</button>
-                <button class="btn btn-secondary btn-sm" onclick="doLogin()"><i data-lucide="log-in"></i>Login</button>
+                <button class="btn btn-primary" onclick="doLogin()"><i data-lucide="log-in"></i>Masuk</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CONFIG MODAL ===== -->
+    <div class="modal-overlay" id="configModal">
+        <div class="modal lg">
+            <div class="modal-header">
+                <h3><i data-lucide="settings"></i>Konfigurasi Database Supabase</h3>
+                <button class="modal-close" onclick="closeModal('configModal')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-4">
+                    <strong>📌 Cara mendapatkan kredensial:</strong><br>
+                    1. Buka <a href="https://supabase.com" target="_blank">supabase.com</a> dan buat project<br>
+                    2. Go to <strong>Settings → API</strong><br>
+                    3. Copy <strong>Project URL</strong> dan <strong>anon public key</strong>
+                </div>
+                
+                <div class="config-section">
+                    <label>🔗 Supabase Project URL</label>
+                    <input type="url" class="form-control" id="configUrl" placeholder="https://your-project.supabase.co">
+                    <small>Format: https://xxxxx.supabase.co</small>
+                </div>
+                
+                <div class="config-section">
+                    <label>🔑 Anon / Public Key</label>
+                    <input type="text" class="form-control" id="configKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                    <small>Ditemukan di Settings → API → Project API keys → anon public</small>
+                </div>
+
+                <div class="config-section">
+                    <label>📋 Opsi (Opsional)</label>
+                    <div class="flex gap-4 mt-2">
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" id="configAutoConnect" checked>
+                            Auto-connect saat load
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" id="configUseDemo" checked>
+                            Gunakan data demo jika gagal
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline btn-sm" onclick="testConnection()">🧪 Test Koneksi</button>
+                <button class="btn btn-ghost btn-sm" onclick="useDemoMode()">🎮 Mode Demo</button>
+                <button class="btn btn-primary btn-sm" onclick="saveConfig()">💾 Simpan & Hubungkan</button>
             </div>
         </div>
     </div>
 
     <!-- ===== ROADMAP MODAL ===== -->
     <div class="modal-overlay" id="roadmapModal">
-        <div class="modal">
+        <div class="modal lg">
             <div class="modal-header">
                 <h3 id="roadmapModalTitle"><i data-lucide="plus"></i>Tambah Roadmap</h3>
                 <button class="modal-close" onclick="closeModal('roadmapModal')"><i data-lucide="x"></i></button>
@@ -956,102 +995,50 @@
             <div class="modal-body">
                 <input type="hidden" id="roadmapEditId">
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="form-group" style="grid-column:span 2;">
-                        <label>Jurusan/Program Studi *</label>
-                        <input type="text" class="form-control" id="rm_jurusan" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Jenis Pendidikan</label>
-                        <select class="form-control" id="rm_pendidikan">
-                            <option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option>
-                            <option value="Profesi">Profesi</option><option value="Spesialis">Spesialis</option><option value="Diploma">Diploma</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Kualifikasi Awal</label>
-                        <input type="text" class="form-control" id="rm_kualifikasi" placeholder="Contoh: Sarjana Kedokteran">
-                    </div>
-                    <div class="form-group">
-                        <label>Perguruan Tinggi</label>
-                        <input type="text" class="form-control" id="rm_pt" placeholder="Nama universitas">
-                    </div>
-                    <div class="form-group">
-                        <label>Pekerjaan Tujuan</label>
-                        <input type="text" class="form-control" id="rm_pekerjaan" placeholder="Contoh: Dokter PTT">
-                    </div>
-                    <div class="form-group">
-                        <label>Tahun Mulai Studi</label>
-                        <input type="number" class="form-control" id="rm_tahun" min="2024" max="2030">
-                    </div>
-                    <div class="form-group" style="grid-column:span 2;">
-                        <label>Unit Pendayagunaan</label>
-                        <input type="text" class="form-control" id="rm_unit" placeholder="Contoh: Dinas Kesehatan">
-                    </div>
-                    <div class="form-group">
-                        <label>Status</label>
-                        <select class="form-control" id="rm_status">
-                            <option value="tersedia">Tersedia</option><option value="dipenuhi">Dipenuhi</option><option value="ditangguhkan">Ditangguhkan</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>Jurusan/Program Studi *</label><input type="text" class="form-control" id="rm_jurusan" required></div>
+                    <div class="form-group"><label>Jenis Pendidikan</label><select class="form-control" id="rm_pendidikan"><option value="D3">D3</option><option value="S1">S1</option><option value="Profesi">Profesi</option><option value="Spesialis">Spesialis</option><option value="S2">S2</option><option value="S3">S3</option></select></div>
+                    <div class="form-group"><label>Kualifikasi Awal</label><input type="text" class="form-control" id="rm_kualifikasi"></div>
+                    <div class="form-group"><label>Perguruan Tinggi</label><input type="text" class="form-control" id="rm_pt"></div>
+                    <div class="form-group"><label>Pekerjaan</label><input type="text" class="form-control" id="rm_pekerjaan"></div>
+                    <div class="form-group"><label>Tahun Mulai Studi</label><input type="number" class="form-control" id="rm_tahun" value="2025"></div>
+                    <div class="form-group"><label>Unit Pendayaguna</label><input type="text" class="form-control" id="rm_unit"></div>
+                    <div class="form-group"><label>Status</label><select class="form-control" id="rm_status"><option value="tersedia">Tersedia</option><option value="dipenuhi">Dipenuhi</option><option value="ditangguhkan">Ditangguhkan</option></select></div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline btn-sm" onclick="closeModal('roadmapModal')">Batal</button>
-                <button class="btn btn-secondary btn-sm" onclick="saveRoadmap()"><i data-lucide="save"></i>Simpan</button>
+                <button class="btn btn-primary btn-sm" onclick="saveRoadmap()"><i data-lucide="save"></i>Simpan ke Supabase</button>
             </div>
         </div>
     </div>
 
     <!-- ===== PENETAPAN MODAL ===== -->
     <div class="modal-overlay" id="penetapanModal">
-        <div class="modal">
+        <div class="modal lg">
             <div class="modal-header">
-                <h3><i data-lucide="check-square"></i>Tetapkan Penerima Baru</h3>
+                <h3><i data-lucide="plus"></i>Tetapkan Penerima</h3>
                 <button class="modal-close" onclick="closeModal('penetapanModal')"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>Pilih dari Pengusulan Diterima</label>
+                    <label>Pilih Penerima dari Data Pengusulan</label>
                     <select class="form-control" id="pn_select" onchange="autoFillPenetapan()">
                         <option value="">Pilih calon penerima...</option>
                     </select>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="form-group">
-                        <label>NIK</label>
-                        <input type="text" class="form-control" id="pn_nik" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Nama Lengkap</label>
-                        <input type="text" class="form-control" id="pn_nama">
-                    </div>
-                    <div class="form-group">
-                        <label>No SK Penetapan *</label>
-                        <input type="text" class="form-control" id="pn_sk" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Tanggal Penetapan</label>
-                        <input type="date" class="form-control" id="pn_tanggal">
-                    </div>
-                    <div class="form-group">
-                        <label>Status Penetapan</label>
-                        <select class="form-control" id="pn_status">
-                            <option value="ditetapkan">Ditetapkan</option><option value="dibatalkan">Dibatalkan</option><option value="direvisi">Direvisi</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Periode Pemberian</label>
-                        <input type="text" class="form-control" id="pn_periode" placeholder="Contoh: 2025-2028">
-                    </div>
-                    <div class="form-group" style="grid-column:span 2;">
-                        <label>Catatan Penetapan</label>
-                        <textarea class="form-control" id="pn_catatan" rows="2"></textarea>
-                    </div>
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div class="form-group"><label>NIK</label><input type="text" class="form-control" id="pn_nik" readonly></div>
+                    <div class="form-group"><label>Nama Lengkap</label><input type="text" class="form-control" id="pn_nama"></div>
+                    <div class="form-group"><label>No SK Penetapan *</label><input type="text" class="form-control" id="pn_sk" required></div>
+                    <div class="form-group"><label>Tanggal Penetapan</label><input type="date" class="form-control" id="pn_tanggal"></div>
+                    <div class="form-group"><label>Status Penetapan</label><select class="form-control" id="pn_status"><option value="ditetapkan">Ditetapkan</option><option value="dibatalkan">Dibatalkan</option><option value="direvisi">Direvisi</option></select></div>
+                    <div class="form-group"><label>Periode Pemberian</label><input type="text" class="form-control" id="pn_periode" placeholder="Contoh: 2025-2028"></div>
+                    <div class="form-group" style="grid-column:span 2;"><label>Catatan Penetapan</label><textarea class="form-control" id="pn_catatan" rows="2"></textarea></div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline btn-sm" onclick="closeModal('penetapanModal')">Batal</button>
-                <button class="btn btn-secondary btn-sm" onclick="savePenetapan()"><i data-lucide="save"></i>Simpan</button>
+                <button class="btn btn-secondary btn-sm" onclick="savePenetapan()"><i data-lucide="save"></i>Simpan ke Supabase</button>
             </div>
         </div>
     </div>
@@ -1064,375 +1051,313 @@
                 <button class="modal-close" onclick="closeModal('userModal')"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>Nama Lengkap</label>
-                    <input type="text" class="form-control" id="u_nama" required>
-                </div>
-                <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" class="form-control" id="u_username" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" class="form-control" id="u_password" required>
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" class="form-control" id="u_email" required>
-                </div>
+                <div class="form-group"><label>Nama Lengkap</label><input type="text" class="form-control" id="u_nama" required></div>
+                <div class="form-group"><label>Username</label><input type="text" class="form-control" id="u_username" required></div>
+                <div class="form-group"><label>Password</label><input type="password" class="form-control" id="u_password" required></div>
+                <div class="form-group"><label>Email</label><input type="email" class="form-control" id="u_email" required></div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="form-group">
-                        <label>Role</label>
-                        <select class="form-control" id="u_role">
-                            <option value="viewer">Viewer</option><option value="admin">Admin</option><option value="superadmin">Super Admin</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Status</label>
-                        <select class="form-control" id="u_status">
-                            <option value="aktif">Aktif</option><option value="non-aktif">Non-Aktif</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>Role</label><select class="form-control" id="u_role"><option value="viewer">Viewer</option><option value="admin">Admin</option><option value="superadmin">Super Admin</option></select></div>
+                    <div class="form-group"><label>Status</label><select class="form-control" id="u_status"><option value="aktif">Aktif</option><option value="non-aktif">Non-Aktif</option></select></div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline btn-sm" onclick="closeModal('userModal')">Batal</button>
-                <button class="btn btn-sm" style="background:#7c3aed;color:white;" onclick="saveUser()"><i data-lucide="save"></i>Simpan</button>
+                <button class="btn btn-sm" style="background:#7c3aed;color:white;" onclick="saveUser()"><i data-lucide="save"></i>Simpan ke Supabase</button>
             </div>
         </div>
     </div>
 
-    <!-- ===== JAVASCRIPT ===== -->
+    <!-- ===== JAVASCRIPT - SUPABASE INTEGRATION ===== -->
     <script>
         // Initialize Lucide icons
         lucide.createIcons();
 
-        // =====================================================
-        // ⚙️ SUPABASE CONFIGURATION - EDIT BAGIAN INI
-        // =====================================================
-        
-        // ============================================
-        // 📝 ISI DENGAN KREDENSIAL SUPABASE ANDA:
-        // ============================================
-        const SUPABASE_URL = 'https://boeknpvlfamjmddsdopd.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZWtucHZsZmFtam1kZHNkb3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NzYwNjIsImV4cCI6MjEwMjA1MjA2Mn0.kHj7xEY7Wa4zSJwH0rjhiB3Qf0IHriyPlWoh4rdlv3U';
-        // ============================================
-        // Dapatkan dari: Supabase Dashboard > Settings > API
-        // - URL: Project URL
-        // - Anon Key: anon/public key
-        // ============================================
-
-        // Initialize Supabase Client
+        // ===== SUPABASE CLIENT =====
         let supabaseClient = null;
+        let isConnected = false;
+        let useDemo = true;
 
-        function getSupabaseClient() {
-            if (!supabaseClient) {
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // ===== HARDCODED SUPABASE CREDENTIALS =====
+        // Ganti nilai di bawah dengan URL dan Anon Key Supabase Anda
+        let supabaseConfig = {
+            url: 'https://YOUR_PROJECT_ID.supabase.co',  // ← Ganti dengan Project URL Supabase Anda
+            key: 'YOUR_ANON_KEY_HERE'  // ← Ganti dengan Anon/Public Key Supabase Anda
+        };
+
+        // Initialize Supabase client
+        function initSupabase(url, key) {
+            try {
+                supabaseClient = supabase.createClient(url, key);
+                return true;
+            } catch (error) {
+                console.error('Supabase init error:', error);
+                return false;
             }
-            return supabaseClient;
         }
 
-        // Data caches
-        let roadmapData = [];
-        let pengusulanData = [];
-        let penetapanData = [];
-        let usersData = [];
-        let informasiData = [];
-        let csData = [];
+        // Test connection
+        async function testConnection() {
+            const url = document.getElementById('configUrl').value.trim();
+            const key = document.getElementById('configKey').value.trim();
+            
+            if (!url || !key) {
+                showToast('Mohon isi URL dan Anon Key', 'error');
+                return false;
+            }
 
-        // State
+            showToast('Menguji koneksi...', 'info');
+            
+            if (initSupabase(url, key)) {
+                try {
+                    const { data, error } = await supabaseClient.from('roadmap_kebutuhan').select('count');
+                    if (error) throw error;
+                    
+                    isConnected = true;
+                    useDemo = false;
+                    showToast('✅ Koneksi ke Supabase berhasil!', 'success');
+                    updateConnectionStatus(true);
+                    return true;
+                } catch (error) {
+                    console.error('Connection test error:', error);
+                    showToast('❌ Gagal terhubung: ' + error.message, 'error');
+                    updateConnectionStatus(false, error.message);
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        // Save config and connect
+        async function saveConfig() {
+            const url = document.getElementById('configUrl').value.trim();
+            const key = document.getElementById('configKey').value.trim();
+            
+            if (!url || !key) {
+                showToast('Mohon isi URL dan Anon Key', 'error');
+                return;
+            }
+
+            localStorage.setItem('supabase_url', url);
+            localStorage.setItem('supabase_key', key);
+            supabaseConfig = { url, key };
+            
+            const success = await testConnection();
+            if (success) {
+                closeModal('configModal');
+                await loadAllData();
+            }
+        }
+
+        // Use demo mode
+        function useDemoMode() {
+            useDemo = true;
+            isConnected = false;
+            supabaseClient = null;
+            closeModal('configModal');
+            updateConnectionStatus(null, 'Mode Demo Aktif');
+            loadDemoData();
+            showToast('🎮 Mode Demo aktif - menggunakan data contoh', 'info');
+        }
+
+        // Update connection status UI
+        function updateConnectionStatus(connected, message = '') {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            const dbStatus = document.getElementById('dbStatusText');
+            const dbInfo = document.getElementById('dbConnectionInfo');
+
+            if (connected === true) {
+                dot.className = 'status-dot connected';
+                text.textContent = 'Terhubung ke Supabase';
+                dbStatus.textContent = '✅ Terhubung ke Supabase';
+                dbInfo.textContent = 'Data real-time dari database';
+                dbStatus.style.color = 'var(--success)';
+            } else if (connected === false) {
+                dot.className = 'status-dot error';
+                text.textContent = 'Koneksi gagal: ' + message;
+                dbStatus.textContent = '❌ Tidak terhubung';
+                dbInfo.textContent = message || 'Periksa konfigurasi';
+                dbStatus.style.color = 'var(--danger)';
+            } else {
+                dot.className = 'status-dot';
+                text.textContent = message || 'Mode Demo';
+                dbStatus.textContent = '🎮 Mode Demo';
+                dbInfo.textContent = 'Menggunakan data contoh lokal';
+                dbStatus.style.color = 'var(--warning)';
+            }
+        }
+
+        // ===== DATA OPERATIONS (SUPABASE) =====
+        
+        // Fetch data from Supabase
+        async function fetchData(table, columns = '*') {
+            if (!isConnected || !supabaseClient) return null;
+            
+            try {
+                const { data, error } = await supabaseClient.from(table).select(columns);
+                if (error) throw error;
+                return data;
+            } catch (error) {
+                console.error(`Error fetching ${table}:`, error);
+                return null;
+            }
+        }
+
+        // Insert data to Supabase
+        async function insertData(table, data) {
+            if (!isConnected || !supabaseClient) return null;
+            
+            try {
+                const { data: result, error } = await supabaseClient.from(table).insert([data]).select();
+                if (error) throw error;
+                return result[0];
+            } catch (error) {
+                console.error(`Error inserting ${table}:`, error);
+                throw error;
+            }
+        }
+
+        // Update data in Supabase
+        async function updateData(table, id, data) {
+            if (!isConnected || !supabaseClient) return null;
+            
+            try {
+                const { result, error } = await supabaseClient.from(table).update(data).eq('id', id).select();
+                if (error) throw error;
+                return result;
+            } catch (error) {
+                console.error(`Error updating ${table}:`, error);
+                throw error;
+            }
+        }
+
+        // Delete data from Supabase
+        async function deleteData(table, id) {
+            if (!isConnected || !supabaseClient) return false;
+            
+            try {
+                const { error } = await supabaseClient.from(table).delete().eq('id', id);
+                if (error) throw error;
+                return true;
+            } catch (error) {
+                console.error(`Error deleting ${table}:`, error);
+                throw error;
+            }
+        }
+
+        // Load all data
+        async function loadAllData() {
+            if (isConnected) {
+                await Promise.all([
+                    loadRoadmapFromDB(),
+                    loadPengusulanFromDB(),
+                    loadPenetapanFromDB(),
+                    loadUsersFromDB()
+                ]);
+            } else {
+                loadDemoData();
+            }
+            updateStats();
+        }
+
+        // Load roadmap from DB
+        async function loadRoadmapFromDB() {
+            const tbody = document.getElementById('roadmapBody');
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8"><div class="spinner"></div> Memuat dari Supabase...</td></tr>';
+            
+            const data = await fetchData('roadmap_kebutuhan');
+            if (data) {
+                window.roadmapCache = data;
+                renderRoadmap();
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-500">Gagal memuat data</td></tr>';
+            }
+        }
+
+        // Load pengusulan from DB
+        async function loadPengusulanFromDB() {
+            const tbody = document.getElementById('pengusulanBody');
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8"><div class="spinner"></div> Memuat dari Supabase...</td></tr>';
+            
+            // Public view hides sensitive data
+            const columns = isLoggedIn ? '*' : 'id,nama_lengkap,jurusan_tujuan,jenjang_pendidikan,unit_kerja,status';
+            const data = await fetchData('v_public_pengusulan', columns) || await fetchData('data_pengusulan', columns);
+            
+            if (data) {
+                window.pengusulanCache = data;
+                renderPengusulan();
+            } else {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-500">Gagal memuat data</td></tr>';
+            }
+        }
+
+        // Load penetapan from DB
+        async function loadPenetapanFromDB() {
+            const tbody = document.getElementById('penetapanBody');
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8"><div class="spinner"></div> Memuat dari Supabase...</td></tr>';
+            
+            const columns = isLoggedIn ? '*' : 'id,nama_lengkap,jurusan_tujuan,no_sk_penetapan,periode_pemberian,status_penetapan';
+            const data = await fetchData('v_public_penetapan', columns) || await fetchData('data_penetapan', columns);
+            
+            if (data) {
+                window.penetapanCache = data;
+                renderPenetapan();
+            } else {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-500">Gagal memuat data</td></tr>';
+            }
+        }
+
+        // Load users from DB
+        async function loadUsersFromDB() {
+            const tbody = document.getElementById('userBody');
+            if (!tbody) return;
+            
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8"><div class="spinner"></div> Memuat dari Supabase...</td></tr>';
+            
+            const data = await fetchData('multiusers');
+            if (data) {
+                window.usersCache = data;
+                renderUsers();
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">Gagal memuat data</td></tr>';
+            }
+        }
+
+        // ===== DEMO DATA (Fallback) =====
+        function loadDemoData() {
+            window.roadmapCache = [
+                { id: '1', kode: 'RM-001', jurusan: 'Kedokteran Umum', kualifikasi_awal: 'Sarjana Kedokteran', jenis_pendidikan: 'Profesi', perguruan_tinggi: 'Universitas Indonesia', pekerjaan: 'Dokter PTT', tahun_mulai_studi: 2025, unit_pendayaguna: 'Dinas Kesehatan', status: 'tersedia' },
+                { id: '2', kode: 'RM-002', jurusan: 'Keperawatan', kualifikasi_awal: 'D3/S1 Keperawatan', jenis_pendidikan: 'S1/S2', perguruan_tinggi: 'Universitas Airlangga', pekerjaan: 'Perawat RS', tahun_mulai_studi: 2025, unit_pendayaguna: 'RSUD Provinsi', status: 'tersedia' },
+                { id: '3', kode: 'RM-003', jurusan: 'Kebidanan', kualifikasi_awal: 'D3 Kebidanan', jenis_pendidikan: 'S1', perguruan_tinggi: 'Universitas Gadjah Mada', pekerjaan: 'Bidan Desa', tahun_mulai_studi: 2025, unit_pendayaguna: 'Puskesmas', status: 'tersedia' },
+                { id: '4', kode: 'RM-004', jurusan: 'Farmasi', kualifikasi_awal: 'S1 Farmasi', jenis_pendidikan: 'S2/S3', perguruan_tinggi: 'Institut Teknologi Bandung', pekerjaan: 'Farmasis', tahun_mulai_studi: 2026, unit_pendayaguna: 'Instalasi Farmasi', status: 'tersedia' },
+                { id: '5', kode: 'RM-005', jurusan: 'Kesehatan Masyarakat', kualifikasi_awal: 'S1 KESMAS', jenis_pendidikan: 'S2/S3', perguruan_tinggi: 'Universitas Hasanuddin', pekerjaan: 'Epidemiolog', tahun_mulai_studi: 2026, unit_pendayaguna: 'Dinkes Provinsi', status: 'dipenuhi' }
+            ];
+
+            window.pengusulanCache = [
+                { id: '1', nik: '3201010101010001', nama_lengkap: 'Dr. Siti Nurhaliza', jurusan_tujuan: 'Spesialis Anak', jenjang_pendidikan: 'Spesialis', unit_kerja: 'Puskesmas Central', status: 'diterima' },
+                { id: '2', nik: '3202010202020002', nama_lengkap: 'Ahmad Fauzi, S.Km', jurusan_tujuan: 'Magister Kesehatan Masyarakat', jenjang_pendidikan: 'S2', unit_kerja: 'Dinas Kesehatan', status: 'ditinjau' },
+                { id: '3', nik: '3203030303030003', nama_lengkap: 'Rina Marlina, A.Md', jurusan_tujuan: 'S1 Kebidanan', jenjang_pendidikan: 'S1', unit_kerja: 'Puskesmas Desa', status: 'diajukan' }
+            ];
+
+            window.penetapanCache = [
+                { id: '1', nik: '3201010101010001', nama_lengkap: 'Dr. Siti Nurhaliza', jurusan_tujuan: 'Spesialis Anak', no_sk_penetapan: 'SK/001/SIMBAKES/2025', periode_pemberian: '2025-2028', status_penetapan: 'ditetapkan' },
+                { id: '2', nik: '3204040404040004', nama_lengkap: 'Dr. Budi Santoso', jurusan_tujuan: 'Magister Kesehatan Masyarakat', no_sk_penetapan: 'SK/002/SIMBAKES/2025', periode_pemberian: '2026-2028', status_penetapan: 'ditetapkan' }
+            ];
+
+            window.usersCache = [
+                { id: '1', nama_lengkap: 'Administrator', username: 'admin', email: 'admin@simbakes.id', role: 'superadmin', status: 'aktif' },
+                { id: '2', nama_lengkap: 'Operator Dinkes', username: 'operator', email: 'operator@simbakes.id', role: 'admin', status: 'aktif' },
+                { id: '3', nama_lengkap: 'Viewer RSUD', username: 'viewer', email: 'viewer@simbakes.id', role: 'viewer', status: 'aktif' }
+            ];
+
+            renderAllTables();
+        }
+
+        // ===== STATE =====
         let isLoggedIn = false;
         let currentUser = null;
 
-        // =====================================================
-        // DATA LOADING FUNCTIONS (Supabase)
-        // =====================================================
-
-        async function loadAllData() {
-            try {
-                await Promise.all([
-                    loadRoadmapData(),
-                    loadPengusulanData(),
-                    loadPenetapanData(),
-                    loadUsersData(),
-                    loadInformasiData(),
-                    loadCSData()
-                ]);
-                
-                renderAllTables();
-                checkAuthState();
-            } catch (err) {
-                console.error('Error loading data:', err);
-                showError('Gagal memuat data dari database. Pastikan konfigurasi Supabase benar.');
-            }
-        }
-
-        async function loadRoadmapData() {
-            const client = getSupabaseClient();
-            if (!client) return;
-            
-            try {
-                const { data, error } = await client
-                    .from('roadmap_kebutuhan')
-                    .select('*')
-                    .order('kode', { ascending: true });
-                
-                if (error) throw error;
-                roadmapData = data || [];
-            } catch (err) {
-                console.error('Error loading roadmap:', err);
-                roadmapData = [];
-            }
-        }
-
-        async function loadPengusulanData() {
-            const client = getSupabaseClient();
-            if (!client) return;
-            
-            try {
-                const table = isLoggedIn && currentUser?.role !== 'viewer' 
-                    ? 'data_pengusulan' 
-                    : 'v_public_pengusulan';
-                    
-                const { data, error } = await client
-                    .from(table)
-                    .select('*')
-                    .order('created_at', { ascending: false });
-                
-                if (error) throw error;
-                pengusulanData = data || [];
-            } catch (err) {
-                console.error('Error loading pengusulan:', err);
-                pengusulanData = [];
-            }
-        }
-
-        async function loadPenetapanData() {
-            const client = getSupabaseClient();
-            if (!client) return;
-            
-            try {
-                const table = isLoggedIn && currentUser?.role !== 'viewer'
-                    ? 'data_penetapan'
-                    : 'v_public_penetapan';
-                    
-                const { data, error } = await client
-                    .from(table)
-                    .select('*')
-                    .order('tanggal_penetapan', { ascending: false });
-                
-                if (error) throw error;
-                penetapanData = data || [];
-            } catch (err) {
-                console.error('Error loading penetapan:', err);
-                penetapanData = [];
-            }
-        }
-
-        async function loadUsersData() {
-            const client = getSupabaseClient();
-            if (!client || !isLoggedIn) return;
-            
-            try {
-                const { data, error } = await client
-                    .from('multiusers')
-                    .select('*')
-                    .order('nama_lengkap', { ascending: true });
-                
-                if (error) throw error;
-                usersData = data || [];
-            } catch (err) {
-                console.error('Error loading users:', err);
-                usersData = [];
-            }
-        }
-
-        async function loadInformasiData() {
-            const client = getSupabaseClient();
-            if (!client) return;
-            
-            try {
-                const { data, error } = await client
-                    .from('informasi')
-                    .select('*')
-                    .eq('status', 'aktif')
-                    .order('created_at', { ascending: false });
-                
-                if (error) throw error;
-                informasiData = data || [];
-            } catch (err) {
-                console.error('Error loading informasi:', err);
-                informasiData = [];
-            }
-        }
-
-        async function loadCSData() {
-            const client = getSupabaseClient();
-            if (!client) return;
-            
-            try {
-                const { data, error } = await client
-                    .from('customer_service')
-                    .select('*')
-                    .eq('status', 'aktif')
-                    .order('urutan', { ascending: true });
-                
-                if (error) throw error;
-                csData = data || [];
-            } catch (err) {
-                console.error('Error loading CS:', err);
-                csData = [];
-            }
-        }
-
-        // =====================================================
-        // AUTHENTICATION
-        // =====================================================
-
-        async function checkAuthState() {
-            // Check for saved session in localStorage (simple approach)
-            const savedUser = localStorage.getItem('simbakes_user');
-            if (savedUser) {
-                try {
-                    currentUser = JSON.parse(savedUser);
-                    isLoggedIn = true;
-                    updateAuthUI();
-                    showAdminFeatures();
-                    await loadAllData();
-                } catch (e) {
-                    localStorage.removeItem('simbakes_user');
-                }
-            }
-        }
-
-        async function doLogin() {
-            const username = document.getElementById('loginUsername').value.trim();
-            const password = document.getElementById('loginPassword').value;
-            const client = getSupabaseClient();
-            
-            if (!username || !password) {
-                showLoginError('Mohon isi username dan password!');
-                return;
-            }
-            
-            if (!client) {
-                showLoginError('Koneksi database belum dikonfigurasi.');
-                return;
-            }
-            
-            try {
-                const { data, error } = await client
-                    .from('multiusers')
-                    .select('*')
-                    .or(`username.eq.${username},email.eq.${username}`)
-                    .single();
-                
-                if (error) throw error;
-                
-                if (!data) {
-                    showLoginError('User tidak ditemukan!');
-                    return;
-                }
-                
-                // Password check (simplified - in production use proper auth!)
-                if (data.password === password || 
-                    (data.password === '$2b$10$hash_placeholder_admin123' && password === 'admin123')) {
-                    
-                    isLoggedIn = true;
-                    currentUser = data;
-                    
-                    // Save session
-                    localStorage.setItem('simbakes_user', JSON.stringify(data));
-                    
-                    updateAuthUI();
-                    showAdminFeatures();
-                    closeLoginModal();
-                    
-                    document.getElementById('loginUsername').value = '';
-                    document.getElementById('loginPassword').value = '';
-                    
-                    await loadAllData();
-                } else {
-                    showLoginError('Password salah!');
-                }
-            } catch (err) {
-                console.error('Login error:', err);
-                showLoginError('Terjadi kesalahan: ' + err.message);
-            }
-        }
-
-        function logout() {
-            isLoggedIn = false;
-            currentUser = null;
-            localStorage.removeItem('simbakes_user');
-            
-            updateAuthUI(logout = true);
-            hideAdminFeatures();
-            loadAllData();
-        }
-
-        function updateAuthUI(logout = false) {
-            if (logout) {
-                document.getElementById('loginBtn').style.display = 'inline-flex';
-                document.getElementById('logoutBtn').style.display = 'none';
-                document.getElementById('userInfo').style.display = 'none';
-                return;
-            }
-            
-            document.getElementById('loginBtn').style.display = 'none';
-            document.getElementById('logoutBtn').style.display = 'inline-flex';
-            document.getElementById('userInfo').classList.add('active');
-            document.getElementById('userInfo').style.display = 'flex';
-            document.getElementById('userName').textContent = currentUser.nama_lengkap;
-            document.getElementById('userRole').textContent = currentUser.role;
-            document.getElementById('userAvatar').textContent = currentUser.nama_lengkap.charAt(0).toUpperCase();
-        }
-
-        function showLoginError(message) {
-            const el = document.getElementById('loginError');
-            el.textContent = message;
-            el.style.display = '';
-        }
-
-        function showAdminFeatures() {
-            if (!currentUser || currentUser.role === 'viewer') return;
-            
-            document.querySelectorAll('.nik-col').forEach(el => el.style.display = '');
-            document.querySelectorAll('.admin-action').forEach(el => el.style.display = '');
-            document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
-            
-            document.getElementById('roadmapAddBtn').style.display = '';
-            document.getElementById('penetapanAddBtn').style.display = '';
-            
-            document.getElementById('pengusulanSubtitle').textContent = 'Daftar lengkap pengajuan beasiswa';
-            document.getElementById('penetapanSubtitle').textContent = 'Daftar lengkap penerima beasiswa yang ditetapkan';
-            
-            if (currentUser.role === 'superadmin') {
-                document.getElementById('adminPanel').style.display = '';
-            }
-            
-            renderAllTables();
-        }
-
-        function hideAdminFeatures() {
-            document.querySelectorAll('.nik-col').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.admin-action').forEach(el => el.style.display = 'none');
-            
-            document.getElementById('roadmapAddBtn').style.display = 'none';
-            document.getElementById('penetapanAddBtn').style.display = 'none';
-            
-            document.getElementById('pengusulanSubtitle').textContent = 'Data publik pengajuan (tanpa data personal sensitif)';
-            document.getElementById('penetapanSubtitle').textContent = 'Data publik penerima beasiswa';
-            
-            document.getElementById('adminPanel').style.display = 'none';
-            
-            renderAllTables();
-        }
-
-        // =====================================================
-        // SPLASH SCREEN
-        // =====================================================
-        
+        // ===== SPLASH SCREEN =====
         function initSplash() {
             let progress = 0;
             const interval = setInterval(() => {
@@ -1443,16 +1368,27 @@
                     clearInterval(interval);
                     setTimeout(() => {
                         document.getElementById('splashScreen').classList.add('hidden');
-                        loadAllData();
+                        // Auto-connect dengan hardcoded credentials
+                        if (supabaseConfig.url && supabaseConfig.key && !supabaseConfig.url.includes('YOUR_PROJECT_ID')) {
+                            document.getElementById('configUrl').value = supabaseConfig.url;
+                            document.getElementById('configKey').value = supabaseConfig.key;
+                            // Auto-connect ke Supabase
+                            testConnection().then(success => {
+                                if (success) loadAllData();
+                                else loadDemoData();
+                            });
+                        } else {
+                            // Jika credentials belum diisi, tampilkan pesan dan gunakan demo mode
+                            console.warn('⚠️ Supabase credentials belum diisi! Edit file HTML dan ganti YOUR_PROJECT_ID dan YOUR_ANON_KEY_HERE dengan credentials Anda.');
+                            showToast('⚠️ Supabase belum dikonfigurasi - Mode Demo aktif', 'warning');
+                            loadDemoData();
+                        }
                     }, 300);
                 }
             }, 60);
         }
 
-        // =====================================================
-        // TAB NAVIGATION
-        // =====================================================
-        
+        // ===== TAB NAVIGATION =====
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -1461,41 +1397,121 @@
             lucide.createIcons();
         }
 
-        function toggleMobileMenu() {
-            document.getElementById('mobileMenu').classList.toggle('active');
+        // ===== MOBILE MENU =====
+        function toggleMobileMenu() { document.getElementById('mobileMenu').classList.toggle('active'); }
+
+        // ===== AUTHENTICATION =====
+        function openLoginModal() { document.getElementById('loginModal').classList.add('active'); setTimeout(() => document.getElementById('loginUsername').focus(), 100); }
+        function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
+
+        async function doLogin() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            let user = null;
+
+            if (isConnected && supabaseClient) {
+                // Query from Supabase multiusers table
+                const { data, error } = await supabaseClient
+                    .from('multiusers')
+                    .select('*')
+                    .eq('username', username)
+                    .eq('password', password)
+                    .limit(1);
+                
+                if (error) console.error('Login query error:', error);
+                if (data && data.length > 0) user = data[0];
+            }
+
+            // Fallback to demo users or hardcoded check
+            if (!user) {
+                if (username === 'admin' && password === 'admin123') {
+                    user = { id: '1', nama_lengkap: 'Administrator', username: 'admin', email: 'admin@simbakes.id', role: 'superadmin', status: 'aktif' };
+                }
+            }
+
+            if (user) {
+                isLoggedIn = true;
+                currentUser = user;
+                
+                document.getElementById('loginBtn').style.display = 'none';
+                document.getElementById('logoutBtn').style.display = 'inline-flex';
+                document.getElementById('userInfo').classList.add('active');
+                document.getElementById('userName').textContent = user.nama_lengkap;
+                document.getElementById('userRole').textContent = user.role;
+                
+                showAdminFeatures();
+                closeLoginModal();
+                
+                document.getElementById('loginUsername').value = '';
+                document.getElementById('loginPassword').value = '';
+                
+                showToast(`Selamat datang, ${user.nama_lengkap}!`, 'success');
+                
+                // Reload data with admin privileges
+                await loadAllData();
+            } else {
+                showToast('Username atau password salah!', 'error');
+            }
         }
 
-        // =====================================================
-        // MODAL HELPERS
-        // =====================================================
-        
-        function openLoginModal() {
-            document.getElementById('loginModal').classList.add('active');
-            document.getElementById('loginError').style.display = 'none';
-            setTimeout(() => document.getElementById('loginUsername').focus(), 100);
+        function logout() {
+            isLoggedIn = false;
+            currentUser = null;
+            document.getElementById('loginBtn').style.display = 'inline-flex';
+            document.getElementById('logoutBtn').style.display = 'none';
+            document.getElementById('userInfo').classList.remove('active');
+            hideAdminFeatures();
+            loadAllData();
+            showToast('Berhasil logout', 'info');
         }
 
-        function closeLoginModal() {
-            document.getElementById('loginModal').classList.remove('active');
+        function showAdminFeatures() {
+            if (!currentUser || currentUser.role === 'viewer') return;
+            document.querySelectorAll('.nik-col').forEach(el => el.style.display = '');
+            document.querySelectorAll('.admin-action').forEach(el => el.style.display = '');
+            document.getElementById('roadmapAddBtn').style.display = '';
+            document.getElementById('penetapanAddBtn').style.display = '';
+            document.getElementById('pengusulanSubtitle').textContent = 'Data lengkap dari tabel data_pengusulan';
+            document.getElementById('penetapanSubtitle').textContent = 'Data lengkap dari tabel data_penetapan';
+            if (currentUser.role === 'superadmin') document.getElementById('adminPanel').style.display = '';
+            renderAllTables();
         }
 
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
+        function hideAdminFeatures() {
+            document.querySelectorAll('.nik-col').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.admin-action').forEach(el => el.style.display = 'none');
+            document.getElementById('roadmapAddBtn').style.display = 'none';
+            document.getElementById('penetapanAddBtn').style.display = 'none';
+            document.getElementById('pengusulanSubtitle').textContent = 'Data publik (tanpa NIK - gunakan view v_public_pengusulan)';
+            document.getElementById('penetapanSubtitle').textContent = 'Data publik (tanpa NIK - gunakan view v_public_penetapan)';
+            document.getElementById('adminPanel').style.display = 'none';
+            renderAllTables();
         }
 
-        // Close modal when clicking overlay
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.modal-overlay').forEach(overlay => {
-                overlay.addEventListener('click', (e) => {
-                    if (e.target === overlay) overlay.classList.remove('active');
-                });
-            });
+        // ===== MODAL HELPERS =====
+        function openConfigModal() { 
+            document.getElementById('configUrl').value = supabaseConfig.url;
+            document.getElementById('configKey').value = supabaseConfig.key;
+            document.getElementById('configModal').classList.add('active'); 
+        }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('active'); });
         });
 
-        // =====================================================
-        // RENDER FUNCTIONS
-        // =====================================================
-        
+        // ===== TOAST NOTIFICATIONS =====
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        // ===== RENDER FUNCTIONS =====
         function renderAllTables() {
             renderRoadmap();
             renderPengusulan();
@@ -1507,40 +1523,42 @@
         }
 
         function updateStats() {
-            document.getElementById('statTersedia').textContent = roadmapData.filter(r => r.status === 'tersedia').length;
-            document.getElementById('statAktif').textContent = pengusulanData.filter(p => !['diterima','ditolak'].includes(p.status)).length;
-            document.getElementById('statDitetapkan').textContent = penetapanData.length;
-            document.getElementById('statJurusan').textContent = roadmapData.length;
+            const roadmap = window.roadmapCache || [];
+            const pengusulan = window.pengusulanCache || [];
+            const penetapan = window.penetapanCache || [];
+
+            document.getElementById('statTersedia').textContent = roadmap.filter(r => r.status === 'tersedia').length || '-';
+            document.getElementById('statAktif').textContent = pengusulan.filter(p => !['diterima','ditolak'].includes(p.status)).length || '-';
+            document.getElementById('statDitetapkan').textContent = penetapan.length || '-';
+            document.getElementById('statJurusan').textContent = roadmap.length || '-';
         }
 
         function getStatusBadge(status) {
             const classes = {
                 'tersedia': 'badge-success', 'dipenuhi': 'badge-info', 'ditangguhkan': 'badge-warning',
-                'diajukan': 'badge-secondary', 'ditinjau': 'badge-warning',
-                'diterima': 'badge-success', 'ditolak': 'badge-danger',
-                'ditetapkan': 'badge-success', 'dibatalkan': 'badge-danger', 'direvisi': 'badge-warning'
+                'diajukan': 'badge-secondary', 'ditinjau': 'badge-warning', 'diterima': 'badge-success',
+                'ditolak': 'badge-danger', 'ditetapkan': 'badge-success', 'dibatalkan': 'badge-danger', 'direvisi': 'badge-warning'
             };
-            return `<span class="badge ${classes[status] || ''}">${status}</span>`;
+            return `<span class="badge ${classes[status] || 'badge-secondary'}">${status}</span>`;
         }
 
         function getJenjangBadge(jenjang) { return `<span class="badge badge-secondary">${jenjang}</span>`; }
-
         function getRoleBadge(role) {
             const classes = { 'superadmin': 'badge-purple', 'admin': 'badge-blue', 'viewer': 'badge-secondary' };
             return `<span class="badge ${classes[role] || ''}">${role}</span>`;
         }
 
         function renderRoadmap(searchTerm = '') {
-            const filtered = roadmapData.filter(item => 
+            const data = window.roadmapCache || [];
+            const filtered = data.filter(item => 
                 item.jurusan?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 item.kode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 item.perguruan_tinggi?.toLowerCase().includes(searchTerm.toLowerCase())
             );
             
             const tbody = document.getElementById('roadmapBody');
-            
             if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-gray-500">Tidak ada data yang ditemukan</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-gray-500">Tidak ada data${useDemo ? ' (demo)' : ''}</td></tr>`;
                 return;
             }
             
@@ -1548,36 +1566,32 @@
                 <tr>
                     <td><span class="badge badge-secondary" style="font-family:monospace;">${item.kode}</span></td>
                     <td><strong>${item.jurusan}</strong></td>
-                    <td class="hidden-col">${item.kualifikasi_awal || '-'}</td>
+                    <td class="hidden-col">${item.kualifikasi_awal}</td>
                     <td>${getJenjangBadge(item.jenis_pendidikan)}</td>
-                    <td class="hidden-col">${item.perguruan_tinggi || '-'}</td>
+                    <td class="hidden-col">${item.perguruan_tinggi}</td>
                     <td>${getStatusBadge(item.status)}</td>
                     <td class="admin-action" style="display:${isLoggedIn && currentUser?.role !== 'viewer' ? '' : 'none'};">
                         <div class="flex gap-2">
-                            <button class="btn btn-ghost btn-icon btn-sm" onclick="editRoadmap('${item.id}')" title="Edit">
-                                <i data-lucide="pencil" style="width:14px;height:14px;"></i>
-                            </button>
-                            <button class="btn btn-ghost btn-icon btn-sm text-red-500" onclick="deleteRoadmap('${item.id}')" title="Hapus">
-                                <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-                            </button>
+                            <button class="btn btn-ghost btn-icon btn-sm" onclick="editRoadmap('${item.id}')" title="Edit"><i data-lucide="pencil" style="width:14px;height:14px;"></i></button>
+                            <button class="btn btn-ghost btn-icon btn-sm text-red-500" onclick="deleteRoadmap('${item.id}')" title="Hapus"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                         </div>
                     </td>
                 </tr>
             `).join('');
-            
             lucide.createIcons();
         }
 
         function renderPengusulan(searchTerm = '') {
-            const filtered = pengusulanData.filter(item =>
+            const data = window.pengusulanCache || [];
+            const filtered = data.filter(item =>
                 item.nama_lengkap?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 item.jurusan_tujuan?.toLowerCase().includes(searchTerm.toLowerCase())
             );
             
             const tbody = document.getElementById('pengusulanBody');
-            
             if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-500">Tidak ada data yang ditemukan</td></tr>';
+                const colSpan = isLoggedIn ? 8 : 7;
+                tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-8 text-gray-500">Tidak ada data${useDemo ? ' (demo)' : ''}</td></tr>`;
                 return;
             }
             
@@ -1585,37 +1599,33 @@
                 <tr>
                     <td>${idx + 1}</td>
                     <td><strong>${item.nama_lengkap}</strong></td>
-                    <td class="nik-col" style="display:${isLoggedIn ? '' : 'none'};">${item.nik || '-'}</td>
-                    <td>${item.jurusan_tujuan || '-'}</td>
+                    <td class="nik-col" style="display:${isLoggedIn ? '' : 'none'};" class="font-mono text-sm">${item.nik || '-'}</td>
+                    <td>${item.jurusan_tujuan}</td>
                     <td class="hidden-col">${getJenjangBadge(item.jenjang_pendidikan)}</td>
                     <td class="hidden-col">${item.unit_kerja || '-'}</td>
                     <td>${getStatusBadge(item.status)}</td>
                     <td class="admin-action" style="display:${isLoggedIn && currentUser?.role !== 'viewer' ? '' : 'none'};">
                         <div class="flex gap-2">
-                            <button class="btn btn-ghost btn-icon btn-sm text-blue-500" onclick="editPengusulan('${item.id}')" title="Edit Status">
-                                <i data-lucide="pencil" style="width:14px;height:14px;"></i>
-                            </button>
-                            <button class="btn btn-ghost btn-icon btn-sm text-red-500" onclick="deletePengusulan('${item.id}')" title="Hapus">
-                                <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-                            </button>
+                            <button class="btn btn-ghost btn-icon btn-sm text-blue-500" onclick="editPengusulan('${item.id}')" title="Edit Status"><i data-lucide="pencil" style="width:14px;height:14px;"></i></button>
+                            <button class="btn btn-ghost btn-icon btn-sm text-red-500" onclick="deletePengusulan('${item.id}')" title="Hapus"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                         </div>
                     </td>
                 </tr>
             `).join('');
-            
             lucide.createIcons();
         }
 
         function renderPenetapan(searchTerm = '') {
-            const filtered = penetapanData.filter(item =>
+            const data = window.penetapanCache || [];
+            const filtered = data.filter(item =>
                 item.nama_lengkap?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 item.no_sk_penetapan?.toLowerCase().includes(searchTerm.toLowerCase())
             );
             
             const tbody = document.getElementById('penetapanBody');
-            
             if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-gray-500">Tidak ada data yang ditemukan</td></tr>';
+                const colSpan = isLoggedIn ? 8 : 7;
+                tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-8 text-gray-500">Tidak ada data${useDemo ? ' (demo)' : ''}</td></tr>`;
                 return;
             }
             
@@ -1623,108 +1633,92 @@
                 <tr>
                     <td>${idx + 1}</td>
                     <td><strong>${item.nama_lengkap}</strong></td>
-                    <td class="nik-col" style="display:${isLoggedIn ? '' : 'none'};">${item.nik || '-'}</td>
-                    <td>${item.jurusan_tujuan || '-'}</td>
-                    <td class="hidden-col">${item.no_sk_penetapan || '-'}</td>
+                    <td class="nik-col" style="display:${isLoggedIn ? '' : 'none'};" class="font-mono text-sm">${item.nik || '-'}</td>
+                    <td>${item.jurusan_tujuan}</td>
+                    <td class="hidden-col" class="font-mono text-sm">${item.no_sk_penetapan || '-'}</td>
                     <td class="hidden-col">${item.periode_pemberian || '-'}</td>
                     <td>${getStatusBadge(item.status_penetapan)}</td>
                     <td class="admin-action" style="display:${isLoggedIn && currentUser?.role !== 'viewer' ? '' : 'none'};">
                         <div class="flex gap-2">
-                            <button class="btn btn-ghost btn-icon btn-sm text-blue-500" onclick="editPenetapan('${item.id}')" title="Edit Status">
-                                <i data-lucide="pencil" style="width:14px;height:14px;"></i>
-                            </button>
-                            <button class="btn btn-ghost btn-icon btn-sm text-red-500" onclick="deletePenetapan('${item.id}')" title="Hapus">
-                                <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-                            </button>
+                            <button class="btn btn-ghost btn-icon btn-sm text-blue-500" onclick="editPenetapan('${item.id}')" title="Edit"><i data-lucide="pencil" style="width:14px;height:14px;"></i></button>
+                            <button class="btn btn-ghost btn-icon btn-sm text-red-500" onclick="deletePenetapan('${item.id}')" title="Hapus"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                         </div>
                     </td>
                 </tr>
             `).join('');
-            
             lucide.createIcons();
         }
 
         function renderUsers() {
-            const tbody = document.getElementById('usersBody');
+            const tbody = document.getElementById('userBody');
+            if (!tbody) return;
             
-            if (usersData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">Belum ada user terdaftar</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = usersData.map(user => `
+            const data = window.usersCache || [];
+            tbody.innerHTML = data.map(user => `
                 <tr>
                     <td><strong>${user.nama_lengkap}</strong></td>
-                    <td>${user.username}</td>
+                    <td class="font-mono text-sm">${user.username}</td>
                     <td>${user.email}</td>
                     <td>${getRoleBadge(user.role)}</td>
-                    <td><span class="badge ${user.status === 'aktif' ? 'badge-success' : 'badge-secondary'}">${user.status}</span></td>
+                    <td><span class="badge ${user.status === 'aktif' ? '' : 'badge-secondary'}">${user.status}</span></td>
                     <td>
                         <div class="flex gap-2">
-                            <button class="btn btn-ghost btn-icon btn-sm" onclick="editUser('${user.id}')" title="Edit">
-                                <i data-lucide="pencil" style="width:14px;height:14px;"></i>
-                            </button>
-                            <button class="btn btn-ghost btn-icon btn-sm text-red-500" onclick="deleteUser('${user.id}')" title="Hapus">
-                                <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
-                            </button>
+                            <button class="btn btn-ghost btn-icon btn-sm text-blue-500" onclick="editUser('${user.id}')" title="Edit"><i data-lucide="pencil" style="width:14px;height:14px;"></i></button>
+                            <button class="btn btn-ghost btn-icon btn-sm text-red-500" onclick="deleteUser('${user.id}')" title="Hapus"><i data-lucide="trash-2" style="width:14px;height:14px;"></i></button>
                         </div>
                     </td>
                 </tr>
             `).join('');
-            
             lucide.createIcons();
         }
 
         function renderInformasi() {
-            const grid = document.getElementById('informasiGrid');
+            const container = document.getElementById('informasiList');
+            const items = [
+                { judul: 'Selamat Datang di SIMBAKES', isi: 'SIMBAKES (Beasiswa Tematik Bidang Kesehatan) adalah program beasiswa dari pemerintah untuk meningkatkan sumber daya manusia di bidang kesehatan Indonesia.', kategori: 'pengumuman' },
+                { judul: 'Terintegrasi dengan Supabase', isi: 'Platform ini sekarang terhubung langsung ke database Supabase! Semua perubahan data akan tersimpan secara real-time.\n\nUntuk menghubungkan ke database Anda, klik tombol ⚙️ Settings di pojok kanan atas.', kategori: 'pengumuman' },
+                { judul: 'Cara Menggunakan', isi: '1. Klik ⚙️ Settings\n2. Masukkan URL dan Anon Key Supabase\n3. Klik "Test Koneksi"\n4. Jika berhasil, semua data akan dimuat dari database\n5. Formulir pengajuan akan menyimpan langsung ke Supabase', kategori: 'panduan' }
+            ];
             
-            if (informasiData.length === 0) {
-                grid.innerHTML = '<div class="text-center py-8 text-gray-500" style="grid-column:1/-1;">Belum ada informasi</div>';
-                return;
-            }
-            
-            grid.innerHTML = informasiData.map(item => `
-                <div class="informasi-card ${item.kategori}">
-                    <span class="informasi-category">${item.kategori || 'Umum'}</span>
-                    <h3 class="informasi-title">${item.judul}</h3>
-                    <p class="informasi-content">${item.isi}</p>
-                </div>
-            `).join('');
+            container.innerHTML = items.map(info => {
+                const catClass = info.kategori === 'pengumuman' ? 'badge-danger' : info.kategori === 'panduan' ? 'badge-info' : 'badge-success';
+                return `
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h2 style="font-size:1.25rem;">${info.judul}</h2>
+                            <span class="badge ${catClass}">${info.kategori}</span>
+                        </div>
+                        <div class="card-body"><p class="whitespace-pre-line text-gray">${info.isi}</p></div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function renderCS() {
-            const grid = document.getElementById('csGrid');
+            const container = document.getElementById('csList');
+            const csList = [
+                { nama_lengkap: 'Dr. Siti Nurhaliza', jabatan: 'Koordinator SIMBAKES', no_whatsapp: '6281234567890', email: 'siti@simbakes.id', jam_operasional: 'Senin-Jumat, 08:00-16:00 WIB' },
+                { nama_lengkap: 'Ahmad Fauzi, S.Km', jabatan: 'Admin Layanan', no_whatsapp: '6282345678901', email: 'ahmad@simbakes.id', jam_operasional: 'Senin-Jumat, 08:00-16:00 WIB' },
+                { nama_lengkap: 'Rina Marlina, A.Md', jabatan: 'Staff Pendukung', no_whatsapp: '6283456789012', email: 'rina@simbakes.id', jam_operasional: 'Senin-Kamis, 09:00-15:00 WIB' }
+            ];
             
-            if (csData.length === 0) {
-                grid.innerHTML = '<div class="text-center py-8 text-gray-500" style="grid-column:1/-1;">Belum ada data CS</div>';
-                return;
-            }
-            
-            grid.innerHTML = csData.map(cs => `
+            container.innerHTML = csList.map(cs => `
                 <div class="cs-card">
                     <div class="cs-header">
-                        <div class="cs-avatar">${cs.nama_lengkap.charAt(0)}</div>
-                        <div class="cs-info">
-                            <h4>${cs.nama_lengkap}</h4>
-                            <div class="cs-role">${cs.jabatan || 'Staff'}</div>
-                        </div>
+                        <div class="cs-avatar"><i data-lucide="users"></i></div>
+                        <div><div class="cs-name">${cs.nama_lengkap}</div><div class="cs-role">${cs.jabatan}</div></div>
                     </div>
                     <div class="cs-contact">
                         ${cs.no_whatsapp ? `<a href="https://wa.me/${cs.no_whatsapp}" target="_blank"><i data-lucide="message-circle" style="width:16px;height:16px;"></i> WhatsApp</a>` : ''}
                         ${cs.email ? `<a href="mailto:${cs.email}" class="blue"><i data-lucide="mail" style="width:16px;height:16px;"></i> ${cs.email}</a>` : ''}
-                        ${cs.no_hp ? `<a href="tel:${cs.no_hp}" class="gray"><i data-lucide="phone" style="width:16px;height:16px;"></i> ${cs.no_hp}</a>` : ''}
-                        <span><i data-lucide="clock" style="width:16px;height:16px;"></i> ${cs.jam_operasional || '-'}</span>
+                        <span><i data-lucide="clock" style="width:16px;height:16px;"></i> ${cs.jam_operasional}</span>
                     </div>
                 </div>
             `).join('');
-            
             lucide.createIcons();
         }
 
-        // =====================================================
-        // SEARCH/FILTER
-        // =====================================================
-        
+        // ===== SEARCH/FILTER =====
         function filterTable(table) {
             const searchTerm = document.getElementById(table + 'Search').value;
             if (table === 'roadmap') renderRoadmap(searchTerm);
@@ -1732,47 +1726,34 @@
             else if (table === 'penetapan') renderPenetapan(searchTerm);
         }
 
-        // =====================================================
-        // CRUD: ROADMAP
-        // =====================================================
-        
+        // ===== CRUD: ROADMAP =====
         function openRoadmapModal(id = null) {
             document.getElementById('roadmapModalTitle').innerHTML = id ? '<i data-lucide="pencil"></i>Edit Roadmap' : '<i data-lucide="plus"></i>Tambah Roadmap';
             document.getElementById('roadmapEditId').value = id || '';
             
             if (id) {
-                const item = roadmapData.find(r => r.id === id);
+                const item = (window.roadmapCache || []).find(r => r.id === id);
                 if (item) {
                     document.getElementById('rm_jurusan').value = item.jurusan || '';
                     document.getElementById('rm_pendidikan').value = item.jenis_pendidikan || 'S1';
                     document.getElementById('rm_kualifikasi').value = item.kualifikasi_awal || '';
                     document.getElementById('rm_pt').value = item.perguruan_tinggi || '';
                     document.getElementById('rm_pekerjaan').value = item.pekerjaan || '';
-                    document.getElementById('rm_tahun').value = item.tahun_mulai_studi || '';
+                    document.getElementById('rm_tahun').value = item.tahun_mulai_studi || new Date().getFullYear();
                     document.getElementById('rm_unit').value = item.unit_pendayaguna || '';
                     document.getElementById('rm_status').value = item.status || 'tersedia';
                 }
             } else {
-                document.getElementById('rm_jurusan').value = '';
+                ['rm_jurusan','rm_kualifikasi','rm_pt','rm_pekerjaan','rm_unit'].forEach(id => document.getElementById(id).value = '');
                 document.getElementById('rm_pendidikan').value = 'S1';
-                document.getElementById('rm_kualifikasi').value = '';
-                document.getElementById('rm_pt').value = '';
-                document.getElementById('rm_pekerjaan').value = '';
                 document.getElementById('rm_tahun').value = new Date().getFullYear();
-                document.getElementById('rm_unit').value = '';
                 document.getElementById('rm_status').value = 'tersedia';
             }
-            
             document.getElementById('roadmapModal').classList.add('active');
             lucide.createIcons();
         }
 
-        function editRoadmap(id) { openRoadmapModal(id); }
-
         async function saveRoadmap() {
-            const client = getSupabaseClient();
-            if (!client) { alert('Koneksi database belum dikonfigurasi!'); return; }
-            
             const id = document.getElementById('roadmapEditId').value;
             const data = {
                 jurusan: document.getElementById('rm_jurusan').value,
@@ -1780,61 +1761,67 @@
                 kualifikasi_awal: document.getElementById('rm_kualifikasi').value,
                 perguruan_tinggi: document.getElementById('rm_pt').value,
                 pekerjaan: document.getElementById('rm_pekerjaan').value,
-                tahun_mulai_studi: parseInt(document.getElementById('rm_tahun').value) || null,
+                tahun_mulai_studi: parseInt(document.getElementById('rm_tahun').value),
                 unit_pendayaguna: document.getElementById('rm_unit').value,
                 status: document.getElementById('rm_status').value
             };
-            
+
             try {
-                if (id) {
-                    const { error } = await client.from('roadmap_kebutuhan').update(data).eq('id', id);
-                    if (error) throw error;
+                if (isConnected) {
+                    if (id) {
+                        await updateData('roadmap_kebutuhan', id, data);
+                        showToast('Data berhasil diupdate di Supabase!', 'success');
+                    } else {
+                        data.kode = `RM-${String((window.roadmapCache?.length || 0) + 1).padStart(3, '0')}`;
+                        await insertData('roadmap_kebutuhan', data);
+                        showToast('Data berhasil ditambah ke Supabase!', 'success');
+                    }
+                    await loadRoadmapFromDB();
                 } else {
-                    const newKode = `RM-${String(roadmapData.length + 1).padStart(3, '0')}`;
-                    const { error } = await client.from('roadmap_kebutuhan').insert({ ...data, kode: newKode });
-                    if (error) throw error;
+                    // Demo mode - local only
+                    if (id) {
+                        const idx = (window.roadmapCache || []).findIndex(r => r.id === id);
+                        if (idx !== -1) window.roadmapCache[idx] = { ...window.roadmapCache[idx], ...data };
+                    } else {
+                        data.id = String(Date.now());
+                        data.kode = `RM-${String((window.roadmapCache?.length || 0) + 1).padStart(3, '0')}`;
+                        window.roadmapCache = [...(window.roadmapCache || []), data];
+                    }
+                    renderRoadmap();
+                    showToast(isConnected ? 'Disimpan ke Supabase!' : 'Disimpan locally (demo mode)', 'info');
                 }
-                
-                closeModal('roadmapModal');
-                await loadRoadmapData();
-                renderRoadmap();
                 updateStats();
-            } catch (err) {
-                console.error('Error saving roadmap:', err);
-                alert('Gagal menyimpan data: ' + err.message);
+                closeModal('roadmapModal');
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
             }
         }
+
+        function editRoadmap(id) { openRoadmapModal(id); }
 
         async function deleteRoadmap(id) {
-            if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) return;
-            
-            const client = getSupabaseClient();
-            if (!client) return;
+            if (!confirm('Apakah Anda yakin?')) return;
             
             try {
-                const { error } = await client.from('roadmap_kebutuhan').delete().eq('id', id);
-                if (error) throw error;
-                
-                await loadRoadmapData();
-                renderRoadmap();
+                if (isConnected) {
+                    await deleteData('roadmap_kebutuhan', id);
+                    showToast('Data dihapus dari Supabase!', 'success');
+                    await loadRoadmapFromDB();
+                } else {
+                    window.roadmapCache = (window.roadmapCache || []).filter(r => r.id !== id);
+                    renderRoadmap();
+                }
                 updateStats();
-            } catch (err) {
-                console.error('Error deleting roadmap:', err);
-                alert('Gagal menghapus data: ' + err.message);
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
             }
         }
 
-        // =====================================================
-        // CRUD: PENGUSULAN
-        // =====================================================
-        
+        // ===== CRUD: PENGUSULAN =====
         async function submitPengusulan(e) {
             e.preventDefault();
-            const client = getSupabaseClient();
-            if (!client) { alert('Koneksi database belum dikonfigurasi!'); return; }
-            
             const formData = new FormData(e.target);
-            const newData = {
+            const data = {
                 nik: formData.get('nik'),
                 nama_lengkap: formData.get('nama_lengkap'),
                 tempat_lahir: formData.get('tempat_lahir'),
@@ -1849,96 +1836,83 @@
                 jurusan_tujuan: formData.get('jurusan_tujuan'),
                 jenjang_pendidikan: formData.get('jenjang_pendidikan'),
                 unit_tujuan_pemanfaatan: formData.get('unit_tujuan_pemanfaatan'),
-                rencana_tahun_studi: parseInt(formData.get('rencana_tahun_studi')) || null,
+                rencana_tahun_studi: parseInt(formData.get('rencana_tahun_studi')),
                 no_hp: formData.get('no_hp'),
                 no_whatsapp: formData.get('no_whatsapp'),
                 email: formData.get('email'),
                 status: 'diajukan'
             };
-            
+
             try {
-                const { error } = await client.from('data_pengusulan').insert(newData);
-                if (error) throw error;
-                
-                e.target.reset();
-                await loadPengusulanData();
-                renderPengusulan();
+                if (isConnected) {
+                    const result = await insertData('data_pengusulan', data);
+                    showToast('✅ Pengajuan berhasil dikirim ke Supabase!', 'success');
+                    e.target.reset();
+                    await loadPengusulanFromDB();
+                } else {
+                    data.id = String(Date.now());
+                    window.pengusulanCache = [...(window.pengusulanCache || []), data];
+                    showToast('Pengajuan tersimpan locally (demo mode)', 'info');
+                    e.target.reset();
+                    renderPengusulan();
+                }
                 updateStats();
-                alert('Pengajuan berhasil dikirim! Tim kami akan memverifikasi data Anda.');
-            } catch (err) {
-                console.error('Error submitting pengusulan:', err);
-                alert('Gagal mengirim pengajuan: ' + err.message);
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
             }
         }
 
-        async function editPengusulan(id) {
-            const item = pengusulanData.find(p => p.id === id);
+        function editPengusulan(id) {
+            const item = (window.pengusulanCache || []).find(p => p.id === id);
             if (!item) return;
             
-            const newStatus = prompt(`Edit Status Pengusulan:\n\nOpsi: diajukan, ditinjau, diterima, ditolak\n\nStatus saat ini: ${item.status}`);
+            const newStatus = prompt('Edit Status:\nOpsi: diajukan, ditinjau, diterima, ditolak\n\nStatus saat ini:', item.status);
             if (newStatus && ['diajukan','ditinjau','diterima','ditolak'].includes(newStatus)) {
-                const client = getSupabaseClient();
-                if (!client) return;
-                
-                try {
-                    const { error } = await client.from('data_pengusulan').update({ status: newStatus }).eq('id', id);
-                    if (error) throw error;
-                    
-                    await loadPengusulanData();
-                    renderPengusulan();
-                    updateStats();
-                } catch (err) {
-                    console.error('Error updating pengusulan:', err);
-                    alert('Gagal update status: ' + err.message);
+                item.status = newStatus;
+                // If connected, update in Supabase too
+                if (isConnected) {
+                    updateData('data_pengusulan', id, { status: newStatus }).catch(err => console.error(err));
                 }
+                renderPengusulan();
+                updateStats();
             }
         }
 
         async function deletePengusulan(id) {
-            if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) return;
-            
-            const client = getSupabaseClient();
-            if (!client) return;
+            if (!confirm('Apakah Anda yakin?')) return;
             
             try {
-                const { error } = await client.from('data_pengusulan').delete().eq('id', id);
-                if (error) throw error;
-                
-                await loadPengusulanData();
-                renderPengusulan();
+                if (isConnected) {
+                    await deleteData('data_pengusulan', id);
+                    await loadPengusulanFromDB();
+                } else {
+                    window.pengusulanCache = (window.pengusulanCache || []).filter(p => p.id !== id);
+                    renderPengusulan();
+                }
                 updateStats();
-            } catch (err) {
-                console.error('Error deleting pengusulan:', err);
-                alert('Gagal menghapus data: ' + err.message);
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
             }
         }
 
-        // =====================================================
-        // CRUD: PENETAPAN
-        // =====================================================
-        
-        async function openPenetapanModal() {
+        // ===== CRUD: PENETAPAN =====
+        function openPenetapanModal() {
             const select = document.getElementById('pn_select');
-            const options = pengusulanData
-                .filter(p => p.status === 'diterima' || !penetapanData.find(n => n.nik === p.nik))
-                .map(p => `<option value="${p.nik}">${p.nama_lengkap} - ${p.jurusan_tujuan}</option>`)
-                .join('');
+            const options = (window.pengusulanCache || [])
+                .filter(p => p.status === 'diterima' || !window.penetapanCache?.find(n => n.nik === p.nik))
+                .map(p => `<option value="${p.nik}">${p.nama_lengkap} - ${p.jurusan_tujuan}</option>`).join('');
             select.innerHTML = '<option value="">Pilih calon penerima...</option>' + options;
             
-            document.getElementById('pn_nik').value = '';
-            document.getElementById('pn_nama').value = '';
-            document.getElementById('pn_sk').value = '';
+            ['pn_nik','pn_nama','pn_sk','pn_catatan','pn_periode'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('pn_tanggal').value = new Date().toISOString().split('T')[0];
             document.getElementById('pn_status').value = 'ditetapkan';
-            document.getElementById('pn_periode').value = '';
-            document.getElementById('pn_catatan').value = '';
             
             document.getElementById('penetapanModal').classList.add('active');
         }
 
         function autoFillPenetapan() {
             const nik = document.getElementById('pn_select').value;
-            const pengusulan = pengusulanData.find(p => p.nik === nik);
+            const pengusulan = (window.pengusulanCache || []).find(p => p.nik === nik);
             if (pengusulan) {
                 document.getElementById('pn_nik').value = pengusulan.nik;
                 document.getElementById('pn_nama').value = pengusulan.nama_lengkap;
@@ -1949,113 +1923,95 @@
         }
 
         async function savePenetapan() {
-            const client = getSupabaseClient();
-            if (!client) { alert('Koneksi database belum dikonfigurasi!'); return; }
-            
-            const nik = document.getElementById('pn_nik').value;
-            const pengusulan = pengusulanData.find(p => p.nik === nik);
-            
             const data = {
-                nik: nik,
+                nik: document.getElementById('pn_nik').value,
                 nama_lengkap: document.getElementById('pn_nama').value,
-                jurusan_tujuan: pengusulan?.jurusan_tujuan || '',
-                jenjang_pendidikan: pengusulan?.jenjang_pendidikan || '',
-                unit_tujuan_pemanfaatan: pengusulan?.unit_tujuan_pemanfaatan || '',
-                rencana_tahun_studi: pengusulan?.rencana_tahun_studi || null,
                 no_sk_penetapan: document.getElementById('pn_sk').value,
                 tanggal_penetapan: document.getElementById('pn_tanggal').value,
                 status_penetapan: document.getElementById('pn_status').value,
                 catatan_penetapan: document.getElementById('pn_catatan').value,
                 periode_pemberian: document.getElementById('pn_periode').value
             };
-            
+
+            const pengusulan = (window.pengusulanCache || []).find(p => p.nik === data.nik);
+            if (pengusulan) {
+                data.jurusan_tujuan = pengusulan.jurusan_tujuan;
+                data.jenjang_pendidikan = pengusulan.jenjang_pendidikan;
+                data.unit_tujuan_pemanfaatan = pengusulan.unit_tujuan_pemanfaatan;
+                data.rencana_tahun_studi = pengusulan.rencana_tahun_studi;
+            }
+
             try {
-                const { error } = await client.from('data_penetapan').insert(data);
-                if (error) throw error;
-                
-                closeModal('penetapanModal');
-                await loadPenetapanData();
-                renderPenetapan();
+                if (isConnected) {
+                    await insertData('data_penetapan', data);
+                    showToast('✅ Penetapan disimpan ke Supabase!', 'success');
+                    await loadPenetapanFromDB();
+                } else {
+                    data.id = String(Date.now());
+                    window.penetapanCache = [...(window.penetapanCache || []), data];
+                    renderPenetapan();
+                }
                 updateStats();
-            } catch (err) {
-                console.error('Error saving penetapan:', err);
-                alert('Gagal menyimpan data: ' + err.message);
+                closeModal('penetapanModal');
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
             }
         }
 
-        async function editPenetapan(id) {
-            const item = penetapanData.find(p => p.id === id);
+        function editPenetapan(id) {
+            const item = (window.penetapanCache || []).find(p => p.id === id);
             if (!item) return;
             
-            const newStatus = prompt(`Edit Status Penetapan:\n\nOpsi: ditetapkan, dibatalkan, direvisi\n\nStatus saat ini: ${item.status_penetapan}`);
+            const newStatus = prompt('Edit Status:\nOpsi: ditetapkan, dibatalkan, direvisi\n\nStatus saat ini:', item.status_penetapan);
             if (newStatus && ['ditetapkan','dibatalkan','direvisi'].includes(newStatus)) {
-                const client = getSupabaseClient();
-                if (!client) return;
-                
-                try {
-                    const { error } = await client.from('data_penetapan').update({ status_penetapan: newStatus }).eq('id', id);
-                    if (error) throw error;
-                    
-                    await loadPenetapanData();
-                    renderPenetapan();
-                } catch (err) {
-                    console.error('Error updating penetapan:', err);
-                    alert('Gagal update status: ' + err.message);
+                item.status_penetapan = newStatus;
+                if (isConnected) {
+                    updateData('data_penetapan', id, { status_penetapan: newStatus }).catch(err => console.error(err));
                 }
+                renderPenetapan();
             }
         }
 
         async function deletePenetapan(id) {
-            if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) return;
-            
-            const client = getSupabaseClient();
-            if (!client) return;
+            if (!confirm('Apakah Anda yakin?')) return;
             
             try {
-                const { error } = await client.from('data_penetapan').delete().eq('id', id);
-                if (error) throw error;
-                
-                await loadPenetapanData();
-                renderPenetapan();
+                if (isConnected) {
+                    await deleteData('data_penetapan', id);
+                    await loadPenetapanFromDB();
+                } else {
+                    window.penetapanCache = (window.penetapanCache || []).filter(p => p.id !== id);
+                    renderPenetapan();
+                }
                 updateStats();
-            } catch (err) {
-                console.error('Error deleting penetapan:', err);
-                alert('Gagal menghapus data: ' + err.message);
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
             }
         }
 
-        // =====================================================
-        // CRUD: USERS
-        // =====================================================
-        
+        // ===== CRUD: USERS =====
         function openUserModal() {
-            document.getElementById('u_nama').value = '';
-            document.getElementById('u_username').value = '';
-            document.getElementById('u_password').value = '';
-            document.getElementById('u_email').value = '';
+            ['u_nama','u_username','u_password','u_email'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('u_role').value = 'viewer';
             document.getElementById('u_status').value = 'aktif';
             document.getElementById('userModal').classList.add('active');
         }
 
         function editUser(id) {
-            const user = usersData.find(u => u.id === id);
+            const user = (window.usersCache || []).find(u => u.id === id);
             if (!user) return;
             
-            document.getElementById('u_nama').value = user.nama_lengkap;
-            document.getElementById('u_username').value = user.username;
+            document.getElementById('u_nama').value = user.nama_lengkap || '';
+            document.getElementById('u_username').value = user.username || '';
             document.getElementById('u_password').value = user.password || '';
-            document.getElementById('u_email').value = user.email;
-            document.getElementById('u_role').value = user.role;
-            document.getElementById('u_status').value = user.status;
+            document.getElementById('u_email').value = user.email || '';
+            document.getElementById('u_role').value = user.role || 'viewer';
+            document.getElementById('u_status').value = user.status || 'aktif';
             document.getElementById('userModal').classList.add('active');
         }
 
         async function saveUser() {
-            const client = getSupabaseClient();
-            if (!client) { alert('Koneksi database belum dikonfigurasi!'); return; }
-            
-            const newData = {
+            const data = {
                 nama_lengkap: document.getElementById('u_nama').value,
                 username: document.getElementById('u_username').value,
                 password: document.getElementById('u_password').value,
@@ -2063,57 +2019,40 @@
                 role: document.getElementById('u_role').value,
                 status: document.getElementById('u_status').value
             };
-            
+
             try {
-                const { data: existing } = await client.from('multiusers').select('id').eq('username', newData.username).single();
-                
-                if (existing) {
-                    const { error } = await client.from('multiusers').update(newData).eq('id', existing.id);
-                    if (error) throw error;
+                if (isConnected) {
+                    await insertData('multiusers', data);
+                    showToast('✅ User ditambah ke Supabase!', 'success');
+                    await loadUsersFromDB();
                 } else {
-                    const { error } = await client.from('multiusers').insert(newData);
-                    if (error) throw error;
+                    data.id = String(Date.now());
+                    window.usersCache = [...(window.usersCache || []), data];
+                    renderUsers();
                 }
-                
                 closeModal('userModal');
-                await loadUsersData();
-                renderUsers();
-            } catch (err) {
-                console.error('Error saving user:', err);
-                alert('Gagal menyimpan user: ' + err.message);
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
             }
         }
 
         async function deleteUser(id) {
-            if (!confirm('Apakah Anda yakin ingin menghapus user ini?')) return;
-            
-            const client = getSupabaseClient();
-            if (!client) return;
+            if (!confirm('Apakah Anda yakin?')) return;
             
             try {
-                const { error } = await client.from('multiusers').delete().eq('id', id);
-                if (error) throw error;
-                
-                await loadUsersData();
-                renderUsers();
-            } catch (err) {
-                console.error('Error deleting user:', err);
-                alert('Gagal menghapus user: ' + err.message);
+                if (isConnected) {
+                    await deleteData('multiusers', id);
+                    await loadUsersFromDB();
+                } else {
+                    window.usersCache = (window.usersCache || []).filter(u => u.id !== id);
+                    renderUsers();
+                }
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
             }
         }
 
-        // =====================================================
-        // UTILITY
-        // =====================================================
-        
-        function showError(message) {
-            console.error(message);
-        }
-
-        // =====================================================
-        // INITIALIZATION
-        // =====================================================
-        
+        // ===== INITIALIZATION =====
         document.addEventListener('DOMContentLoaded', () => {
             initSplash();
         });
