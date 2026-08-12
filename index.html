@@ -1109,18 +1109,64 @@
             
             if (initSupabase(url, key)) {
                 try {
-                    const { data, error } = await supabaseClient.from('roadmap_kebutuhan').select('count');
-                    if (error) throw error;
+                    // Method 1: Coba query ke tabel dengan select '*' dan limit 1 (lebih kompatibel)
+                    let testPassed = false;
                     
-                    isConnected = true;
-                    useDemo = false;
-                    showToast('✅ Koneksi ke Supabase berhasil!', 'success');
-                    updateConnectionStatus(true);
-                    return true;
+                    try {
+                        const { data: testData, error: testError } = await supabaseClient
+                            .from('roadmap_kebutuhan')
+                            .select('*')
+                            .limit(1);
+                        
+                        // Jika error adalah "relation does not exist", berarti koneksi OK tapi tabel belum dibuat
+                        if (testError) {
+                            const errorMsg = testError.message || '';
+                            if (errorMsg.includes('does not exist') || errorMsg.includes('42P01')) {
+                                console.log('Tabel roadmap_kebutuhan belum ada, tapi koneksi Supabase berhasil');
+                                testPassed = true;
+                            } else if (errorMsg.includes('permission') || errorMsg.includes('42501')) {
+                                console.warn('RLS permission issue - perlu konfigurasi RLS');
+                                testPassed = true;
+                            } else {
+                                throw testError;
+                            }
+                        } else {
+                            testPassed = true;
+                        }
+                    } catch (queryError) {
+                        // Method 2: Fallback ke health check endpoint
+                        try {
+                            const response = await fetch(url + '/rest/v1/', {
+                                headers: { 
+                                    'apikey': key,
+                                    'Authorization': 'Bearer ' + key 
+                                }
+                            });
+                            if (response.ok || response.status === 200 || response.status === 406) {
+                                testPassed = true;
+                            } else {
+                                throw new Error('HTTP ' + response.status);
+                            }
+                        } catch (healthError) {
+                            throw healthError;
+                        }
+                    }
+                    
+                    if (testPassed) {
+                        isConnected = true;
+                        useDemo = false;
+                        showToast('✅ Koneksi ke Supabase berhasil!', 'success');
+                        updateConnectionStatus(true);
+                        return true;
+                    }
+                    
+                    throw new Error('Koneksi gagal');
+                    
                 } catch (error) {
                     console.error('Connection test error:', error);
-                    showToast('❌ Gagal terhubung: ' + error.message, 'error');
-                    updateConnectionStatus(false, error.message);
+                    const errorMsg = error.message || JSON.stringify(error);
+                    showToast('❌ Gagal terhubung: ' + errorMsg, 'error');
+                    updateConnectionStatus(false, errorMsg);
                     return false;
                 }
             }
