@@ -1095,7 +1095,8 @@
             }
         }
 
-                        // Test connection - IMPROVED VERSION
+                // Test connection
+        // Test connection - IMPROVED VERSION with Storage API check
         async function testConnection() {
             const url = document.getElementById('configUrl').value.trim();
             const key = document.getElementById('configKey').value.trim();
@@ -1122,11 +1123,10 @@
             if (initSupabase(url, key)) {
                 try {
                     let testPassed = false;
-                    let errorMessage = '';
-                    
-                    // METHOD 1: Test via Storage API (selalu berhasil jika key valid)
+
+                    // METHOD 1: Test via Storage API (always works if key is valid)
                     try {
-                        console.log('[TEST] Mencoba Storage endpoint...');
+                        console.log('[TEST] Trying Storage endpoint...');
                         const storageResponse = await fetch(url + '/storage/v1/bucket', {
                             method: 'GET',
                             headers: { 
@@ -1138,18 +1138,17 @@
                         console.log('[TEST] Storage status:', storageResponse.status);
                         
                         if (storageResponse.status === 200 || storageResponse.ok) {
-                            // Storage berhasil = key valid & project aktif!
                             testPassed = true;
                             console.log('[TEST] ✅ Storage endpoint OK - Key valid!');
                         } else if (storageResponse.status === 401) {
                             throw new Error('STORAGE_401');
                         }
                     } catch (storageError) {
-                        console.log('[TEST] Storage gagal, coba tabel...', storageError.message);
+                        console.log('[TEST] Storage failed, trying table query...', storageError.message);
                         
-                        // METHOD 2: Test langsung query ke tabel
+                        // METHOD 2: Try direct table query
                         try {
-                            console.log('[TEST] Mencoba query tabel roadmap_kebutuhan...');
+                            console.log('[TEST] Trying roadmap_kebutuhan table...');
                             const { data: testData, error: testError } = await supabaseClient
                                 .from('roadmap_kebutuhan')
                                 .select('*')
@@ -1157,31 +1156,30 @@
                             
                             if (testError) {
                                 const errorMsg = testError.message || '';
-                                console.log('[TEST] Tabel query error:', errorMsg);
+                                console.log('[TEST] Table error:', errorMsg);
                                 
-                                // Jika error karena tabel belum ada, tetap anggap sukses
+                                // If error is "table doesn't exist", still count as success
                                 if (errorMsg.includes('does not exist') || 
                                     errorMsg.includes('42P01') ||
                                     errorMsg.includes('relation')) {
-                                    console.log('[TEST] ⚠️ Tabel belum ada, tapi koneksi OK!');
+                                    console.log('[TEST] ⚠️ Table missing but connection OK!');
                                     testPassed = true;
                                 } else if (errorMsg.includes('permission') || errorMsg.includes('42501')) {
-                                    console.log('[TEST] ⚠️ RLS issue, tapi koneksi OK!');
+                                    console.log('[TEST] ⚠️ RLS issue but connection OK!');
                                     testPassed = true;
                                 } else {
                                     throw new Error(errorMsg);
                                 }
                             } else {
-                                // Query berhasil!
                                 testPassed = true;
-                                console.log('[TEST] ✅ Query tabel berhasil!');
+                                console.log('[TEST] ✅ Table query succeeded!');
                             }
                         } catch (tableError) {
-                            console.error('[TEST] Query tabel gagal:', tableError);
+                            console.error('[TEST] Table query failed:', tableError);
                             
-                            // METHOD 3: Terakhir coba POST ke root (beberapa project butuh ini)
+                            // METHOD 3: Last resort - POST to root
                             try {
-                                console.log('[TEST] Mencoba POST method...');
+                                console.log('[TEST] Trying POST method...');
                                 const postResponse = await fetch(url + '/rest/v1/', {
                                     method: 'POST',
                                     headers: { 
@@ -1193,9 +1191,8 @@
                                 });
                                 
                                 if (postResponse.status === 401 || postResponse.status === 405 || postResponse.status === 406) {
-                                    // Response apapun selain network error = koneksi ada
                                     testPassed = true;
-                                    console.log('[TEST] ✅ POST response diterima (koneksi ada)');
+                                    console.log('[TEST] ✅ Response received (connection exists)');
                                 } else {
                                     throw new Error('HTTP_' + postResponse.status);
                                 }
@@ -1210,31 +1207,23 @@
                         useDemo = false;
                         showToast('✅ Koneksi ke Supabase berhasil!', 'success');
                         updateConnectionStatus(true);
-                        
-                        // Log sukses
-                        console.log('%c✅ SIMBAKES: Koneksi Supabase BERHASIL!', 
+                        console.log('%c✅ SIMBAKES: Supabase connection SUCCESSFUL!', 
                             'color: #16a34a; font-weight: bold; font-size: 14px;');
-                        
                         return true;
                     }
                     
-                    throw new Error('Koneksi tidak dapat diverifikasi');
+                    throw new Error('Connection could not be verified');
                     
                 } catch (error) {
                     console.error('[ERROR] Connection test failed:', error);
-                    const errorMsg = error.message || JSON.stringify(error);
+                    let userMessage = error.message || String(error);
                     
-                    // User-friendly error messages
-                    let userMessage = errorMsg;
-                    if (errorMsg.includes('401')) {
-                        userMessage = `Gagal autentikasi (401). Kemungkinan:
-1. Project di-PAUSE → Buka dashboard dan Resume
-2. Key expired → Generate new key di Settings → API
-3. Salah copy key → Pastikan copy yang "anon public"`;
-                    } else if (errorMsg.includes('403')) {
-                        userMessage = 'Akses ditolak (403). IP Anda mungkin diblokir.';
-                    } else if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
-                        userMessage = 'Tidak ada koneksi internet atau URL salah.';
+                    if (userMessage.includes('401')) {
+                        userMessage = 'Auth failed (401). Check: Project paused? Key expired? Wrong key copied?';
+                    } else if (userMessage.includes('403')) {
+                        userMessage = 'Access denied (403). IP may be blocked.';
+                    } else if (userMessage.includes('network') || userMessage.includes('fetch')) {
+                        userMessage = 'No internet or wrong URL.';
                     }
                     
                     showToast('❌ Gagal terhubung: ' + userMessage, 'error');
@@ -1245,109 +1234,6 @@
             return false;
         }
 
-            // Validasi format URL
-            if (!url.includes('supabase.co') && !url.includes('supabase.in')) {
-                showToast('❌ Format URL tidak valid! Harus: https://xxxxx.supabase.co', 'error');
-                return false;
-            }
-
-            // Validasi format JWT (basic check)
-            if (key.length < 50 || !key.includes('.')) {
-                showToast('❌ Format Anon Key tidak valid! Harus JWT token yang panjang', 'error');
-                return false;
-            }
-
-            showToast('Menguji koneksi...', 'info');
-            
-            if (initSupabase(url, key)) {
-                try {
-                    // Method 1: Health check langsung ke REST API
-                    let testPassed = false;
-                    let httpStatus = 0;
-                    
-                    try {
-                        const response = await fetch(url + '/rest/v1/', {
-                            method: 'GET',
-                            headers: { 
-                                'apikey': key,
-                                'Authorization': 'Bearer ' + key,
-                                'Content-Type': 'application/json'
-                            }
-                        });
-                        httpStatus = response.status;
-                        
-                        console.log('Supabase health check status:', response.status);
-                        
-                        if (response.ok || response.status === 200 || response.status === 406) {
-                            // 406 = Not Acceptable (normal untuk root endpoint)
-                            testPassed = true;
-                        } else if (response.status === 401) {
-                            throw new Error('AUTH_401');
-                        } else if (response.status === 403) {
-                            throw new Error('AUTH_403');
-                        } else if (response.status === 404) {
-                            throw new Error('NOT_FOUND_404');
-                        } else {
-                            throw new Error('HTTP_' + response.status);
-                        }
-                    } catch (fetchError) {
-                        if (fetchError.message === 'AUTH_401') {
-                            throw new Error('API KEY TIDAK VALID (Error 401). Silakan periksa:
-
-1. Buka dashboard Supabase → Settings → API
-2. Copy "Project URL" dan "anon public" key
-3. Pastikan tidak ada spasi tambahan
-4. Pastikan project belum di-pause/dihapus');
-                        } else if (fetchError.message === 'AUTH_403') {
-                            throw new Error('DILARANG (Error 403). IP atau domain Anda mungkin diblokir.');
-                        } else if (fetchError.message === 'NOT_FOUND_404') {
-                            throw new Error('PROJECT TIDAK DITEMUKAN (Error 404). URL project salah atau project sudah dihapus.');
-                        } else if (fetchError.message.startsWith('HTTP_')) {
-                            throw new Error('Server error: ' + fetchError.message.replace('HTTP_', 'HTTP '));
-                        } else {
-                            throw fetchError;
-                        }
-                    }
-                    
-                    // Method 2: Jika health check OK, coba query tabel (optional)
-                    if (testPassed) {
-                        try {
-                            const { data: testData, error: testError } = await supabaseClient
-                                .from('roadmap_kebutuhan')
-                                .select('*')
-                                .limit(1);
-                            
-                            if (testError) {
-                                const errorMsg = testError.message || '';
-                                console.log('Tabel query result:', errorMsg);
-                                // Tetap sukses, tabel mungkin belum ada tapi koneksi OK
-                            }
-                        } catch (tableError) {
-                            console.log('Table query skipped:', tableError.message);
-                            // Tetap lanjutkan, yang penting health check berhasil
-                        }
-                    }
-                    
-                    if (testPassed) {
-                        isConnected = true;
-                        useDemo = false;
-                        showToast('✅ Koneksi ke Supabase berhasil!', 'success');
-                        updateConnectionStatus(true);
-                        return true;
-                    }
-                    
-                    throw new Error('Koneksi gagal - coba refresh halaman');
-                    
-                } catch (error) {
-                    console.error('Connection test error:', error);
-                    const errorMsg = error.message || JSON.stringify(error);
-                    showToast('❌ Gagal terhubung: ' + errorMsg, 'error');
-                    updateConnectionStatus(false, errorMsg);
-                    return false;
-                }
-            }
-            return false;
-        }
 
         // Save config and connect
         async function saveConfig() {
