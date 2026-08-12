@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - SIMBAKES</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* ============================================
+           SIMBAKES - Login Page Stylesheet
+           Beasiswa Tematik Bidang Kesehatan
+           ============================================ */
+        
+        :root {
+            --primary-color: #1565c0;
+            --primary-dark: #0d47a1;
+            --primary-light: #e3f2fd;
+            --secondary-color: #00695c;
+            --accent-color: #ff6f00;
+            --success-color: #2e7d32;
+            --error-color: #c62828;
+            --warning-color: #ef6c00;
+            --text-primary: #212121;
+            --text-secondary: #757575;
+            --bg-main: #f5f7fa;
+            --bg-card: #ffffff;
+            --border-color: #e0e0e0;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.16);
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 440px;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Header Section */
+        .login-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.3; }
+        }
+        
+        .logo-container {
+            position: relative;
+            z-index: 1;
+            margin-bottom: 15px;
+        }
+        
+        .logo-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            font-size: 36px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .login-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+            letter-spacing: 1px;
+        }
+        
+        .login-header p {
+            font-size: 14px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Form Section */
+        .login-body {
+            padding: 35px 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 22px;
+            position: relative;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .input-wrapper i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 16px;
+            transition: var(--transition);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px 15px 14px 45px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            color: var(--text-primary);
+            transition: var(--transition);
+            background: var(--bg-main);
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(21, 101, 192, 0.1);
+            background: white;
+        }
+        
+        .form-control:focus + i,
+        .input-wrapper:focus-within i {
+            color: var(--primary-color);
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 16px;
+            transition: var(--transition);
+            background: none;
+            border: none;
+            padding: 5px;
+        }
+        
+        .toggle-password:hover {
+            color: var(--primary-color);
+        }
+        
+        /* Error State */
+        .form-group.error .form-control {
+            border-color: var(--error-color);
+            background: #fff5f5;
+        }
+        
+        .error-message {
+            color: var(--error-color);
+            font-size: 12px;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* Remember Me & Forgot Password */
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+        
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        
+        .remember-me input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-color);
+            cursor: pointer;
+        }
+        
+        .forgot-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+        
+        .forgot-link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+        
+        /* Submit Button */
+        .btn-login {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .btn-login:hover::before {
+            left: 100%;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(21, 101, 192, 0.4);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .btn-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Alert Messages */
+        .alert {
+            padding: 14px 18px;
+            border-radius: var(--radius-md);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .alert-error {
+            background: #ffebee;
+            color: var(--error-color);
+            border: 1px solid #ffcdd2;
+        }
+        
+        .alert-success {
+            background: #e8f5e9;
+            color: var(--success-color);
+            border: 1px solid #c8e6c9;
+        }
+        
+        .alert-warning {
+            background: #fff3e0;
+            color: var(--warning-color);
+            border: 1px solid #ffe0b2;
+        }
+        
+        .alert i {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .alert-close {
+            margin-left: auto;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: var(--transition);
+        }
+        
+        .alert-close:hover {
+            opacity: 1;
+        }
+        
+        /* Footer */
+        .login-footer {
+            text-align: center;
+            padding: 20px 30px;
+            background: var(--bg-main);
+            border-top: 1px solid var(--border-color);
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .login-footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 9999;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Responsive */
+        @media (max-width: 767px) {
+            .login-container {
+                max-width: 100%;
+                border-radius: var(--radius-md);
+            }
+            
+            .login-header {
+                padding: 30px 20px;
+            }
+            
+            .login-header h1 {
+                font-size: 24px;
+            }
+            
+            .login-body {
+                padding: 25px 20px;
+            }
+            
+            .form-options {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .logo-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 28px;
+            }
+            
+            .login-header h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>Memeriksa sesi...</p>
+    </div>
+
+    <div class="login-container">
+        <!-- Header -->
+        <div class="login-header">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <i class="fas fa-user-md"></i>
+                </div>
+            </div>
+            <h1>SIMBAKES</h1>
+            <p>Sistem Manajemen Beasiswa Kesehatan</p>
+        </div>
+
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
+
+        <!-- Login Form -->
+        <div class="login-body">
+            <form id="loginForm" novalidate>
+                <!-- Email Field -->
+                <div class="form-group" id="emailGroup">
+                    <label for="email">Email</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            class="form-control" 
+                            placeholder="Masukkan email anda"
+                            autocomplete="email"
+                            required
+                        >
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="error-message" id="emailError" style="display: none;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span></span>
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-group" id="passwordGroup">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            class="form-control" 
+                            placeholder="Masukkan password"
+                            autocomplete="current-password"
+                            required
+                        >
+                        <i class="fas fa-lock"></i>
+                        <button type="button" class="toggle-password" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="error-message" id="passwordError" style="display: none;">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span></span>
+                    </div>
+                </div>
+
+                <!-- Options -->
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" id="rememberMe" name="rememberMe">
+                        <span>Ingat saya</span>
+                    </label>
+                    <a href="#" class="forgot-link" onclick="handleForgotPassword(event)">Lupa password?</a>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn-login" id="loginBtn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Masuk</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="login-footer">
+            <p>&copy; 2025 SIMBAKES - Beasiswa Tematik Bidang Kesehatan</p>
+        </div>
+    </div>
+
+    <!-- Supabase JS Client v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        // ============================================================
+        // SIMBAKES - Login Module
+        // Integrasi dengan Supabase Auth
+        // ============================================================
+
+        // === KONFIGURASI SUPABASE ===
+        // Ganti dengan credentials Anda
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+        // Initialize Supabase Client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // === DOM ELEMENTS ===
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const togglePasswordBtn = document.getElementById('togglePassword');
+        const loginBtn = document.getElementById('loginBtn');
+        const alertContainer = document.getElementById('alertContainer');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        // === INITIALIZATION ===
+        document.addEventListener('DOMContentLoaded', async () => {
+            showLoading(true);
+            
+            // Check existing session
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (session) {
+                // Valid session exists, redirect to dashboard
+                await handleSuccessfulLogin(session.user);
+            }
+            
+            showLoading(false);
+
+            // Setup event listeners
+            setupEventListeners();
+        });
+
+        // === EVENT LISTENERS ===
+        function setupEventListeners() {
+            // Form submission
+            loginForm.addEventListener('submit', handleLogin);
+
+            // Toggle password visibility
+            togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
+
+            // Real-time validation
+            emailInput.addEventListener('blur', () => validateField('email'));
+            emailInput.addEventListener('input', clearFieldError.bind(null, 'email'));
+            
+            passwordInput.addEventListener('blur', () => validateField('password'));
+            passwordInput.addEventListener('input', clearFieldError.bind(null, 'password'));
+
+            // Listen for auth state changes
+            supabase.auth.onAuthStateChange((event, session) => {
+                if (event === 'SIGNED_IN' && session) {
+                    handleSuccessfulLogin(session.user);
+                }
+            });
+        }
+
+        // === LOGIN HANDLER ===
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            // Clear previous alerts
+            clearAlerts();
+            
+            // Validate form
+            if (!validateForm()) {
+                return;
+            }
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            // Show loading state
+            setLoadingState(true);
+
+            try {
+                // Attempt sign in with Supabase Auth
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) throw error;
+
+                if (data.user) {
+                    // Check user status in multiusers table
+                    await checkUserStatus(data.user);
+                }
+
+            } catch (error) {
+                console.error('Login error:', error);
+                
+                let errorMessage = 'Terjadi kesalahan saat login';
+                
+                // Handle specific error messages
+                if (error.message?.includes('Invalid login credentials')) {
+                    errorMessage = 'Email atau password salah';
+                } else if (error.message?.includes('Email not confirmed')) {
+                    errorMessage = 'Email belum diverifikasi. Silakan cek inbox Anda';
+                } else if (error.message?.includes('User not found')) {
+                    errorMessage = 'Akun tidak ditemukan';
+                } else if (error.message?.includes('Account is disabled')) {
+                    errorMessage = 'Akun Anda telah dinonaktifkan. Hubungi administrator';
+                }
+
+                showAlert('error', errorMessage);
+                setLoadingState(false);
+            }
+        }
+
+        // === CHECK USER STATUS ===
+        async function checkUserStatus(user) {
+            try {
+                // Query multiusers table to get user status and role
+                const { data: userData, error: userError } = await supabase
+                    .from('multiusers')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                if (userError && userError.code === 'PGRST116') {
+                    // User not found in multiusers table
+                    showAlert('warning', 'Akun Anda belum terdaftar di sistem. Hubungi administrator.');
+                    await supabase.auth.signOut();
+                    setLoadingState(false);
+                    return;
+                }
+
+                if (userError) throw userError;
+
+                // Check user status
+                if (userData.status === 'non-aktif') {
+                    showAlert('error', 'Akun Anda tidak aktif. Hubungi administrator.');
+                    await supabase.auth.signOut();
+                    setLoadingState(false);
+                    return;
+                }
+
+                if (userData.status === 'blokir') {
+                    showAlert('error', 'Akun Anda diblokir. Hubungi administrator.');
+                    await supabase.auth.signOut();
+                    setLoadingState(false);
+                    return;
+                }
+
+                // Store user info in sessionStorage
+                const userInfo = {
+                    id: user.id,
+                    email: user.email,
+                    nama_lengkap: userData.nama_lengkap || user.user_metadata?.nama_lengkap || '',
+                    username: userData.username || '',
+                    role: userData.role || 'viewer',
+                    status: userData.status
+                };
+
+                sessionStorage.setItem('simbakes_user', JSON.stringify(userInfo));
+                sessionStorage.setItem('simbakes_auth_token', user.access_token);
+
+                // Success - redirect based on role
+                showAlert('success', 'Login berhasil! Mengalihkan...');
+                
+                setTimeout(() => {
+                    redirectByRole(userInfo.role);
+                }, 1000);
+
+            } catch (error) {
+                console.error('Status check error:', error);
+                showAlert('error', 'Gagal memverifikasi status user');
+                setLoadingState(false);
+            }
+        }
+
+        // === HANDLE SUCCESSFUL LOGIN ===
+        async function handleSuccessfulLogin(user) {
+            try {
+                const { data: userData } = await supabase
+                    .from('multiusers')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                const userInfo = {
+                    id: user.id,
+                    email: user.email,
+                    nama_lengkap: userData?.nama_lengkap || user.user_metadata?.nama_lengkap || '',
+                    username: userData?.username || '',
+                    role: userData?.role || 'viewer',
+                    status: userData?.status || 'aktif'
+                };
+
+                sessionStorage.setItem('simbakes_user', JSON.stringify(userInfo));
+                
+                redirectByRole(userInfo.role);
+            } catch (error) {
+                console.error('Session restore error:', error);
+                // If error, still redirect to allow re-login
+                window.location.href = 'multiusers.html';
+            }
+        }
+
+        // === REDIRECT BY ROLE ===
+        function redirectByRole(role) {
+            // For now, redirect to multiusers page
+            // This can be expanded later based on role permissions
+            const redirects = {
+                'super_admin': 'multiusers.html',
+                'admin': 'multiusers.html',
+                'approver': 'roadmap_kebutuhan.html',
+                'operator': 'simbakes_form.html',
+                'viewer': 'roadmap_kebutuhan.html'
+            };
+            
+            window.location.href = redirects[role] || 'roadmap_kebutuhan.html';
+        }
+
+        // === VALIDATION FUNCTIONS ===
+        function validateForm() {
+            let isValid = true;
+
+            if (!validateField('email')) isValid = false;
+            if (!validateField('password')) isValid = false;
+
+            return isValid;
+        }
+
+        function validateField(fieldName) {
+            const field = fieldName === 'email' ? emailInput : passwordInput;
+            const value = field.value.trim();
+            const group = document.getElementById(fieldName + 'Group');
+            const errorDiv = document.getElementById(fieldName + 'Error');
+            const errorSpan = errorDiv.querySelector('span');
+
+            let isValid = true;
+            let message = '';
+
+            if (fieldName === 'email') {
+                if (!value) {
+                    message = 'Email wajib diisi';
+                    isValid = false;
+                } else if (!isValidEmail(value)) {
+                    message = 'Format email tidak valid';
+                    isValid = false;
+                }
+            }
+
+            if (fieldName === 'password') {
+                if (!value) {
+                    message = 'Password wajib diisi';
+                    isValid = false;
+                } else if (value.length < 6) {
+                    message = 'Password minimal 6 karakter';
+                    isValid = false;
+                }
+            }
+
+            if (!isValid) {
+                group.classList.add('error');
+                errorSpan.textContent = message;
+                errorDiv.style.display = 'flex';
+            } else {
+                group.classList.remove('error');
+                errorDiv.style.display = 'none';
+            }
+
+            return isValid;
+        }
+
+        function clearFieldError(fieldName) {
+            const group = document.getElementById(fieldName + 'Group');
+            const errorDiv = document.getElementById(fieldName + 'Error');
+            group.classList.remove('error');
+            errorDiv.style.display = 'none';
+        }
+
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        // === UI HELPER FUNCTIONS ===
+        function togglePasswordVisibility() {
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+            
+            const icon = togglePasswordBtn.querySelector('i');
+            icon.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+        }
+
+        function setLoadingState(loading) {
+            loginBtn.disabled = loading;
+            
+            if (loading) {
+                loginBtn.innerHTML = '<div class="spinner"></div><span>Memproses...</span>';
+            } else {
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i><span>Masuk</span>';
+            }
+        }
+
+        function showLoading(show) {
+            loadingOverlay.style.display = show ? 'flex' : 'none';
+        }
+
+        function showAlert(type, message) {
+            const icons = {
+                'error': 'fas fa-times-circle',
+                'success': 'fas fa-check-circle',
+                'warning': 'fas fa-exclamation-triangle'
+            };
+
+            const alertHtml = `
+                <div class="alert alert-${type}">
+                    <i class="${icons[type]}"></i>
+                    <span>${message}</span>
+                    <span class="alert-close" onclick="this.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </span>
+                </div>
+            `;
+
+            alertContainer.innerHTML = alertHtml;
+        }
+
+        function clearAlerts() {
+            alertContainer.innerHTML = '';
+        }
+
+        function handleForgotPassword(e) {
+            e.preventDefault();
+            alert('Fitur reset password akan segera tersedia.\n\nHubungi administrator untuk reset password manual.');
+        }
+
+        // === LOGOUT FUNCTION (available globally) ===
+        async function logout() {
+            try {
+                await supabase.auth.signOut();
+                sessionStorage.removeItem('simbakes_user');
+                sessionStorage.removeItem('simbakes_auth_token');
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Make logout available globally
+        window.logout = logout;
+        window.supabaseClient = supabase;
+    </script>
+</body>
+</html>
