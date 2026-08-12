@@ -20,10 +20,10 @@
 // Supabase Configuration Object
 const SUPABASE_CONFIG = {
     // URL proyek Supabase Anda (format: https://xxxxx.supabase.co)
-    url: 'YOUR_SUPABASE_URL',
+    url: 'https://boeknpvlfamjmddsdopd.supabase.co',
     
     // Anon/ Public key (aman untuk frontend)
-    anonKey: 'YOUR_SUPABASE_ANON_KEY',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZWtucHZsZmFtam1kZHNkb3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NzYwNjIsImV4cCI6MjEwMjA1MjA2Mn0.kHj7xEY7Wa4zSJwH0rjhiB3Qf0IHriyPlWoh4rdlv3U',
     
     // Opsi konfigurasi tambahan
     options: {
