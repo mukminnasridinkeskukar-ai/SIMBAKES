@@ -3,257 +3,1622 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIMBAKES - Sistem Manajemen Beasiswa Kesehatan</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <meta name="description" content="SIMBAKES - Sistem Informasi Beasiswa Tematik Bidang Kesehatan">
+    <meta name="author" content="SIMBAKES Team">
+    <title>SIMBAKES - Beasiswa Tematik Bidang Kesehatan</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-        <div class="navbar-container">
-            <a href="index.html" class="navbar-brand">
-                <div class="navbar-logo">
-                    <i class="fas fa-user-md"></i>
+    <!-- ============================================ -->
+    <!-- LANDING PAGE (3 Detik)                        -->
+    <!-- ============================================ -->
+    <div id="landing-page" class="landing-page">
+        <div class="landing-content">
+            <div class="landing-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 100 100" class="logo-svg">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="3"/>
+                        <path d="M30 50 L45 65 L70 35" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
                 </div>
-                <div class="navbar-title">
-                    <h1>SIMBAKES</h1>
-                    <span>Beasiswa Tematik Bidang Kesehatan</span>
+                <h1 class="landing-title">SIMBAKES</h1>
+                <p class="landing-subtitle">Beasiswa Tematik Bidang Kesehatan</p>
+            </div>
+            <div class="loading-indicator">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
                 </div>
-            </a>
-
-            <div class="navbar-user">
-                <div class="user-info">
-                    <div class="user-name" id="currentUserName">Guest</div>
-                    <div class="user-role" id="currentUserRole">-</div>
-                </div>
-                <button class="btn-logout" onclick="handleLogout()">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Keluar</span>
-                </button>
+                <p class="loading-text">Memuat...</p>
             </div>
         </div>
-    </nav>
+    </div>
 
-    <!-- Main Container -->
-    <main class="main-container">
-        <!-- Welcome Section -->
-        <section class="welcome-section" style="margin-bottom: 32px;">
-            <div style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); border-radius: var(--radius-lg); padding: 40px; color: white;">
-                <h2 style="color: white; margin-bottom: 12px;">Selamat Datang di SIMBAKES</h2>
-                <p style="color: rgba(255,255,255,0.9); font-size: 16px; max-width: 600px; margin-bottom: 24px;">
-                    Sistem Informasi Manajemen Beasiswa Tematik Bidang Kesehatan. 
-                    Kelola data pengusulan, penetapan, dan penerima beasiswa kesehatan dengan mudah.
-                </p>
-                <a href="login.html" class="btn btn-primary" style="background: white; color: var(--primary-color); border: none;">
-                    <i class="fas fa-sign-in-alt"></i> Masuk ke Sistem
-                </a>
+    <!-- ============================================ -->
+    <!-- APLIKASI UTAMA (BERANDA)                      -->
+    <!-- ============================================ -->
+    <div id="app" class="app hidden">
+        
+        <!-- HEADER -->
+        <header class="header">
+            <button id="menu-toggle" class="menu-toggle" aria-label="Toggle Menu">
+                <span class="hamburger-icon">☰</span>
+            </button>
+            <div class="header-brand">
+                <h1 class="header-title">SIMBAKES</h1>
+                <p class="header-subtitle">Beasiswa Tematik Bidang Kesehatan</p>
             </div>
-        </section>
+            <div class="header-spacer"></div>
+        </header>
 
-        <!-- Quick Stats -->
-        <section class="quick-stats" style="margin-bottom: 32px;">
-            <h3 style="margin-bottom: 20px;"><i class="fas fa-chart-bar"></i> Ringkasan Data</h3>
-            <div class="stats-grid" id="dashboardStats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
-                <!-- Stats will be populated by JavaScript -->
-            </div>
-        </section>
+        <!-- SIDEBAR OVERLAY (Mobile) -->
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
-        <!-- Module Cards -->
-        <section class="modules-section">
-            <h3 style="margin-bottom: 20px;"><i class="fas fa-th-large"></i> Modul Tersedia</h3>
-            <div class="modules-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-                
-                <!-- Roadmap Kebutuhan Card -->
-                <div class="card module-card">
-                    <div class="card-body" style="text-align: center; padding: 32px;">
-                        <div style="width: 64px; height: 64px; background: var(--primary-light); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-                            <i class="fas fa-road" style="font-size: 28px; color: var(--primary-color);"></i>
-                        </div>
-                        <h4>Roadmap Kebutuhan</h4>
-                        <p style="margin: 8px 0 20px;">Master data kebutuhan beasiswa tematik bidang kesehatan.</p>
-                        <a href="modules/roadmap_kebutuhan.html" class="btn btn-primary btn-block">
-                            <i class="fas fa-arrow-right"></i> Buka Modul
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Data Pengusulan Card -->
-                <div class="card module-card">
-                    <div class="card-body" style="text-align: center; padding: 32px;">
-                        <div style="width: 64px; height: 64px; background: #e8f5e9; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-                            <i class="fas fa-file-alt" style="font-size: 28px; color: var(--success-color);"></i>
-                        </div>
-                        <h4>Data Pengusulan</h4>
-                        <p style="margin: 8px 0 20px;">Form pengajuan dan data usulan beasiswa dari calon penerima.</p>
-                        <a href="modules/data_pengusulan.html" class="btn btn-success btn-block">
-                            <i class="fas fa-arrow-right"></i> Buka Modul
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Data Penetapan Card -->
-                <div class="card module-card">
-                    <div class="card-body" style="text-align: center; padding: 32px;">
-                        <div style="width: 64px; height: 64px; background: #fff3e0; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-                            <i class="fas fa-check-double" style="font-size: 28px; color: var(--warning-color);"></i>
-                        </div>
-                        <h4>Data Penetapan</h4>
-                        <p style="margin: 8px 0 20px;">Data penetapan beasiswa yang telah disetujui dengan SK resmi.</p>
-                        <a href="modules/data_penetapan.html" class="btn btn-secondary btn-block">
-                            <i class="fas fa-arrow-right"></i> Buka Modul
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Multiusers Card -->
-                <div class="card module-card">
-                    <div class="card-body" style="text-align: center; padding: 32px;">
-                        <div style="width: 64px; height: 64px; background: #fce4ec; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-                            <i class="fas fa-users-cog" style="font-size: 28px; color: #c2185b;"></i>
-                        </div>
-                        <h4>Manajemen User</h4>
-                        <p style="margin: 8px 0 20px;">Kelola akun pengguna sistem SIMBAKES (Admin only).</p>
-                        <a href="modules/multiusers.html" class="btn btn-danger btn-block">
-                            <i class="fas fa-arrow-right"></i> Buka Modul
-                        </a>
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
-        <!-- Info Section -->
-        <section class="info-section" style="margin-top: 32px;">
-            <div class="card">
-                <div class="card-header">
-                    <h4><i class="fas fa-info-circle"></i> Informasi Sistem</h4>
-                </div>
-                <div class="card-body">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
-                        <div>
-                            <strong>Versi:</strong> 1.0.0
-                        </div>
-                        <div>
-                            <strong>Teknologi:</strong> Supabase + GitHub Pages
-                        </div>
-                        <div>
-                            <strong>Status:</strong> Development
-                        </div>
-                        <div>
-                            <strong>Dokumentasi:</strong> Lihat folder /docs
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- Footer -->
-    <footer style="background: var(--bg-dark); color: rgba(255,255,255,0.7); padding: 24px; text-align: center; margin-top: 48px;">
-        <p>&copy; 2025 SIMBAKES - Beasiswa Tematik Bidang Kesehatan. All rights reserved.</p>
-    </footer>
-
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config/supabase-config.js"></script>
-    <script src="assets/js/supabase-client.js"></script>
-    <script src="assets/js/auth.js"></script>
-    <script src="assets/js/utils.js"></script>
-    
-    <script>
-        // ============================================================
-        // Dashboard Page Script
-        // ============================================================
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                // Initialize auth
-                await simbakesAuth.init();
-                
-                // Update user info in navbar
-                UI.updateUserInfo();
-                
-                // Load dashboard statistics
-                await loadDashboardStats();
-                
-            } catch (error) {
-                console.error('Dashboard init error:', error);
-            }
-        });
-
-        /**
-         * Load dashboard statistics from all tables
-         */
-        async function loadDashboardStats() {
-            const statsContainer = document.getElementById('dashboardStats');
+        <!-- MAIN LAYOUT CONTAINER -->
+        <div class="main-layout">
             
-            try {
-                // Fetch data concurrently
-                const [roadmapStats, pengusulanData, penetapanData] = await Promise.all([
-                    RoadmapKebutuhan.getStatistics(),
-                    DataPengusulan.getAll(),
-                    DataPenetapan.getStatistics()
-                ]);
+            <!-- SIDEBAR -->
+            <aside id="sidebar" class="sidebar">
+                <nav class="sidebar-nav">
+                    
+                    <!-- BAGIAN 1: BERANDA -->
+                    <div class="nav-section nav-section-beranda">
+                        <h2 class="nav-section-title">
+                            <span class="section-icon">🏠</span>
+                            Beranda
+                        </h2>
+                        <ul class="nav-menu">
+                            <li>
+                                <a href="#/dashboard" class="nav-item nav-item-dashboard active" data-page="dashboard">
+                                    <span class="nav-icon">📊</span>
+                                    <span class="nav-text">Dashboard</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#/petunjuk" class="nav-item nav-item-petunjuk" data-page="petunjuk">
+                                    <span class="nav-icon">📖</span>
+                                    <span class="nav-text">Petunjuk Penggunaan</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#/roadmap" class="nav-item nav-item-roadmap" data-page="roadmap">
+                                    <span class="nav-icon">🗺️</span>
+                                    <span class="nav-text">Roadmap Kebutuhan</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#/informasi-update" class="nav-item nav-item-informasi" data-page="informasi-update">
+                                    <span class="nav-icon">📢</span>
+                                    <span class="nav-text">Informasi Update</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
 
-                const totalPengusulan = pengusulanData.data?.length || 0;
-                const totalDiajukan = pengusulanData.data?.filter(d => d.status === 'diajukan').length || 0;
+                    <!-- BAGIAN 2: LAYANAN -->
+                    <div class="nav-section nav-section-layanan">
+                        <h2 class="nav-section-title">
+                            <span class="section-icon">🎯</span>
+                            Layanan
+                        </h2>
+                        <ul class="nav-menu">
+                            <li>
+                                <a href="#/formulir-usulan" class="nav-item nav-item-formulir" data-page="formulir-usulan">
+                                    <span class="nav-icon">📝</span>
+                                    <span class="nav-text">Formulir Usulan Rekomendasi</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#/cek-pengusulan" class="nav-item nav-item-cek-usul" data-page="cek-pengusulan">
+                                    <span class="nav-icon">🔍</span>
+                                    <span class="nav-text">Cek Status Pengusulan</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#/cek-penetapan" class="nav-item nav-item-cek-net" data-page="cek-penetapan">
+                                    <span class="nav-icon">✅</span>
+                                    <span class="nav-text">Cek Status Penetapan</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
 
-                statsContainer.innerHTML = `
-                    <div class="stat-card primary">
-                        <div class="stat-icon"><i class="fas fa-road"></i></div>
-                        <div class="stat-info">
-                            <h3>${roadmapStats.total}</h3>
-                            <p>Kebutuhan Beasiswa</p>
+                    <!-- BAGIAN 3: PANEL ADMIN -->
+                    <div class="nav-section nav-section-admin">
+                        <h2 class="nav-section-title">
+                            <span class="section-icon">⚙️</span>
+                            Panel Admin
+                        </h2>
+                        <ul class="nav-menu">
+                            <li>
+                                <a href="#/data-pengusulan" class="nav-item nav-item-data-usul" data-page="data-pengusulan">
+                                    <span class="nav-icon">📋</span>
+                                    <span class="nav-text">Data Pengusulan</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#/data-penetapan" class="nav-item nav-item-data-net" data-page="data-penetapan">
+                                    <span class="nav-icon">📑</span>
+                                    <span class="nav-text">Data Penetapan</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#/data-roadmap" class="nav-item nav-item-data-roadmap" data-page="data-roadmap">
+                                    <span class="nav-icon">📊</span>
+                                    <span class="nav-text">Data Roadmap Kebutuhan</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                </nav>
+            </aside>
+
+            <!-- MAIN CONTENT AREA -->
+            <main id="main-content" class="main-content">
+                
+                <!-- ============================================ -->
+                <!-- DASHBOARD PAGE (Default)                     -->
+                <!-- ============================================ -->
+                <div id="page-dashboard" class="page active">
+                    <div class="page-header">
+                        <h2 class="page-title">Dashboard</h2>
+                        <p class="page-description">Selamat datang di SIMBAKES - Beasiswa Tematik Bidang Kesehatan</p>
+                    </div>
+                    
+                    <!-- Stats Cards Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card stat-blue">
+                            <div class="stat-icon">📋</div>
+                            <div class="stat-info">
+                                <h3 class="stat-number">156</h3>
+                                <p class="stat-label">Total Pengusulan</p>
+                            </div>
+                            <div class="stat-trend trend-up">+12%</div>
+                        </div>
+                        
+                        <div class="stat-card stat-green">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-info">
+                                <h3 class="stat-number">89</h3>
+                                <p class="stat-label">Disetujui</p>
+                            </div>
+                            <div class="stat-trend trend-up">+8%</div>
+                        </div>
+                        
+                        <div class="stat-card stat-yellow">
+                            <div class="stat-icon">⏳</div>
+                            <div class="stat-info">
+                                <h3 class="stat-number">42</h3>
+                                <p class="stat-label">Dalam Proses</p>
+                            </div>
+                            <div class="stat-trend trend-neutral">0%</div>
+                        </div>
+                        
+                        <div class="stat-card stat-red">
+                            <div class="stat-icon">❌</div>
+                            <div class="stat-info">
+                                <h3 class="stat-number">25</h3>
+                                <p class="stat-label">Ditolak</p>
+                            </div>
+                            <div class="stat-trend trend-down">-5%</div>
                         </div>
                     </div>
-                    <div class="stat-card success">
-                        <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
-                        <div class="stat-info">
-                            <h3>${totalPengusulan}</h3>
-                            <p>Total Pengusulan</p>
-                        </div>
-                    </div>
-                    <div class="stat-card warning">
-                        <div class="stat-icon"><i class="fas fa-clock"></i></div>
-                        <div class="stat-info">
-                            <h3>${totalDiajukan}</h3>
-                            <p>Menunggu Proses</p>
-                        </div>
-                    </div>
-                    <div class="stat-card danger">
-                        <div class="stat-icon"><i class="fas fa-check-double"></i></div>
-                        <div class="stat-info">
-                            <h3>${penetapanData.total}</h3>
-                            <p>Ditetapkan</p>
-                        </div>
-                    </div>
-                `;
 
-            } catch (error) {
-                console.error('Error loading stats:', error);
-                statsContainer.innerHTML = `
-                    <div class="alert alert-error" style="grid-column: 1/-1;">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <span>Gagal memuat statistik. Pastikan koneksi ke database aktif.</span>
+                    <!-- Quick Actions & Recent Activity -->
+                    <div class="dashboard-grid">
+                        <div class="dashboard-card">
+                            <h3 class="card-title">Aksi Cepat</h3>
+                            <div class="quick-actions">
+                                <a href="#/formulir-usulan" class="action-btn action-emerald">
+                                    <span>📝</span> Buat Usulan Baru
+                                </a>
+                                <a href="#/cek-pengusulan" class="action-btn action-blue">
+                                    <span>🔍</span> Cek Status Usulan
+                                </a>
+                                <a href="#/cek-penetapan" class="action-btn action-violet">
+                                    <span>✅</span> Cek Penetapan
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="dashboard-card">
+                            <h3 class="card-title">Aktivitas Terbaru</h3>
+                            <div class="activity-list">
+                                <div class="activity-item">
+                                    <span class="activity-dot activity-success"></span>
+                                    <div class="activity-content">
+                                        <p>Usulan #2024-001 disetujui</p>
+                                        <small>2 jam yang lalu</small>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <span class="activity-dot activity-warning"></span>
+                                    <div class="activity-content">
+                                        <p>Usulan #2024-002 dalam review</p>
+                                        <small>5 jam yang lalu</small>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <span class="activity-dot activity-info"></span>
+                                    <div class="activity-content">
+                                        <p>Penetapan batch 3 dipublikasikan</p>
+                                        <small>1 hari yang lalu</small>
+                                    </div>
+                                </div>
+                                <div class="activity-item">
+                                    <span class="activity-dot activity-danger"></span>
+                                    <div class="activity-content">
+                                        <p>Usulan #2024-003 ditolak</p>
+                                        <small>2 hari yang lalu</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                `;
-            }
-        }
 
-        /**
-         * Handle logout
-         */
-        async function handleLogout() {
-            if (confirm('Apakah Anda yakin ingin keluar?')) {
-                try {
-                    await simbakesAuth.logout();
-                    window.location.href = 'login.html';
-                } catch (error) {
-                    console.error('Logout error:', error);
-                    window.location.href = 'login.html';
-                }
-            }
-        }
-    </script>
+                    <!-- Chart Placeholder -->
+                    <div class="dashboard-card chart-container">
+                        <h3 class="card-title">Statistik Bulanan</h3>
+                        <div class="chart-placeholder">
+                            <canvas id="dashboardChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- PETUNJUK PENGGUNAAN PAGE                     -->
+                <!-- ============================================ -->
+                <div id="page-petunjuk" class="page">
+                    <div class="page-header">
+                        <h2 class="page-title">Petunjuk Penggunaan</h2>
+                        <p class="page-description">Panduan lengkap penggunaan platform SIMBAKES</p>
+                    </div>
+                    
+                    <div class="guide-container">
+                        <!-- Step by Step Guide -->
+                        <div class="guide-section">
+                            <h3 class="guide-title"><span class="step-num">1</span> Memulai Pengajuan Beasiswa</h3>
+                            <div class="guide-content">
+                                <p>Untuk memulai pengajuan beasiswa tematik bidang kesehatan, ikuti langkah-langkah berikut:</p>
+                                <ol class="guide-steps">
+                                    <li>Akses menu <strong>Layanan → Formulir Usulan Rekomendasi</strong></li>
+                                    <li>Isi formulir pengajuan dengan data yang lengkap dan benar</li>
+                                    <li>Unggah dokumen pendukung yang diperlukan (KTP, ijazah, surat rekomendasi, dll)</li>
+                                    <li>Periksa kembali semua data sebelum mengirimkan</li>
+                                    <li>Klik tombol "Kirim Usulan" untuk submit pengajuan</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <div class="guide-section">
+                            <h3 class="guide-title"><span class="step-num">2</span> Mengecek Status Pengusulan</h3>
+                            <div class="guide-content">
+                                <p>Setelah mengirimkan usulan, Anda dapat memantau statusnya kapan saja:</p>
+                                <ol class="guide-steps">
+                                    <li>Buka menu <strong>Layanan → Cek Status Pengusulan</strong></li>
+                                    <li>Masukkan Nomor Usulan yang Anda terima saat submit</li>
+                                    <li>Klik tombol "Cari" atau tekan Enter</li>
+                                    <li>Status dan informasi detail usulan akan ditampilkan</li>
+                                </ol>
+                                <div class="status-guide">
+                                    <h4>Status Pengusulan:</h4>
+                                    <ul class="status-list">
+                                        <li><span class="status-badge status-draft">Draft</span> - Usulan belum dikirim</li>
+                                        <li><span class="status-badge status-review">Dalam Review</span> - Sedang diverifikasi admin</li>
+                                        <li><span class="status-badge status-approved">Disetujui</span> - Lolos verifikasi, menunggu penetapan</li>
+                                        <li><span class="status-badge status-rejected">Ditolak</span> - Tidak memenuhi persyaratan</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="guide-section">
+                            <h3 class="guide-title"><span class="step-num">3</span> Mengecek Status Penetapan</h3>
+                            <div class="guide-content">
+                                <p>Setelah proses penetapan, penerima beasiswa dapat dicek melalui:</p>
+                                <ol class="guide-steps">
+                                    <li>Akses menu <strong>Layanan → Cek Status Penetapan</strong></li>
+                                    <li>Masukkan NIK atau Nomor Pendaftar</li>
+                                    <li>Lihat hasil penetapan dan status beasiswa</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <div class="guide-section">
+                            <h3 class="guide-title"><span class="step-num">4</span> Persyaratan Dokumen</h3>
+                            <div class="guide-content">
+                                <p>Dokumen yang perlu disiapkan untuk pengajuan beasiswa:</p>
+                                <div class="doc-requirements">
+                                    <div class="doc-item">
+                                        <span class="doc-icon">📄</span>
+                                        <div>
+                                            <strong>Fotokopi KTP</strong>
+                                            <p>Masih berlaku, jelas terbaca</p>
+                                        </div>
+                                    </div>
+                                    <div class="doc-item">
+                                        <span class="doc-icon">🎓</span>
+                                        <div>
+                                            <strong>Ijazah Terakhir</strong>
+                                            <p>Dilegalisir oleh instansi berwenang</p>
+                                        </div>
+                                    </div>
+                                    <div class="doc-item">
+                                        <span class="doc-icon">📝</span>
+                                        <div>
+                                            <strong>Surat Rekomendasi</strong>
+                                            <p>Dari atasan/pimpinan instansi</p>
+                                        </div>
+                                    </div>
+                                    <div class="doc-item">
+                                        <span class="doc-icon">🏥</span>
+                                        <div>
+                                            <strong>Surat Keterangan Sehat</strong>
+                                            <p>Dari dokter/rumah sakit</p>
+                                        </div>
+                                    </div>
+                                    <div class="doc-item">
+                                        <span class="doc-icon">📊</span>
+                                        <div>
+                                            <strong>Proposal Rencana Studi</strong>
+                                            <p>Mencantumkan tujuan dan manfaat beasiswa</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="guide-section">
+                            <h3 class="guide-title"><span class="step-num">5</span> Kontak & Bantuan</h3>
+                            <div class="guide-content">
+                                <div class="contact-info">
+                                    <div class="contact-item">
+                                        <span class="contact-icon">📧</span>
+                                        <div>
+                                            <strong>Email</strong>
+                                            <p>simbakes@kemenkes.go.id</p>
+                                        </div>
+                                    </div>
+                                    <div class="contact-item">
+                                        <span class="contact-icon">📞</span>
+                                        <div>
+                                            <strong>Telepon</strong>
+                                            <p>(021) 1234-5678</p>
+                                        </div>
+                                    </div>
+                                    <div class="contact-item">
+                                        <span class="contact-icon">💬</span>
+                                        <div>
+                                            <strong>Jam Operasional</strong>
+                                            <p>Senin-Jumat, 08:00 - 16:00 WIB</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- ROADMAP KEBUTUHAN PAGE                       -->
+                <!-- ============================================ -->
+                <div id="page-roadmap" class="page">
+                    <div class="page-header">
+                        <h2 class="page-title">Roadmap Kebutuhan</h2>
+                        <p class="page-description">Informasi roadmap kebutuhan beasiswa kesehatan</p>
+                    </div>
+                    
+                    <div class="roadmap-container">
+                        <!-- Year Filter -->
+                        <div class="roadmap-filter">
+                            <label for="year-select">Tahun Anggaran:</label>
+                            <select id="year-select" class="filter-select">
+                                <option value="2024">2024</option>
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                            </select>
+                        </div>
+
+                        <!-- Roadmap Timeline -->
+                        <div class="roadmap-timeline">
+                            <div class="timeline-phase phase-active">
+                                <div class="phase-marker"></div>
+                                <div class="phase-content">
+                                    <h4>Fase 1: Perencanaan</h4>
+                                    <p class="phase-period">Januari - Maret 2024</p>
+                                    <ul class="phase-items">
+                                        <li>Analisis kebutuhan SDM kesehatan</li>
+                                        <li>Penentuan kuota per program studi</li>
+                                        <li>Koordinasi dengan institusi pendidikan</li>
+                                    </ul>
+                                    <div class="phase-stats">
+                                        <span class="phase-stat">Target: 500 Penerima</span>
+                                        <span class="phase-stat">Budget: Rp 25 M</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="timeline-phase phase-active">
+                                <div class="phase-marker"></div>
+                                <div class="phase-content">
+                                    <h4>Fase 2: Pengusulan</h4>
+                                    <p class="phase-period">April - Juni 2024</p>
+                                    <ul class="phase-items">
+                                        <li>Pembukaan pendaftaran online</li>
+                                        <li>Verifikasi administrasi awal</li>
+                                        <li>Seleksi dokumen kelengkapan</li>
+                                    </ul>
+                                    <div class="phase-stats">
+                                        <span class="phase-stat">Pendaftar: 1,250 Orang</span>
+                                        <span class="phase-stat">Lolos Admin: 980 Orang</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="timeline-phase phase-current">
+                                <div class="phase-marker current-marker"></div>
+                                <div class="phase-content">
+                                    <span class="current-badge">SEDANG BERLANGSUNG</span>
+                                    <h4>Fase 3: Seleksi & Penetapan</h4>
+                                    <p class="phase-period">Juli - September 2024</p>
+                                    <ul class="phase-items">
+                                        <li>Evaluasi substansi proposal</li>
+                                        <li>Wawancara (jika diperlukan)</li>
+                                        <li>Penetapan penerima beasiswa</li>
+                                        <li>Pengumuman resmi</li>
+                                    </ul>
+                                    <div class="phase-stats">
+                                        <span class="phase-stat">Proses Seleksi: 450 Orang</span>
+                                        <span class="phase-stat">Target Ditetapkan: 500 Orang</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="timeline-phase">
+                                <div class="phase-marker"></div>
+                                <div class="phase-content">
+                                    <h4>Fase 4: Pelaksanaan</h4>
+                                    <p class="phase-period">Oktober 2024 - 2026</p>
+                                    <ul class="phase-items">
+                                        <li>Pencairan dana beasiswa</li>
+                                        <li>Monitoring perkuliahan</ monitoring>
+                                        <li>Laporan kemajuan semester</li>
+                                        <li>Evaluasi akhir program</li>
+                                    </ul>
+                                    <div class="phase-stats">
+                                        <span class="phase-stat">Aktif: 500 Mahasiswa</span>
+                                        <span class="phase-stat">Durasi: 2 Tahun</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Needs Summary Table -->
+                        <div class="roadmap-summary">
+                            <h3 class="summary-title">Ringkasan Kebutuhan per Program Studi</h3>
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Program Studi</th>
+                                            <th>Kuota</th>
+                                            <th>Terkumpul</th>
+                                            <th>Sisa</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Keperawatan (S1)</td>
+                                            <td>150</td>
+                                            <td>142</td>
+                                            <td>8</td>
+                                            <td><span class="table-badge badge-available">Tersedia</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Kedokteran (Profesi)</td>
+                                            <td>100</td>
+                                            <td>98</td>
+                                            <td>2</td>
+                                            <td><span class="table-badge badge-limited">Terbatas</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Kesehatan Masyarakat (S2)</td>
+                                            <td>80</td>
+                                            <td>75</td>
+                                            <td>5</td>
+                                            <td><span class="table-badge badge-available">Tersedia</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Farmasi (S1)</td>
+                                            <td>90</td>
+                                            <td>88</td>
+                                            <td>2</td>
+                                            <td><span class="table-badge badge-limited">Terbatas</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Gizi (S1/S2)</td>
+                                            <td>80</td>
+                                            <td>77</td>
+                                            <td>3</td>
+                                            <td><span class="table-badge badge-available">Tersedia</span></td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th>Total</th>
+                                            <th>500</th>
+                                            <th>480</th>
+                                            <th>20</th>
+                                            <th>-</th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- INFORMASI UPDATE PAGE                        -->
+                <!-- ============================================ -->
+                <div id="page-informasi-update" class="page">
+                    <div class="page-header">
+                        <h2 class="page-title">Informasi Update</h2>
+                        <p class="page-description">Berita dan pembaruan terbaru seputar SIMBAKES</p>
+                    </div>
+                    
+                    <div class="news-container">
+                        <!-- Featured News -->
+                        <div class="news-featured">
+                            <div class="featured-badge">Berita Utama</div>
+                            <h3 class="featured-title">Pendaftaran Beasiswa Tematik Kesehatan 2024 Resmi Dibuka</h3>
+                            <p class="featured-excerpt">Kementerian Kesehatan membuka pendaftaran beasiswa tematik bidang kesehatan tahun anggaran 2024. Kuota tersedia untuk 500 penerima dari berbagai program studi kesehatan.</p>
+                            <div class="featured-meta">
+                                <span>📅 15 Januari 2024</span>
+                                <span>👁️ 2,534 views</span>
+                            </div>
+                        </div>
+
+                        <!-- News List -->
+                        <div class="news-list">
+                            <article class="news-card news-important">
+                                <div class="news-category">Pengumuman</div>
+                                <h4 class="news-title">Perpanjangan Batas Waktu Pengusulan</h4>
+                                <p class="news-excerpt">Batas waktu pengiriman usulan diperpanjang hingga 30 Juni 2024 karena tingginya antusiasme pendaftar.</p>
+                                <div class="news-meta">
+                                    <span>10 Juni 2024</span>
+                                    <span class="news-tag tag-urgent">Penting</span>
+                                </div>
+                            </article>
+
+                            <article class="news-card">
+                                <div class="news-category">Update Sistem</div>
+                                <h4 class="news-title">Fitur Baru: Tracking Real-time Status Usulan</h4>
+                                <p class="news-excerpt">SIMBAKES kini dilengkapi fitur tracking real-time untuk memantau status pengusulan beasiswa secara langsung.</p>
+                                <div class="news-meta">
+                                    <span>5 Juni 2024</span>
+                                    <span class="news-tag tag-new">Baru</span>
+                                </div>
+                            </article>
+
+                            <article class="news-card">
+                                <div class="news-category">Workshop</div>
+                                <h4 class="news-title">Workshop Pengisian Formulir Online</h4>
+                                <p class="news-excerpt">Bagi yang kesulitan mengisi formulir online, kami menyediakan workshop panduan setiap hari Rabu pukul 14:00 WIB via Zoom.</p>
+                                <div class="news-meta">
+                                    <span>1 Juni 2024</span>
+                                    <span class="news-tag tag-info">Info</span>
+                                </div>
+                            </article>
+
+                            <article class="news-card">
+                                <div class="news-category">Hasil</div>
+                                <h4 class="news-title">Pengumuman Hasil Seleksi Tahap 1</h4>
+                                <p class="news-excerpt">Hasil seleksi administrasi tahap 1 telah diumumkan. Silakan cek status pengusulan Anda di menu Layanan > Cek Status.</p>
+                                <div class="news-meta">
+                                    <span>28 Mei 2024</span>
+                                    <span class="news-tag tag-result">Hasil</span>
+                                </div>
+                            </article>
+
+                            <article class="news-card">
+                                <div class="news-category">Tips</div>
+                                <h4 class="news-title">Tips Sukses Mendapatkan Beasiswa SIMBAKES</h4>
+                                <p class="news-excerpt">Pelajari tips dan trik untuk meningkatkan peluang Anda mendapatkan beasiswa tematik bidang kesehatan.</p>
+                                <div class="news-meta">
+                                    <span>20 Mei 2024</span>
+                                    <span class="news-tag tag-guide">Panduan</span>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- FORMULIR USULAN REKOMENDASI PAGE              -->
+                <!-- ============================================ -->
+                <div id="page-formulir-usulan" class="page">
+                    <div class="page-header">
+                        <h2 class="page-title">Formulir Usulan Rekomendasi</h2>
+                        <p class="page-description">Formulir pengajuan usulan rekomendasi beasiswa</p>
+                    </div>
+                    
+                    <div class="form-container">
+                        <!-- Progress Steps -->
+                        <div class="form-progress">
+                            <div class="progress-step active" data-step="1">
+                                <span class="step-circle">1</span>
+                                <span class="step-label">Data Pribadi</span>
+                            </div>
+                            <div class="progress-line"></div>
+                            <div class="progress-step" data-step="2">
+                                <span class="step-circle">2</span>
+                                <span class="step-label">Pendidikan</span>
+                            </div>
+                            <div class="progress-line"></div>
+                            <div class="progress-step" data-step="3">
+                                <span class="step-circle">3</span>
+                                <span class="step-label">Dokumen</span>
+                            </div>
+                            <div class="progress-line"></div>
+                            <div class="progress-step" data-step="4">
+                                <span class="step-circle">4</span>
+                                <span class="step-label">Konfirmasi</span>
+                            </div>
+                        </div>
+
+                        <form id="usulan-form" class="multi-step-form">
+                            <!-- Step 1: Data Pribadi -->
+                            <div class="form-step active" data-step="1">
+                                <h3 class="form-section-title">Data Pribadi</h3>
+                                
+                                <div class="form-grid">
+                                    <div class="form-group full-width">
+                                        <label for="nama_lengkap">Nama Lengkap <span class="required">*</span></label>
+                                        <input type="text" id="nama_lengkap" name="nama_lengkap" placeholder="Masukkan nama lengkap sesuai KTP" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="nik">NIK <span class="required">*</span></label>
+                                        <input type="text" id="nik" name="nik" placeholder="16 digit NIK" maxlength="16" required pattern="[0-9]{16}">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="tempat_lahir">Tempat Lahir <span class="required">*</span></label>
+                                        <input type="text" id="tempat_lahir" name="tempat_lahir" placeholder="Kota kelahiran" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="tanggal_lahir">Tanggal Lahir <span class="required">*</span></label>
+                                        <input type="date" id="tanggal_lahir" name="tanggal_lahir" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="jenis_kelamin">Jenis Kelamin <span class="required">*</span></label>
+                                        <select id="jenis_kelamin" name="jenis_kelamin" required>
+                                            <option value="">Pilih</option>
+                                            <option value="L">Laki-laki</option>
+                                            <option value="P">Perempuan</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="agama">Agama <span class="required">*</span></label>
+                                        <select id="agama" name="agama" required>
+                                            <option value="">Pilih</option>
+                                            <option value="Islam">Islam</option>
+                                            <option value="Kristen">Kristen</option>
+                                            <option value="Katolik">Katolik</option>
+                                            <option value="Hindu">Hindu</option>
+                                            <option value="Buddha">Buddha</option>
+                                            <option value="Konghucu">Konghucu</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group full-width">
+                                        <label for="alamat">Alamat Lengkap <span class="required">*</span></label>
+                                        <textarea id="alamat" name="alamat" rows="3" placeholder="Alamat sesuai KTP" required></textarea>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="no_hp">No. HP <span class="required">*</span></label>
+                                        <input type="tel" id="no_hp" name="no_hp" placeholder="08xxxxxxxxxx" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="email">Email <span class="required">*</span></label>
+                                        <input type="email" id="email" name="email" placeholder="email@contoh.com" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 2: Data Pendidikan -->
+                            <div class="form-step" data-step="2">
+                                <h3 class="form-section-title">Data Pendidikan</h3>
+                                
+                                <div class="form-grid">
+                                    <div class="form-group full-width">
+                                        <label for="pendidikan_terakhir">Pendidikan Terakhir <span class="required">*</span></label>
+                                        <select id="pendidikan_terakhir" name="pendidikan_terakhir" required>
+                                            <option value="">Pilih</option>
+                                            <option value="SMA/SMK">SMA/SMK</option>
+                                            <option value="D3">Diploma (D3)</option>
+                                            <option value="S1">Sarjana (S1)</option>
+                                            <option value="S2">Magister (S2)</option>
+                                            <option value="S3">Doktor (S3)</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group full-width">
+                                        <label for="program_studi_dituju">Program Studi yang Dituju <span class="required">*</span></label>
+                                        <select id="program_studi_dituju" name="program_studi_dituju" required>
+                                            <option value="">Pilih Program Studi</option>
+                                            <optgroup label="Sarjana (S1)">
+                                                <option value="Keperawatan-S1">Keperawatan</option>
+                                                <option value="Kedokteran-S1">Pendidikan Dokter</option>
+                                                <option value="Farmasi-S1">Farmasi</option>
+                                                <option value="Gizi-S1">Gizi</option>
+                                                <option value="Kesehatan-Masyarakat-S1">Kesehatan Masyarakat</option>
+                                            </optgroup>
+                                            <optgroup label="Profesi/Pasca">
+                                                <option value="Profesi-Dokter">Profesi Dokter</option>
+                                                <option value="Profesi-Ners">Profesi Ners</option>
+                                                <option value="Keperawatan-S2">Magister Keperawatan</option>
+                                                <option value="KM-S2">Magister Kesehatan Masyarakat</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="nama_institusi">Institusi Pendidikan <span class="required">*</span></label>
+                                        <input type="text" id="nama_institusi" name="nama_institusi" placeholder="Universitas/Polteknes" required>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="ipk">IPK Terakhir <span class="required">*</span></label>
+                                        <input type="number" id="ipk" name="ipk" min="0" max="4" step="0.01" placeholder="3.50" required>
+                                    </div>
+                                    
+                                    <div class="form-group full-width">
+                                        <label for="tahun_lulus">Tahun Lulus/Ijazah <span class="required">*</span></label>
+                                        <input type="text" id="tahun_lulus" name="tahun_lulus" placeholder="2023" required>
+                                    </div>
+                                    
+                                    <div class="form-group full-width">
+                                        <label for="nomor_ijazah">Nomor Ijazah <span class="required">*</span></label>
+                                        <input type="text" id="nomor_ijazah" name="nomor_ijazah" placeholder="Nomor ijazah terakhir" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 3: Upload Dokumen -->
+                            <div class="form-step" data-step="3">
+                                <h3 class="form-section-title">Upload Dokumen Pendukung</h3>
+                                <p class="form-hint">Format file: PDF, JPG, PNG. Maksimal 5MB per file.</p>
+                                
+                                <div class="upload-sections">
+                                    <div class="upload-group">
+                                        <label>Fotokopi KTP <span class="required">*</span></label>
+                                        <div class="file-upload">
+                                            <input type="file" id="ktp_file" accept=".pdf,.jpg,.jpeg,.png" required>
+                                            <div class="file-upload-label">
+                                                <span class="upload-icon">📄</span>
+                                                <span>Pilih file atau drag & drop</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="upload-group">
+                                        <label>Ijazah Terakhir <span class="required">*</span></label>
+                                        <div class="file-upload">
+                                            <input type="file" id="ijazah_file" accept=".pdf,.jpg,.jpeg,.png" required>
+                                            <div class="file-upload-label">
+                                                <span class="upload-icon">🎓</span>
+                                                <span>Pilih file atau drag & drop</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="upload-group">
+                                        <label>Surat Rekomendasi <span class="required">*</span></label>
+                                        <div class="file-upload">
+                                            <input type="file" id="rekomendasi_file" accept=".pdf,.jpg,.jpeg,.png" required>
+                                            <div class="file-upload-label">
+                                                <span class="upload-icon">📝</span>
+                                                <span>Pilih file atau drag & drop</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="upload-group">
+                                        <label>Surat Keterangan Sehat</label>
+                                        <div class="file-upload">
+                                            <input type="file" id="sehat_file" accept=".pdf,.jpg,.jpeg,.png">
+                                            <div class="file-upload-label">
+                                                <span class="upload-icon">🏥</span>
+                                                <span>Pilih file atau drag & drop</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="upload-group">
+                                        <label>Proposal Rencana Studi</label>
+                                        <div class="file-upload">
+                                            <input type="file" id="proposal_file" accept=".pdf,.doc,.docx">
+                                            <div class="file-upload-label">
+                                                <span class="upload-icon">📊</span>
+                                                <span>Pilih file atau drag & drop</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 4: Konfirmasi -->
+                            <div class="form-step" data-step="4">
+                                <h3 class="form-section-title">Konfirmasi & Submit</h3>
+                                
+                                <div class="confirmation-summary">
+                                    <h4>Ringkasan Data</h4>
+                                    <div id="summary-content" class="summary-details">
+                                        <!-- Will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                                
+                                <div class="declaration-box">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="declaration" required>
+                                        <span>Saya menyatakan bahwa data yang saya isi adalah benar dan dapat dipertanggungjawabkan keabsahannya. Saya bersedia menerima sanksi jika data yang saya berikan tidak sesuai dengan ketentuan.</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Navigation Buttons -->
+                            <div class="form-navigation">
+                                <button type="button" class="btn btn-secondary" id="prev-btn" style="display:none;">
+                                    ← Sebelumnya
+                                </button>
+                                <button type="button" class="btn btn-primary" id="next-btn">
+                                    Selanjutnya →
+                                </button>
+                                <button type="submit" class="btn btn-success" id="submit-btn" style="display:none;">
+                                    ✉️ Kirim Usulan
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- CEK STATUS PENGUSULAN PAGE                   -->
+                <!-- ============================================ -->
+                <div id="page-cek-pengusulan" class="page">
+                    <div class="page-header">
+                        <h2 class="page-title">Cek Status Pengusulan</h2>
+                        <p class="page-description">Pengecekan status usulan rekomendasi beasiswa</p>
+                    </div>
+                    
+                    <div class="search-container">
+                        <div class="search-form">
+                            <div class="search-input-group">
+                                <label for="search-nomor">Masukkan Nomor Usulan</label>
+                                <div class="input-with-button">
+                                    <input type="text" id="search-nomor" placeholder="Contoh: USL-2024-0001" class="search-input">
+                                    <button class="btn btn-primary" id="btn-search-usulan">🔍 Cari</button>
+                                </div>
+                            </div>
+                            
+                            <div class="search-divider">
+                                <span>atau cari berdasarkan</span>
+                            </div>
+                            
+                            <div class="search-input-group">
+                                <label for="search-nik">NIK Pemohon</label>
+                                <div class="input-with-button">
+                                    <input type="text" id="search-nik" placeholder="Masukkan 16 digit NIK" class="search-input" maxlength="16">
+                                    <button class="btn btn-secondary" id="btn-search-nik">Cari</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Search Result -->
+                        <div id="search-result" class="search-result" style="display:none;">
+                            <div class="result-card">
+                                <div class="result-header">
+                                    <h3>Detail Pengusulan</h3>
+                                    <span class="result-status" id="result-status">Status</span>
+                                </div>
+                                
+                                <div class="result-body">
+                                    <div class="result-grid">
+                                        <div class="result-field">
+                                            <label>Nomor Usulan</label>
+                                            <p id="res-nomor">-</p>
+                                        </div>
+                                        <div class="result-field">
+                                            <label>Tanggal Usul</label>
+                                            <p id="res-tanggal">-</p>
+                                        </div>
+                                        <div class="result-field">
+                                            <label>Nama Pemohon</label>
+                                            <p id="res-nama">-</p>
+                                        </div>
+                                        <div class="result-field">
+                                            <label>Program Studi</label>
+                                            <p id="res-prodi">-</p>
+                                        </div>
+                                        <div class="result-field">
+                                            <label>Institusi</label>
+                                            <p id="res-institusi">-</p>
+                                        </div>
+                                        <div class="result-field">
+                                            <label>Status Saat Ini</label>
+                                            <p id="res-status-detail">-</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Timeline Status -->
+                                    <div class="status-timeline">
+                                        <h4>Riwayat Status</h4>
+                                        <div class="timeline-vertical">
+                                            <div class="timeline-item completed">
+                                                <div class="timeline-dot"></div>
+                                                <div class="timeline-text">
+                                                    <strong>Usulan Diterima</strong>
+                                                    <small>15 Jan 2024, 10:30</small>
+                                                </div>
+                                            </div>
+                                            <div class="timeline-item completed">
+                                                <div class="timeline-dot"></div>
+                                                <div class="timeline-text">
+                                                    <strong>Verifikasi Administrasi</strong>
+                                                    <small>18 Jan 2024, 14:15</small>
+                                                </div>
+                                            </div>
+                                            <div class="timeline-item active">
+                                                <div class="timeline-dot current"></div>
+                                                <div class="timeline-text">
+                                                    <strong>Dalam Proses Review</strong>
+                                                    <small>-</small>
+                                                </div>
+                                            </div>
+                                            <div class="timeline-item pending">
+                                                <div class="timeline-dot"></div>
+                                                <div class="timeline-text">
+                                                    <strong>Penetapan</strong>
+                                                    <small>Menunggu</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- No Result Message -->
+                        <div id="no-result" class="no-result" style="display:none;">
+                            <div class="no-result-icon">🔍</div>
+                            <h3>Data Tidak Ditemukan</h3>
+                            <p>Nomor usulan atau NIK tidak ditemukan dalam sistem. Pastikan data yang dimasukkan sudah benar.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- CEK STATUS PENETAPAN PAGE                    -->
+                <!-- ============================================ -->
+                <div id="page-cek-penetapan" class="page">
+                    <div class="page-header">
+                        <h2 class="page-title">Cek Status Penetapan</h2>
+                        <p class="page-description">Pengecekan status penetapan beasiswa</p>
+                    </div>
+                    
+                    <div class="search-container">
+                        <div class="search-form">
+                            <div class="search-input-group">
+                                <label for="penetapan-nomor">Nomor Pendaftar / NIK</label>
+                                <div class="input-with-button">
+                                    <input type="text" id="penetapan-nomor" placeholder="Masukkan nomor pendaftar atau NIK" class="search-input">
+                                    <button class="btn btn-primary" id="btn-search-penetapan">✅ Cek Status</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Penetapan Result -->
+                        <div id="penetapan-result" class="search-result" style="display:none;">
+                            <div class="result-card result-success">
+                                <div class="result-header success-header">
+                                    <h3>🎉 Selamat! Anda Diterima</h3>
+                                    <span class="result-status status-accepted">DITERIMA</span>
+                                </div>
+                                
+                                <div class="result-body">
+                                    <div class="acceptance-banner">
+                                        <p>Anda telah ditetapkan sebagai penerima <strong>Beasiswa Tematik Bidang Kesehatan</strong> Tahun Anggaran 2024</p>
+                                    </div>
+                                    
+                                    <div class="result-grid">
+                                        <div class="result-field">
+                                            <label>Nomor Penetapan</label>
+                                            <p id="pen-no-penetapan">PNT-2024-0156</p>
+                                        </div>
+                                        <div class="result-field">
+                                            <label>Nama Lengkap</label>
+                                            <p id="pen-nama">Ahmad Fauzi</p>
+                                        </div>
+                                        <div class="result-field">
+                                            <label>Program Studi</label>
+                                            <p id="pen-prodi">Keperawatan (S1)</p>
+                                        </div>
+                                        <div class="result-field">
+                                            <label>Institusi</label>
+                                            <p id="pen-institusi">Universitas Indonesia</p>
+                                        </div>
+                                        <div class="result-field">
+                                            <label>Nomor Rekening</label>
+                                            <p id="pen-rekening">**** **** **** 1234</p>
+                                        </div>
+                                        <div class="result-field">
+                                            <label>Status Dana</label>
+                                            <p id="pen-dana"><span class="badge-processing">Dalam Proses</span></p>
+                                        </div>
+                                    </div>
+
+                                    <div class="next-steps">
+                                        <h4>Langkah Selanjutnya:</h4>
+                                        <ol>
+                                            <li>Unduh Surat Keputusan resmi dari tombol di bawah</li>
+                                            <li>Lakukan konfirmasi penerimaan melalui email</li>
+                                            <li>Siapkan dokumen untuk pencairan dana</li>
+                                            <li>Ikuti orientasi mahasiswa baru beasiswa</li>
+                                        </ol>
+                                        
+                                        <div class="action-buttons">
+                                            <button class="btn btn-primary">📥 Unduh SK Beasiswa</button>
+                                            <button class="btn btn-secondary">📧 Konfirmasi Penerimaan</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Not Accepted Result -->
+                        <div id="penetapan-rejected" class="search-result" style="display:none;">
+                            <div class="result-card result-error">
+                                <div class="result-header error-header">
+                                    <h3>Maaf, Belum Ada Hasil</h3>
+                                    <span class="result-status status-pending">BELUM DITETAPKAN</span>
+                                </div>
+                                <div class="result-body">
+                                    <p>Data Anda belum masuk dalam daftar penetapan penerima beasiswa periode ini. Hal ini bisa disebabkan oleh:</p>
+                                    <ul>
+                                        <li>Proses seleksi masih berlangsung</li>
+                                        <li>Usulan Anda masih dalam tahap review</li>
+                                        <li>Belum memenuhi kriteria seleksi</li>
+                                    </ul>
+                                    <p>Silakan cek kembali status pengusulan Anda atau hubungi admin untuk informasi lebih lanjut.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- DATA PENGUSULAN PAGE (ADMIN)                  -->
+                <!-- ============================================ -->
+                <div id="page-data-pengusulan" class="page">
+                    <div class="page-header">
+                        <h2 class="page-title">Data Pengusulan</h2>
+                        <p class="page-description">Kelola data pengusulan beasiswa</p>
+                    </div>
+                    
+                    <div class="admin-container">
+                        <!-- Admin Toolbar -->
+                        <div class="admin-toolbar">
+                            <div class="toolbar-search">
+                                <input type="text" id="admin-search-usulan" placeholder="🔍 Cari usulan..." class="toolbar-input">
+                            </div>
+                            <div class="toolbar-filters">
+                                <select id="filter-status" class="toolbar-select">
+                                    <option value="">Semua Status</option>
+                                    <option value="draft">Draft</option>
+                                    <option value="review">Dalam Review</option>
+                                    <option value="approved">Disetujui</option>
+                                    <option value="rejected">Ditolak</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="exportData('pengusulan')">📥 Export</button>
+                                <button class="btn btn-success" onclick="showAddModal('pengusulan')">+ Tambah Data</button>
+                            </div>
+                        </div>
+
+                        <!-- Data Table -->
+                        <div class="table-responsive">
+                            <table class="data-table admin-table" id="table-pengusulan">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Nomor Usulan</th>
+                                        <th>Nama Pemohon</th>
+                                        <th>Program Studi</th>
+                                        <th>Institusi</th>
+                                        <th>Tanggal Usul</th>
+                                        <th>Status</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>USL-2024-0001</td>
+                                        <td>Ahmad Fauzi</td>
+                                        <td>Keperawatan (S1)</td>
+                                        <td>Universitas Indonesia</td>
+                                        <td>15 Jan 2024</td>
+                                        <td><span class="table-badge badge-approved">Disetujui</span></td>
+                                        <td>
+                                            <div class="action-group">
+                                                <button class="btn-icon btn-view" title="Lihat">👁️</button>
+                                                <button class="btn-icon btn-edit" title="Edit">✏️</button>
+                                                <button class="btn-icon btn-delete" title="Hapus">🗑️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>USL-2024-0002</td>
+                                        <td>Siti Nurhaliza</td>
+                                        <td>Kedokteran (Profesi)</td>
+                                        <td>Universitas Gadjah Mada</td>
+                                        <td>18 Jan 2024</td>
+                                        <td><span class="table-badge badge-review">Review</span></td>
+                                        <td>
+                                            <div class="action-group">
+                                                <button class="btn-icon btn-view" title="Lihat">👁️</button>
+                                                <button class="btn-icon btn-edit" title="Edit">✏️</button>
+                                                <button class="btn-icon btn-delete" title="Hapus">🗑️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>USL-2024-0003</td>
+                                        <td>Budi Santoso</td>
+                                        <td>Farmasi (S1)</td>
+                                        <td>Institut Teknologi Bandung</td>
+                                        <td>20 Jan 2024</td>
+                                        <td><span class="table-badge badge-rejected">Ditolak</span></td>
+                                        <td>
+                                            <div class="action-group">
+                                                <button class="btn-icon btn-view" title="Lihat">👁️</button>
+                                                <button class="btn-icon btn-edit" title="Edit">✏️</button>
+                                                <button class="btn-icon btn-delete" title="Hapus">🗑️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>4</td>
+                                        <td>USL-2024-0004</td>
+                                        <td>Dewi Lestari</td>
+                                        <td>Kesehatan Masyarakat (S2)</td>
+                                        <td>Universitas Airlangga</td>
+                                        <td>22 Jan 2024</td>
+                                        <td><span class="table-badge badge-draft">Draft</span></td>
+                                        <td>
+                                            <div class="action-group">
+                                                <button class="btn-icon btn-view" title="Lihat">👁️</button>
+                                                <button class="btn-icon btn-edit" title="Edit">✏️</button>
+                                                <button class="btn-icon btn-delete" title="Hapus">🗑️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>5</td>
+                                        <td>USL-2024-0005</td>
+                                        <td>Rizky Pratama</td>
+                                        <td>Gizi (S1)</td>
+                                        <td>Universitas Diponegoro</td>
+                                        <td>25 Jan 2024</td>
+                                        <td><span class="table-badge badge-approved">Disetujui</span></td>
+                                        <td>
+                                            <div class="action-group">
+                                                <button class="btn-icon btn-view" title="Lihat">👁️</button>
+                                                <button class="btn-icon btn-edit" title="Edit">✏️</button>
+                                                <button class="btn-icon btn-delete" title="Hapus">🗑️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="8">
+                                            <div class="table-footer">
+                                                <span>Menampilkan 1-5 dari 156 data</span>
+                                                <div class="pagination">
+                                                    <button class="btn-pagination">« First</button>
+                                                    <button class="btn-pagination">‹ Prev</button>
+                                                    <button class="btn-pagination active">1</button>
+                                                    <button class="btn-pagination">2</button>
+                                                    <button class="btn-pagination">3</button>
+                                                    <button class="btn-pagination">Next ›</button>
+                                                    <button class="btn-pagination">Last »</button>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- DATA PENETAPAN PAGE (ADMIN)                   -->
+                <!-- ============================================ -->
+                <div id="page-data-penetapan" class="page">
+                    <div class="page-header">
+                        <h2 class="page-title">Data Penetapan</h2>
+                        <p class="page-description">Kelola data penetapan beasiswa</p>
+                    </div>
+                    
+                    <div class="admin-container">
+                        <!-- Admin Toolbar -->
+                        <div class="admin-toolbar">
+                            <div class="toolbar-search">
+                                <input type="text" id="admin-search-penetapan" placeholder="🔍 Cari penetapan..." class="toolbar-input">
+                            </div>
+                            <div class="toolbar-filters">
+                                <select id="filter-batch" class="toolbar-select">
+                                    <option value="">Semua Batch</option>
+                                    <option value="1">Batch 1</option>
+                                    <option value="2">Batch 2</option>
+                                    <option value="3">Batch 3</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="exportData('penetapan')">📥 Export</button>
+                                <button class="btn btn-success" onclick="showAddModal('penetapan')">+ Tambah Data</button>
+                            </div>
+                        </div>
+
+                        <!-- Data Table -->
+                        <div class="table-responsive">
+                            <table class="data-table admin-table" id="table-penetapan">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>No. Penetapan</th>
+                                        <th>Nama Penerima</th>
+                                        <th>Program Studi</th>
+                                        <th>Batch</th>
+                                        <th>Tanggal Tetap</th>
+                                        <th>Status Dana</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>PNT-2024-0001</td>
+                                        <td>Ahmad Fauzi</td>
+                                        <td>Keperawatan (S1)</td>
+                                        <td>Batch 1</td>
+                                        <td>01 Feb 2024</td>
+                                        <td><span class="table-badge badge-disbursed">Dicairkan</span></td>
+                                        <td>
+                                            <div class="action-group">
+                                                <button class="btn-icon btn-view" title="Lihat">👁️</button>
+                                                <button class="btn-icon btn-edit" title="Edit">✏️</button>
+                                                <button class="btn-icon btn-print" title="Cetak">🖨️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>PNT-2024-0002</td>
+                                        <td>Siti Nurhaliza</td>
+                                        <td>Kedokteran (Profesi)</td>
+                                        <td>Batch 1</td>
+                                        <td>01 Feb 2024</td>
+                                        <td><span class="table-badge badge-disbursed">Dicairkan</span></td>
+                                        <td>
+                                            <div class="action-group">
+                                                <button class="btn-icon btn-view" title="Lihat">👁️</button>
+                                                <button class="btn-icon btn-edit" title="Edit">✏️</button>
+                                                <button class="btn-icon btn-print" title="Cetak">🖨️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>PNT-2024-0015</td>
+                                        <td>Rizky Pratama</td>
+                                        <td>Gizi (S1)</td>
+                                        <td>Batch 2</td>
+                                        <td>15 Feb 2024</td>
+                                        <td><span class="table-badge badge-processing">Proses</span></td>
+                                        <td>
+                                            <div class="action-group">
+                                                <button class="btn-icon btn-view" title="Lihat">👁️</button>
+                                                <button class="btn-icon btn-edit" title="Edit">✏️</button>
+                                                <button class="btn-icon btn-print" title="Cetak">🖨️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>4</td>
+                                        <td>PNT-2024-0028</td>
+                                        <td>Maya Putri</td>
+                                        <td>Farmasi (S1)</td>
+                                        <td>Batch 3</td>
+                                        <td>01 Mar 2024</td>
+                                        <td><span class="table-badge badge-pending">Pending</span></td>
+                                        <td>
+                                            <div class="action-group">
+                                                <button class="btn-icon btn-view" title="Lihat">👁️</button>
+                                                <button class="btn-icon btn-edit" title="Edit">✏️</button>
+                                                <button class="btn-icon btn-print" title="Cetak">🖨️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>5</td>
+                                        <td>PNT-2024-0042</td>
+                                        <td>Hendra Wijaya</td>
+                                        <td>Kesehatan Masyarakat (S2)</td>
+                                        <td>Batch 3</td>
+                                        <td>01 Mar 2024</td>
+                                        <td><span class="table-badge badge-pending">Pending</span></td>
+                                        <td>
+                                            <div class="action-group">
+                                                <button class="btn-icon btn-view" title="Lihat">👁️</button>
+                                                <button class="btn-icon btn-edit" title="Edit">✏️</button>
+                                                <button class="btn-icon btn-print" title="Cetak">🖨️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="8">
+                                            <div class="table-footer">
+                                                <span>Menampilkan 1-5 dari 89 data</span>
+                                                <div class="pagination">
+                                                    <button class="btn-pagination">« First</button>
+                                                    <button class="btn-pagination">‹ Prev</button>
+                                                    <button class="btn-pagination active">1</button>
+                                                    <button class="btn-pagination">2</button>
+                                                    <button class="btn-pagination">Next ›</button>
+                                                    <button class="btn-pagination">Last »</button>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- DATA ROADMAP KEBUTUHAN PAGE (ADMIN)           -->
+                <!-- ============================================ -->
+                <div id="page-data-roadmap" class="page">
+                    <div class="page-header">
+                        <h2 class="page-title">Data Roadmap Kebutuhan</h2>
+                        <p class="page-description">Kelola data roadmap kebutuhan beasiswa</p>
+                    </div>
+                    
+                    <div class="admin-container">
+                        <!-- Summary Cards -->
+                        <div class="roadmap-admin-summary">
+                            <div class="summary-card summary-total">
+                                <h4>Total Kebutuhan</h4>
+                                <p class="summary-number">500</p>
+                                <span class="summary-unit">Penerima</span>
+                            </div>
+                            <div class="summary-card summary-filled">
+                                <h4>Terpenuhi</h4>
+                                <p class="summary-number">420</p>
+                                <span class="summary-unit">84%</span>
+                            </div>
+                            <div class="summary-card summary-available">
+                                <h4>Tersisa</h4>
+                                <p class="summary-number">80</p>
+                                <span class="summary-unit">16%</span>
+                            </div>
+                            <div class="summary-card summary-budget">
+                                <h4>Total Budget</h4>
+                                <p class="summary-number">Rp 25M</p>
+                                <span class="summary-unit">Tahun 2024</span>
+                            </div>
+                        </div>
+
+                        <!-- Admin Toolbar -->
+                        <div class="admin-toolbar">
+                            <div class="toolbar-search">
+                                <input type="text" id="admin-search-roadmap" placeholder="🔍 Cari program studi..." class="toolbar-input">
+                            </div>
+                            <div class="toolbar-filters">
+                                <select id="filter-tahun" class="toolbar-select">
+                                    <option value="2024">Tahun 2024</option>
+                                    <option value="2025">Tahun 2025</option>
+                                    <option value="2026">Tahun 2026</option>
+                                </select>
+                                <button class="btn btn-primary" onclick="exportData('roadmap')">📥 Export</button>
+                                <button class="btn btn-success" onclick="showAddModal('roadmap')">+ Tambah Data</button>
+                            </div>
+                        </div>
+
+                        <!-- Data Table -->
+                        <div class="table-responsive">
+                            <table class="data-table admin-table" id="table-roadmap">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Program Studi</th>
+                                        <th>Jenjang</th>
+                                        <th>Kuota</th>
+                                        <th>Terdaftar</th>
+                                        <th>Tersisa</th>
+                                        <th>% Terpenuhi</th>
+                                        <th>Budget (Rp)</th>
+                                        <th>Status</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>Keperawatan</td>
+                                        <td>S1</td>
+                                        <td>150</td>
+                                        <td>142</td>
+                                        <td>8</td>
+                                        <td>
+                                            <div class="progress-mini">
+                                                <div class="progress-bar-mini" style="width: 94.67%"></div>
+                                            </div>
+                                            <span>94.67%
+                                        </td>
+                                        <td>7.500.000</td>
+                                        <td><span class="table-badge badge-available">Tersedia</span></td>
+                                        <td>
+                                            <div class="action-group">
+                                                <button class="btn-icon btn-view" title="Lihat">👁️</button>
+                                                <button class="btn-icon btn-edit" title="Edit">✏️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>Kedokteran</td>
+                                        <td>Profesi</td>
+                                        <td>100</td>
+                                        <td>98</td>
+                                        <td>2</td>
+                                        <td>
+                                            <div class="progress-mini">
+                                                <div class="progress-bar-mini" style="width: 98%"></div>
+                                            </div>
+                                            <span>98%
+                                        </td>
+                                        <td>10.000.000</td>
+                                        <td><span class="table-badge badge-limited">Terbatas</span></td>
+                                        <td>
+                                            <div class="action-group">
+                                                <button class="btn-icon btn-view" title="Lihat">👁️</button>
+                                                <button class="btn-icon btn-edit" title="Edit">✏️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>Kesehatan Masyarakat</td>
+                                        <td>S2</td>
+                                        <td>80</td>
+                                        <td>65</td>
+                                        <td>15</td>
+                                        <td>
+                                            <div class="progress-mini">
+                                                <div class="progress-bar-mini" style="width: 81.25%"></div>
+                                            </div>
+                                            <span>81.25%
+                                        </td>
+                                        <td>5.000.000</td>
+                                        <td><span class="table-badge badge-available">Tersedia</span></td>
+                                        <td>
+                                            <div class="action-group">
+                                                <button class="btn-icon btn-view" title="Lihat">👁️</button>
+                                                <button class="btn-icon btn-edit" title="Edit">✏️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>4</td>
+                                        <td>Farmasi</td>
+                                        <td>S1</td>
+                                        <td>90</td>
+                                        <td>68</td>
+                                        <td>22</td>
+                                        <td>
+                                            <div class="progress-mini">
+                                                <div class="progress-bar-mini" style="width: 75.56%"></div>
+                                            </div>
+                                            <span>75.56%
+                                        </td>
+                                        <td>4.500.000</td>
+                                        <td><span class="table-badge badge-available">Tersedia</span></td>
+                                        <td>
+                                            <div class="action-group">
+                                                <button class="btn-icon btn-view" title="Lihat">👁️</button>
+                                                <button class="btn-icon btn-edit" title="Edit">✏️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>5</td>
+                                        <td>Gizi</td>
+                                        <td>S1/S2</td>
+                                        <td>80</td>
+                                        <td>47</td>
+                                        <td>33</td>
+                                        <td>
+                                            <div class="progress-mini">
+                                                <div class="progress-bar-mini" style="width: 58.75%"></div>
+                                            </div>
+                                            <span>58.75%
+                                        </td>
+                                        <td>3.000.000</td>
+                                        <td><span class="table-badge badge-available">Tersedia</span></td>
+                                        <td>
+                                            <div class="action-group">
+                                                <button class="btn-icon btn-view" title="Lihat">👁️</button>
+                                                <button class="btn-icon btn-edit" title="Edit">✏️</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="10">
+                                            <div class="table-footer">
+                                                <span>Menampilkan 1-5 dari 10 program studi</span>
+                                                <div class="pagination">
+                                                    <button class="btn-pagination active">1</button>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="footer">
+            <p>&copy; 2024 SIMBAKES - Beasiswa Tematik Bidang Kesehatan. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Modal Template (Hidden by default) -->
+    <div id="modal-overlay" class="modal-overlay" style="display:none;">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="modal-title">Modal Title</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Modal content will be injected here -->
+            </div>
+            <div class="modal-footer" id="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>

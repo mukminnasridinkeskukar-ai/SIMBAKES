@@ -1,191 +1,113 @@
-# SIMBAKES - Sistem Manajemen Beasiswa Kesehatan
+# SIMBAKES - Beasiswa Tematik Bidang Kesehatan
 
-**Beasiswa Tematik Bidang Kesehatan**
+## Deskripsi
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Supabase](https://img.shields.io/badge/backend-Supabase-green)
-![GitHub Pages](https://img.shields.io/badge/deploy-GitHub_Pages-orange)
+SIMBAKES (Sistem Informasi Beasiswa Tematik Bidang Kesehatan) adalah platform untuk pengelolaan informasi dan proses pengusulan beasiswa tematik bidang kesehatan.
 
----
+## Teknologi
 
-## 📋 Deskripsi
+### Frontend
+- **HTML5** - Struktur semantik
+- **CSS3** - Styling dengan Custom Properties, Flexbox, Grid
+- **JavaScript ES6+** - Vanilla JS untuk navigasi SPA
+- **Responsive Design** - Mobile-first approach
 
-SIMBAKES adalah sistem informasi manajemen beasiswa tematik bidang kesehatan yang dirancang untuk mengelola seluruh proses beasiswa mulai dari pengajuan, seleksi, hingga penetapan penerima beasiswa.
+### Backend (Tahap Selanjutnya)
+- **Supabase** - Backend as a Service
+- **PostgreSQL** - Database
+- **Supabase Storage** - File storage
+- **Supabase Auth** - Autentikasi
 
-## 🏗️ Arsitektur Teknologi
-
-| Komponen | Teknologi | Deskripsi |
-|----------|-----------|-----------|
-| **Frontend** | HTML5, CSS3, JavaScript ES6+ | Static pages deployable ke GitHub Pages |
-| **Backend** | Supabase (PostgreSQL) | Database + Authentication + Storage |
-| **Hosting** | GitHub Pages | Static site hosting |
-| **CDN** | Supabase JS Client v2, Font Awesome 6 | External libraries |
-
-## 📁 Struktur Folder
+## Struktur Project
 
 ```
-simbakes/
-├── index.html                    # Landing page / Dashboard
-├── login.html                    # Halaman login
-├── modules/                      # Folder modul aplikasi
-│   ├── roadmap_kebutuhan.html    # Modul Roadmap Kebutuhan
-│   ├── data_pengusulan.html      # Modul Form Pengusulan
-│   ├── data_penetapan.html       # Modul Data Penetapan
-│   └── multiusers.html           # Modul Manajemen User
-├── assets/                       # Aset statis
-│   ├── css/
-│   │   └── style.css             # Global stylesheet
-│   └── js/
-│       ├── supabase-client.js    # Supabase client & query helpers
-│       ├── auth.js               # Authentication module
-│       ├── utils.js              # Utility functions
-│       └── storage.js            # File upload/download module
-├── config/
-│   └── supabase-config.js        # Konfigurasi Supabase credentials
-├── docs/                         # Dokumentasi database
-│   ├── simbakes_database.sql     # Schema database utama
-│   ├── simbakes_multiusers_auth.sql # Schema auth & RLS
-│   └── simbakes_storage_design.md # Desain storage bucket
-└── README.md                     # Dokumentasi ini
+SIMBAKES/
+├── index.html          # Entry point utama (Landing Page + App Shell)
+├── style.css           # Semua styling termasuk responsive design
+├── app.js              # Logika aplikasi (SPA router, navigasi, events)
+├── assets/
+│   ├── images/         # Gambar dan ilustrasi
+│   └── icons/          # Icon SVG custom
+└── README.md           # Dokumentasi project
 ```
 
-## 🚀 Instalasi & Setup
+## Fitur (Tahap 1)
 
-### Prasyarat
+### Landing Page
+- Tampilan elegan dengan animasi ringan
+- Auto-redirect ke Beranda setelah 3 detik
+- Progress bar indicator
+- Gradient background profesional
 
-1. Akun [Supabase](https://supabase.com) (gratis)
-2. Akun [GitHub](https://github.com) (untuk hosting)
-3. Text editor (VS Code recommended)
+### Navigasi Utama
+- **Beranda**
+  - Dashboard
+  - Petunjuk Penggunaan
+  - Roadmap Kebutuhan
+  - Informasi Update
 
-### Langkah 1: Setup Supabase
+- **Layanan**
+  - Formulir Usulan Rekomendasi
+  - Cek Status Pengusulan
+  - Cek Status Penetapan
 
-1. Buat project baru di [Supabase Dashboard](https://app.supabase.com)
-2. Copy **Project URL** dan **Anon/Public Key** dari Settings > API
-3. Buka SQL Editor dan jalankan file `docs/simbakes_database.sql`
-4. Jalankan `docs/simbakes_multiusers_auth.sql` untuk setup Auth & RLS
-5. Buat Storage bucket dengan nama `simbakes` (lihat `docs/simbakes_storage_design.md`)
+- **Panel Admin**
+  - Data Pengusulan
+  - Data Penetapan
+  - Data Roadmap Kebutuhan
 
-### Langkah 2: Konfigurasi Frontend
+### Fitur UI/UX
+- ✅ Responsive design (Mobile, Tablet, Desktop)
+- ✅ Sidebar collapsible (Drawer di mobile)
+- ✅ Lightbox/Card navigation
+- ✅ Warna berbeda per kategori menu
+- ✅ Hover effects dan transisi halus
+- ✅ SPA routing (hash-based)
+- ✅ Placeholder untuk modul yang akan dikembangkan
 
-1. Edit file `config/supabase-config.js`:
-```javascript
-const SUPABASE_CONFIG = {
-    url: 'YOUR_SUPABASE_URL',        // Ganti dengan URL Anda
-    anonKey: 'YOUR_SUPABASE_ANON_KEY' // Ganti dengan Anon Key Anda
-};
-```
+## Sistem Warna
 
-### Langkah 3: Deploy ke GitHub Pages
+| Kategori | Warna | Hex Code |
+|----------|-------|----------|
+| Beranda | Blue | `#3B82F6` |
+| Layanan | Emerald/Green | `#10B981` |
+| Panel Admin | Violet/Purple | `#8B5CF6` |
 
-1. Buat repository baru di GitHub
-2. Upload semua file dalam folder ini
-3. Aktifkan GitHub Pages:
-   - Settings > Pages > Source: main branch > / (root)
-4. Akses situs di `https://username.github.io/repo-name`
+## Cara Menjalankan
 
-## 👥 Modul Tersedia
+### Local Development
+1. Clone atau download repository ini
+2. Buka `index.html` di browser modern
+3. Atau gunakan live server extension di VS Code
 
-### 1. Roadmap Kebutuhan (`modules/roadmap_kebutuhan.html`)
-- Master data kebutuhan beasiswa
-- 10 field data (kode, jurusan, PT, status, dll)
-- Statistik & filter
-- Read-only display
+### Deployment (GitHub Pages)
+1. Push ke repository GitHub
+2. Aktifkan GitHub Pages di Settings > Pages
+3. Pilih branch `main` dan folder `/ (root)`
+4. Akses via `https://username.github.io/SIMBAKES/`
 
-### 2. Data Pengusulan (`modules/data_pengusulan.html`)
-- Form pengajuan beasiswa (21 field)
-- Upload pasfoto (JPG/PNG/WebP, max 2MB)
-- Upload dokumen pendukung (PDF/JPG/PNG, max 5MB)
-- Validasi client-side
-- Integrasi Supabase Storage
+## Browser Support
 
-### 3. Data Penetapan (`modules/data_penetapan.html`)
-- Data penerima beasiswa yang ditetapkan (13 field)
-- Standalone (tanpa JOIN ke pengusulan)
-- Preview foto & download dokumen
-- Status badge (aktif/selesai/dibatalkan)
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
+- Opera (latest)
+- Mobile browsers (iOS Safari, Chrome Android)
 
-### 4. Multiusers (`modules/multiusers.html`)
-- Manajemen akun pengguna
-- Role-based access control (5 level)
-- Distribusi role & statistik
-- Search & filter user
+## Performance
 
-## 🔐 Autentikasi & Authorization
+- Tanpa framework/library eksternal
+- CSS dan JavaScript vanilla yang ringan
+- Animasi menggunakan CSS transitions (GPU accelerated)
+- Optimized untuk loading cepat
 
-### Role System
+## Development Notes
 
-| Role | Level | Hak Akses |
-|------|-------|-----------|
-| `super_admin` | 5 | Kelola user, konfigurasi, akses penuh |
-| `admin` | 4 | CRUD data, manage users |
-| `approver` | 3 | Lihat data, approve/reject |
-| `operator` | 2 | Input data pengusulan |
-| `viewer` | 1 | Hanya baca (read-only) |
+Project ini dikembangkan secara bertahap:
+- **Tahap 1**: Kerangka aplikasi, landing page, navigasi, placeholder
+- **Tahap 2+**: Modul fungsional sesuai instruksi
 
-### Password Security
-- Menggunakan **Supabase Auth** (bcrypt hashing)
-- Kolom `password` di tabel = NULL (tidak disimpan)
-- Session management via JWT
-- Auto token refresh
+## License
 
-## 💾 Struktur Database
-
-### Tabel Utama (4 tabel)
-
-1. **roadmap_kebutuhan** (10 kolom) - Master kebutuhan beasiswa
-2. **data_pengusulan** (21 kolom) - Data usulan/pengajuan
-3. **data_penetapan** (13 kolom) - Data penetapan/SK
-4. **multiusers** (6 kolom + id UUID) - Manajemen user
-
-### Storage Bucket
-
-```
-simbakes/
-├── pasfoto/{nik}/{filename}      # Foto pasfoto penerima
-└── dokumen/{nik}/{filename}      # Dokumen pendukung (PDF)
-```
-
-## 🔧 Konfigurasi Tambahan
-
-### Environment Variables (Opsional)
-
-Untuk production, pertimbangkan menggunakan environment variables:
-
-```bash
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_anon_key
-```
-
-### Custom Domain
-
-1. Tambahkan CNAME record di DNS provider
-2. Configure custom domain di GitHub Settings > Pages
-3. Update base URL jika perlu
-
-## 📱 Responsive Design
-
-- **Desktop**: Full layout (>1024px)
-- **Tablet**: Adapted layout (768px - 1024px)
-- **Mobile**: Optimized (<768px)
-
-## 🛡️ Keamanan
-
-- ✅ Row Level Security (RLS) aktif
-- ✅ Password hashing oleh Supabase Auth
-- ✅ JWT-based session management
-- ✅ Input validation client-side
-- ✅ File type & size validation
-- ✅ XSS prevention (escape HTML)
-
-## 📄 License
-
-MIT License - Bebas digunakan untuk keperluan internal.
-
-## 👨‍💻 Support & Kontribusi
-
-Untuk bug report atau feature request, silakan buat issue di repository GitHub.
-
----
-
-**Developed with ❤️ for SIMBAKES Team**
+© 2024 SIMBAKES - Beasiswa Tematik Bidang Kesehatan. All rights reserved.
