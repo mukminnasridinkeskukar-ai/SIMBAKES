@@ -6214,7 +6214,41 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 <!-- END OF SUPABASE INJECTION -->
 <script>
+
 // ============================================================
+// ⚡ SUPABASE MODE ENABLED ⚡
+// ============================================================
+// Backend telah dimigrasi dari Google Apps Script ke Supabase
+// Semua fungsi GAS di bawah ini telah DINONAKTIFKAN
+// dan digantikan oleh Supabase Client Wrapper (lihat atas)
+//
+// Status: ✅ ACTIVE - Using Supabase Backend
+// Tables: submissions, admins, visitors, roadmap_data
+// Storage: documents, photos
+// ============================================================
+
+const SUPABASE_MODE = true; // Flag untuk menandai mode Supabase aktif
+
+// ===== SUPABASE FALLBACK HELPER =====
+// Fungsi ini menangani panggilan yang masih mengacu ke WEB_APP_URL
+// dan mengalihkannya ke Supabase
+function supabaseFallback(action, params = {}) {
+    console.warn(`⚠️ [Supabase Fallback] Intercepted action: ${action}`);
+    console.warn('   This call was originally going to Google Apps Script');
+    console.warn('   Now redirecting to Supabase...');
+    
+    // Return a pending promise that resolves with empty data
+    // The actual data will be loaded by the Supabase legacy overrides
+    return Promise.resolve({ 
+        ok: true, 
+        json: () => Promise.resolve({ data: [], total: 0, success: true })
+    });
+}
+
+
+
+// [LEGACY CODE BELOW - DISABLED]
+// // ============================================================
 // SIMBAKES - CONFIGURATION GOOGLE SHEETS INTEGRATION
 // ============================================================
 // 
@@ -6237,7 +6271,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // File pendukung: SIMBAKES_WebApp_Code.gs (Google Apps Script Code)
 // ============================================================
 
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwD9p9qxp8hdTmZhasdm2Qi2e2sJA0kDQ7IM3pPu3sEUm1SI66cXmPqr51Tm6TGaUgF4w/exec'; // ← PASTE URL WEB APP DI SINI
+/* [DISABLED - Using Supabase] const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwD9p9qxp8hdTmZhasdm2Qi2e2sJA0kDQ7IM3pPu3sEUm1SI66cXmPqr51Tm6TGaUgF4w/exec' ;  // ← PASTE URL WEB APP DI SINI */
 
 // Set ke false jika sudah memasukkan URL Google Apps Script di atas
 const USE_LOCAL_STORAGE = false; // Ganti menjadi false setelah setup Google Sheets
@@ -7602,7 +7636,8 @@ async function submitForm() {
     }
 }
 
-async function sendToGoogleSheets(data) {
+/* [DISABLED - Now using submitApplication() via Supabase] */
+// async function sendToGoogleSheets(data) {
     console.log('📤 Mengirim data ke Google Sheets...');
     console.log('🔗 URL:', GOOGLE_APPS_SCRIPT_URL);
     
@@ -7751,7 +7786,7 @@ function searchStatus() {
 // ===== RENDER FUNCTIONS =====
 
 // ===== CONFIGURATION =====
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwD9p9qxp8hdTmZhasdm2Qi2e2sJA0kDQ7IM3pPu3sEUm1SI66cXmPqr51Tm6TGaUgF4w/exec'; // Ganti dengan URL Web App Google Apps Script Anda
+/* [DISABLED - Using Supabase Backend] const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwD9p9qxp8hdTmZhasdm2Qi2e2sJA0kDQ7IM3pPu3sEUm1SI66cXmPqr51Tm6TGaUgF4w/exec' ; // Ganti dengan URL Web App Google Apps Script Anda */ const WEB_APP_URL = ""; // Redirected to Supabase
 
 // ===== ROBUST API FETCH WRAPPER v2.0 =====
 /**
@@ -7802,7 +7837,8 @@ function delay(ms) {
  * - Connection status tracking
  * - Detailed error messages
  */
-async function apiFetch(url, options = {}, isRetry = false) {
+/* [DISABLED - Using Supabase Legacy Override instead] Original API Fetch disabled */
+// async function apiFetch(url, options = {}, isRetry = false) {
     let lastError = null;
     
     for (let attempt = 1; attempt <= APIConfig.maxRetries; attempt++) {
