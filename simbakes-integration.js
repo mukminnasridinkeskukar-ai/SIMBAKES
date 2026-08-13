@@ -1,16 +1,19 @@
 /**
  * =====================================================
- * SIMBAKES - SUPABASE INTEGRATION LAYER (COMPLETE v4.0)
+ * SIMBAKES - SUPABASE INTEGRATION LAYER (COMPLETE v5.0)
  * =====================================================
  * 
  * ⚠️ FILE INI MENGgANTI SELURUH FUNGSI GOOGLE SHEETS
  * DENGAN SUPABASE 100%
  * 
- * PERBAIKAN v4.0:
- * - Fix: AbortError pada visitor tracking
+ * PERBAIKAN v5.0:
+ * - 🔥 CRITICAL FIX: Typo simbasesDB → simbakesDB (line 83)
+ * - Fix: Block ipapi.co/json/ (CORS error source)
+ * - Fix: Block api.ipify.org (IP API error)
+ * - Fix: Patch native fetch() untuk CORS protection
+ * - Fix: Override getClientIP() function
  * - Fix: fetchWithTimeout() sekarang di-override
  * - Fix: WEB_APP_URL dinonaktifkan total
- * - Fix: Monkey-patch untuk semua fetch calls
  * 
  * CARA PENGGUNAAN:
  * 1. Letakkan file ini di folder yang sama dengan index.html
@@ -80,9 +83,8 @@ async function initSimbakesSupabase() {
         try {
             // Initialize Supabase client
             if (typeof simbakesDB !== 'undefined') {
-                await simbasesDB.init().catch(e => {
-                    // Fix typo from previous version
-                    console.warn('[SIMBAKES] Retrying init with correct class name...');
+                await simbakesDB.init().catch(e => {
+                    console.warn('[SIMBAKES] Retrying Supabase init...:', e.message);
                     return simbakesDB.init();
                 });
                 
@@ -120,13 +122,16 @@ function applyImmediatePatches() {
     if (typeof fetchWithTimeout !== 'undefined') {
         const originalFetchWithTimeout = window.fetchWithTimeout;
         window.fetchWithTimeout = function patchedFetchWithTimeout(url, options = {}, timeout = 10000) {
-            // Block any call to Google Sheets URLs
+            // Block any call to Google Sheets URLs or external IP APIs
             if (url && (
                 url.includes('script.google.com') ||
                 url.includes('google.com/macros') ||
-                url === '#disabled-by-supabase-integration'
+                url === '#disabled-by-supabase-integration' ||
+                url.includes('ipapi.co') ||
+                url.includes('api.ipify.org') ||
+                url.includes('ip-api.com')
             )) {
-                console.log('[SIMBAKES] 🛑 Blocked Google Sheets call:', url?.substring(0, 60));
+                console.log('[SIMBAKES] 🛑 Blocked external API call:', url?.substring(0, 60));
                 return Promise.resolve({
                     ok: true,
                     json: () => Promise.resolve({ status: 'success', data: [], message: 'Blocked by Supabase' })
@@ -136,8 +141,34 @@ function applyImmediatePatches() {
             // Allow other calls through
             return originalFetchWithTimeout.call(this, url, options, timeout);
         };
-        console.log('[SIMBAKES] ✅ fetchWithTimeout() patched');
+        console.log('[SIMBAKES] ✅ fetchWithTimeout() patched (including IP APIs)');
     }
+    
+    // Patch 1.5: Block direct fetch calls to problematic APIs
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = function patchedFetch(url, options) {
+        const urlStr = typeof url === 'string' ? url : (url?.url || url?.toString() || '');
+        
+        // Block external IP/location APIs that cause CORS errors
+        if (urlStr && (
+            urlStr.includes('ipapi.co') ||
+            urlStr.includes('api.ipify.org') ||
+            urlStr.includes('ip-api.com') ||
+            urlStr.includes('script.google.com') ||
+            urlStr.includes('google.com/macros')
+        )) {
+            console.log('[SIMBAKES] 🛑 Blocked fetch to:', urlStr.substring(0, 60));
+            return Promise.resolve({
+                ok: false,
+                status: 0,
+                json: () => Promise.resolve({ error: 'Blocked by SIMBAKES' }),
+                text: () => Promise.resolve('')
+            });
+        }
+        
+        return originalFetch(url, options);
+    };
+    console.log('[SIMBAKES] ✅ fetch() patched for CORS protection');
     
     // Patch 2: Override apiFetch immediately with safe version
     if (typeof window.apiFetch !== 'undefined') {
@@ -355,12 +386,23 @@ function overrideGoogleSheetsFunctions() {
     // 6. OVERRIDE trackVisitorToSheets() - CRITICAL FIX!
     // ==========================================
     window.trackVisitorToSheets = async function supabaseTrackVisitor() {
-        console.log('[SIMBAKES] trackVisitorToSheets() → Local tracking (no Google)');
+        console.log('[SIMBAKES] trackVisitorToSheets() → Local tracking (no Google/ipapi)');
         
         // IMPORTANT: Do NOT call fetchWithTimeout or any external URL
-        // Just use local storage
+        // Just use local storage - NO ipapi.co, NO Google Sheets
         return await trackVisitorLocal();
     };
+    
+    // ==========================================
+    // 6.5 OVERRIDE getClientIP() - Block api.ipify.org
+    // ==========================================
+    if (typeof window.getClientIP !== 'undefined') {
+        window.getClientIP = async function safeGetClientIP() {
+            console.log('[SIMBAKES] getClientIP() → Local fallback (no external API)');
+            return '-'; // Return placeholder instead of calling api.ipify.org
+        };
+        console.log('[SIMBAKES] ✅ getClientIP() overridden');
+    }
     
     // ==========================================
     // 7. OVERRIDE sendToGoogleSheets()
