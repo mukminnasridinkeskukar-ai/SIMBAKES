@@ -3488,6 +3488,11 @@
             background: #94a3b8;
         }
     </style>
+
+    <!-- SUPABASE INTEGRATION SCRIPTS - Load Early! -->
+    <script src="supabase-client.js"></script>
+    <script src="login.js"></script>
+    <script src="simbakes-integration.js"></script>
 </head>
 <body>
 
@@ -5749,6 +5754,46 @@
 
 
 <script>
+// ============================================================
+// SIMBAKES - DIAGNOSTIC & HELPER FUNCTIONS
+// ============================================================
+
+/**
+ * Check Supabase connection status
+ * Usage in browser console: checkSupabaseStatus()
+ */
+window.checkSupabaseStatus = function() {
+    console.log('%c=== SIMBAKES SUPABASE CONNECTION STATUS ===', 'color:blue;font-weight:bold;font-size:14px');
+    
+    const checks = {
+        'Supabase Client Loaded': typeof supabaseClient !== 'undefined',
+        'Supabase Config Available': typeof SUPABASE_CONFIG !== 'undefined',
+        'Supabase URL Configured': typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG.url && SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_URL',
+        'Supabase Key Configured': typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG.anonKey && SUPABASE_CONFIG.anonKey !== 'YOUR_SUPABASE_ANON_KEY',
+        'SimbakesDB Initialized': typeof simbakesDB !== 'undefined' && typeof simbakesDB.isInitialized !== 'undefined',
+        'SIMBAKES Integration Ready': typeof SimbakesIntegration !== 'undefined',
+        'Supabase Connected': typeof SimbakesIntegration !== 'undefined' && SimbakesIntegration.isConnected()
+    };
+    
+    let allPassed = true;
+    Object.entries(checks).forEach(([check, status]) => {
+        const icon = status ? '✅' : '❌';
+        const color = status ? 'green' : 'red';
+        console.log(`%c${icon} ${check}: ${status}`, `color:${color};font-weight:bold`);
+        if (!status) allPassed = false;
+    });
+    
+    console.log('%c=====================================', 'color:blue;font-weight:bold');
+    
+    if (allPassed) {
+        console.log('%c✅ Semua sistem Supabase siap digunakan!', 'color:green;font-weight:bold;font-size:12px');
+    } else {
+        console.log('%c⚠️ Ada komponen Supabase yang belum siap. Periksa supabase-client.js', 'color:orange;font-weight:bold;font-size:12px');
+    }
+    
+    return allPassed;
+};
+
 // ============================================================
 // SIMBAKES - CONFIGURATION GOOGLE SHEETS INTEGRATION
 // ============================================================
@@ -12058,7 +12103,23 @@ document.addEventListener('keydown', function(e) {
 
 
 // ===== INITIALIZATION =====
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('[SIMBAKES] DOMContentLoaded - Waiting for Supabase integration...');
+    
+    // Wait for Supabase integration to be ready
+    let maxWait = 50; // 5 seconds max
+    while (maxWait > 0 && typeof SimbakesIntegration === 'undefined') {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        maxWait--;
+    }
+    
+    if (typeof SimbakesIntegration !== 'undefined') {
+        console.log('[SIMBAKES] ✅ Supabase integration ready, loading dashboard...');
+    } else {
+        console.warn('[SIMBAKES] ⚠️ Supabase integration timeout, using fallback...');
+    }
+    
+    // Now safe to render dashboard
     renderDashboard();
     
     // Observe page changes to load admin data
@@ -12080,14 +12141,10 @@ document.addEventListener('DOMContentLoaded', () => {
 <!-- 
 ======================================================
 SIMBAKES SUPABASE INTEGRATION
-- Jangan hapus script di bawah ini!
-- File ini menghubungkan template ke database Supabase
-- Urutan loading: supabase-client.js dulu, lalu login.js, lalu simbakes-integration.js
+- ✅ Scripts sudah dipindahkan ke <head> untuk loading lebih cepat!
+- Urutan: supabase-client.js → login.js → simbakes-integration.js
 ======================================================
 -->
-<script src="supabase-client.js"></script>
-<script src="login.js"></script>
-<script src="simbakes-integration.js"></script>
 
 </body>
 </html>
