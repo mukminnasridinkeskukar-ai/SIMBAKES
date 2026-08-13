@@ -63,25 +63,6 @@ const SimbakesCache = {
 let supabaseConnected = false;
 
 // =====================================================
-// GLOBAL VARIABLES - Declaration
-// =====================================================
-
-// User & Session Management
-let currentUser = null;
-
-// Dashboard & Admin Cache
-let cachedRecentSubmissions = [];
-let adminCurrentPage = 1;
-
-// Roadmap Management
-let roadmapCachedData = [];
-let roadmapAdminData = [];
-let roadmapCurrentPage = 1;
-let roadmapPageSize = 10;
-let roadmapTotalRecords = 0;
-let roadmapTotalPages = 0;
-
-// =====================================================
 // INITIALIZATION
 // =====================================================
 
@@ -129,10 +110,6 @@ async function initSimbakesSupabase() {
     
     // Show status notification
     showIntegrationStatus(configValid);
-    
-    // Signal that SIMBAKES is ready - trigger landing page to hide
-    document.dispatchEvent(new Event('SIMBAKES_READY'));
-    console.log('[SIMBAKES] 📢 Dispatched SIMBAKES_READY event for landing page');
 }
 
 /**
@@ -196,30 +173,17 @@ function applyImmediatePatches() {
         
         // Pass through ALL other requests (including Supabase) with error handling
         return originalFetch(url, options).catch(error => {
-            const errorType = error.name || 'NetworkError';
-            const errorMsg = error.message || 'Unknown error';
-            
-            console.warn('[SIMBAKES] ⚠️ Fetch error:', errorType, '-', errorMsg, '| URL:', urlStr?.substring(0, 60));
-            
-            // Provide more specific error info
-            if (errorMsg.includes('DNS') || errorMsg.includes('name') || errorType === 'TypeError') {
-                console.error('[SIMBAKES] 🌐 Possible DNS/Network issue - Check internet connection');
-            }
+            console.warn('[SIMBAKES] ⚠️ Fetch error:', error.message, '| URL:', urlStr?.substring(0, 60));
             
             // Return a proper error response instead of crashing
             return Promise.resolve({
                 ok: false,
                 status: 0,
-                statusText: errorType || 'NetworkError',
+                statusText: error.name || 'NetworkError',
                 json: () => Promise.resolve({ 
-                    error: errorMsg,
+                    error: error.message,
                     code: 'NETWORK_ERROR',
-                    message: 'Gagal terhubung ke server. Periksa koneksi internet Anda.',
-                    details: {
-                        errorType: errorType,
-                        originalError: errorMsg,
-                        url: urlStr?.substring(0, 100)
-                    }
+                    message: 'Gagal terhubung ke server. Periksa koneksi internet Anda.'
                 }),
                 text: () => Promise.resolve('')
             });
@@ -545,7 +509,7 @@ function overrideGoogleSheetsFunctions() {
     if (typeof window.loadDataRoadmap !== 'undefined') {
         window.loadDataRoadmap = function() {
             console.log('[SIMBAKES] loadDataRoadmap() → Supabase');
-            roadmapCurrentPage = 1;
+            if (typeof roadmapCurrentPage !== 'undefined') roadmapCurrentPage = 1;
             fetchRoadmapDataFromSupabase();
         };
         console.log('[SIMBAKES] ✅ loadDataRoadmap() overridden');
@@ -981,7 +945,7 @@ async function fetchAdminDataFromSupabase() {
             sortBy: { 'timestamp': 'created_at', 'nama': 'nama_lengkap', 'nik': 'nik', 'status': 'status' }[sortBy?.value] || 'created_at',
             sortOrder: sortOrder?.value || 'desc',
             pageSize: parseInt(pageSizeSelect?.value || '10'),
-            page: adminCurrentPage
+            page: typeof adminCurrentPage !== 'undefined' ? adminCurrentPage : 1
         };
         
         const result = await simbakesDB.getPengusulan(filters);
@@ -1095,7 +1059,9 @@ async function loadRoadmapDataFromSupabase() {
         loadingEl.style.display = 'none';
         
         // Cache data
-        roadmapCachedData = result.data || [];
+        if (typeof window.roadmapCachedData !== 'undefined') {
+            window.roadmapCachedData = result.data || [];
+        }
         
         // Render table or show empty state
         if (result.data && result.data.length > 0) {
@@ -1130,16 +1096,19 @@ async function loadRoadmapDataFromSupabase() {
         loadingEl.style.display = 'none';
         emptyStateEl.style.display = 'block';
         
+        // Detect error type and provide helpful message
+        const errorDetails = analyzeFetchError(error);
+        
         const titleEl = document.getElementById('roadmap-empty-state')?.querySelector('h3');
         const descEl = document.getElementById('roadmap-empty-state')?.querySelector('p');
-        if (titleEl) titleEl.textContent = 'Gagal Memuat Data';
-        if (descEl) descEl.textContent = error.message || 'Terjadi kesalahan saat memuat data dari Supabase. Silakan coba lagi.';
+        if (titleEl) titleEl.textContent = errorDetails.title;
+        if (descEl) descEl.innerHTML = errorDetails.message + (errorDetails.corsHelp ? '<br><br>' + errorDetails.corsHelp : '');
         
         if (typeof showToast === 'function') {
-            showToast('❌ Gagal memuat data roadmap: ' + error.message, 'error');
+            showToast('❌ ' + errorDetails.toastMessage, 'error', 8000);
         }
         
-        return { status: 'error', data: [], message: error.message };
+        return { status: 'error', data: [], message: errorDetails.message };
     }
 }
 
@@ -1206,11 +1175,13 @@ async function fetchRoadmapDataFromSupabase() {
         }
         
         // Cache data for pagination
-        roadmapAdminData = filteredData;
+        if (typeof window.roadmapAdminData !== 'undefined') {
+            window.roadmapAdminData = filteredData;
+        }
         
         // Calculate pagination
-        const pageSize = roadmapPageSize;
-        const currentPage = roadmapCurrentPage;
+        const pageSize = typeof window.roadmapPageSize !== 'undefined' ? window.roadmapPageSize : 10;
+        const currentPage = typeof window.roadmapCurrentPage !== 'undefined' ? window.roadmapCurrentPage : 1;
         const totalRecords = filteredData.length;
         const totalPages = Math.ceil(totalRecords / pageSize);
         const startIndex = (currentPage - 1) * pageSize;
@@ -1218,8 +1189,8 @@ async function fetchRoadmapDataFromSupabase() {
         const paginatedData = filteredData.slice(startIndex, endIndex);
         
         // Update pagination variables
-        roadmapTotalRecords = totalRecords;
-        roadmapTotalPages = totalPages;
+        if (typeof window.roadmapTotalRecords !== 'undefined') window.roadmapTotalRecords = totalRecords;
+        if (typeof window.roadmapTotalPages !== 'undefined') window.roadmapTotalPages = totalPages;
         
         // Transform data to match expected format (array of arrays)
         const transformedData = paginatedData.map((row, idx) => [
@@ -1256,15 +1227,20 @@ async function fetchRoadmapDataFromSupabase() {
     } catch (error) {
         console.error('[SIMBAKES] ❌ Error fetching roadmap dari Supabase:', error);
         
-        const errorMsg = error.message || 'Terjadi kesalahan tidak diketahui';
+        // Detect error type and provide helpful message
+        const errorDetails = analyzeFetchError(error);
         
         if (tbody) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="12" style="text-align:center;padding:3rem;color:#dc2626;">
-                        <div style="font-size:2.5rem;margin-bottom:1rem;">⚠️</div>
-                        <div style="font-weight:600;margin-bottom:0.5rem;">Gagal Memuat Data Roadmap</div>
-                        <div style="color:#64748b;font-size:0.875rem;">${errorMsg}</div>
+                        <div style="font-size:2.5rem;margin-bottom:1rem;">${errorDetails.icon}</div>
+                        <div style="font-weight:600;margin-bottom:0.5rem;">${errorDetails.title}</div>
+                        <div style="color:#64748b;font-size:0.875rem;">${errorDetails.message}</div>
+                        ${errorDetails.corsHelp ? `<div style="margin-top:1rem;padding:1rem;background:#fef3c7;border-radius:8px;font-size:0.8rem;color:#92400e;text-align:left;">
+                            <strong>🔧 Solusi CORS:</strong><br>
+                            ${errorDetails.corsHelp}
+                        </div>` : ''}
                         <button onclick="fetchRoadmapDataFromSupabase()" style="margin-top:1rem;padding:0.5rem 1rem;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.875rem;">
                             🔄 Coba Lagi
                         </button>
@@ -1274,16 +1250,143 @@ async function fetchRoadmapDataFromSupabase() {
         }
         
         if (typeof showToast === 'function') {
-            showToast('❌ Gagal memuat data roadmap: ' + errorMsg, 'error');
+            showToast('❌ ' + errorDetails.toastMessage, 'error', 8000);
         }
         
-        return { status: 'error', data: [], message: errorMsg };
+        return { status: 'error', data: [], message: errorDetails.message };
     }
 }
 
 // =====================================================
 // HELPERS
 // =====================================================
+
+/**
+ * Analyze fetch error and provide helpful messages
+ * Detects CORS, Network, DNS, and other errors
+ */
+function analyzeFetchError(error) {
+    const errorMsg = error?.message || error?.toString() || 'Unknown error';
+    const errorMsgLower = errorMsg.toLowerCase();
+    
+    // CORS Error Detection
+    if (errorMsgLower.includes('failed to fetch') || 
+        errorMsgLower.includes('networkerror') ||
+        errorMsgLower.includes('network error') ||
+        errorMsgLower.includes('load failed') ||
+        errorMsgLower.includes('cross-origin')) {
+        
+        const currentDomain = window.location.origin;
+        const isGitHubPages = currentDomain.includes('github.io') || currentDomain.includes('localhost');
+        
+        return {
+            icon: '🌐',
+            title: 'Gagal Terhubung ke Server',
+            message: 'Tidak dapat terhubung ke database Supabase. Ini biasanya karena konfigurasi CORS.',
+            toastMessage: 'CORS/Network Error - Periksa konfigurasi Supabase',
+            corsHelp: isGitHubPages ? `
+                <ol style="margin:0;padding-left:1.2rem;text-align:left;line-height:1.6;">
+                    <li>Buka <a href="https://supabase.com/dashboard" target="_blank" style="color:#059669;font-weight:600;">Supabase Dashboard</a></li>
+                    <li>Pilih project <strong>boeknpvifamjmddsdopd</strong></li>
+                    <li>Klik <strong>Settings</strong> → <strong>API</strong></li>
+                    <li>Di bagian <strong>CORS Configuration</strong>, tambahkan:</li>
+                    <li><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:0.85rem;">${currentDomain}</code></li>
+                    <li>Klik <strong>Save</strong></li>
+                    <li>Refresh halaman ini</li>
+                </ol>
+            ` : `
+                Pastikan URL <code>${currentDomain}</code> sudah ditambahkan di CORS configuration Supabase.
+            `,
+            isCorsError: true
+        };
+    }
+    
+    // DNS / Name Resolution Error
+    if (errorMsgLower.includes('err_name_not_resolved') || 
+        errorMsgLower.includes('getaddrinfo') ||
+        errorMsgLower.includes('enotfound') ||
+        errorMsgLower.includes('dns')) {
+        
+        return {
+            icon: '🔍',
+            title: 'DNS Error',
+            message: 'Domain Supabase tidak dapat diresolve. Periksa koneksi internet Anda.',
+            toastMessage: 'DNS Error - Periksa koneksi internet',
+            corsHelp: null,
+            isDnsError: true
+        };
+    }
+    
+    // Timeout Error
+    if (errorMsgLower.includes('timeout') || errorMsgLower.includes('aborted') || errorMsgLower.includes('abort')) {
+        return {
+            icon: '⏱️',
+            title: 'Timeout',
+            message: 'Server terlalu lama merespon. Coba lagi dalam beberapa saat.',
+            toastMessage: 'Request Timeout - Coba lagi nanti',
+            corsHelp: null,
+            isTimeout: true
+        };
+    }
+    
+    // Auth/API Key Error
+    if (errorMsgLower.includes('401') || 
+        errorMsgLower.includes('403') || 
+        errorMsgLower.includes('unauthorized') ||
+        errorMsgLower.includes('forbidden') ||
+        errorMsgLower.includes('api key') ||
+        errorMsgLower.includes('invalid api')) {
+        
+        return {
+            icon: '🔑',
+            title: 'Error Autentikasi',
+            message: 'API key tidak valid atau expired. Periksa konfigurasi supabase-client.js.',
+            toastMessage: 'Auth Error - Periksa API key Supabase',
+            corsHelp: 'Pastikan ANON KEY di file <code>supabase-client.js</code> sudah benar dan masih aktif.',
+            isAuthError: true
+        };
+    }
+    
+    // Table Not Found Error
+    if (errorMsgLower.includes('42p01') || 
+        errorMsgLower.includes('relation') ||
+        errorMsgLower.includes('does not exist') ||
+        errorMsgLower.includes("doesn't exist")) {
+        
+        return {
+            icon: '📋',
+            title: 'Tabel Tidak Ditemukan',
+            message: 'Tabel "roadmap_kebutuhan" belum dibuat di Supabase. Jalankan SQL schema.',
+            toastMessage: 'Table not found - Jalankan SQL schema',
+            corsHelp: `
+                Buat tabel dengan menjalankan SQL ini di <a href="https://supabase.com/dashboard/project/boeknpvifamjmddsdopd/sql" target="_blank" style="color:#059669;font-weight:600;">SQL Editor</a>:
+                <pre style="background:#1e293b;color:#e2e8f0;padding:8px;border-radius:4px;margin-top:4px;overflow-x:auto;font-size:0.75rem;">CREATE TABLE IF NOT EXISTS roadmap_kebutuhan (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nama_lengkap TEXT,
+  nik TEXT,
+  jurusan TEXT,
+  jenjang_pendidikan TEXT,
+  perguruan_tinggi TEXT,
+  pekerjaan TEXT,
+  unit_kerja TEXT,
+  status TEXT DEFAULT 'aktif',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);</pre>
+            `,
+            isTableError: true
+        };
+    }
+    
+    // Default/Unknown Error
+    return {
+        icon: '⚠️',
+        title: 'Terjadi Kesalahan',
+        message: errorMsg || 'Terjadi kesalahan tidak diketahui. Silakan coba lagi.',
+        toastMessage: 'Error: ' + (errorMsg || 'Unknown'),
+        corsHelp: null,
+        isUnknown: true
+    };
+}
 
 function mapPengusulanItem(item, index = 0) {
     return {
