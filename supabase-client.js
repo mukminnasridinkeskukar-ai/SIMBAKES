@@ -601,6 +601,214 @@ class SimbakesSupabase {
     }
 
     // =====================================================
+    // SANGGAHAN (APPEAL) METHODS
+    // =====================================================
+
+    /**
+     * Get all sanggahan for current user
+     */
+    async getSanggahan(filters = {}) {
+        try {
+            let query = this.client
+                .from('data_sanggahan')
+                .select('*', { count: 'exact' })
+                .eq('user_id', this.currentUser?.id);
+
+            if (filters.status) {
+                query = query.eq('status_sanggahan', filters.status);
+            }
+
+            query = query.order('created_at', { ascending: false });
+
+            const { data, error, count } = await query;
+
+            if (error) throw error;
+
+            return {
+                success: true,
+                data: data || [],
+                total: count || 0
+            };
+        } catch (error) {
+            console.error('[SIMBAKES] Get sanggahan error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Submit new sanggahan
+     */
+    async submitSanggahan(sanggahData) {
+        try {
+            const { data, error } = await this.client
+                .from('data_sanggahan')
+                .insert([{
+                    ...sanggahData,
+                    user_id: this.currentUser?.id,
+                    status_sanggahan: 'menunggu_review',
+                    created_at: new Date().toISOString()
+                }])
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // Update pengusulan status to 'disanggah'
+            if (sanggahData.nik) {
+                await this.client
+                    .from('data_pengusulan')
+                    .update({ 
+                        status: 'disanggah',
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('nik', sanggahData.nik);
+            }
+
+            return { success: true, data };
+        } catch (error) {
+            console.error('[SIMBAKES] Submit sanggahan error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Get single sanggahan by ID
+     */
+    async getSanggahanById(id) {
+        try {
+            const { data, error } = await this.client
+                .from('data_sanggahan')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (error) throw error;
+
+            return { success: true, data };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    // =====================================================
+    // USER REGISTRATION METHOD
+    // =====================================================
+
+    /**
+     * Register new user
+     */
+    async registerUser(userData) {
+        try {
+            // Check if username or email exists
+            const { data: existingUser } = await this.client
+                .from('multiusers')
+                .select('id')
+                .or(`username.eq.${userData.username},email.eq.${userData.email}`)
+                .limit(1);
+
+            if (existingUser && existingUser.length > 0) {
+                return { success: false, error: 'Username atau email sudah terdaftar' };
+            }
+
+            // Insert new user
+            const { data, error } = await this.client
+                .from('multiusers')
+                .insert([{
+                    id: userData.id || this.generateUUID(),
+                    nama_lengkap: userData.nama_lengkap,
+                    username: userData.username,
+                    password: userData.password, // In production, hash this!
+                    email: userData.email,
+                    role: userData.role || 'peserta',
+                    institusi: userData.institusi || '',
+                    status: 'aktif',
+                    created_at: new Date().toISOString()
+                }])
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            return { success: true, user: data };
+        } catch (error) {
+            console.error('[SIMBAKES] Registration error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Update user password
+     */
+    async updatePassword(userId, oldPassword, newPassword) {
+        try {
+            // Verify old password first
+            const { data: user, error: fetchError } = await this.client
+                .from('multiusers')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+            if (fetchError) throw fetchError;
+            
+            if (!user) {
+                return { success: false, error: 'User tidak ditemukan' };
+            }
+
+            // Note: In production, compare hashed passwords properly
+            if (user.password !== oldPassword) {
+                return { success: false, error: 'Password lama tidak sesuai' };
+            }
+
+            // Update password
+            const { error: updateError } = await this.client
+                .from('multiusers')
+                .update({ 
+                    password: newPassword, // Hash in production!
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', userId);
+
+            if (updateError) throw updateError;
+
+            return { success: true };
+        } catch (error) {
+            console.error('[SIMBAKES] Update password error:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Get user profile
+     */
+    async getUserProfile(userId) {
+        try {
+            const { data, error } = await this.client
+                .from('multiusers')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+            if (error) throw error;
+
+            return { success: true, user: data };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    // =====================================================
+    // UTILITY METHODS
+    // =====================================================
+
+    generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    // =====================================================
     // EXPORT DATA (to Excel/CSV format)
     // =====================================================
 

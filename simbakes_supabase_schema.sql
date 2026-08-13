@@ -393,22 +393,172 @@ GRANT SELECT ON v_pengusulan_full TO authenticated, anon;
 GRANT SELECT ON v_dashboard_stats TO authenticated, anon;
 
 -- =====================================================
--- END OF SCHEMA
+-- 5. TABLE: data_sanggahan (Appeal/Dispute Data)
+-- For handling user appeals against rejected/cancelled submissions
+-- =====================================================
+CREATE TABLE IF NOT EXISTS public.data_sanggahan (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id_sanggahan VARCHAR(50) UNIQUE NOT NULL, -- Format: SG-timestamp
+    
+    -- User Reference
+    user_id UUID REFERENCES public.multiusers(id),
+    
+    -- Pengusulan Reference
+    nik VARCHAR(20) REFERENCES public.data_pengusulan(nik),
+    no_register VARCHAR(50),
+    
+    -- Original Status & Reason
+    status_asal VARCHAR(50), -- Status sebelum sanggah (ditolak/dibatalkan)
+    alasan_penolakan TEXT, -- Alasan penolakan dari reviewer/admin
+    
+    -- Sanggahan Details
+    jenis_sanggahan VARCHAR(50) NOT NULL CHECK (jenis_sanggahan IN (
+        'kesalahan_data', 'dokumen_kurang', 'penilaian_salah', 'ketentuan_baru', 'lainnya'
+    )),
+    alasan_sanggahan TEXT NOT NULL,
+    bukti_pendukung TEXT, -- Description of supporting evidence
+    
+    -- Review Process
+    status_sanggahan VARCHAR(50) DEFAULT 'menunggu_review' CHECK (status_sanggahan IN (
+        'menunggu_review', 'direview', 'diterima', 'ditolak'
+    )),
+    catatan_reviewer TEXT,
+    reviewed_by UUID REFERENCES public.multiusers(id),
+    reviewed_at TIMESTAMPTZ,
+    
+    -- Timestamps
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create indexes for sanggahan queries
+CREATE INDEX idx_sanggahan_user_id ON public.data_sanggahan(user_id);
+CREATE INDEX idx_sanggahan_nik ON public.data_sanggahan(nik);
+CREATE INDEX idx_sanggahan_status ON public.data_sanggahan(status_sanggahan);
+CREATE INDEX idx_sanggahan_created ON public.data_sanggahan(created_at);
+
+-- Add comment
+COMMENT ON TABLE public.data_sanggahan IS 'Tabel untuk menyimpan data sanggahan/banding pengguna terhadap keputusan penolakan/pembatalan';
+
+-- =====================================================
+-- UPDATE: Extend multiusers roles for new user types
+-- =====================================================
+
+-- Alter role constraint to include new user types
+ALTER TABLE public.multiusers DROP CONSTRAINT IF EXISTS multiusers_role_check;
+ALTER TABLE public.multiusers ADD CONSTRAINT multiusers_role_check 
+CHECK (role IN ('superadmin', 'admin', 'operator', 'peserta', 'admin_sekolah', 'admin_dinkes', 'reviewer'));
+
+-- Add institusi field for certain roles
+ALTER TABLE public.multiusers ADD COLUMN IF NOT EXISTS institusi VARCHAR(255);
+
+-- Create index on new column
+CREATE INDEX IF NOT EXISTS idx_multiusers_institusi ON public.multiusers(institusi);
+
+-- =====================================================
+-- UPDATE: Add alasan_penolakan to data_pengusulan if not exists
+-- =====================================================
+
+ALTER TABLE public.data_pengusulan ADD COLUMN IF NOT EXISTS alasan_penolakan TEXT;
+ALTER TABLE public.data_pengusulan ADD COLUMN IF NOT EXISTS username VARCHAR(100);
+ALTER TABLE public.data_pengusulan ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES public.multiusers(id);
+ALTER TABLE public.data_pengusulan ADD COLUMN IF NOT EXISTS no_register VARCHAR(50);
+ALTER TABLE public.data_pengusulan ADD COLUMN IF NOT EXISTS judul_proposal VARCHAR(500);
+
+-- Update status to include new values
+ALTER TABLE public.data_pengusulan DROP CONSTRAINT IF EXISTS data_pengusulan_status_check;
+ALTER TABLE public.data_pengusalan ADD CONSTRAINT data_pengusulan_status_check 
+CHECK (status IN ('diajukan', 'diproses', 'diterima', 'ditolak', 'direvisi', 'dibatalkan', 'disanggah'));
+
+-- =====================================================
+-- 11. RLS POLICIES FOR data_sanggahan
+-- =====================================================
+
+ALTER TABLE public.data_sanggahan ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Users can read their own sanggahan
+CREATE POLICY "Users can read own sanggahan" ON public.data_sanggahan
+    FOR SELECT USING (auth.uid() = user_id);
+
+-- Policy: Users can insert their own sanggahan
+CREATE POLICY "Users can insert own sanggahan" ON public.data_sanggahan
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Policy: Admins can read all sanggahan
+CREATE POLICY "Admins can read all sanggahan" ON public.data_sanggahan
+    FOR SELECT USING (
+        EXISTS (SELECT 1 FROM public.multiusers WHERE id = auth.uid() AND role IN ('superadmin', 'admin'))
+    );
+
+-- Policy: Admins/reviewers can update sanggahan status
+CREATE POLICY "Admins can update sanggahan" ON public.data_sanggahan
+    FOR UPDATE USING (
+        EXISTS (SELECT 1 FROM public.multiusers WHERE id = auth.uid() AND role IN ('superadmin', 'admin', 'reviewer'))
+    );
+
+-- =====================================================
+-- 12. FUNCTION: Auto-generate no_register trigger
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION generate_no_register()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.no_register IS NULL OR NEW.no_register = '' THEN
+        NEW.no_register := 'REG-' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(FLOOR(RANDOM() * 10000)::TEXT, 4, '0');
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Apply trigger to data_pengusulan
+DROP TRIGGER IF EXISTS trg_generate_no_register ON public.data_pengusulan;
+CREATE TRIGGER trg_generate_no_register
+    BEFORE INSERT ON public.data_pengusulan
+    FOR EACH ROW EXECUTE FUNCTION generate_no_register();
+
+-- =====================================================
+-- 13. GRANTS & PERMISSIONS (Updated)
+-- =====================================================
+
+-- Grant usage to authenticated and anon roles
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon;
+
+-- Grant sequence usage
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+
+-- Grant view permissions
+GRANT SELECT ON v_pengusulan_full TO authenticated, anon;
+GRANT SELECT ON v_dashboard_stats TO authenticated, anon;
+
+-- Grant sanggahan table permissions
+GRANT ALL ON public.data_sanggahan TO authenticated;
+GRANT SELECT ON public.data_sanggahan TO anon;
+
+-- =====================================================
+-- END OF SCHEMA (Updated v2.0 - with Sanggahan System)
 -- =====================================================
 
 -- Documentation:
 -- ================================
 -- TABLE RELATIONSHIPS:
--- 1. multiusers (1) ---> (N) data_pengusulan (created_by)
+-- 1. multiusers (1) ---> (N) data_pengusulan (user_id / created_by)
 -- 2. data_pengusulan (1) ---> (1) data_penetapan (nik)
 -- 3. data_pengusulan (1) ---> (0..1) roadmap_kebutuhan (pengusulan_id)
+-- 4. multiusers (1) ---> (N) data_sanggahan (user_id)
+-- 5. data_pengusulan (1) ---> (0..N) data_sanggahan (nik)
 
 -- STATUS VALUES:
--- data_pengusulan.status: diajukan | diproses | diterima | ditolak | direvisi
+-- data_pengusulan.status: diajukan | diproses | diterima | ditolak | direvisi | dibatalkan | disanggah
 -- data_penetapan.status_penetapan: pending | disetujui | ditolak | dicabut
 -- roadmap_kebutuhan.status: aktif | nonaktif | terpenuhi | dicabut
+-- data_sanggahan.status_sanggahan: menunggu_review | direview | diterima | ditolak
 -- multiusers.status: aktif | nonaktif | blocked
--- multiusers.role: superadmin | admin | operator
+-- multiusers.role: superadmin | admin | operator | peserta | admin_sekolah | admin_dinkes | reviewer
 
 -- JENJANG PENDIDIKAN values:
--- S1, S1 + Profesi, Sp1, Sp2, S2, S3, s1_profesi_unmul, etc.
+-- D3, D4, S1, S1 + Profesi, Sp1, Sp2, S2, S3, s1_profesi_unmul, etc.
+
+-- JENIS_SANGGAH values:
+-- kesalahan_data | dokumen_kurang | penilaian_salah | ketentuan_baru | lainnya
