@@ -845,12 +845,22 @@ class SimbakesSupabase {
 // =====================================================
 const simbakesDB = new SimbakesSupabase();
 
+// Global supabaseClient reference (for backward compatibility with login.js)
+let supabaseClient = null;
+
 // Auto-initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
     await simbakesDB.init();
+    
+    // Expose global supabaseClient after initialization
+    if (simbakesDB.client) {
+        supabaseClient = simbakesDB.client;
+        window.supabaseClient = simbakesDB.client;  // Also expose on window
+        console.log('[SIMBAKES] ✅ Global supabaseClient exposed');
+    }
 });
 
 // Export for module usage
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { SimbakesSupabase, simbakesDB, SUPABASE_CONFIG };
+    module.exports = { SimbakesSupabase, simbakesDB, SUPABASE_CONFIG, supabaseClient };
 }

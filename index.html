@@ -304,6 +304,13 @@
         }
 
         .btn-login-sidebar:hover { background: #047857; }
+        
+        /* Sidebar Register Button Hover */
+        .btn-register-sidebar:hover { 
+            background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%) !important; 
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35) !important;
+        }
 
         .hint-text {
             font-size: 0.625rem;
@@ -3600,6 +3607,12 @@
                         <button class="btn-login-sidebar" onclick="handleSidebarLogin()" style="margin-top:10px;height:34px;">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10,17 15,12 10,7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                             Login Admin
+                        </button>
+                        
+                        <!-- Tombol DAFTAR USER (New!) - Bersebelahan dengan Login Admin -->
+                        <button class="btn-register-sidebar" onclick="openRegisterModal()" style="margin-top:8px;height:34px;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 12px;background:linear-gradient(135deg,#7c3aed 0%,#6d28d9 100%);color:white;border:none;border-radius:8px;font-size:0.75rem;font-weight:600;cursor:pointer;transition:all 0.2s;box-shadow:0 2px 8px rgba(124,58,237,0.25);">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                            Daftar User Baru
                         </button>
                     </div>
 
@@ -12069,10 +12082,11 @@ document.addEventListener('DOMContentLoaded', () => {
 SIMBAKES SUPABASE INTEGRATION
 - Jangan hapus script di bawah ini!
 - File ini menghubungkan template ke database Supabase
-- Urutan loading: supabase-client.js dulu, lalu simbakes-integration.js
+- Urutan loading: supabase-client.js dulu, lalu login.js, lalu simbakes-integration.js
 ======================================================
 -->
 <script src="supabase-client.js"></script>
+<script src="login.js"></script>
 <script src="simbakes-integration.js"></script>
 
 </body>
