@@ -487,7 +487,35 @@ function overrideGoogleSheetsFunctions() {
         };
     }
     
-    console.log('[SIMBAKES] ✅ All Google Sheets functions overridden successfully');
+    // ==========================================
+    // 10. OVERRIDE ROADMAP FUNCTIONS - FIX "GAGAL MENAMPILKAN DATA"!
+    // ==========================================
+    if (typeof window.loadRoadmapData !== 'undefined') {
+        window.loadRoadmapData = async function() {
+            console.log('[SIMBAKES] loadRoadmapData() → Supabase (OVERRIDING Google Sheets)');
+            return await loadRoadmapDataFromSupabase();
+        };
+        console.log('[SIMBAKES] ✅ loadRoadmapData() overridden');
+    }
+    
+    if (typeof window.fetchRoadmapData !== 'undefined') {
+        window.fetchRoadmapData = async function() {
+            console.log('[SIMBAKES] fetchRoadmapData() → Supabase (OVERRIDING Google Sheets)');
+            return await fetchRoadmapDataFromSupabase();
+        };
+        console.log('[SIMBAKES] ✅ fetchRoadmapData() overridden');
+    }
+    
+    if (typeof window.loadDataRoadmap !== 'undefined') {
+        window.loadDataRoadmap = function() {
+            console.log('[SIMBAKES] loadDataRoadmap() → Supabase');
+            if (typeof roadmapCurrentPage !== 'undefined') roadmapCurrentPage = 1;
+            fetchRoadmapDataFromSupabase();
+        };
+        console.log('[SIMBAKES] ✅ loadDataRoadmap() overridden');
+    }
+    
+    console.log('[SIMBAKES] ✅ All Google Sheets functions overridden successfully (including ROADMAP)');
 }
 
 // =====================================================
@@ -967,6 +995,257 @@ async function updateAdminStatsFromSupabase(pagination) {
         
     } catch (error) {
         console.warn('[SIMBAKES] Admin stats warning:', error.message);
+    }
+}
+
+// =====================================================
+// ROADMAP DATA FUNCTIONS (NEW! - Fix "Gagal Menampilkan Data")
+// =====================================================
+
+/**
+ * Load Roadmap Data from Supabase - Public version (for loadRoadmapData)
+ * Fetches from roadmap_kebutuhan table
+ */
+async function loadRoadmapDataFromSupabase() {
+    const loadingEl = document.getElementById('roadmap-loading');
+    const tableWrapperEl = document.getElementById('roadmap-table-wrapper');
+    const emptyStateEl = document.getElementById('roadmap-empty-state');
+    
+    // Safety check
+    if (!loadingEl || !tableWrapperEl || !emptyStateEl) {
+        console.error('[SIMBAKES] ❌ Elemen Roadmap tidak ditemukan di DOM!');
+        return;
+    }
+    
+    // Show loading
+    loadingEl.style.display = 'block';
+    tableWrapperEl.style.display = 'none';
+    emptyStateEl.style.display = 'none';
+    
+    console.log('[SIMBAKES] 🔄 Loading Roadmap Kebutuhan dari Supabase...');
+    
+    try {
+        let result;
+        
+        if (supabaseConnected && typeof simbakesDB !== 'undefined' && simbakesDB.client) {
+            // Fetch from Supabase roadmap_kebutuhan table
+            const { data, error } = await simbakesDB.client
+                .from('roadmap_kebutuhan')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(1000);
+            
+            if (error) throw error;
+            
+            result = {
+                status: 'success',
+                data: data || [],
+                totalRecords: data?.length || 0
+            };
+            
+            console.log(`[SIMBAKES] ✅ Berhasil mengambil ${data?.length || 0} data roadmap dari Supabase`);
+        } else {
+            // Fallback: return empty data with demo mode message
+            console.warn('[SIMBAKES] ⚠️ Supabase tidak terhubung, menggunakan mode demo untuk roadmap');
+            result = {
+                status: 'success',
+                data: [],
+                totalRecords: 0,
+                message: 'Demo mode - Supabase not connected'
+            };
+        }
+        
+        // Hide loading
+        loadingEl.style.display = 'none';
+        
+        // Cache data
+        if (typeof window.roadmapCachedData !== 'undefined') {
+            window.roadmapCachedData = result.data || [];
+        }
+        
+        // Render table or show empty state
+        if (result.data && result.data.length > 0) {
+            tableWrapperEl.style.display = 'block';
+            emptyStateEl.style.display = 'none';
+            
+            // Call original render function if exists
+            if (typeof renderRoadmapTablePublic === 'function') {
+                renderRoadmapTablePublic(result.data);
+            }
+            
+            if (typeof updateRoadmapResultCount === 'function') {
+                updateRoadmapResultCount(result.totalRecords || result.data.length);
+            }
+            
+            if (typeof showToast === 'function') {
+                showToast(`✅ Berhasil memuat ${result.data.length} data roadmap (Supabase)`, 'success');
+            }
+        } else {
+            tableWrapperEl.style.display = 'none';
+            emptyStateEl.style.display = 'block';
+            
+            if (typeof updateRoadmapResultCount === 'function') {
+                updateRoadmapResultCount(0);
+            }
+        }
+        
+        return result;
+        
+    } catch (error) {
+        console.error('[SIMBAKES] ❌ Error loading roadmap dari Supabase:', error);
+        loadingEl.style.display = 'none';
+        emptyStateEl.style.display = 'block';
+        
+        const titleEl = document.getElementById('roadmap-empty-state')?.querySelector('h3');
+        const descEl = document.getElementById('roadmap-empty-state')?.querySelector('p');
+        if (titleEl) titleEl.textContent = 'Gagal Memuat Data';
+        if (descEl) descEl.textContent = error.message || 'Terjadi kesalahan saat memuat data dari Supabase. Silakan coba lagi.';
+        
+        if (typeof showToast === 'function') {
+            showToast('❌ Gagal memuat data roadmap: ' + error.message, 'error');
+        }
+        
+        return { status: 'error', data: [], message: error.message };
+    }
+}
+
+/**
+ * Fetch Roadmap Data from Supabase - Admin version (for fetchRoadmapData)
+ * With pagination, search, and filter support
+ */
+async function fetchRoadmapDataFromSupabase() {
+    const tbody = document.getElementById('roadmap-table-body');
+    
+    // Show loading state
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="12" style="text-align:center;padding:3rem;color:#64748b;">
+                    <div class="spinner"></div>
+                    <p style="margin-top:1rem;">Memuat data roadmap dari Supabase...</p>
+                    <p style="font-size:0.8rem;color:#94a3b8;margin-top:0.5rem;">Menghubungkan ke database...</p>
+                </td>
+            </tr>
+        `;
+    }
+    
+    try {
+        let filteredData = [];
+        
+        if (supabaseConnected && typeof simbakesDB !== 'undefined' && simbakesDB.client) {
+            // Fetch all data from Supabase first
+            const { data, error } = await simbakesDB.client
+                .from('roadmap_kebutuhan')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(5000);
+            
+            if (error) throw error;
+            
+            filteredData = data || [];
+            
+            // Apply client-side search filter
+            const searchInput = document.getElementById('roadmap-search-input');
+            if (searchInput && searchInput.value.trim()) {
+                const search = searchInput.value.trim().toLowerCase();
+                filteredData = filteredData.filter(row => 
+                    String(row.nama_lengkap || row.nama || '').toLowerCase().includes(search) ||
+                    String(row.jurusan || '').toLowerCase().includes(search) ||
+                    String(row.pekerjaan || '').toLowerCase().includes(search) ||
+                    String(row.institusi || '').toLowerCase().includes(search)
+                );
+            }
+            
+            // Apply client-side status filter
+            const statusFilter = document.getElementById('roadmap-status-filter');
+            if (statusFilter && statusFilter.value) {
+                filteredData = filteredData.filter(row => 
+                    String(row.status || '').toLowerCase() === statusFilter.value.toLowerCase()
+                );
+            }
+            
+            console.log(`[SIMBAKES] ✅ Roadmap admin data: ${filteredData.length} records`);
+            
+        } else {
+            console.warn('[SIMBAKES] ⚠️ Mode demo untuk roadmap admin');
+            filteredData = [];
+        }
+        
+        // Cache data for pagination
+        if (typeof window.roadmapAdminData !== 'undefined') {
+            window.roadmapAdminData = filteredData;
+        }
+        
+        // Calculate pagination
+        const pageSize = typeof window.roadmapPageSize !== 'undefined' ? window.roadmapPageSize : 10;
+        const currentPage = typeof window.roadmapCurrentPage !== 'undefined' ? window.roadmapCurrentPage : 1;
+        const totalRecords = filteredData.length;
+        const totalPages = Math.ceil(totalRecords / pageSize);
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = Math.min(startIndex + pageSize, totalRecords);
+        const paginatedData = filteredData.slice(startIndex, endIndex);
+        
+        // Update pagination variables
+        if (typeof window.roadmapTotalRecords !== 'undefined') window.roadmapTotalRecords = totalRecords;
+        if (typeof window.roadmapTotalPages !== 'undefined') window.roadmapTotalPages = totalPages;
+        
+        // Transform data to match expected format (array of arrays)
+        const transformedData = paginatedData.map((row, idx) => [
+            startIndex + idx + 1,          // No
+            row.nama_lengkap || row.nama || '-',  // Nama
+            row.nik || '-',                 // NIK
+            row.jurusan || '-',             // Jurusan
+            row.jenjang_pendidikan || '-',  // Jenjang
+            row.perguruan_tinggi || row.institusi || '-',  // PT
+            row.pekerjaan || '-',           // Pekerjaan
+            row.unit_kerja || '-',          // Unit
+            row.status || '-',              // Status
+            row.created_at || '-',          // Tanggal
+            row.id                          // ID for actions
+        ]);
+        
+        // Call render function if exists
+        if (typeof renderRoadmapTable === 'function') {
+            renderRoadmapTable(transformedData, startIndex);
+        }
+        
+        // Update pagination controls
+        if (typeof updateRoadmapPagination === 'function') {
+            updateRoadmapPagination();
+        }
+        
+        // Update stats
+        if (typeof updateRoadmapStats === 'function') {
+            updateRoadmapStats();
+        }
+        
+        return { status: 'success', data: transformedData, totalRecords };
+        
+    } catch (error) {
+        console.error('[SIMBAKES] ❌ Error fetching roadmap dari Supabase:', error);
+        
+        const errorMsg = error.message || 'Terjadi kesalahan tidak diketahui';
+        
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="12" style="text-align:center;padding:3rem;color:#dc2626;">
+                        <div style="font-size:2.5rem;margin-bottom:1rem;">⚠️</div>
+                        <div style="font-weight:600;margin-bottom:0.5rem;">Gagal Memuat Data Roadmap</div>
+                        <div style="color:#64748b;font-size:0.875rem;">${errorMsg}</div>
+                        <button onclick="fetchRoadmapDataFromSupabase()" style="margin-top:1rem;padding:0.5rem 1rem;background:#059669;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.875rem;">
+                            🔄 Coba Lagi
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        if (typeof showToast === 'function') {
+            showToast('❌ Gagal memuat data roadmap: ' + errorMsg, 'error');
+        }
+        
+        return { status: 'error', data: [], message: errorMsg };
     }
 }
 
