@@ -63,6 +63,25 @@ const SimbakesCache = {
 let supabaseConnected = false;
 
 // =====================================================
+// GLOBAL VARIABLES - Declaration
+// =====================================================
+
+// User & Session Management
+let currentUser = null;
+
+// Dashboard & Admin Cache
+let cachedRecentSubmissions = [];
+let adminCurrentPage = 1;
+
+// Roadmap Management
+let roadmapCachedData = [];
+let roadmapAdminData = [];
+let roadmapCurrentPage = 1;
+let roadmapPageSize = 10;
+let roadmapTotalRecords = 0;
+let roadmapTotalPages = 0;
+
+// =====================================================
 // INITIALIZATION
 // =====================================================
 
@@ -509,7 +528,7 @@ function overrideGoogleSheetsFunctions() {
     if (typeof window.loadDataRoadmap !== 'undefined') {
         window.loadDataRoadmap = function() {
             console.log('[SIMBAKES] loadDataRoadmap() → Supabase');
-            if (typeof roadmapCurrentPage !== 'undefined') roadmapCurrentPage = 1;
+            roadmapCurrentPage = 1;
             fetchRoadmapDataFromSupabase();
         };
         console.log('[SIMBAKES] ✅ loadDataRoadmap() overridden');
@@ -945,7 +964,7 @@ async function fetchAdminDataFromSupabase() {
             sortBy: { 'timestamp': 'created_at', 'nama': 'nama_lengkap', 'nik': 'nik', 'status': 'status' }[sortBy?.value] || 'created_at',
             sortOrder: sortOrder?.value || 'desc',
             pageSize: parseInt(pageSizeSelect?.value || '10'),
-            page: typeof adminCurrentPage !== 'undefined' ? adminCurrentPage : 1
+            page: adminCurrentPage
         };
         
         const result = await simbakesDB.getPengusulan(filters);
@@ -1059,9 +1078,7 @@ async function loadRoadmapDataFromSupabase() {
         loadingEl.style.display = 'none';
         
         // Cache data
-        if (typeof window.roadmapCachedData !== 'undefined') {
-            window.roadmapCachedData = result.data || [];
-        }
+        roadmapCachedData = result.data || [];
         
         // Render table or show empty state
         if (result.data && result.data.length > 0) {
@@ -1172,13 +1189,11 @@ async function fetchRoadmapDataFromSupabase() {
         }
         
         // Cache data for pagination
-        if (typeof window.roadmapAdminData !== 'undefined') {
-            window.roadmapAdminData = filteredData;
-        }
+        roadmapAdminData = filteredData;
         
         // Calculate pagination
-        const pageSize = typeof window.roadmapPageSize !== 'undefined' ? window.roadmapPageSize : 10;
-        const currentPage = typeof window.roadmapCurrentPage !== 'undefined' ? window.roadmapCurrentPage : 1;
+        const pageSize = roadmapPageSize;
+        const currentPage = roadmapCurrentPage;
         const totalRecords = filteredData.length;
         const totalPages = Math.ceil(totalRecords / pageSize);
         const startIndex = (currentPage - 1) * pageSize;
@@ -1186,8 +1201,8 @@ async function fetchRoadmapDataFromSupabase() {
         const paginatedData = filteredData.slice(startIndex, endIndex);
         
         // Update pagination variables
-        if (typeof window.roadmapTotalRecords !== 'undefined') window.roadmapTotalRecords = totalRecords;
-        if (typeof window.roadmapTotalPages !== 'undefined') window.roadmapTotalPages = totalPages;
+        roadmapTotalRecords = totalRecords;
+        roadmapTotalPages = totalPages;
         
         // Transform data to match expected format (array of arrays)
         const transformedData = paginatedData.map((row, idx) => [
