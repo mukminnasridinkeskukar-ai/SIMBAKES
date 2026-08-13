@@ -32,6 +32,7 @@
         #landing-page.hidden {
             opacity: 0;
             pointer-events: none;
+            display: none !important;
         }
 
         .landing-logo {
@@ -6779,23 +6780,73 @@ let uploadedPDFBase64 = null;    // Base64 string for PDF document
 let uploadedFileInfo = null;     // File info object (name, size)
 
 // ===== LANDING PAGE =====
+/**
+ * Landing page progress animation - Move to dashboard after 3 seconds or when ready
+ */
 let progress = 0;
+let landingPageReady = false;
 const progressBar = document.getElementById('progress-bar');
 const landingPage = document.getElementById('landing-page');
 const mainApp = document.getElementById('main-app');
+const loadingText = document.querySelector('.loading-text');
 
-const progressInterval = setInterval(() => {
-    progress += 2;
-    progressBar.style.width = progress + '%';
-    if (progress >= 100) {
-        clearInterval(progressInterval);
-        setTimeout(() => {
+// Safety timeout - hide landing page after max 8 seconds anyway
+const landingPageTimeout = setTimeout(() => {
+    console.warn('[SIMBAKES] Landing page timeout - force hide');
+    if (loadingText) loadingText.textContent = 'Selesai (Mode Fallback)';
+    hideLandingPageSafely();
+}, 8000);
+
+// Function to safely hide landing page
+function hideLandingPageSafely() {
+    if (landingPageReady) return; // Already hidden
+    
+    clearInterval(progressInterval);
+    clearTimeout(landingPageTimeout);
+    landingPageReady = true;
+    
+    console.log('[SIMBAKES] ✅ Hiding landing page');
+    
+    if (progressBar) progressBar.style.width = '100%';
+    if (loadingText) loadingText.textContent = 'Selesai - Beralih ke dashboard...';
+    
+    setTimeout(() => {
+        if (landingPage) {
             landingPage.classList.add('hidden');
+            console.log('[SIMBAKES] Landing page hidden, showing main app');
+        }
+        if (mainApp) {
             mainApp.classList.add('visible');
-            initializeForm();
-        }, 500);
+        }
+        
+        // Initialize form if not already done
+        if (typeof initializeForm === 'function') {
+            try {
+                initializeForm();
+            } catch (e) {
+                console.warn('[SIMBAKES] Form init warning:', e.message);
+            }
+        }
+    }, 500);
+}
+
+// Progress bar increment - faster (every 30ms instead of 60ms)
+const progressInterval = setInterval(() => {
+    progress += 3;
+    if (progressBar) progressBar.style.width = progress + '%';
+    
+    // Reach 90% and wait for Supabase
+    if (progress >= 90) {
+        clearInterval(progressInterval);
     }
-}, 60);
+}, 30);
+
+// When Supabase is ready, complete the landing page
+document.addEventListener('SIMBAKES_READY', () => {
+    console.log('[SIMBAKES] Supabase ready event fired');
+    if (loadingText) loadingText.textContent = 'Platform siap!';
+    hideLandingPageSafely();
+});
 
 // ===== INITIALIZE FORM =====
 function initializeForm() {
@@ -12216,21 +12267,39 @@ document.addEventListener('keydown', function(e) {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('[SIMBAKES] DOMContentLoaded - Waiting for Supabase integration...');
     
-    // Wait for Supabase integration to be ready
-    let maxWait = 50; // 5 seconds max
-    while (maxWait > 0 && typeof SimbakesIntegration === 'undefined') {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        maxWait--;
+    try {
+        // Wait for Supabase integration to be ready
+        let maxWait = 50; // 5 seconds max
+        while (maxWait > 0 && typeof SimbakesIntegration === 'undefined') {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            maxWait--;
+        }
+        
+        if (typeof SimbakesIntegration !== 'undefined') {
+            console.log('[SIMBAKES] ✅ Supabase integration ready, loading dashboard...');
+        } else {
+            console.warn('[SIMBAKES] ⚠️ Supabase integration timeout, using fallback...');
+        }
+        
+        // Now safe to render dashboard
+        try {
+            await renderDashboard();
+            console.log('[SIMBAKES] ✅ Dashboard rendered successfully');
+        } catch (dashboardError) {
+            console.error('[SIMBAKES] ❌ Dashboard render error:', dashboardError);
+            // Show error but don't crash
+            if (typeof showToast === 'function') {
+                showToast('⚠️ Terjadi kesalahan saat memuat dashboard', 'warning', 5000);
+            }
+        }
+        
+    } catch (error) {
+        console.error('[SIMBAKES] DOMContentLoaded error:', error);
+        // Fallback - still try to show dashboard
+        if (typeof showToast === 'function') {
+            showToast('⚠️ Platform dalam mode fallback', 'warning', 5000);
+        }
     }
-    
-    if (typeof SimbakesIntegration !== 'undefined') {
-        console.log('[SIMBAKES] ✅ Supabase integration ready, loading dashboard...');
-    } else {
-        console.warn('[SIMBAKES] ⚠️ Supabase integration timeout, using fallback...');
-    }
-    
-    // Now safe to render dashboard
-    renderDashboard();
     
     // Observe page changes to load admin data
     const observer = new MutationObserver((mutations) => {

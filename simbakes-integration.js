@@ -129,6 +129,10 @@ async function initSimbakesSupabase() {
     
     // Show status notification
     showIntegrationStatus(configValid);
+    
+    // Signal that SIMBAKES is ready - trigger landing page to hide
+    document.dispatchEvent(new Event('SIMBAKES_READY'));
+    console.log('[SIMBAKES] 📢 Dispatched SIMBAKES_READY event for landing page');
 }
 
 /**
