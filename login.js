@@ -32,18 +32,29 @@ const AuthState = {
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('[SIMBAKES-AUTH] Initializing authentication module...');
     
-    // Check if already logged in
-    await checkExistingSession();
-    
-    // Initialize Supabase if available
-    if (typeof simbakesDB !== 'undefined') {
+    // Non-blocking initialization - don't await
+    (async () => {
         try {
-            await simbakesDB.init();
-            console.log('[SIMBAKES-AUTH] ✅ Supabase client ready');
-        } catch (error) {
-            console.warn('[SIMBAKES-AUTH] ⚠️ Supabase init failed:', error.message);
+            // Check existing session (quick)
+            await checkExistingSession();
+            
+            // Initialize Supabase in background (may timeout)
+            if (typeof simbakesDB !== 'undefined') {
+                try {
+                    // Don't wait too long
+                    await Promise.race([
+                        simbakesDB.init(),
+                        new Promise((_, reject) => setTimeout(() => reject('timeout'), 5000))
+                    ]);
+                    console.log('[SIMBAKES-AUTH] ✅ Supabase client ready');
+                } catch (error) {
+                    console.warn('[SIMBAKES-AUTH] ⚠️ Supabase init skipped/timeout:', error.message || error);
+                }
+            }
+        } catch (e) {
+            console.warn('[SIMBAKES-AUTH] Non-blocking init error:', e.message);
         }
-    }
+    })(); // Run in background
 });
 
 /**

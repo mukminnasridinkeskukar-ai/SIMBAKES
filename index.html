@@ -6781,7 +6781,8 @@ let uploadedFileInfo = null;     // File info object (name, size)
 
 // ===== LANDING PAGE =====
 /**
- * Landing page progress animation - Move to dashboard after 3 seconds or when ready
+ * Landing page progress animation - Move to dashboard after 2-3 seconds
+ * This runs IMMEDIATELY without waiting for Supabase to load
  */
 let progress = 0;
 let landingPageReady = false;
@@ -6790,62 +6791,81 @@ const landingPage = document.getElementById('landing-page');
 const mainApp = document.getElementById('main-app');
 const loadingText = document.querySelector('.loading-text');
 
-// Safety timeout - hide landing page after max 8 seconds anyway
-const landingPageTimeout = setTimeout(() => {
-    console.warn('[SIMBAKES] Landing page timeout - force hide');
-    if (loadingText) loadingText.textContent = 'Selesai (Mode Fallback)';
+console.log('[SIMBAKES] 🚀 Landing page init - will auto-hide in 3 seconds');
+
+// Aggressive progress increment
+const progressInterval = setInterval(() => {
+    if (progress < 95) {
+        progress += 5; // Big jumps
+    } else {
+        progress += 1; // Slow down near end
+    }
+    if (progressBar) progressBar.style.width = progress + '%';
+    
+    // Update loading text with progress
+    const messages = [
+        'Memuat platform...',
+        'Mempersiapkan data...',
+        'Menghubungkan ke server...',
+        'Hampir selesai...',
+        'Selesai!'
+    ];
+    const msgIndex = Math.floor((progress / 100) * messages.length);
+    if (loadingText) loadingText.textContent = messages[Math.min(msgIndex, messages.length - 1)];
+}, 50);
+
+// Force hide landing page after 3 seconds - NO WAITING for Supabase
+const hardTimeout = setTimeout(() => {
+    console.warn('[SIMBAKES] ⏰ Force hiding landing page after 3 seconds');
     hideLandingPageSafely();
-}, 8000);
+}, 3000);
 
 // Function to safely hide landing page
 function hideLandingPageSafely() {
-    if (landingPageReady) return; // Already hidden
-    
-    clearInterval(progressInterval);
-    clearTimeout(landingPageTimeout);
+    if (landingPageReady) return;
     landingPageReady = true;
     
-    console.log('[SIMBAKES] ✅ Hiding landing page');
+    clearInterval(progressInterval);
+    clearTimeout(hardTimeout);
+    
+    console.log('[SIMBAKES] ✅ Hiding landing page NOW');
     
     if (progressBar) progressBar.style.width = '100%';
-    if (loadingText) loadingText.textContent = 'Selesai - Beralih ke dashboard...';
+    if (loadingText) loadingText.textContent = 'Selesai!';
     
-    setTimeout(() => {
-        if (landingPage) {
-            landingPage.classList.add('hidden');
-            console.log('[SIMBAKES] Landing page hidden, showing main app');
+    // Immediate hide
+    if (landingPage) {
+        landingPage.classList.add('hidden');
+        console.log('[SIMBAKES] Landing page class "hidden" added');
+    }
+    if (mainApp) {
+        mainApp.classList.add('visible');
+        console.log('[SIMBAKES] Main app class "visible" added');
+    }
+    
+    // Initialize form
+    if (typeof initializeForm === 'function') {
+        try {
+            initializeForm();
+            console.log('[SIMBAKES] Form initialized');
+        } catch (e) {
+            console.warn('[SIMBAKES] Form init error:', e.message);
         }
-        if (mainApp) {
-            mainApp.classList.add('visible');
-        }
-        
-        // Initialize form if not already done
-        if (typeof initializeForm === 'function') {
-            try {
-                initializeForm();
-            } catch (e) {
-                console.warn('[SIMBAKES] Form init warning:', e.message);
-            }
-        }
-    }, 500);
+    }
 }
 
-// Progress bar increment - faster (every 30ms instead of 60ms)
-const progressInterval = setInterval(() => {
-    progress += 3;
-    if (progressBar) progressBar.style.width = progress + '%';
-    
-    // Reach 90% and wait for Supabase
-    if (progress >= 90) {
-        clearInterval(progressInterval);
+// Allow manual exit from landing page
+document.addEventListener('click', () => {
+    if (!landingPageReady && progress > 50) {
+        console.log('[SIMBAKES] Manual exit from landing page');
+        hideLandingPageSafely();
     }
-}, 30);
+});
 
-// When Supabase is ready, complete the landing page
+// When Supabase ready, also confirm
 document.addEventListener('SIMBAKES_READY', () => {
-    console.log('[SIMBAKES] Supabase ready event fired');
-    if (loadingText) loadingText.textContent = 'Platform siap!';
-    hideLandingPageSafely();
+    console.log('[SIMBAKES] 🎉 Supabase ready event');
+    // Landing page might already be hidden, that's OK
 });
 
 // ===== INITIALIZE FORM =====
@@ -8389,18 +8409,43 @@ async function fetchAPI(url, options = {}) {
 async function renderDashboard() {
     console.log('🔄 Loading Dashboard v3.0...');
     
-    // Track visitor saat dashboard dibuka
-    await trackVisitorToSheets();
-    
-    // Fetch semua data secara paralel
-    await Promise.all([
-        fetchDashboardStats(),
-        fetchRecentSubmissions(),
-        fetchVisitorStats()
-    ]);
-    
-    // Update timestamp
-    updateLastUpdateTime();
+    try {
+        // Track visitor dengan timeout 2 detik (non-blocking)
+        Promise.race([
+            trackVisitorToSheets(),
+            new Promise((_, reject) => setTimeout(() => reject('timeout'), 2000))
+        ]).catch(e => {
+            console.warn('[SIMBAKES] Visitor tracking skipped:', e);
+        });
+        
+        // Fetch all data in parallel dengan timeout
+        const dashboardPromises = [
+            fetchDashboardStats().catch(e => {
+                console.warn('Dashboard stats error:', e.message);
+                return { status: 'error', data: {} };
+            }),
+            fetchRecentSubmissions().catch(e => {
+                console.warn('Recent submissions error:', e.message);
+                return { status: 'error', data: [] };
+            }),
+            fetchVisitorStats().catch(e => {
+                console.warn('Visitor stats error:', e.message);
+                return { status: 'error', data: {} };
+            })
+        ];
+        
+        // Don't block if loading is slow
+        Promise.all(dashboardPromises).then(() => {
+            updateLastUpdateTime();
+            console.log('✅ Dashboard data loaded');
+        }).catch(e => {
+            console.warn('Dashboard loading warning:', e.message);
+        });
+        
+    } catch (error) {
+        console.error('Dashboard error:', error);
+        // Non-blocking - don't throw
+    }
 }
 
 /**
@@ -12265,52 +12310,51 @@ document.addEventListener('keydown', function(e) {
 
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('[SIMBAKES] DOMContentLoaded - Waiting for Supabase integration...');
+    console.log('[SIMBAKES] DOMContentLoaded fired');
     
-    try {
-        // Wait for Supabase integration to be ready
-        let maxWait = 50; // 5 seconds max
-        while (maxWait > 0 && typeof SimbakesIntegration === 'undefined') {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            maxWait--;
-        }
-        
-        if (typeof SimbakesIntegration !== 'undefined') {
-            console.log('[SIMBAKES] ✅ Supabase integration ready, loading dashboard...');
-        } else {
-            console.warn('[SIMBAKES] ⚠️ Supabase integration timeout, using fallback...');
-        }
-        
-        // Now safe to render dashboard
+    // Load dashboard in BACKGROUND without blocking
+    (async () => {
         try {
-            await renderDashboard();
-            console.log('[SIMBAKES] ✅ Dashboard rendered successfully');
-        } catch (dashboardError) {
-            console.error('[SIMBAKES] ❌ Dashboard render error:', dashboardError);
-            // Show error but don't crash
-            if (typeof showToast === 'function') {
-                showToast('⚠️ Terjadi kesalahan saat memuat dashboard', 'warning', 5000);
+            // Wait briefly for Supabase, but don't block UI
+            let maxWait = 30; // 3 seconds max
+            while (maxWait > 0 && typeof SimbakesIntegration === 'undefined') {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                maxWait--;
             }
+            
+            if (typeof SimbakesIntegration !== 'undefined') {
+                console.log('[SIMBAKES] ✅ Supabase ready');
+            } else {
+                console.warn('[SIMBAKES] ⚠️ Supabase timeout - using fallback');
+            }
+            
+            // Load dashboard in background
+            if (typeof renderDashboard === 'function') {
+                try {
+                    await renderDashboard();
+                    console.log('[SIMBAKES] ✅ Dashboard loaded');
+                } catch (e) {
+                    console.warn('[SIMBAKES] Dashboard error (non-blocking):', e.message);
+                }
+            }
+            
+        } catch (e) {
+            console.error('[SIMBAKES] Init error:', e.message);
         }
-        
-    } catch (error) {
-        console.error('[SIMBAKES] DOMContentLoaded error:', error);
-        // Fallback - still try to show dashboard
-        if (typeof showToast === 'function') {
-            showToast('⚠️ Platform dalam mode fallback', 'warning', 5000);
-        }
-    }
+    })(); // IIFE - non-blocking
     
-    // Observe page changes to load admin data
+    // Observe page changes for admin data
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.target.id === 'page-data-pengusul' && mutation.target.classList.contains('active')) {
-                loadDataPengusul();
+                if (typeof loadDataPengusul === 'function') {
+                    loadDataPengusul();
+                }
             }
         });
     });
     
-    // Start observing all pages
+    // Start observing
     document.querySelectorAll('.page').forEach(page => {
         observer.observe(page, { attributes: true, attributeFilter: ['class'] });
     });
