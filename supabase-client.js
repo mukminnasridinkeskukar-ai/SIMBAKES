@@ -16,12 +16,11 @@
 // KONFIGURASI SUPABASE - ISI DENGAN CREDENTIAL ANDA
 // =====================================================
 const SUPABASE_CONFIG = {
-    // ⚠️ GANTI DUA NILAI DI BAWAH INI!
+    // ✅ KONFIGURASI SUDAH LENGKAP!
     
-    url: 'https://boeknpvifamjmddsdopd.supabase.co',  // ✅ Sudah dari screenshot Anda
+    url: 'https://boeknpvifamjmddsdopd.supabase.co',
     
-    anonKey: 'PASTE_ANON_KEY_ANDA_DISINI'  // ⚠️ Copy dari Settings > API Keys > Publishable key
-    // Contoh: sb_publishable__f1lRVdxF37JngpwsKrBUg_K6sSn...
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZWtucHZsZmFtam1kZHNkb3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NzYwNjIsImV4cCI6MjEwMjA1MjA2Mn0.kHj7xEY7Wa4zSJwH0rjhiB3Qf0IHriyPlWoh4rdlv3U'
 };
 
 // =====================================================
