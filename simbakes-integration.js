@@ -144,12 +144,17 @@ function applyImmediatePatches() {
         console.log('[SIMBAKES] ✅ fetchWithTimeout() patched (including IP APIs)');
     }
     
-    // Patch 1.5: Block direct fetch calls to problematic APIs
+    // Patch 1.5: Block direct fetch calls to problematic APIs (with safe pass-through)
     const originalFetch = window.fetch.bind(window);
     window.fetch = function patchedFetch(url, options) {
         const urlStr = typeof url === 'string' ? url : (url?.url || url?.toString() || '');
         
-        // Block external IP/location APIs that cause CORS errors
+        // Log Supabase calls for debugging (optional - can be disabled in production)
+        if (urlStr && urlStr.includes('supabase.co')) {
+            console.log('[SIMBAKES] 🔄 Supabase API call:', urlStr.substring(0, 80) + '...');
+        }
+        
+        // ONLY block these specific problematic URLs (NOT Supabase!)
         if (urlStr && (
             urlStr.includes('ipapi.co') ||
             urlStr.includes('api.ipify.org') ||
@@ -166,9 +171,25 @@ function applyImmediatePatches() {
             });
         }
         
-        return originalFetch(url, options);
+        // Pass through ALL other requests (including Supabase) with error handling
+        return originalFetch(url, options).catch(error => {
+            console.warn('[SIMBAKES] ⚠️ Fetch error:', error.message, '| URL:', urlStr?.substring(0, 60));
+            
+            // Return a proper error response instead of crashing
+            return Promise.resolve({
+                ok: false,
+                status: 0,
+                statusText: error.name || 'NetworkError',
+                json: () => Promise.resolve({ 
+                    error: error.message,
+                    code: 'NETWORK_ERROR',
+                    message: 'Gagal terhubung ke server. Periksa koneksi internet Anda.'
+                }),
+                text: () => Promise.resolve('')
+            });
+        });
     };
-    console.log('[SIMBAKES] ✅ fetch() patched for CORS protection');
+    console.log('[SIMBAKES] ✅ fetch() patched with network error handling');
     
     // Patch 2: Override apiFetch immediately with safe version
     if (typeof window.apiFetch !== 'undefined') {
