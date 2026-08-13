@@ -5794,6 +5794,116 @@ window.checkSupabaseStatus = function() {
     return allPassed;
 };
 
+/**
+ * Test network connectivity & Supabase access
+ * Usage in browser console: testNetworkConnectivity()
+ */
+window.testNetworkConnectivity = async function() {
+    console.log('%c=== SIMBAKES NETWORK & SUPABASE CONNECTIVITY TEST ===', 'color:purple;font-weight:bold;font-size:14px');
+    
+    const tests = {
+        'Internet Access (google.com)': async () => {
+            try {
+                const response = await fetch('https://www.google.com/favicon.ico', { mode: 'no-cors', timeout: 5000 });
+                return response.ok || response.status === 0; // CORS mode always returns 0
+            } catch (e) {
+                console.warn('  Error:', e.message);
+                return false;
+            }
+        },
+        'Supabase API Endpoint': async () => {
+            if (typeof SUPABASE_CONFIG === 'undefined' || !SUPABASE_CONFIG.url) {
+                console.warn('  Supabase config not found');
+                return false;
+            }
+            try {
+                const url = `${SUPABASE_CONFIG.url}/rest/v1/`;
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+                        'apikey': SUPABASE_CONFIG.anonKey
+                    },
+                    timeout: 5000
+                });
+                return response.status === 400 || response.status === 200; // Both mean endpoint is reachable
+            } catch (e) {
+                console.warn('  Error:', e.message);
+                return false;
+            }
+        },
+        'Supabase Roadmap Table': async () => {
+            if (typeof simbakesDB === 'undefined' || !simbakesDB.client) {
+                console.warn('  SimbakesDB not initialized');
+                return false;
+            }
+            try {
+                const { data, error } = await simbakesDB.client
+                    .from('roadmap_kebutuhan')
+                    .select('id')
+                    .limit(1);
+                
+                if (error) throw error;
+                return true;
+            } catch (e) {
+                console.warn('  Error:', e.message);
+                return false;
+            }
+        }
+    };
+    
+    let results = {};
+    for (const [testName, testFn] of Object.entries(tests)) {
+        console.log(`  Testing ${testName}... ⏳`);
+        try {
+            const result = await testFn();
+            results[testName] = result;
+            const icon = result ? '✅' : '❌';
+            console.log(`%c${icon} ${testName}`, result ? 'color:green;font-weight:bold' : 'color:red;font-weight:bold');
+        } catch (e) {
+            results[testName] = false;
+            console.log(`%c❌ ${testName}: ${e.message}`, 'color:red;font-weight:bold');
+        }
+    }
+    
+    console.log('%c=====================================', 'color:purple;font-weight:bold');
+    
+    const allPassed = Object.values(results).every(r => r);
+    if (allPassed) {
+        console.log('%c✅ Semua tes konektivitas berhasil!', 'color:green;font-weight:bold;font-size:12px');
+    } else {
+        console.log('%c❌ Beberapa tes gagal. Periksa error di atas.', 'color:red;font-weight:bold;font-size:12px');
+        console.log('%cTunggu 2 detik dan coba lagi...', 'color:orange;font-style:italic');
+    }
+    
+    return results;
+};
+
+/**
+ * Get detailed error diagnostics
+ * Usage: getDiagnostics()
+ */
+window.getDiagnostics = function() {
+    console.log('%c=== SIMBAKES DETAILED DIAGNOSTICS ===', 'color:#059669;font-weight:bold;font-size:14px');
+    
+    console.group('Configuration');
+    console.log('Supabase URL:', SUPABASE_CONFIG?.url?.substring(0, 50) + '...' || 'NOT SET');
+    console.log('Supabase Key:', SUPABASE_CONFIG?.anonKey?.substring(0, 30) + '...' || 'NOT SET');
+    console.log('Integration Version:', SimbakesIntegration?.version || 'NOT LOADED');
+    console.groupEnd();
+    
+    console.group('Cache');
+    console.log('Dashboard Stats:', SimbakesIntegration?.cache?.dashboardStats || 'Empty');
+    console.log('Recent Submissions:', (SimbakesIntegration?.cache?.recentSubmissions?.length || 0) + ' items');
+    console.log('Visitor Count:', SimbakesIntegration?.cache?.visitorCount || 0);
+    console.groupEnd();
+    
+    console.group('State');
+    console.log('Supabase Connected:', SimbakesIntegration?.isConnected?.() || false);
+    console.log('Current User:', sessionStorage.getItem('currentUser') || 'Not logged in');
+    console.groupEnd();
+};
+
 // ============================================================
 // SIMBAKES - CONFIGURATION GOOGLE SHEETS INTEGRATION
 // ============================================================

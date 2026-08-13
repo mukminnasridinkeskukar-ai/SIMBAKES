@@ -192,17 +192,30 @@ function applyImmediatePatches() {
         
         // Pass through ALL other requests (including Supabase) with error handling
         return originalFetch(url, options).catch(error => {
-            console.warn('[SIMBAKES] ⚠️ Fetch error:', error.message, '| URL:', urlStr?.substring(0, 60));
+            const errorType = error.name || 'NetworkError';
+            const errorMsg = error.message || 'Unknown error';
+            
+            console.warn('[SIMBAKES] ⚠️ Fetch error:', errorType, '-', errorMsg, '| URL:', urlStr?.substring(0, 60));
+            
+            // Provide more specific error info
+            if (errorMsg.includes('DNS') || errorMsg.includes('name') || errorType === 'TypeError') {
+                console.error('[SIMBAKES] 🌐 Possible DNS/Network issue - Check internet connection');
+            }
             
             // Return a proper error response instead of crashing
             return Promise.resolve({
                 ok: false,
                 status: 0,
-                statusText: error.name || 'NetworkError',
+                statusText: errorType || 'NetworkError',
                 json: () => Promise.resolve({ 
-                    error: error.message,
+                    error: errorMsg,
                     code: 'NETWORK_ERROR',
-                    message: 'Gagal terhubung ke server. Periksa koneksi internet Anda.'
+                    message: 'Gagal terhubung ke server. Periksa koneksi internet Anda.',
+                    details: {
+                        errorType: errorType,
+                        originalError: errorMsg,
+                        url: urlStr?.substring(0, 100)
+                    }
                 }),
                 text: () => Promise.resolve('')
             });
