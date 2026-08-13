@@ -467,7 +467,7 @@ ALTER TABLE public.data_pengusulan ADD COLUMN IF NOT EXISTS judul_proposal VARCH
 
 -- Update status to include new values
 ALTER TABLE public.data_pengusulan DROP CONSTRAINT IF EXISTS data_pengusulan_status_check;
-ALTER TABLE public.data_pengusalan ADD CONSTRAINT data_pengusulan_status_check 
+ALTER TABLE public.data_pengusulan ADD CONSTRAINT data_pengusulan_status_check 
 CHECK (status IN ('diajukan', 'diproses', 'diterima', 'ditolak', 'direvisi', 'dibatalkan', 'disanggah'));
 
 -- =====================================================
