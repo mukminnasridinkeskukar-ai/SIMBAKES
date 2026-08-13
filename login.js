@@ -419,21 +419,28 @@ async function handleLogin(event) {
 
 /**
  * Fallback login via direct Supabase query
+ * FIXED: Use dynamic client resolution
  */
 async function loginViaAPI(username, password) {
     try {
+        // Get Supabase client dynamically
+        const client = getSupabaseClientSafe();
+        if (!client) {
+            throw new Error('Koneksi database tidak tersedia. Pastikan konfigurasi Supabase benar.');
+        }
+        
         // Check if it's an email or username
         const isEmail = isValidEmail(username);
         
         let query;
         if (isEmail) {
-            query = supabaseClient
+            query = client
                 .from('multiusers')
                 .select('*')
                 .eq('email', username)
                 .eq('status', 'aktif');
         } else {
-            query = supabaseClient
+            query = client
                 .from('multiusers')
                 .select('*')
                 .eq('username', username)
@@ -449,13 +456,12 @@ async function loginViaAPI(username, password) {
         }
         
         // Note: In production, use proper password hashing comparison
-        // This is a simplified version for demonstration
         if (data.password !== password) {
             return { success: false, error: 'Username/email atau password salah' };
         }
         
         // Update last_login
-        await supabaseClient
+        await client
             .from('multiusers')
             .update({ last_login: new Date().toISOString() })
             .eq('id', data.id);
@@ -464,8 +470,32 @@ async function loginViaAPI(username, password) {
         
     } catch (error) {
         console.error('[SIMBAKES-AUTH] API login error:', error);
-        return { success: false, error: 'Terjadi kesalahan koneksi database' };
+        return { success: false, error: error.message || 'Terjadi kesalahan koneksi database' };
     }
+}
+
+/**
+ * Get Supabase client safely from multiple sources
+ */
+function getSupabaseClientSafe() {
+    // Priority 1: simbakesDB.client (from supabase-client.js)
+    if (typeof simbakesDB !== 'undefined' && simbakesDB.isInitialized && simbakesDB.client) {
+        return simbakesDB.client;
+    }
+    
+    // Priority 2: Global supabaseClient variable
+    if (typeof supabaseClient !== 'undefined') {
+        return supabaseClient;
+    }
+    
+    // Priority 3: Create new client from config
+    if (typeof window.supabase !== 'undefined' && typeof SUPABASE_CONFIG !== 'undefined') {
+        if (SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey && SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_URL') {
+            return window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+        }
+    }
+    
+    return null;
 }
 
 function handleFailedLogin(errorMessage) {
@@ -616,10 +646,32 @@ async function checkExistingUser(username, email) {
 
 /**
  * Register via Supabase client library
+ * FIXED: Use simbakesDB.client instead of undefined supabaseClient
  */
 async function registerViaSupabase(userData) {
     try {
-        const { data, error } = await supabaseClient
+        // Get Supabase client from multiple sources
+        let client = null;
+        
+        if (typeof simbakesDB !== 'undefined' && simbakesDB.isInitialized && simbakesDB.client) {
+            client = simbakesDB.client;
+            console.log('[SIMBAKES-AUTH] Using simbakesDB.client for registration');
+        } else if (typeof supabaseClient !== 'undefined') {
+            client = supabaseClient;
+            console.log('[SIMBAKES-AUTH] Using global supabaseClient for registration');
+        } else if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
+            // Create temporary client using config
+            if (typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey) {
+                client = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+                console.log('[SIMBAKES-AUTH] Created new Supabase client for registration');
+            }
+        }
+        
+        if (!client) {
+            throw new Error('Supabase client tidak tersedia. Pastikan supabase-client.js sudah dimuat.');
+        }
+        
+        const { data, error } = await client
             .from('multiusers')
             .insert([{
                 id: generateUUID(),
@@ -628,8 +680,8 @@ async function registerViaSupabase(userData) {
                 username: userData.username,
                 password: userData.password, // In production, hash this!
                 role: userData.role,
-                institusi: userData.institusi,
-                status: userData.status,
+                institusi: userData.institusi || '',
+                status: userData.status || 'aktif',
                 created_at: new Date().toISOString()
             }])
             .select()
