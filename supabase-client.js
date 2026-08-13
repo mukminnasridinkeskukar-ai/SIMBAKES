@@ -632,7 +632,7 @@ class SimbakesSupabase {
 // =====================================================
 // GLOBAL INSTANCE
 // =====================================================
-const simbakesDB = new SimbakesSimbakes();
+const simbakesDB = new SimbakesSupabase();
 
 // Auto-initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {

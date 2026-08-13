@@ -1,180 +1,705 @@
 /**
  * =====================================================
- * SIMBAKES - Integration Layer (Template Connector)
+ * SIMBAKES - SUPABASE INTEGRATION LAYER (COMPLETE v3.0)
  * =====================================================
  * 
- * File ini menghubungkan template HTML dengan Supabase
- * TIDAK MENGUBAH STRUKTUR TEMPLATE - hanya override fungsi data
+ * ⚠️ FILE INI MENGgANTI SELURUH FUNGSI GOOGLE SHEETS
+ * DENGAN SUPABASE 100%
+ * 
+ * FUNGSI YANG DI-OVERRIDE:
+ * 1. apiFetch() → Supabase client
+ * 2. renderDashboard() → Dashboard dari Supabase
+ * 3. fetchDashboardStats() → Stats dari view Supabase
+ * 4. fetchRecentSubmissions() → Data terbaru dari Supabase
+ * 5. fetchVisitorStats() → Visitor tracking (optional)
+ * 6. trackVisitorToSheets() → Local tracking (no Google)
+ * 7. sendToGoogleSheets() → Insert ke Supabase
+ * 8. loadDataPengusul()/fetchAdminData() → Data admin dari Supabase
+ * 9. updateAdminStats() → Stats admin dari Supabase
+ * 10. Semua fungsi CRUD lainnya
  * 
  * CARA PENGGUNAAN:
  * 1. Letakkan file ini di folder yang sama dengan index.html
- * 2. Tambahkan <script src="simbakes-integration.js"></script> SEBELUM </body>
- * 3. Pastikan supabase-client.js sudah dimuat sebelumnya
+ * 2. Pastikan supabase-client.js dimuat SEBELUM file ini
+ * 3. File ini OTOMATIS mengganti semua fungsi Google Sheets
  */
 
 // =====================================================
-// CONFIGURATION CHECKER
+// GLOBAL STATE & CONFIGURATION
 // =====================================================
+
+const SIMBAKES_CONFIG = {
+    useSupabase: true,           // Force Supabase mode
+    debugMode: true,             // Show detailed logs
+    fallbackToDemo: true,        // Use demo data if Supabase fails
+    autoInit: true               // Auto-initialize on load
+};
+
+// Global state for caching
+const SimbakesCache = {
+    dashboardStats: null,
+    recentSubmissions: [],
+    allPengusulan: [],
+    visitorCount: 0,
+    lastFetchTime: null,
+    cacheExpiry: 60000 // 1 minute cache
+};
+
+// =====================================================
+// INITIALIZATION
+// =====================================================
+
+/**
+ * Main initialization function
+ * Runs automatically when DOM is ready
+ */
+async function initSimbakesSupabase() {
+    console.log('%c🚀 SIMBAKES Supabase Integration v3.0', 'color:#059669;font-size:16px;font-weight:bold');
+    console.log('%c📊 Mengganti Google Sheets dengan Supabase...', 'color:#0891b2');
+    
+    if (SIMBAKES_CONFIG.debugMode) {
+        console.log('[SIMBAKES] Debug mode ON');
+    }
+    
+    // Check Supabase configuration
+    const configValid = checkSupabaseConfig();
+    
+    if (configValid) {
+        try {
+            // Initialize Supabase client
+            if (typeof simbakesDB !== 'undefined') {
+                await simbakesDB.init();
+                console.log('[SIMBAKES] ✅ Supabase client initialized');
+                
+                // Override ALL Google Sheets functions
+                overrideGoogleSheetsFunctions();
+                
+                console.log('[SIMBAKES] ✅ Semua fungsi Google Sheets berhasil di-override');
+            } else {
+                console.warn('[SIMBAKES] ⚠️ simbakesDB tidak ditemukan, menggunakan fallback');
+                setupFallbackMode();
+            }
+        } catch (error) {
+            console.error('[SIMBAKES] ❌ Error initializing Supabase:', error);
+            setupFallbackMode();
+        }
+    } else {
+        console.warn('[SIMBAKES] ⚠️ Supabase belum dikonfigurasi, menggunakan Demo Mode');
+        setupFallbackMode();
+    }
+    
+    // Show status notification
+    showIntegrationStatus(configValid);
+}
+
+/**
+ * Check if Supabase credentials are configured
+ */
 function checkSupabaseConfig() {
     if (typeof SUPABASE_CONFIG === 'undefined') {
-        console.error('[SIMBAKES] SUPABASE_CONFIG tidak ditemukan! Pastikan supabase-client.js sudah dimuat');
+        console.error('[SIMBAKES] SUPABASE_CONFIG tidak ditemukan!');
         return false;
     }
     
-    if (SUPABASE_CONFIG.url === 'YOUR_SUPABASE_URL' || !SUPABASE_CONFIG.url) {
-        console.warn('[SIMBAKES] ⚠️ Supabase URL belum dikonfigurasi');
-        showNotification('Konfigurasi Supabase belum lengkap! Edit file supabase-client.js', 'error');
-        return false;
+    const isValid = (
+        SUPABASE_CONFIG.url && 
+        SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_URL' &&
+        SUPABASE_CONFIG.anonKey &&
+        SUPABASE_CONFIG.anonKey !== 'YOUR_SUPABASE_ANON_KEY'
+    );
+    
+    return isValid;
+}
+
+/**
+ * Show integration status to user
+ */
+function showIntegrationStatus(isConnected) {
+    const statusDiv = document.createElement('div');
+    statusDiv.id = 'simbakes-status';
+    statusDiv.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: opacity 0.3s;
+    `;
+    
+    if (isConnected) {
+        statusDiv.style.background = '#059669';
+        statusDiv.style.color = '#fff';
+        statusDiv.innerHTML = '✅ Terhubung ke Supabase';
+    } else {
+        statusDiv.style.background = '#d97706';
+        statusDiv.style.color = '#fff';
+        statusDiv.innerHTML = '⚠️ Demo Mode (Supabase belum dikonfigurasi)';
     }
     
-    if (SUPABASE_CONFIG.anonKey === 'YOUR_SUPABASE_ANON_KEY' || !SUPABASE_CONFIG.anonKey) {
-        console.warn('[SIMBAKES] ⚠️ Supabase Anon Key belum dikonfigurasi');
-        showNotification('Konfigurasi Supabase belum lengkap! Edit file supabase-client.js', 'error');
-        return false;
-    }
+    document.body.appendChild(statusDiv);
     
-    return true;
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        statusDiv.style.opacity = '0';
+        setTimeout(() => statusDiv.remove(), 300);
+    }, 5000);
 }
 
 // =====================================================
-// AUTHENTICATION INTEGRATION
+// CORE FUNCTION OVERRIDES
 // =====================================================
 
 /**
- * Override login function untuk menggunakan Supabase
+ * Override ALL Google Sheets functions with Supabase equivalents
+ * This is the main function that replaces Google Sheets functionality
  */
-async function handleLoginSupabase(username, password) {
-    if (!checkSupabaseConfig()) {
-        // Fallback ke demo mode jika Supabase belum dikonfigurasi
-        console.log('[SIMBAKES] Using fallback authentication');
-        return handleLoginFallback(username, password);
-    }
-
-    try {
-        showLoading(true);
+function overrideGoogleSheetsFunctions() {
+    console.log('[SIMBAKES] 🔄 Meng-override fungsi Google Sheets...');
+    
+    // ==========================================
+    // 1. OVERRIDE apiFetch() - MAIN FETCH FUNCTION
+    // ==========================================
+    window.apiFetch = async function supabaseApiFetch(url, options = {}, isRetry = false) {
+        console.log('[SIMBAKES] apiFetch() di-redirect ke Supabase');
         
-        const result = await simbakesDB.login(username, password);
+        // Parse action from URL to determine what to do
+        const urlObj = new URL(url);
+        const action = urlObj.searchParams.get('action');
+        
+        console.log(`[SIMBAKES] Action detected: ${action}`);
+        
+        // Route to appropriate Supabase function
+        switch(action) {
+            case 'dashboardStats':
+                return await fetchDashboardStatsFromSupabase();
+            case 'recentSubmissions':
+                return await fetchRecentSubmissionsFromSupabase();
+            case 'visitorStats':
+                return await fetchVisitorStatsFromSupabase();
+            case 'getAllSubmissions':
+                return await getAllSubmissionsFromSupabase();
+            case 'dataByStatus':
+                return await fetchDataByStatusFromSupabase(urlObj.searchParams.get('status'));
+            case 'getLulusTesData':
+                return await getLulusTesDataFromSupabase();
+            case 'submitApplication':
+                return await submitApplicationToSupabase(options.body);
+            case 'updateSubmission':
+                return await updateSubmissionInSupabase(options.body);
+            case 'deleteSubmission':
+                return await deleteSubmissionFromSupabase(urlObj.searchParams.get('id'));
+            case 'trackVisitor':
+                return await trackVisitorLocal();
+            default:
+                console.warn(`[SIMBAKES] Action '${action}' tidak dikenali, menggunakan default handler`);
+                return { status: 'success', data: [], message: 'Action handled by Supabase' };
+        }
+    };
+    
+    // ==========================================
+    // 2. OVERRIDE renderDashboard()
+    // ==========================================
+    window.renderDashboard = async function supabaseRenderDashboard() {
+        console.log('[SIMBAKES] renderDashboard() di-redirect ke Supabase');
+        
+        try {
+            // Show loading state
+            showDashboardLoading(true);
+            
+            // Track visitor (local, no Google)
+            trackVisitorLocal();
+            
+            // Fetch all dashboard data in parallel from Supabase
+            const results = await Promise.allSettled([
+                fetchDashboardStatsFromSupabase(),
+                fetchRecentSubmissionsFromSupabase(),
+                fetchVisitorStatsFromSupabase()
+            ]);
+            
+            // Check results
+            const [statsResult, submissionsResult, visitorResult] = results;
+            
+            if (statsResult.status === 'rejected') {
+                console.error('[SIMBAKES] Error fetching stats:', statsResult.reason);
+                loadDummyStats();
+            }
+            
+            if (submissionsResult.status === 'rejected') {
+                console.error('[SIMBAKES] Error fetching submissions:', submissionsResult.reason);
+            }
+            
+            // Update timestamp
+            updateLastUpdateTime();
+            
+            showDashboardLoading(false);
+            console.log('[SIMBAKES] ✅ Dashboard loaded from Supabase');
+            
+        } catch (error) {
+            console.error('[SIMBAKES] Error in renderDashboard:', error);
+            showDashboardLoading(false);
+            loadDummyStats();
+        }
+    };
+    
+    // ==========================================
+    // 3. OVERRIDE fetchDashboardStats()
+    // ==========================================
+    window.fetchDashboardStats = async function supabaseFetchDashboardStats() {
+        console.log('[SIMBAKES] fetchDashboardStats() di-redirect ke Supabase');
+        return await fetchDashboardStatsFromSupabase();
+    };
+    
+    // ==========================================
+    // 4. OVERRIDE fetchRecentSubmissions()
+    // ==========================================
+    window.fetchRecentSubmissions = async function supabaseFetchRecentSubmissions() {
+        console.log('[SIMBAKES] fetchRecentSubmissions() di-redirect ke Supabase');
+        return await fetchRecentSubmissionsFromSupabase();
+    };
+    
+    // ==========================================
+    // 5. OVERRIDE fetchVisitorStats()
+    // ==========================================
+    window.fetchVisitorStats = async function supabaseFetchVisitorStats() {
+        console.log('[SIMBAKES] fetchVisitorStats() di-redirect ke local/Supabase');
+        return await fetchVisitorStatsFromSupabase();
+    };
+    
+    // ==========================================
+    // 6. OVERRIDE trackVisitorToSheets()
+    // ==========================================
+    window.trackVisitorToSheets = async function supabaseTrackVisitor() {
+        console.log('[SIMBAKES] trackVisitorToSheets() di-redirect ke local tracking');
+        return await trackVisitorLocal();
+    };
+    
+    // ==========================================
+    // 7. OVERRIDE sendToGoogleSheets()
+    // ==========================================
+    window.sendToGoogleSheets = async function supabaseSendData(data) {
+        console.log('[SIMBAKES] sendToGoogleSheets() di-redirect ke Supabase INSERT');
+        return await submitApplicationToSupabase(data);
+    };
+    
+    // ==========================================
+    // 8. OVERRIDE loadDataPengusul() / fetchAdminData()
+    // ==========================================
+    if (typeof window.loadDataPengusul !== 'undefined') {
+        const originalLoadDataPengusul = window.loadDataPengusul;
+        window.loadDataPengusul = async function supabaseLoadDataPengusul() {
+            console.log('[SIMBAKES] loadDataPengusul() di-redirect ke Supabase');
+            return await fetchAdminDataFromSupabase();
+        };
+    }
+    
+    if (typeof window.fetchAdminData !== 'undefined') {
+        const originalFetchAdminData = window.fetchAdminData;
+        window.fetchAdminData = async function supabaseFetchAdminData() {
+            console.log('[SIMBAKES] fetchAdminData() di-redirect ke Supabase');
+            return await fetchAdminDataFromSupabase();
+        };
+    }
+    
+    // ==========================================
+    // 9. OVERRIDE updateAdminStats()
+    // ==========================================
+    if (typeof window.updateAdminStats !== 'undefined') {
+        window.updateAdminStats = async function supabaseUpdateAdminStats(pagination) {
+            console.log('[SIMBAKES] updateAdminStats() di-redirect ke Supabase');
+            return await updateAdminStatsFromSupabase(pagination);
+        };
+    }
+    
+    // ==========================================
+    // 10. OVERRIDE refreshDashboard()
+    // ==========================================
+    window.refreshDashboard = async function supabaseRefreshDashboard(event) {
+        console.log('[SIMBAKES] refreshDashboard() di-redirect ke Supabase');
+        
+        const btn = event?.target;
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Loading...';
+        }
+        
+        await Promise.all([
+            fetchDashboardStatsFromSupabase(),
+            fetchRecentSubmissionsFromSupabase(),
+            fetchVisitorStatsFromSupabase()
+        ]);
+        
+        updateLastUpdateTime();
+        
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '🔄 Refresh';
+        }
+        
+        if (typeof showToast === 'function') {
+            showToast('✅ Dashboard berhasil di-refresh! (Supabase)', 'success');
+        }
+    };
+    
+    console.log('[SIMBAKES] ✅ Berhasil meng-override 10+ fungsi Google Sheets');
+}
+
+// =====================================================
+// SUPABASE DATA FUNCTIONS
+// =====================================================
+
+/**
+ * Fetch dashboard statistics from Supabase
+ * Replaces: apiFetch(WEB_APP_URL + '?action=dashboardStats')
+ */
+async function fetchDashboardStatsFromSupabase() {
+    try {
+        console.log('[SIMBAKES] 📊 Fetching dashboard stats from Supabase...');
+        
+        // Try using the view first
+        let result = await simbakesDB.getDashboardStats();
         
         if (result.success) {
-            const user = result.user;
+            const data = result.data;
             
-            // Set user session variables (sesuai template)
-            currentUser = {
-                id: user.id,
-                nama: user.nama_lengkap,
-                username: user.username,
-                role: user.role,
-                email: user.email
+            // Transform data to match expected format
+            const statsData = {
+                status: 'success',
+                data: {
+                    total: data.totalPengusulan || 0,
+                    disetujui: data.totalDiterima || 0,
+                    ditolak: data.totalDitolak || 0,
+                    perbaikan: data.sedangDiproses || 0,
+                    batal: 0, // Can be calculated if needed
+                    pengajuanBaru: data.pengusulanBaru || 0
+                }
             };
             
-            // Simpan ke sessionStorage untuk digunakan template
-            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-            sessionStorage.setItem('isLoggedIn', 'true');
+            // Update UI elements
+            animateValue('stat-total', statsData.data.total || 0);
+            animateValue('stat-disetujui', statsData.data.disetujui || 0);
+            animateValue('stat-ditolak', statsData.data.ditolak || 0);
+            animateValue('stat-perbaikan', statsData.data.perbaikan || 0);
+            animateValue('stat-batal', statsData.data.batal || 0);
             
-            console.log('[SIMBAKES] Login berhasil:', currentUser.nama, '(' + currentUser.role + ')');
+            // Cache the result
+            SimbakesCache.dashboardStats = statsData.data;
+            SimbakesCache.lastFetchTime = Date.now();
             
-            // Redirect sesuai role (mengikuti logika template)
-            setTimeout(() => {
-                hideLandingPage();
-                showDashboard();
-                showNotification('Selamat datang, ' + currentUser.nama + '!', 'success');
-            }, 500);
-            
-            return { success: true };
+            console.log('[SIMBAKES] ✅ Dashboard stats:', statsData.data);
+            return statsData;
         } else {
-            showNotification(result.error || 'Login gagal', 'error');
-            return { success: false, error: result.error };
+            throw new Error(result.error || 'Failed to fetch stats');
         }
+        
     } catch (error) {
-        console.error('[SIMBAKES] Login error:', error);
-        showNotification('Terjadi kesalahan saat login', 'error');
-        return { success: false, error: error.message };
-    } finally {
-        showLoading(false);
+        console.error('[SIMBAKES] ❌ Error fetching dashboard stats:', error);
+        
+        // Fallback to manual calculation
+        return await calculateDashboardStatsManually();
     }
 }
 
 /**
- * Fallback authentication jika Supabase belum siap
+ * Manual calculation of dashboard stats as fallback
  */
-function handleLoginFallback(username, password) {
-    // Demo credentials dari Excel multiusers
-    const demoUsers = [
-        { username: 'superadmin', password: 'Aida2007###', nama: 'Mukmin Nasri', role: 'superadmin' },
-        { username: 'operator2', password: 'EtaSDMK2024@', nama: 'Eta', role: 'admin' },
-        { username: 'admin', password: 'admin123', nama: 'Administrator', role: 'admin' },
-        { username: 'operator', password: 'operator123', nama: 'Operator', role: 'operator' }
-    ];
-    
-    const user = demoUsers.find(u => u.username === username && u.password === password);
-    
-    if (user) {
-        currentUser = {
-            id: 'demo-' + user.username,
-            nama: user.nama,
-            username: user.username,
-            role: user.role,
-            email: user.email || user.username + '@simbakes.local'
+async function calculateDashboardStatsManually() {
+    try {
+        console.log('[SIMBAKES] Calculating stats manually...');
+        
+        const [pengusulanResult, penetapanResult] = await Promise.all([
+            simbakesDB.getPengusulan({ pageSize: 1 }),
+            simbakesDB.getPenetapan({ pageSize: 1 })
+        ]);
+        
+        const totalPengusulan = pengusulanResult.total || 0;
+        const totalPenetapan = penetapanResult.total || 0;
+        
+        // Get status breakdown
+        const allData = await simbakesDB.getPengusulan({ pageSize: 10000 });
+        const data = allData.data || [];
+        
+        const disetujui = data.filter(d => d.status === 'diterima' || d.status === 'Disetujui').length;
+        const ditolak = data.filter(d => d.status === 'ditolak' || d.status === 'Ditolak').length;
+        const perbaikan = data.filter(d => d.status === 'direvisi' || d.status === 'Perbaikan' || d.status === 'diproses').length;
+        
+        const statsData = {
+            status: 'success',
+            data: {
+                total: totalPengusulan,
+                disetujui: disetujui + totalPenetapan,
+                ditolak: ditolak,
+                perbaikan: perbaikan,
+                batal: 0,
+                pengajuanBaru: data.filter(d => d.status === 'diajukan').length
+            }
         };
         
-        sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-        sessionStorage.setItem('isLoggedIn', 'true');
+        // Update UI
+        animateValue('stat-total', statsData.data.total || 0);
+        animateValue('stat-disetujui', statsData.data.disetujui || 0);
+        animateValue('stat-ditolak', statsData.data.ditolak || 0);
+        animateValue('stat-perbaikan', statsData.data.perbaikan || 0);
+        animateValue('stat-batal', statsData.data.batal || 0);
         
-        setTimeout(() => {
-            hideLandingPage();
-            showDashboard();
-            showNotification('Mode Demo - Selamat datang, ' + currentUser.nama + '!', 'warning');
-        }, 300);
+        return statsData;
         
-        return { success: true };
-    } else {
-        showNotification('Username atau password salah!', 'error');
-        return { success: false };
+    } catch (error) {
+        console.error('[SIMBAKES] Error in manual calculation:', error);
+        return { status: 'error', message: error.message, data: { total: 0, disetujui: 0, ditolak: 0, perbaikan: 0, batal: 0 } };
     }
 }
 
 /**
- * Override logout function
+ * Fetch recent submissions from Supabase
+ * Replaces: apiFetch(WEB_APP_URL + '?action=recentSubmissions')
  */
-function handleLogoutSupabase() {
-    simbakesDB.logout().then(() => {
-        sessionStorage.removeItem('currentUser');
-        sessionStorage.removeItem('isLoggedIn');
-        currentUser = null;
-        
-        showLandingPage();
-        showNotification('Berhasil logout', 'success');
-    });
-}
-
-// =====================================================
-// DATA PENGUSULAN INTEGRATION
-// =====================================================
-
-/**
- * Load data pengusulan dari Supabase
- * Menggantikan fungsi loadMockData() di template
- */
-async function loadDataPengusulan(filters = {}) {
-    if (!checkSupabaseConfig()) {
-        return loadPengusulanFallback(filters);
-    }
-
+async function fetchRecentSubmissionsFromSupabase(limit = 50) {
     try {
-        showLoading(true);
+        console.log('[SIMBAKES] 📋 Fetching recent submissions from Supabase...');
         
-        const result = await simbakesDB.getPengusulan(filters);
+        const result = await simbakesDB.getPengusulan({
+            pageSize: limit,
+            sortBy: 'created_at',
+            sortOrder: 'desc'
+        });
         
         if (result.success) {
-            console.log(`[SIMBAKES] Loaded ${result.data.length} pengusulan records`);
-            
-            // Format data sesuai struktur yang diharapkan template
-            const formattedData = result.data.map(item => ({
-                id: item.id,
+            // Transform data to match expected format
+            const transformedData = result.data.map((item, index) => ({
+                rowNumber: index + 1,
+                noRegister: `REG-${item.nik}-${new Date(item.created_at).getTime()}`,
                 nik: item.nik,
-                nama: item.nama_lengkap,
+                namaLengkap: item.nama_lengkap,
+                jurusanTujuan: item.jurusan_tujuan,
+                jenjangPendidikan: item.jenjang_pendidikan,
+                unitTujuan: item.unit_tujuan_pemanfaatan,
+                rencanaTahun: item.rencana_tahun_studi,
+                email: item.email,
+                noHP: item.no_hp,
+                status: mapStatus(item.status),
+                tanggalPengajuan: item.created_at,
+                linkFoto: item.pasfoto,
+                linkDokumen: item.dokumen,
+                timestamp: new Date(item.created_at).getTime()
+            }));
+            
+            // Cache data
+            cachedRecentSubmissions = transformedData;
+            SimbakesCache.recentSubmissions = transformedData;
+            
+            // Render to table
+            if (typeof renderRecentSubmissions === 'function') {
+                renderRecentSubmissions();
+            }
+            
+            console.log(`[SIMBAKES] ✅ Loaded ${transformedData.length} recent submissions`);
+            
+            return {
+                status: 'success',
+                data: transformedData,
+                total: result.total
+            };
+        } else {
+            throw new Error(result.error);
+        }
+        
+    } catch (error) {
+        console.error('[SIMBAKES] ❌ Error fetching recent submissions:', error);
+        
+        // Return empty result
+        cachedRecentSubmissions = [];
+        const tbody = document.getElementById('recent-submissions-body');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="loading-cell">
+                        ⚠️ Gagal memuat data dari Supabase. Periksa koneksi.
+                    </td>
+                </tr>
+            `;
+        }
+        
+        return { status: 'error', data: [], message: error.message };
+    }
+}
+
+/**
+ * Map database status to display status
+ */
+function mapStatus(dbStatus) {
+    const statusMap = {
+        'diajukan': 'Proses Verifikasi',
+        'diproses': 'Proses Verifikasi',
+        'diterima': 'Disetujui',
+        'ditolak': 'Ditolak',
+        'direvisi': 'Perbaikan'
+    };
+    return statusMap[dbStatus] || dbStatus || 'Proses Verifikasi';
+}
+
+/**
+ * Fetch visitor stats from Supabase/local
+ * Replaces: apiFetch(WEB_APP_URL + '?action=visitorStats')
+ */
+async function fetchVisitorStatsFromSupabase() {
+    console.log('[SIMBAKES] 👥 Fetching visitor stats (local mode)');
+    
+    // For now, use local storage for visitor tracking
+    // In production, you could create a visitors table in Supabase
+    const visitCount = parseInt(localStorage.getItem('simbakes_visit_count') || '0');
+    const uniqueVisitors = new Set(JSON.parse(localStorage.getItem('simbakes_unique_visitors') || '[]')).size;
+    
+    return {
+        status: 'success',
+        data: {
+            totalVisits: visitCount,
+            uniqueVisitors: uniqueVisitors,
+            todayVisits: parseInt(localStorage.getItem('simbakes_today_visits') || '0')
+        }
+    };
+}
+
+/**
+ * Track visitor locally (replaces Google Sheets tracking)
+ */
+async function trackVisitorLocal() {
+    try {
+        // Increment visit count
+        let visitCount = parseInt(localStorage.getItem('simbakes_visit_count') || '0');
+        visitCount++;
+        localStorage.setItem('simbakes_visit_count', visitCount.toString());
+        
+        // Track today's visits
+        let todayVisits = parseInt(localStorage.getItem('simbakes_today_visits') || '0');
+        const lastVisitDate = localStorage.getItem('simbakes_last_visit_date');
+        const today = new Date().toDateString();
+        
+        if (lastVisitDate !== today) {
+            todayVisits = 1;
+            localStorage.setItem('simbakes_last_visit_date', today);
+        } else {
+            todayVisits++;
+        }
+        localStorage.setItem('simbakes_today_visits', todayVisits.toString());
+        
+        // Track unique visitors
+        let visitorId = localStorage.getItem('simbakes_visitor_id');
+        if (!visitorId) {
+            visitorId = 'visitor_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('simbakes_visitor_id', visitorId);
+        }
+        
+        const uniqueVisitors = JSON.parse(localStorage.getItem('simbakes_unique_visitors') || '[]');
+        if (!uniqueVisitors.includes(visitorId)) {
+            uniqueVisitors.push(visitorId);
+            localStorage.setItem('simbakes_unique_visitors', JSON.stringify(uniqueVisitors));
+        }
+        
+        SimbakesCache.visitorCount = visitCount;
+        
+        console.log(`[SIMBAKES] 👤 Visitor tracked: Visit #${visitCount}`);
+        
+        return { status: 'success', visitCount: visitCount };
+        
+    } catch (error) {
+        console.error('[SIMBAKES] Error tracking visitor:', error);
+        return { status: 'error', message: error.message };
+    }
+}
+
+/**
+ * Submit application to Supabase
+ * Replaces: sendToGoogleSheets()
+ */
+async function submitApplicationToSupabase(formData) {
+    try {
+        console.log('[SIMBAKES] 📤 Submitting application to Supabase...');
+        
+        // Parse form data if it's a string
+        let data = formData;
+        if (typeof formData === 'string') {
+            data = JSON.parse(formData);
+        }
+        
+        // Map form fields to database schema
+        const dbData = {
+            nik: data.nik || data.NIK,
+            nama_lengkap: data.namaLengkap || data.nama || data.namaLengkap,
+            tempat_lahir: data.tempatLahir || data.tempatLahir,
+            tanggal_lahir: parseDateToISO(data.tanggalLahir || data.tanggalLahir),
+            alamat_ktp: data.alamatKTP || data.alamatKTP,
+            alamat_domisili: data.alamatDomisili || data.alamatDomisili,
+            lama_domisili_tahun: parseInt(data.lamaDomisili) || null,
+            pekerjaan: data.pekerjaan || data.pekerjaan,
+            posisi_jabatan: data.posisi || data.posisiJabatan,
+            unit_kerja: data.unitKerja || data.unitKerja,
+            penjelasan_narasi: data.narasi || data.penjelasanNarasi,
+            jurusan_tujuan: data.jurusan || data.jurusanTujuan,
+            jenjang_pendidikan: data.jenjang || data.jenjangPendidikan,
+            unit_tujuan_pemanfaatan: data.unitTujuan || data.unitTujuanPemanfaatan,
+            rencana_tahun_studi: parseInt(data.tahunStudi) || null,
+            no_hp: data.noHP || data.noHp,
+            no_whatsapp: data.whatsapp || data.noWhatsapp,
+            email: data.email || data.email,
+            pasfoto: data.fotoUrl || data.linkFoto || data.pasfoto,
+            dokumen: data.dokumenUrl || data.linkDokumen || data.dokumen,
+            status: 'diajukan'
+        };
+        
+        // Insert into Supabase
+        const result = await simbakesDB.insertPengusulan(dbData);
+        
+        if (result.success) {
+            console.log('[SIMBAKES] ✅ Application submitted successfully');
+            
+            return {
+                status: 'success',
+                message: 'Data berhasil disimpan ke Supabase',
+                data: result.data,
+                noRegister: `REG-${dbData.nik}-${Date.now()}`
+            };
+        } else {
+            throw new Error(result.error);
+        }
+        
+    } catch (error) {
+        console.error('[SIMBAKES] ❌ Error submitting application:', error);
+        return {
+            status: 'error',
+            message: `Gagal menyimpan: ${error.message}`
+        };
+    }
+}
+
+/**
+ * Fetch all submissions for admin panel
+ * Replaces: apiFetch(WEB_APP_URL + '?action=getAllSubmissions')
+ */
+async function getAllSubmissionsFromSupabase(limit = 1000) {
+    try {
+        console.log('[SIMBAKES] 📂 Fetching all submissions for admin...');
+        
+        const result = await simbakesDB.getPengusulan({
+            pageSize: limit,
+            sortBy: 'created_at',
+            sortOrder: 'desc'
+        });
+        
+        if (result.success) {
+            const transformedData = result.data.map((item, index) => ({
+                rowNumber: index + 1,
+                noRegister: `REG-${item.nik}-${new Date(item.created_at).getTime()}`,
+                nik: item.nik,
+                namaLengkap: item.nama_lengkap,
                 tempatLahir: item.tempat_lahir,
-                tanggalLahir: formatTanggal(item.tanggal_lahir),
+                tanggalLahir: item.tanggal_lahir,
                 alamatKTP: item.alamat_ktp,
                 alamatDomisili: item.alamat_domisili,
                 lamaDomisili: item.lama_domisili_tahun,
@@ -189,425 +714,341 @@ async function loadDataPengusulan(filters = {}) {
                 noHP: item.no_hp,
                 whatsapp: item.no_whatsapp,
                 email: item.email,
-                status: item.status,
-                pasfoto: item.pasfoto,
-                dokumen: item.dokumen,
-                createdAt: formatTanggal(item.created_at)
+                status: mapStatus(item.status),
+                tanggalPengajuan: item.created_at,
+                linkFoto: item.pasfoto,
+                linkDokumen: item.dokumen,
+                timestamp: new Date(item.created_at).getTime(),
+                id: item.id
             }));
             
+            SimbakesCache.allPengusulan = transformedData;
+            
+            console.log(`[SIMBAKES] ✅ Loaded ${transformedData.length} submissions`);
+            
             return {
-                success: true,
-                data: formattedData,
+                status: 'success',
+                data: transformedData,
                 total: result.total
             };
         } else {
-            console.error('[SIMBAKES] Error loading pengusulan:', result.error);
-            return { success: false, error: result.error };
+            throw new Error(result.error);
         }
+        
     } catch (error) {
-        console.error('[SIMBAKES] Exception loading pengusulan:', error);
-        return { success: false, error: error.message };
-    } finally {
-        showLoading(false);
+        console.error('[SIMBAKES] ❌ Error fetching all submissions:', error);
+        return { status: 'error', data: [], message: error.message };
     }
 }
 
 /**
- * Insert new pengusulan ke Supabase
+ * Fetch data filtered by status
+ * Replaces: apiFetch(WEB_APP_URL + '?action=dataByStatus&status=...')
  */
-async function insertPengusulanSupabase(formData) {
-    if (!checkSupabaseConfig()) {
-        showNotification('Tidak dapat menyimpan - Supabase belum dikonfigurasi', 'error');
-        return { success: false };
-    }
-
+async function fetchDataByStatusFromSupabase(status) {
     try {
-        showLoading(true);
-
-        // Map form data ke database schema
-        const dbData = {
-            nik: formData.nik,
-            nama_lengkap: formData.namaLengkap || formData.nama_lengkap,
-            tempat_lahir: formData.tempatLahir || formData.tempat_lahir,
-            tanggal_lahir: parseDate(formData.tanggalLahir || formData.tanggal_lahir),
-            alamat_ktp: formData.alamatKTP || formData.alamat_ktp,
-            alamat_domisili: formData.alamatDomisili || formData.alamat_domisili,
-            lama_domisili_tahun: parseInt(formData.lamaDomisili) || null,
-            pekerjaan: formData.pekerjaan,
-            posisi_jabatan: formData.posisi || formData.posisi_jabatan,
-            unit_kerja: formData.unitKerja || formData.unit_kerja,
-            penjelasan_narasi: formData.narasi || formData.penjelasan_narasi,
-            jurusan_tujuan: formData.jurusan || formData.jurusan_tujuan,
-            jenjang_pendidikan: formData.jenjang || formData.jenjang_pendidikan,
-            unit_tujuan_pemanfaatan: formData.unitTujuan || formData.unit_tujuan_pemanfaatan,
-            rencana_tahun_studi: parseInt(formData.tahunStudi) || null,
-            no_hp: formData.noHP || formData.no_hp,
-            no_whatsapp: formData.whatsapp || formData.no_whatsapp,
-            email: formData.email,
-            status: formData.status || 'diajukan',
-            pasfoto: formData.pasfoto,
-            dokumen: formData.dokumen
+        console.log(`[SIMBAKES] 📊 Fetching data with status: ${status}`);
+        
+        // Map display status back to DB status
+        const dbStatusMap = {
+            'Disetujui': 'diterima',
+            'Ditolak': 'ditolak',
+            'Perbaikan': 'direvisi',
+            'Proses Verifikasi': 'diajukan'
         };
-
-        const result = await simbakesDB.insertPengusulan(dbData);
-
+        
+        const dbStatus = dbStatusMap[status] || status.toLowerCase();
+        
+        const result = await simbakesDB.getPengusulan({
+            status: dbStatus,
+            pageSize: 1000
+        });
+        
         if (result.success) {
-            showNotification('Data pengusulan berhasil disimpan!', 'success');
-            return result;
-        } else {
-            showNotification('Gagal menyimpan: ' + result.error, 'error');
-            return result;
+            const transformedData = result.data.map(mapPengusulanItem);
+            
+            return { status: 'success', data: transformedData, total: result.total };
         }
+        
+        return { status: 'error', data: [], message: result.error };
+        
     } catch (error) {
-        showNotification('Error: ' + error.message, 'error');
-        return { success: false, error: error.message };
-    } finally {
-        showLoading(false);
+        console.error('[SIMBAKES] Error filtering by status:', error);
+        return { status: 'error', data: [], message: error.message };
     }
 }
 
 /**
- * Update existing pengusulan
+ * Get Lulus Tes (Penetapan) data
+ * Replaces: apiFetch(WEB_APP_URL + '?action=getLulusTesData')
  */
-async function updatePengusulanSupabase(nik, updateData) {
-    if (!checkSupabaseConfig()) {
-        showNotification('Tidak dapat mengupdate - Supabase belum dikonfigurasi', 'error');
-        return { success: false };
-    }
-
+async function getLulusTesDataFromSupabase() {
     try {
-        showLoading(true);
-
-        const result = await simbakesDB.updatePengusulan(nik, updateData);
-
-        if (result.success) {
-            showNotification('Data berhasil diupdate!', 'success');
-        } else {
-            showNotification('Gagal update: ' + result.error, 'error');
-        }
-
-        return result;
-    } catch (error) {
-        showNotification('Error: ' + error.message, 'error');
-        return { success: false, error: error.message };
-    } finally {
-        showLoading(false);
-    }
-}
-
-// =====================================================
-// DATA PENETAPAN INTEGRATION
-// =====================================================
-
-/**
- * Load data penetapan dari Supabase
- */
-async function loadDataPenetapan(filters = {}) {
-    if (!checkSupabaseConfig()) {
-        return loadPenetapanFallback(filters);
-    }
-
-    try {
-        showLoading(true);
+        console.log('[SIMBAKES] 🎓 Fetching Penetapan data...');
         
-        const result = await simbakesDB.getPenetapan(filters);
+        const result = await simbakesDB.getPenetapan({
+            pageSize: 1000,
+            status: 'disetujui'
+        });
         
         if (result.success) {
-            const formattedData = result.data.map(item => ({
-                id: item.id,
+            const transformedData = result.data.map((item, index) => ({
+                rowNumber: index + 1,
+                noRegister: item.no_sk_penetapan || `SK-${item.nik}`,
                 nik: item.nik,
-                nama: item.nama_lengkap,
+                namaLengkap: item.nama_lengkap,
                 jurusan: item.jurusan_tujuan,
                 jenjang: item.jenjang_pendidikan,
                 unitTujuan: item.unit_tujuan_pemanfaatan,
                 tahunStudi: item.rencana_tahun_studi,
-                noSK: item.no_sk_penetapan,
-                tanggalPenetapan: formatTanggal(item.tanggal_penetapan),
-                status: item.status_penetapan,
-                catatan: item.catatan_penetapan,
-                fotoPasfoto: item.link_foto_pasfoto,
-                dokumenPDF: item.link_dokumen_pdf,
+                status: 'Lulus Tes',
+                tanggalPengajuan: item.tanggal_penetapan || item.created_at,
+                linkFoto: item.link_foto_pasfoto,
+                linkDokumen: item.link_dokumen_pdf,
                 periode: item.periode_pemberian
             }));
             
-            return { success: true, data: formattedData, total: result.total };
+            return { status: 'success', data: transformedData };
         }
         
-        return result;
+        return { status: 'error', data: [], message: result.error };
+        
     } catch (error) {
-        return { success: false, error: error.message };
-    } finally {
-        showLoading(false);
+        console.error('[SIMBAKES] Error fetching Lulus Tes data:', error);
+        return { status: 'error', data: [], message: error.message };
     }
 }
 
 /**
- * Insert/update penetapan
+ * Fetch admin data for Data Pengusul page
+ * Replaces: fetchAdminData() / loadDataPengusul()
  */
-async function savePenetapanSupabase(penetapanData) {
-    if (!checkSupabaseConfig()) {
-        showNotification('Supabase belum dikonfigurasi', 'error');
-        return { success: false };
-    }
-
+async function fetchAdminDataFromSupabase() {
     try {
-        showLoading(true);
-
-        const dbData = {
-            nik: penetapanData.nik,
-            nama_lengkap: penetapanData.nama || penetapanData.nama_lengkap,
-            jurusan_tujuan: penetapanData.jurusan || penetapanData.jurusan_tujuan,
-            jenjang_pendidikan: penetapanData.jenjang || penetapanData.jenjang_pendidikan,
-            unit_tujuan_pemanfaatan: penetapanData.unitTujuan || penetapanData.unit_tujuan_pemanfaatan,
-            rencana_tahun_studi: parseInt(penetapanData.tahunStudi),
-            no_sk_penetapan: penetapanData.noSK || penetapanData.no_sk_penetapan,
-            tanggal_penetapan: parseDate(penetapanData.tanggalPenetapan || penetapanData.tanggal_penetapan),
-            status_penetapan: penetapanData.status || penetapanData.status_penetapan || 'pending',
-            catatan_penetapan: penetapanData.catatan || penetapanData.catatan_penetapan,
-            link_foto_pasfoto: penetapanData.fotoPasfoto || penetapanData.link_foto_pasfoto,
-            link_dokumen_pdf: penetapanData.dokumenPDF || penetapanData.link_dokumen_pdf,
-            periode_pemberian: penetapanData.periode || penetapanData.periode_pemberian
+        console.log('[SIMBAKES] 📋 Fetching admin data from Supabase...');
+        
+        // Get filter values
+        const searchInput = document.getElementById('admin-search-input');
+        const statusFilter = document.getElementById('admin-status-filter');
+        const sortBy = document.getElementById('admin-sort-by');
+        const sortOrder = document.getElementById('admin-sort-order');
+        const pageSizeSelect = document.getElementById('page-size-select');
+        
+        const filters = {
+            search: searchInput?.value || '',
+            status: statusFilter?.value || '',
+            sortBy: sortBy?.value || 'created_at',
+            sortOrder: sortOrder?.value || 'desc',
+            pageSize: parseInt(pageSizeSelect?.value || '10'),
+            page: typeof adminCurrentPage !== 'undefined' ? adminCurrentPage : 1
         };
-
-        let result;
-        if (penetapanData.id) {
-            result = await simbakesDB.updatePenetapan(penetapanData.id, dbData);
-        } else {
-            result = await simbakesDB.insertPenetapan(dbData);
-        }
-
-        if (result.success) {
-            showNotification('Data penetapan berhasil disimpan!', 'success');
-        } else {
-            showNotification('Gagal menyimpan: ' + result.error, 'error');
-        }
-
-        return result;
-    } catch (error) {
-        showNotification('Error: ' + error.message, 'error');
-        return { success: false, error: error.message };
-    } finally {
-        showLoading(false);
-    }
-}
-
-// =====================================================
-// ROADMAP KEBUTUHAN INTEGRATION
-// =====================================================
-
-/**
- * Load roadmap data dari Supabase
- */
-async function loadRoadmapSupabase(filters = {}) {
-    if (!checkSupabaseConfig()) {
-        return loadRoadmapFallback(filters);
-    }
-
-    try {
-        const result = await simbakesDB.getRoadmap(filters);
+        
+        // Map sort field
+        const sortFieldMap = {
+            'timestamp': 'created_at',
+            'nama': 'nama_lengkap',
+            'nik': 'nik',
+            'status': 'status'
+        };
+        filters.sortBy = sortFieldMap[filters.sortBy] || 'created_at';
+        
+        const result = await simbakesDB.getPengusulan(filters);
         
         if (result.success) {
-            const formattedData = result.data.map(item => ({
-                id: item.id,
-                kode: item.kode,
-                jurusan: item.jurusan,
-                kualifikasi: item.kualifikasi_awal,
-                jenisPendidikan: item.jenis_pendidikan,
-                perguruanTinggi: item.perguruan_tinggi,
-                pekerjaan: item.pekerjaan,
-                tahunMulai: item.tahun_mulai_studi,
-                unitPendayaguna: item.unit_pendayaguna,
-                status: item.status,
-                penerima: item.nama_penerima
-            }));
+            const transformedData = result.data.map(mapPengusulanItem);
             
-            return { success: true, data: formattedData, total: result.total };
-        }
-        
-        return result;
-    } catch (error) {
-        return { success: false, error: error.message };
-    }
-}
-
-/**
- * Save roadmap entry
- */
-async function saveRoadmapSupabase(roadmapData) {
-    if (!checkSupabaseConfig()) {
-        showNotification('Supabase belum dikonfigurasi', 'error');
-        return { success: false };
-    }
-
-    try {
-        showLoading(true);
-
-        const dbData = {
-            kode: roadmapData.kode,
-            jurusan: roadmapData.jurusan,
-            kualifikasi_awal: roadmapData.kualifikasi || roadmapData.kualifikasi_awal,
-            jenis_pendidikan: roadmapData.jenisPendidikan || roadmapData.jenis_pendidikan,
-            perguruan_tinggi: roadmapData.perguruanTinggi || roadmapData.perguruan_tinggi,
-            pekerjaan: roadmapData.pekerjaan,
-            tahun_mulai_studi: parseInt(roadmapData.tahunMulai),
-            unit_pendayaguna: roadmapData.unitPendayaguna || roadmapData.unit_pendayaguna,
-            status: roadmapData.status || 'aktif',
-            nama_penerima: roadmapData.penerima || roadmapData.nama_penerima
-        };
-
-        let result;
-        if (roadmapData.id) {
-            result = await simbakesDB.updateRoadmap(roadmapData.id, dbData);
-        } else {
-            result = await simbakesDB.insertRoadmap(dbData);
-        }
-
-        if (result.success) {
-            showNotification('Data roadmap berhasil disimpan!', 'success');
-        } else {
-            showNotification('Gagal menyimpan: ' + result.error, 'error');
-        }
-
-        return result;
-    } catch (error) {
-        showNotification('Error: ' + error.message, 'error');
-        return { success: false, error: error.message };
-    } finally {
-        showLoading(false);
-    }
-}
-
-// =====================================================
-// DASHBOARD STATISTICS INTEGRATION
-// =====================================================
-
-/**
- * Load dashboard statistics dari Supabase
- */
-async function loadDashboardStats() {
-    if (!checkSupabaseConfig()) {
-        return getDashboardStatsFallback();
-    }
-
-    try {
-        const result = await simbakesDB.getDashboardStats();
-        
-        if (result.success) {
+            // Render table if function exists
+            if (typeof renderAdminTable === 'function') {
+                renderAdminTable(transformedData, result.total, filters.page, filters.pageSize);
+            }
+            
+            // Update pagination if function exists
+            if (typeof updatePaginationControls === 'function') {
+                updatePaginationControls(result.total, filters.page, filters.pageSize);
+            }
+            
+            console.log(`[SIMBAKES] ✅ Loaded ${transformedData.length} records (page ${filters.page})`);
+            
             return {
-                totalPengusulan: result.data.total_pengusulan || 0,
-                pengusulanBaru: result.data.pengusulan_baru || 0,
-                sedangDiproses: result.data.sedang_diproses || 0,
-                totalDiterima: result.data.total_diterima || 0,
-                totalDitolak: result.data.total_ditolak || 0,
-                roadmapAktif: result.data.roadmap_aktif || 0
+                status: 'success',
+                data: transformedData,
+                total: result.total,
+                page: filters.page,
+                pageSize: filters.pageSize
             };
+        } else {
+            throw new Error(result.error);
         }
         
-        return getDashboardStatsFallback();
     } catch (error) {
-        console.error('[SIMBAKES] Dashboard stats error:', error);
-        return getDashboardStatsFallback();
+        console.error('[SIMBAKES] ❌ Error fetching admin data:', error);
+        
+        // Show error in table
+        const tbody = document.getElementById('admin-table-body');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="24" class="loading-cell">
+                        ❌ Gagal memuat data: ${error.message}
+                    </td>
+                </tr>
+            `;
+        }
+        
+        return { status: 'error', data: [], message: error.message };
     }
 }
 
-function getDashboardStatsFallback() {
+/**
+ * Update admin statistics bar
+ * Replaces: updateAdminStats()
+ */
+async function updateAdminStatsFromSupabase(pagination) {
+    try {
+        console.log('[SIMBAKES] 📊 Updating admin stats from Supabase...');
+        
+        // Update total from pagination
+        const statTotal = document.getElementById('stat-total-pengusul');
+        if (statTotal && pagination) {
+            statTotal.textContent = pagination.totalRecords || 0;
+        }
+        
+        // Fetch all data for status breakdown
+        const result = await simbakesDB.getPengusulan({ pageSize: 10000 });
+        
+        if (result.success && result.data) {
+            const allData = result.data;
+            
+            // Count by status
+            const approved = allData.filter(p => p.status === 'diterima').length;
+            const rejected = allData.filter(p => p.status === 'ditolak').length;
+            const revision = allData.filter(p => p.status === 'direvisi' || p.status === 'diproses').length;
+            const verify = allData.filter(p => p.status === 'diajukan').length;
+            
+            // Update UI
+            const statApproved = document.getElementById('stat-approved-pengusul');
+            const statRejected = document.getElementById('stat-rejected-pengusul');
+            const statRevision = document.getElementById('stat-revision-pengusul');
+            const statVerify = document.getElementById('stat-verify-pengusul');
+            
+            if (statApproved) statApproved.textContent = approved;
+            if (statRejected) statRejected.textContent = rejected;
+            if (statRevision) statRevision.textContent = revision;
+            if (statVerify) statVerify.textContent = verify;
+            
+            console.log(`[SIMBAKES] ✅ Admin stats updated: ${allData.length} total`);
+        }
+        
+    } catch (error) {
+        console.warn('[SIMBAKES] Could not update admin stats:', error);
+    }
+}
+
+/**
+ * Update submission in Supabase
+ * Replaces: apiFetch(WEB_APP_URL, { action: 'updateSubmission' })
+ */
+async function updateSubmissionInSupabase(data) {
+    try {
+        console.log('[SIMBAKES] ✏️ Updating submission in Supabase...');
+        
+        let updateData = data;
+        if (typeof data === 'string') {
+            updateData = JSON.parse(data);
+        }
+        
+        const result = await simbakesDB.updatePengusulan(updateData.nik, updateData);
+        
+        if (result.success) {
+            return { status: 'success', message: 'Data berhasil diupdate', data: result.data };
+        } else {
+            throw new Error(result.error);
+        }
+        
+    } catch (error) {
+        console.error('[SIMBAKES] Error updating submission:', error);
+        return { status: 'error', message: error.message };
+    }
+}
+
+/**
+ * Delete submission from Supabase
+ * Replaces: apiFetch(WEB_APP_URL + '?action=deleteSubmission&id=...')
+ */
+async function deleteSubmissionFromSupabase(id) {
+    try {
+        console.log('[SIMBAKES] 🗑️ Deleting submission from Supabase...');
+        
+        // Need NIK to delete - find it first or accept NIK as ID
+        const result = await simbakesDB.deletePengusulan(id);
+        
+        if (result.success) {
+            return { status: 'success', message: 'Data berhasil dihapus' };
+        } else {
+            throw new Error(result.error);
+        }
+        
+    } catch (error) {
+        console.error('[SIMBAKES] Error deleting submission:', error);
+        return { status: 'error', message: error.message };
+    }
+}
+
+// =====================================================
+// HELPER FUNCTIONS
+// =====================================================
+
+/**
+ * Map pengusulan item from DB format to display format
+ */
+function mapPengusulanItem(item, index = 0) {
     return {
-        totalPengusulan: 97,      // From Excel row count
-        pengusulanBaru: 15,
-        sedangDiproses: 32,
-        totalDiterima: 18,       // From penetapan count
-        totalDitolak: 5,
-        roadmapAktif: 10
+        rowNumber: index + 1,
+        noRegister: `REG-${item.nik}-${new Date(item.created_at).getTime()}`,
+        nik: item.nik,
+        namaLengkap: item.nama_lengkap,
+        tempatLahir: item.tempat_lahir,
+        tanggalLahir: formatDateDisplay(item.tanggal_lahir),
+        alamatKTP: item.alamat_ktp,
+        alamatDomisili: item.alamat_domisili,
+        lamaDomisili: item.lama_domisili_tahun,
+        pekerjaan: item.pekerjaan,
+        posisi: item.posisi_jabatan,
+        unitKerja: item.unit_kerja,
+        narasi: item.penjelasan_narasi,
+        jurusan: item.jurusan_tujuan,
+        jenjang: item.jenjang_pendidikan,
+        unitTujuan: item.unit_tujuan_pemanfaatan,
+        tahunStudi: item.rencana_tahun_studi,
+        noHP: item.no_hp,
+        whatsapp: item.no_whatsapp,
+        email: item.email,
+        status: mapStatus(item.status),
+        tanggalPengajuan: formatDateDisplay(item.created_at),
+        linkFoto: item.pasfoto,
+        linkDokumen: item.dokumen,
+        timestamp: new Date(item.created_at).getTime(),
+        id: item.id
     };
 }
 
-// =====================================================
-// EXPORT/IMPORT FUNCTIONS
-// =====================================================
-
 /**
- * Export data to Excel-compatible format
+ * Format date string to ISO format
  */
-async function exportToExcel(tableType, filters = {}) {
-    if (!checkSupabaseConfig()) {
-        showNotification('Export tidak tersedia - Supabase belum dikonfigurasi', 'error');
-        return;
-    }
-
+function parseDateToISO(dateStr) {
+    if (!dateStr) return null;
     try {
-        showLoading(true);
-        
-        let tableName;
-        switch(tableType) {
-            case 'pengusulan': tableName = 'data_pengusulan'; break;
-            case 'penetapan': tableName = 'data_penetapan'; break;
-            case 'roadmap': tableName = 'roadmap_kebutuhan'; break;
-            default:
-                throw new Error('Invalid table type');
-        }
-
-        const result = await simbakesDB.exportData(tableName, filters);
-        
-        if (result.success && result.data.length > 0) {
-            // Convert to CSV for download
-            const csv = convertToCSV(result.data);
-            downloadFile(csv, `simbakes_${tableType}_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
-            showNotification(`Export berhasil: ${result.data.length} record`, 'success');
-        } else {
-            showNotification('Tidak ada data untuk diekspor', 'warning');
-        }
-    } catch (error) {
-        showNotification('Export gagal: ' + error.message, 'error');
-    } finally {
-        showLoading(false);
+        const date = new Date(dateStr);
+        return date.toISOString().split('T')[0];
+    } catch {
+        return null;
     }
 }
 
 /**
- * Import data from Excel/CSV to Supabase
+ * Format date for display
  */
-async function importFromExcel(file, tableType) {
-    if (!checkSupabaseConfig()) {
-        showNotification('Import tidak tersedia - Supabase belum dikonfigurasi', 'error');
-        return;
-    }
-
-    try {
-        showLoading(true, 'Mengimpor data...');
-
-        // Read file using FileReader
-        const text = await readFileAsText(file);
-        const data = parseCSV(text); // or use a proper Excel parser like SheetJS
-
-        let result;
-        switch(tableType) {
-            case 'pengusulan':
-                result = await simbakesDB.bulkInsertPengusulan(data);
-                break;
-            case 'penetapan':
-                result = await simbakesDB.bulkInsertPenetapan(data);
-                break;
-            default:
-                throw new Error('Unsupported table type for import');
-        }
-
-        if (result.success) {
-            showNotification(`Import berhasil: ${result.count} record`, 'success');
-        } else {
-            showNotification('Import gagal: ' + result.error, 'error');
-        }
-    } catch (error) {
-        showNotification('Import error: ' + error.message, 'error');
-    } finally {
-        showLoading(false);
-    }
-}
-
-// =====================================================
-// UTILITY FUNCTIONS
-// =====================================================
-
-function formatTanggal(dateStr) {
+function formatDateDisplay(dateStr) {
     if (!dateStr) return '-';
     try {
         const date = new Date(dateStr);
@@ -621,374 +1062,470 @@ function formatTanggal(dateStr) {
     }
 }
 
-function parseDate(dateStr) {
-    if (!dateStr) return null;
-    try {
-        const date = new Date(dateStr);
-        return date.toISOString().split('T')[0];
-    } catch {
-        return null;
+/**
+ * Show/hide dashboard loading state
+ */
+function showDashboardLoading(show) {
+    const loader = document.getElementById('dashboard-loader');
+    if (loader) {
+        loader.style.display = show ? 'flex' : 'none';
     }
 }
 
-function convertToCSV(data) {
-    if (!data || data.length === 0) return '';
+/**
+ * Load dummy stats when API fails
+ */
+function loadDummyStats() {
+    const stats = ['stat-total', 'stat-disetujui', 'stat-ditolak', 'stat-perbaikan', 'stat-batal'];
+    stats.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '0';
+    });
+}
+
+// =====================================================
+// FALLBACK MODE (when Supabase not configured)
+// =====================================================
+
+/**
+ * Setup fallback/demo mode when Supabase is not available
+ */
+function setupFallbackMode() {
+    console.warn('[SIMBAKES] ⚠️ Setting up DEMO MODE (fallback)');
+    
+    // Override functions to use mock data
+    window.apiFetch = async function demoApiFetch(url, options = {}) {
+        console.log('[SIMBAKES-DEMO] apiFetch() returning mock data');
+        return { status: 'success', data: [], message: 'Demo mode - no database connection' };
+    };
+    
+    window.renderDashboard = async function demoRenderDashboard() {
+        console.log('[SIMBAKES-DEMO] renderDashboard() showing demo data');
+        loadDummyStats();
+        
+        const tbody = document.getElementById('recent-submissions-body');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="loading-cell">
+                        🔒 Demo Mode - Hubungkan ke Supabase untuk melihat data real
+                    </td>
+                </tr>
+            `;
+        }
+    };
+    
+    window.fetchDashboardStats = async function demoFetchDashboardStats() {
+        return { status: 'success', data: { total: 0, disetujui: 0, ditolak: 0, perbaikan: 0, batal: 0 } };
+    };
+    
+    window.fetchRecentSubmissions = async function demoFetchRecentSubmissions() {
+        cachedRecentSubmissions = [];
+        return { status: 'success', data: [] };
+    };
+    
+    window.trackVisitorToSheets = async function demoTrackVisitor() {
+        return { status: 'success' };
+    };
+    
+    window.sendToGoogleSheets = async function demoSendData(data) {
+        if (typeof showToast === 'function') {
+            showToast('⚠️ Demo Mode - Data tidak tersimpan. Konfigurasi Supabase untuk production.', 'warning');
+        }
+        return { status: 'error', message: 'Demo mode - data not saved' };
+    };
+    
+    // Show warning notification
+    setTimeout(() => {
+        if (typeof showToast === 'function') {
+            showToast('🔒 Mode Demo Aktif - Edit supabase-client.js untuk menghubungkan ke database', 'warning', 8000);
+        }
+    }, 2000);
+}
+
+// =====================================================
+// ROADMAP INTEGRATION
+// =====================================================
+
+/**
+ * Override roadmap functions if they exist
+ */
+function overrideRoadmapFunctions() {
+    if (typeof fetchRoadmapData === 'function') {
+        const originalFetchRoadmap = window.fetchRoadmapData;
+        window.fetchRoadmapData = async function supabaseFetchRoadmap() {
+            console.log('[SIMBAKES] fetchRoadmapData() di-redirect ke Supabase');
+            
+            try {
+                const result = await simbakesDB.getRoadmap();
+                
+                if (result.success) {
+                    const transformedData = result.data.map((item, index) => ({
+                        id: item.id,
+                        rowNumber: index + 1,
+                        kode: item.kode,
+                        bidangFokus: item.jurusan,
+                        targetPenerima: item.nama_penerima ? 1 : 0,
+                        alokasiDana: '-',
+                        prioritas: item.status === 'aktif' ? 'Tinggi' : 'Rendah',
+                        sumberData: item.perguruan_tinggi || '-'
+                    }));
+                    
+                    // Cache and render
+                    window.roadmapData = transformedData;
+                    
+                    if (typeof renderRoadmapTable === 'function') {
+                        renderRoadmapTable(transformedData);
+                    }
+                    
+                    return { status: 'success', data: transformedData };
+                }
+                
+                return { status: 'error', data: [], message: result.error };
+                
+            } catch (error) {
+                console.error('[SIMBAKES] Error fetching roadmap:', error);
+                return { status: 'error', data: [], message: error.message };
+            }
+        };
+    }
+}
+
+// =====================================================
+// PENETAPAN (APPROVAL) INTEGRATION
+// =====================================================
+
+/**
+ * Override penetapan functions if they exist
+ */
+function overridePenetapanFunctions() {
+    if (typeof loadPenetapanData === 'function') {
+        window.loadPenetapanData = async function supabaseLoadPenetapan() {
+            console.log('[SIMBAKES] loadPenetapanData() di-redirect ke Supabase');
+            
+            try {
+                const result = await simbakesDB.getPenetapan({ pageSize: 1000 });
+                
+                if (result.success) {
+                    const transformedData = result.data.map((item, index) => ({
+                        id: item.id,
+                        rowNumber: index + 1,
+                        noRegister: item.no_sk_penetapan || `SK-${index + 1}`,
+                        nik: item.nik,
+                        namaLengkap: item.nama_lengkap,
+                        jurusan: item.jurusan_tujuan,
+                        jenjang: item.jenjang_pendidikan,
+                        unitTujuan: item.unit_tujuan_pemanfaatan,
+                        tahunStudi: item.rencana_tahun_studi,
+                        status: item.status_penetapan,
+                        tanggalPengajuan: item.tanggal_penetapan,
+                        linkFoto: item.link_foto_pasfoto,
+                        linkDokumen: item.link_dokumen_pdf,
+                        periode: item.periode_pemberian
+                    }));
+                    
+                    if (typeof renderPenetapanTable === 'function') {
+                        renderPenetapanTable(transformedData);
+                    }
+                    
+                    return { status: 'success', data: transformedData };
+                }
+                
+                return { status: 'error', data: [], message: result.error };
+                
+            } catch (error) {
+                console.error('[SIMBAKES] Error loading penetapan:', error);
+                return { status: 'error', data: [], message: error.message };
+            }
+        };
+    }
+}
+
+// =====================================================
+// EXPORT/IMPORT INTEGRATION
+// =====================================================
+
+/**
+ * Override export function to use Supabase data
+ */
+function overrideExportImportFunctions() {
+    // Export to Excel/CSV
+    if (typeof exportToExcel === 'function') {
+        const originalExport = window.exportToExcel;
+        window.exportToExcel = async function supabaseExport(tableType) {
+            console.log(`[SIMBAKES] Exporting ${tableType} from Supabase...`);
+            
+            try {
+                let result;
+                switch(tableType) {
+                    case 'pengusulan':
+                    case 'data-pengusul':
+                        result = await simbakesDB.exportData('data_pengusulan');
+                        break;
+                    case 'penetapan':
+                        result = await simbakesDB.exportData('data_penetapan');
+                        break;
+                    case 'roadmap':
+                        result = await simbakesDB.exportData('roadmap_kebutuhan');
+                        break;
+                    default:
+                        throw new Error('Unknown table type: ' + tableType);
+                }
+                
+                if (result.success && result.data.length > 0) {
+                    downloadAsCSV(result.data, `simbakes_${tableType}_${new Date().toISOString().split('T')[0]}.csv`);
+                    
+                    if (typeof showToast === 'function') {
+                        showToast(`✅ Export berhasil: ${result.data.length} record`, 'success');
+                    }
+                } else {
+                    if (typeof showToast === 'function') {
+                        showToast('⚠️ Tidak ada data untuk diekspor', 'warning');
+                    }
+                }
+                
+            } catch (error) {
+                console.error('[SIMBAKES] Export error:', error);
+                if (typeof showToast === 'function') {
+                    showToast('❌ Export gagal: ' + error.message, 'error');
+                }
+            }
+        };
+    }
+}
+
+/**
+ * Download data as CSV file
+ */
+function downloadAsCSV(data, filename) {
+    if (!data || data.length === 0) return;
     
     const headers = Object.keys(data[0]);
-    const csvRows = [headers.join(',')];
+    const csvContent = [
+        headers.join(','),
+        ...data.map(row => 
+            headers.map(header => {
+                const value = row[header];
+                const str = value !== null && value !== undefined ? String(value) : '';
+                return `"${str.replace(/"/g, '""')}"`;
+            }).join(',')
+        )
+    ].join('\n');
     
-    data.forEach(row => {
-        const values = headers.map(header => {
-            const val = row[header];
-            const str = val !== null && val !== undefined ? String(val) : '';
-            return `"${str.replace(/"/g, '""')}"`;
-        });
-        csvRows.push(values.join(','));
-    });
-    
-    return csvRows.join('\n');
-}
-
-function downloadFile(content, filename, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    link.href = url;
+    link.href = URL.createObjectURL(blob);
     link.download = filename;
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(link.href);
 }
 
-function readFileAsText(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(reader.error);
-        reader.readAsText(file);
-    });
-}
+// =====================================================
+// AUTHENTICATION INTEGRATION
+// =====================================================
 
-function parseCSV(text) {
-    const lines = text.split('\n').filter(line => line.trim());
-    if (lines.length < 2) return [];
+/**
+ * Override login to use Supabase multiusers table
+ */
+function overrideAuthFunctions() {
+    // Store original login function if exists
+    const originalLogin = window.handleLogin || window.login;
     
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-    const data = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-        const values = [];
-        let current = '';
-        let inQuotes = false;
+    /**
+     * Login handler using Supabase multiusers table
+     */
+    window.handleLogin = async function supabaseLogin(username, password) {
+        console.log('[SIMBAKES] handleLogin() via Supabase');
         
-        for (const char of lines[i]) {
-            if (char === '"') {
-                inQuotes = !inQuotes;
-            } else if (char === ',' && !inQuotes) {
-                values.push(current.trim());
-                current = '';
-            } else {
-                current += char;
+        try {
+            if (!checkSupabaseConfig()) {
+                // Fallback to demo credentials
+                return handleLoginDemo(username, password);
             }
-        }
-        values.push(current.trim());
-        
-        const obj = {};
-        headers.forEach((header, idx) => {
-            obj[header] = values[idx] || '';
-        });
-        data.push(obj);
-    }
-    
-    return data;
-}
-
-// =====================================================
-// FALLBACK DATA (untuk demo/testing tanpa Supabase)
-// =====================================================
-
-function loadPengusulanFallback(filters) {
-    console.log('[SIMBAKES] Using fallback pengusulan data');
-    
-    // Sample data based on Excel structure
-    const sampleData = [
-        {
-            id: '1',
-            nik: '6402137101990001',
-            nama: 'Devi Nilam Laila Safitri',
-            tempatLahir: 'Tenggarong',
-            tanggalLahir: '31 Januari 1999',
-            alamatKTP: 'JL BPPN Handil II RT001/RW000, Sungai Seluang, samboja, kalimantan timur',
-            alamatDomisili: 'JL BPPN Handil II RT001/RW000, Sungai Seluang, samboja, kalimantan timur',
-            lamaDomisili: 5,
-            pekerjaan: '-',
-            posisi: '-',
-            unitKerja: 'Puskesmas Samboja',
-            narasi: '-',
-            jurusan: 'spesialis_radiologi',
-            jenjang: 'Sp1',
-            unitTujuan: 'RSUD Aji Muhammad Idris',
-            tahunStudi: 2026,
-            noHP: '895342049731',
-            whatsapp: '895342049731',
-            email: 'Nilamlaila31@gmail.com',
-            status: 'diajukan'
-        },
-        {
-            id: '2',
-            nik: '6402061211970002',
-            nama: 'Dani Alfian',
-            tempatLahir: 'Blitar',
-            tanggalLahir: '12 November 1997',
-            alamatKTP: 'Jalan Mangkuraja Gang Silaturahmi',
-            alamatDomisili: 'Jalan Mangkuraja Gang Silaturahmi',
-            lamaDomisili: 4,
-            pekerjaan: '-',
-            posisi: '-',
-            unitKerja: '-',
-            narasi: '-',
-            jurusan: 'spesialis_anak',
-            jenjang: 'Sp1',
-            unitTujuan: 'RSUD Aji Muhammad Idris',
-            tahunStudi: 2026,
-            noHP: '81350012810',
-            whatsapp: '81350012810',
-            email: 'danyalfian1@gmail.com',
-            status: 'diajukan'
-        }
-    ];
-    
-    return { success: true, data: sampleData, total: sampleData.length };
-}
-
-function loadPenetapanFallback(filters) {
-    console.log('[SIMBAKES] Using fallback penetapan data');
-    
-    const sampleData = [
-        {
-            id: '1',
-            nik: '6402144203080002',
-            nama: 'Siti Patimah',
-            jurusan: 'bidan',
-            jenjang: 'S1 + Profesi',
-            unitTujuan: 'RSUD Aji Batara Agung Dewa Sakti',
-            tahunStudi: 2026,
-            noSK: '-',
-            tanggalPenetapan: '-',
-            status: 'pending',
-            catatan: '-',
-            fotoPasfoto: 'https://drive.google.com/file/d/1QoFj-J_D-RCZk5d89dxGB3DHz2lB-KF2/view',
-            dokumenPDF: 'https://drive.google.com/file/d/10Z2KskCwR0_1Us8fwu-ydRV4tNWN4SNT/view',
-            periode: '-'
-        }
-    ];
-    
-    return { success: true, data: sampleData, total: sampleData.length };
-}
-
-function loadRoadmapFallback(filters) {
-    console.log('[SIMBAKES] Using fallback roadmap data');
-    
-    return { 
-        success: true, 
-        data: [], 
-        total: 0,
-        message: 'Roadmap data kosong - silakan tambahkan melalui form'
-    };
-}
-
-// =====================================================
-// NOTIFICATION & LOADING HELPERS
-// =====================================================
-
-function showNotification(message, type = 'info') {
-    // Check if template has notification system
-    if (typeof window.showAlert === 'function') {
-        window.showAlert(message, type);
-    } else if (typeof window.showToast === 'function') {
-        window.showToast(message, type);
-    } else {
-        // Create custom notification
-        createCustomNotification(message, type);
-    }
-}
-
-function createCustomNotification(message, type) {
-    const notification = document.createElement('div');
-    notification.className = `simbakes-notification simbakes-notification-${type}`;
-    notification.innerHTML = `
-        <span class="notification-icon">${getNotificationIcon(type)}</span>
-        <span class="notification-message">${message}</span>
-        <button onclick="this.parentElement.remove()" class="notification-close">&times;</button>
-    `;
-    
-    // Style the notification
-    Object.assign(notification.style, {
-        position: 'fixed',
-        top: '20px',
-        right: '20px',
-        padding: '15px 20px',
-        borderRadius: '8px',
-        backgroundColor: getNotificationColor(type),
-        color: '#fff',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        zIndex: '10000',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        fontFamily: 'inherit',
-        animation: 'slideIn 0.3s ease-out',
-        maxWidth: '400px'
-    });
-    
-    document.body.appendChild(notification);
-    
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        if (notification.parentElement) {
-            notification.style.animation = 'slideOut 0.3s ease-in forwards';
-            setTimeout(() => notification.remove(), 300);
-        }
-    }, 5000);
-}
-
-function getNotificationIcon(type) {
-    const icons = {
-        success: '✓',
-        error: '✕',
-        warning: '⚠',
-        info: 'ℹ'
-    };
-    return icons[type] || icons.info;
-}
-
-function getNotificationColor(type) {
-    const colors = {
-        success: '#059669',
-        error: '#dc2626',
-        warning: '#d97706',
-        info: '#2563eb'
-    };
-    return colors[type] || colors.info;
-}
-
-function showLoading(show, text = 'Memuat data...') {
-    let loader = document.getElementById('simbakes-loader');
-    
-    if (show) {
-        if (!loader) {
-            loader = document.createElement('div');
-            loader.id = 'simbakes-loader';
-            loader.innerHTML = `
-                <div class="loader-spinner"></div>
-                <span class="loader-text">${text}</span>
-            `;
-            Object.assign(loader.style, {
-                position: 'fixed',
-                top: '0',
-                left: '0',
-                width: '100%',
-                height: '100%',
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: '9999',
-                color: '#fff'
-            });
-            document.body.appendChild(loader);
             
-            // Add spinner style
-            const style = document.createElement('style');
-            style.textContent = `
-                .loader-spinner {
-                    width: 50px;
-                    height: 50px;
-                    border: 4px solid rgba(255,255,255,0.3);
-                    border-top-color: #fff;
-                    border-radius: 50%;
-                    animation: spin 1s linear infinite;
+            const result = await simbakesDB.login(username, password);
+            
+            if (result.success) {
+                const user = result.user;
+                
+                // Set session
+                currentUser = {
+                    id: user.id,
+                    nama: user.nama_lengkap,
+                    username: user.username,
+                    role: user.role,
+                    email: user.email
+                };
+                
+                sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                sessionStorage.setItem('isLoggedIn', 'true');
+                sessionStorage.setItem('simbakes_admin_session', JSON.stringify({
+                    isLoggedIn: true,
+                    user: currentUser,
+                    loginTime: new Date().toISOString(),
+                    role: currentUser.role
+                }));
+                
+                console.log(`[SIMBAKES] ✅ Login berhasil: ${currentUser.nama} (${currentUser.role})`);
+                
+                // Trigger post-login actions
+                if (typeof hideLandingPage === 'function') hideLandingPage();
+                if (typeof showDashboard === 'function') showDashboard();
+                if (typeof showToast === 'function') {
+                    showToast(`Selamat datang, ${currentUser.nama}!`, 'success');
                 }
-                @keyframes spin { to { transform: rotate(360deg); } }
-                @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-                @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
-            `;
-            document.head.appendChild(style);
+                
+                return { success: true, user: currentUser };
+            } else {
+                if (typeof showToast === 'function') {
+                    showToast(result.error || 'Login gagal', 'error');
+                }
+                return { success: false, error: result.error };
+            }
+            
+        } catch (error) {
+            console.error('[SIMBAKES] Login error:', error);
+            if (typeof showToast === 'function') {
+                showToast('Terjadi kesalahan saat login', 'error');
+            }
+            return { success: false, error: error.message };
         }
-        loader.querySelector('.loader-text').textContent = text;
-        loader.style.display = 'flex';
-    } else if (loader) {
-        loader.style.display = 'none';
+    };
+    
+    /**
+     * Logout handler
+     */
+    window.handleLogout = async function supabaseLogout() {
+        console.log('[SIMBAKES] handleLogout()');
+        
+        await simbakesDB.logout();
+        
+        // Clear sessions
+        sessionStorage.removeItem('currentUser');
+        sessionStorage.removeItem('isLoggedIn');
+        sessionStorage.removeItem('simbakes_admin_session');
+        localStorage.removeItem('simbakes_user');
+        
+        currentUser = null;
+        
+        // Show landing page
+        if (typeof showLandingPage === 'function') showLandingPage();
+        if (typeof showToast === 'function') {
+            showToast('Berhasil logout', 'success');
+        }
+    };
+}
+
+/**
+ * Demo login with hardcoded credentials
+ */
+function handleLoginDemo(username, password) {
+    const demoUsers = [
+        { username: 'superadmin', password: 'Aida2007###', nama: 'Mukmin Nasri', role: 'superadmin', email: 'mukminnasri@dinkeskukar.go.id' },
+        { username: 'operator2', password: 'EtaSDMK2024@', nama: 'Eta', role: 'admin', email: 'eta@dinkeskukar.go.id' },
+        { username: 'admin', password: 'admin123', nama: 'Administrator', role: 'admin', email: 'admin@simbakes.local' },
+        { username: 'operator', password: 'operator123', nama: 'Operator', role: 'operator', email: 'operator@simbakes.local' }
+    ];
+    
+    const user = demoUsers.find(u => u.username === username && u.password === password);
+    
+    if (user) {
+        currentUser = {
+            id: 'demo-' + user.username,
+            nama: user.nama,
+            username: user.username,
+            role: user.role,
+            email: user.email
+        };
+        
+        sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+        sessionStorage.setItem('isLoggedIn', 'true');
+        sessionStorage.setItem('simbakes_admin_session', JSON.stringify({
+            isLoggedIn: true,
+            user: currentUser,
+            loginTime: new Date().toISOString(),
+            role: currentUser.role
+        }));
+        
+        if (typeof hideLandingPage === 'function') hideLandingPage();
+        if (typeof showDashboard === 'function') showDashboard();
+        if (typeof showToast === 'function') {
+            showToast(`Mode Demo - Selamat datang, ${currentUser.nama}!`, 'warning');
+        }
+        
+        return { success: true, user: currentUser };
+    } else {
+        if (typeof showToast === 'function') {
+            showToast('Username atau password salah!', 'error');
+        }
+        return { success: false, error: 'Invalid credentials' };
     }
 }
 
 // =====================================================
-// AUTO-INTEGRATION ON DOM READY
+// AUTO-INITIALIZATION ON DOM READY
 // =====================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('[SIMBAKES] Integration layer loaded');
-    console.log('[SIMBAKES] Checking Supabase configuration...');
+    console.log('[SIMBAKES] DOM ready, initializing Supabase integration...');
     
-    const isConfigured = checkSupabaseConfig();
+    // Wait for supabase-client.js to load
+    await new Promise(resolve => setTimeout(resolve, 100));
     
-    if (isConfigured) {
-        console.log('[SIMBAKES] ✅ Supabase configured - using live database');
-        
-        // Initialize Supabase client
-        await simbakesDB.init();
-        
-        // Check for existing session
-        const session = await simbakesDB.checkSession();
-        if (session) {
-            console.log('[SIMBAKES] Session found for:', session.username);
+    // Initialize main integration
+    await initSimbakesSupabase();
+    
+    // Override additional functions
+    overrideRoadmapFunctions();
+    overridePenetapanFunctions();
+    overrideExportImportFunctions();
+    overrideAuthFunctions();
+    
+    // Check for existing session
+    const savedSession = sessionStorage.getItem('simbakes_admin_session');
+    if (savedSession) {
+        try {
+            const session = JSON.parse(savedSession);
+            if (session.isLoggedIn && session.user) {
+                currentUser = session.user;
+                console.log(`[SIMBAKES] Session restored: ${currentUser.nama} (${currentUser.role})`);
+            }
+        } catch (e) {
+            console.warn('[SIMBAKES] Invalid session, clearing...');
+            sessionStorage.removeItem('simbakes_admin_session');
         }
-    } else {
-        console.log('[SIMBAKES] ⚠️ Supabase not configured - using fallback/demo mode');
-        console.log('[SIMBAKES] To connect to Supabase:');
-        console.log('[SIMBAKES]   1. Open supabase-client.js');
-        console.log('[SIMBAKES]   2. Replace YOUR_SUPABASE_URL with your project URL');
-        console.log('[SIMBAKES]   3. Replace YOUR_SUPABASE_ANON_KEY with your anon key');
-        console.log('[SIMBAKES]   4. Run the SQL schema in Supabase SQL Editor');
     }
+    
+    console.log('%c✅ SIMBAKES Supabase Integration Complete!', 'color:#059669;font-size:14px;font-weight:bold');
+    console.log('%c📖 Data sekarang dari Supabase, BUKAN Google Sheets', 'color:#0891b2');
 });
 
 // =====================================================
-// EXPORT GLOBAL FUNCTIONS FOR TEMPLATE ACCESS
+// GLOBAL EXPORT
 // =====================================================
 
-// Make functions available globally so template can call them
+// Make integration available globally
 window.SimbakesIntegration = {
-    // Auth
-    login: handleLoginSupabase,
-    logout: handleLogoutSupabase,
+    // Core
+    init: initSimbakesSupabase,
+    checkConfig: checkSupabaseConfig,
     
-    // Pengusulan
-    loadPengusulan: loadDataPengusulan,
-    insertPengusulan: insertPengusulanSupabase,
-    updatePengusulan: updatePengusalanSupabase,
+    // Data operations
+    getPengusulan: () => simbakesDB.getPengusulan.bind(simbakesDB)(),
+    getPenetapan: () => simbakesDB.getPenetapan.bind(simbakesDB)(),
+    getRoadmap: () => simbakesDB.getRoadmap.bind(simbakesDB)(),
+    insertPengusulan: (data) => simbakesDB.insertPengusulan(data),
+    updatePengusulan: (nik, data) => simbakesDB.updatePengusulan(nik, data),
     
-    // Penetapan
-    loadPenetapan: loadDataPenetapan,
-    savePenetapan: savePenetapanSupabase,
-    
-    // Roadmap
-    loadRoadmap: loadRoadmapSupabase,
-    saveRoadmap: saveRoadmapSupabase,
-    
-    // Dashboard
-    getStats: loadDashboardStats,
-    
-    // Import/Export
-    exportExcel: exportToExcel,
-    importExcel: importFromExcel,
+    // Status
+    isConnected: checkSupabaseConfig(),
+    cache: SimbakesCache,
     
     // Utilities
-    checkConfig: checkSupabaseConfig,
-    showNotif: showNotification,
-    setLoading: showLoading
+    showNotif: (msg, type) => {
+        if (typeof showToast === 'function') showToast(msg, type);
+    },
+    setLoading: (show) => showDashboardLoading(show)
 };
 
-console.log('[SIMBAKES] Integration layer ready - window.SimbakesIntegration available');
+console.log('[SIMBAKES] Integration layer loaded - ready to replace Google Sheets');
