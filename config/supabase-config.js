@@ -16,12 +16,12 @@ const SUPABASE_CONFIG = {
     // ====== SUPABASE URL ======
     // Ganti dengan URL project Supabase Anda
     // Format: https://xxxxxxxxxxxxx.supabase.co
-    URL: 'https://YOUR_PROJECT_ID.supabase.co',
+    URL: 'https://boeknpvlfamjmddsdopd.supabase.co',
     
     // ====== SUPABASE ANON (PUBLIC) KEY ======
     // Ganti dengan anon/public key dari project Supabase Anda
     // Ditemukan di: Project Settings > API > Project API keys > public anon key
-    ANON_KEY: 'YOUR_SUPABASE_ANON_KEY',
+    ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZWtucHZsZmFtam1kZHNkb3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NzYwNjIsImV4cCI6MjEwMjA1MjA2Mn0.kHj7xEY7Wa4zSJwH0rjhiB3Qf0IHriyPlWoh4rdlv3U',
     
     // ====== OPTIONAL: SERVICE ROLE KEY (Hanya untuk admin) ======
     // ⚠️ JANGAN gunakan di client-side production!
