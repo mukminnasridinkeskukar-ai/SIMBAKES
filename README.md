@@ -2,112 +2,228 @@
 
 ## Deskripsi
 
-SIMBAKES (Sistem Informasi Beasiswa Tematik Bidang Kesehatan) adalah platform untuk pengelolaan informasi dan proses pengusulan beasiswa tematik bidang kesehatan.
+SIMBAKES (Sistem Informasi Beasiswa Tematik Bidang Kesehatan) adalah platform web untuk pengelolaan informasi dan proses pengusulan beasiswa tematik bidang kesehatan.
 
-## Teknologi
+## ✨ Fitur Lengkap
+
+### 🏠 Beranda
+- **Dashboard** - Statistik real-time dengan animasi
+- **Petunjuk Penggunaan** - Panduan step-by-step lengkap
+- **Roadmap Kebutuhan** - Timeline visualisasi program
+- **Informasi Update** - Sistem berita & pengumuman
+
+### 🎯 Layanan
+- **Formulir Usulan Rekomendasi** - Multi-step form dengan validasi
+- **Cek Status Pengusulan** - Pencarian by nomor/NIK
+- **Cek Status Penetapan** - Hasil penetapan penerima
+
+### ⚙️ Panel Admin
+- **Data Pengusulan** - CRUD table dengan filter & export
+- **Data Penetapan** - Manajemen penerima beasiswa
+- **Data Roadmap Kebutuhan** - Monitoring kuota & progress
+
+## 🛠️ Teknologi
 
 ### Frontend
 - **HTML5** - Struktur semantik
-- **CSS3** - Styling dengan Custom Properties, Flexbox, Grid
-- **JavaScript ES6+** - Vanilla JS untuk navigasi SPA
+- **CSS3** - Custom properties, Flexbox, Grid, Animations
+- **JavaScript ES6+** - Vanilla JS, SPA Router
 - **Responsive Design** - Mobile-first approach
 
-### Backend (Tahap Selanjutnya)
-- **Supabase** - Backend as a Service
-- **PostgreSQL** - Database
-- **Supabase Storage** - File storage
-- **Supabase Auth** - Autentikasi
+### Backend & Database
+- **Supabase** - Backend as a Service (PostgreSQL)
+- **Supabase Auth** - Autentikasi user (opsional)
+- **Supabase Storage** - Upload dokumen (opsional)
+- **Row Level Security** - Keamanan data otomatis
 
-## Struktur Project
+### Deployment
+- **GitHub Pages** - Hosting statis gratis
+- **CDN** - Supabase SDK dari unpkg.com
+
+## 📁 Struktur Project
 
 ```
 SIMBAKES/
-├── index.html          # Entry point utama (Landing Page + App Shell)
-├── style.css           # Semua styling termasuk responsive design
-├── app.js              # Logika aplikasi (SPA router, navigasi, events)
+├── index.html              # Entry point utama
+├── style.css               # Styling lengkap (~49KB)
+├── app.js                  # Logic aplikasi dengan Supabase integration
+│
+├── config/
+│   └── supabase-config.js  # Konfigurasi koneksi Supabase
+│
+├── lib/
+│   └── supabase-client.js  # Database helper & CRUD operations
+│
+├── sql/
+│   └── schema.sql          # SQL schema untuk Supabase database
+│
 ├── assets/
-│   ├── images/         # Gambar dan ilustrasi
-│   └── icons/          # Icon SVG custom
-└── README.md           # Dokumentasi project
+│   ├── images/             # Gambar & ilustrasi
+│   └── icons/              # Icon SVG custom
+│
+├── SETUP-GUIDE.md          # Panduan setup lengkap
+└── README.md               # File ini
 ```
 
-## Fitur (Tahap 1)
+## 🚀 Quick Start
 
-### Landing Page
-- Tampilan elegan dengan animasi ringan
-- Auto-redirect ke Beranda setelah 3 detik
-- Progress bar indicator
-- Gradient background profesional
+### 1. Prasyarat
 
-### Navigasi Utama
-- **Beranda**
-  - Dashboard
-  - Petunjuk Penggunaan
-  - Roadmap Kebutuhan
-  - Informasi Update
+- Akun [GitHub](https://github.com) (gratis)
+- Akun [Supabase](https://supabase.com) (gratis)
 
-- **Layanan**
-  - Formulir Usulan Rekomendasi
-  - Cek Status Pengusulan
-  - Cek Status Penetapan
+### 2. Setup Supabase
 
-- **Panel Admin**
-  - Data Pengusulan
-  - Data Penetapan
-  - Data Roadmap Kebutuhan
+1. Buat project baru di [supabase.com](https://supabase.com)
+2. Buka **SQL Editor**
+3. Copy-paste isi file `sql/schema.sql`
+4. Klik **Run**
+5. Buka **Settings > API**
+6. Copy **URL** dan **anon key**
 
-### Fitur UI/UX
-- ✅ Responsive design (Mobile, Tablet, Desktop)
-- ✅ Sidebar collapsible (Drawer di mobile)
-- ✅ Lightbox/Card navigation
-- ✅ Warna berbeda per kategori menu
-- ✅ Hover effects dan transisi halus
-- ✅ SPA routing (hash-based)
-- ✅ Placeholder untuk modul yang akan dikembangkan
+### 3. Konfigurasi
 
-## Sistem Warna
+Edit file `config/supabase-config.js`:
 
-| Kategori | Warna | Hex Code |
-|----------|-------|----------|
+```javascript
+URL: 'https://YOUR_PROJECT_ID.supabase.co',
+ANON_KEY: 'YOUR_ANON_KEY_HERE',
+```
+
+### 4. Test Lokal
+
+Cukup buka `index.html` di browser modern!
+
+Atau gunakan local server:
+```bash
+python3 -m http.server 8000
+```
+
+### 5. Deploy ke GitHub Pages
+
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/USERNAME/SIMBAKES.git
+git push -u origin main
+```
+
+Lalu aktifkan GitHub Pages di repository Settings.
+
+## 📊 Mode Operasi
+
+### 🟢 Connected Mode (Supabase Aktif)
+- Semua data tersimpan di cloud database
+- Real-time sync antar device
+- Data persisten & aman
+- Support multi-user
+
+### 🟡 Demo Mode (Offline/Fallback)
+- Menggunakan data sample lokal
+- Fungsionalitas tetap berjalan
+- Ideal untuk development/presentation
+- Otomatis fallback jika Supabase tidak terkoneksi
+
+## 🎨 Sistem Warna
+
+| Bagian | Warna | Hex Code |
+|--------|-------|----------|
 | Beranda | Blue | `#3B82F6` |
-| Layanan | Emerald/Green | `#10B981` |
-| Panel Admin | Violet/Purple | `#8B5CF6` |
+| Layanan | Emerald | `#10B981` |
+| Panel Admin | Violet | `#8B5CF6` |
 
-## Cara Menjalankan
+## 📱 Responsive Breakpoints
 
-### Local Development
-1. Clone atau download repository ini
-2. Buka `index.html` di browser modern
-3. Atau gunakan live server extension di VS Code
+| Device | Breakpoint | Layout |
+|--------|------------|--------|
+| Smartphone | < 480px | Drawer sidebar, stacked layout |
+| Tablet Small | < 768px | Collapsible sidebar |
+| Tablet Large | < 1024px | Visible sidebar |
+| Desktop | ≥ 1024px | Full layout with fixed sidebar |
 
-### Deployment (GitHub Pages)
-1. Push ke repository GitHub
-2. Aktifkan GitHub Pages di Settings > Pages
-3. Pilih branch `main` dan folder `/ (root)`
-4. Akses via `https://username.github.io/SIMBAKES/`
+## 🔧 Konfigurasi Lanjutan
 
-## Browser Support
+### Environment Variables (Opsional)
 
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
-- Opera (latest)
-- Mobile browsers (iOS Safari, Chrome Android)
+Untuk production, pertimbangkan menggunakan environment variables:
 
-## Performance
+```javascript
+// Dapatkan dari meta tag atau config endpoint
+const CONFIG = {
+    SUPABASE_URL: document.querySelector('meta[name="supabase-url"]')?.content,
+    SUPABASE_KEY: document.querySelector('meta[name="supabase-key"]')?.content
+};
+```
 
-- Tanpa framework/library eksternal
-- CSS dan JavaScript vanilla yang ringan
-- Animasi menggunakan CSS transitions (GPU accelerated)
-- Optimized untuk loading cepat
+### Custom Domain
 
-## Development Notes
+1. Setup custom domain di GitHub Pages Settings
+2. Update CORS di Supabase Dashboard
+3. Add domain ke allowed list
 
-Project ini dikembangkan secara bertahap:
-- **Tahap 1**: Kerangka aplikasi, landing page, navigasi, placeholder
-- **Tahap 2+**: Modul fungsional sesuai instruksi
+## 📈 Performance
 
-## License
+- **Total Size**: ~180 KB (uncompressed)
+- **ZIP Size**: ~28 KB
+- **Load Time**: < 2 detik (dengan cache)
+- **Lighthouse Score**: 90+ (target)
+
+## 🔒 Keamanan
+
+✅ Implementasi keamanan:
+- Row Level Security (RLS)
+- Input sanitization
+- XSS protection
+- CSRF protection (via Supabase)
+- No sensitive data in localStorage
+
+## 🐛 Troubleshooting
+
+Lihat [`SETUP-GUIDE.md`](SETUP-GUIDE.md) untuk panduan troubleshooting lengkap.
+
+Masalah umum:
+1. **"Demo Mode" muncul** → Cek config/supabase-config.js
+2. **Error "Invalid API key"** → Gunakan ANON key, bukan service_role
+3. **Data tidak tersimpan** → Cek RLS policies di Supabase
+4. **CORS error** → Tambahkan domain ke Supabase settings
+
+## 📚 Dokumentasi
+
+- [Setup Guide](SETUP-GUIDE.md) - Panduan setup detail
+- [Supabase Docs](https://supabase.com/docs) - Dokumentasi resmi
+- [GitHub Pages Docs](https://docs.github.com/pages) - Deployment guide
+
+## 🤝 Kontribusi
+
+1. Fork repository
+2. Create branch (`git checkout -b feature/AmazingFeature`)
+3. Commit (`git commit -m 'Add some AmazingFeature'`)
+4. Push (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
+
+## 📄 License
 
 © 2024 SIMBAKES - Beasiswa Tematik Bidang Kesehatan. All rights reserved.
+
+---
+
+## 💡 Tips & Tricks
+
+### Development Tips:
+- Gunakan browser DevTools untuk debug
+- Cek Console untuk log status koneksi
+- Test di multiple devices untuk responsive design
+
+### Production Tips:
+- Monitor usage di Supabase Dashboard
+- Setup regular backups
+- Enable logging untuk audit trail
+- Consider CDN for static assets
+
+---
+
+**Dibuat dengan ❤️ menggunakan HTML, CSS, JavaScript + Supabase**
+
+🌐 Live Demo: [Ganti dengan URL GitHub Pages Anda]

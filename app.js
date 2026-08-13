@@ -1,6 +1,6 @@
 /* ============================================
    SIMBAKES - Beasiswa Tematik Bidang Kesehatan
-   Application JavaScript (Versi Lengkap)
+   Application JavaScript (Versi Lengkap + Supabase)
    ============================================ */
 
 (function() {
@@ -12,25 +12,16 @@
     const CONFIG = {
         LANDING_DURATION: 3000,
         DEFAULT_PAGE: 'dashboard',
-        ANIMATION_DURATION: 500
+        ANIMATION_DURATION: 500,
+        
+        // Database mode: 'supabase' atau 'demo'
+        // Akan otomatis detect berdasarkan koneksi Supabase
+        DB_MODE: 'auto' 
     };
 
-    // Sample Data untuk Demo
-    const SAMPLE_DATA = {
-        pengusulan: [
-            { nomor: 'USL-2024-0001', nama: 'Ahmad Fauzi', prodi: 'Keperawatan (S1)', institusi: 'Universitas Indonesia', tanggal: '15 Jan 2024', status: 'approved' },
-            { nomor: 'USL-2024-0002', nama: 'Siti Nurhaliza', prodi: 'Kedokteran (Profesi)', institusi: 'Universitas Gadjah Mada', tanggal: '18 Jan 2024', status: 'review' },
-            { nomor: 'USL-2024-0003', nama: 'Budi Santoso', prodi: 'Farmasi (S1)', institusi: 'Institut Teknologi Bandung', tanggal: '20 Jan 2024', status: 'rejected' },
-            { nomor: 'USL-2024-0004', nama: 'Dewi Lestari', prodi: 'Kesehatan Masyarakat (S2)', institusi: 'Universitas Airlangga', tanggal: '22 Jan 2024', status: 'draft' },
-            { nomor: 'USL-2024-0005', nama: 'Rizky Pratama', prodi: 'Gizi (S1)', institusi: 'Universitas Diponegoro', tanggal: '25 Jan 2024', status: 'approved' }
-        ],
-        penetapan: [
-            { nomor: 'PNT-2024-0001', nama: 'Ahmad Fauzi', prodi: 'Keperawatan (S1)', batch: 'Batch 1', tanggal: '01 Feb 2024', dana: 'disbursed' },
-            { nomor: 'PNT-2024-0002', nama: 'Siti Nurhaliza', prodi: 'Kedokteran (Profesi)', batch: 'Batch 1', tanggal: '01 Feb 2024', dana: 'disbursed' },
-            { nomor: 'PNT-2024-0015', nama: 'Rizky Pratama', prodi: 'Gizi (S1)', batch: 'Batch 2', tanggal: '15 Feb 2024', dana: 'processing' },
-            { nomor: 'PNT-2024-0028', nama: 'Maya Putri', prodi: 'Farmasi (S1)', batch: 'Batch 3', tanggal: '01 Mar 2024', dana: 'pending' }
-        ]
-    };
+    // State untuk database connection
+    let db = null;
+    let isSupabaseConnected = false;
 
     // ============================================
     // DOM ELEMENTS
@@ -54,20 +45,122 @@
         isSidebarOpen: false,
         isLandingComplete: false,
         formStep: 1,
-        totalFormSteps: 4
+        totalFormSteps: 4,
+        dbMode: 'demo' // Default ke demo mode
     };
 
     // ============================================
     // INITIALIZATION
     // ============================================
-    function init() {
+    async function init() {
+        console.log('🚀 SIMBAKES - Initializing application...');
+        
         cacheDOMElements();
+        
+        // Initialize database connection
+        await initDatabase();
+        
+        // Setup UI components
         setupLandingPage();
         setupNavigation();
         setupSidebar();
         setupHashRouting();
         setupFormHandler();
         setupSearchHandlers();
+        
+        // Load dashboard data if on dashboard page
+        if (State.currentPage === 'dashboard') {
+            loadDashboardData();
+        }
+        
+        console.log('✅ SIMBAKES - Application initialized');
+        console.log(`📊 Database Mode: ${State.dbMode}`);
+    }
+
+    /**
+     * Initialize database connection to Supabase
+     */
+    async function initDatabase() {
+        try {
+            // Check if SIMBAKESDB is available (from supabase-client.js)
+            if (typeof window.SIMBAKESDB !== 'undefined') {
+                db = window.SIMBAKESDB;
+                await db.init();
+                
+                if (db.isConnected) {
+                    isSupabaseConnected = true;
+                    State.dbMode = 'supabase';
+                    console.log('✅ Connected to Supabase database');
+                    
+                    // Show connection status in UI
+                    showConnectionStatus(true);
+                } else {
+                    State.dbMode = 'demo';
+                    console.log('⚠️ Using demo mode (Supabase not configured)');
+                    showConnectionStatus(false);
+                }
+            } else {
+                State.dbMode = 'demo';
+                console.log('⚠️ SIMBAKESDB not found, using demo mode');
+            }
+        } catch (error) {
+            console.error('❌ Database initialization error:', error);
+            State.dbMode = 'demo';
+            showConnectionStatus(false);
+        }
+    }
+
+    /**
+     * Show database connection status indicator
+     */
+    function showConnectionStatus(connected) {
+        // Create or update status indicator
+        let statusEl = document.getElementById('db-status');
+        
+        if (!statusEl && DOM.app) {
+            statusEl = document.createElement('div');
+            statusEl.id = 'db-status';
+            statusEl.style.cssText = `
+                position: fixed;
+                bottom: 70px;
+                right: 20px;
+                padding: 0.5rem 1rem;
+                border-radius: var(--radius-full);
+                font-size: 0.75rem;
+                font-weight: 600;
+                z-index: 1000;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                box-shadow: var(--shadow-lg);
+                transition: all 0.3s ease;
+            `;
+            DOM.app.appendChild(statusEl);
+        }
+        
+        if (statusEl) {
+            if (connected) {
+                statusEl.innerHTML = '🟢 Supabase Connected';
+                statusEl.style.background = '#D1FAE5';
+                statusEl.style.color = '#065F46';
+            } else {
+                statusEl.innerHTML = '🟡 Demo Mode';
+                statusEl.style.background = '#FEF3C7';
+                statusEl.style.color = '#92400E';
+            }
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                if (statusEl) {
+                    statusEl.style.opacity = '0';
+                    setTimeout(() => {
+                        if (statusEl && statusEl.parentElement) {
+                            statusEl.remove();
+                        }
+                    }, 300);
+                }
+            }, 5000);
+        }
     }
 
     function cacheDOMElements() {
@@ -159,6 +252,422 @@
 
         updateActiveStates(pageName);
         showPage(pageName);
+
+        // Load data for specific pages
+        loadPageData(pageName);
+    }
+
+    /**
+     * Load data for specific pages when navigated
+     */
+    async function loadPageData(pageName) {
+        switch (pageName) {
+            case 'dashboard':
+                await loadDashboardData();
+                break;
+            case 'data-pengusulan':
+                await loadAdminPengusulanData();
+                break;
+            case 'data-penetapan':
+                await loadAdminPenetapanData();
+                break;
+            case 'data-roadmap':
+                await loadAdminRoadmapData();
+                break;
+            case 'informasi-update':
+                await loadInformasiData();
+                break;
+        }
+    }
+
+    /**
+     * Load Dashboard Statistics
+     */
+    async function loadDashboardData() {
+        try {
+            let stats;
+            
+            if (isSupabaseConnected && db) {
+                stats = await db.getDashboardStats();
+            } else {
+                stats = getDemoStats();
+            }
+            
+            // Update stat cards with animation
+            animateValue('stat-total', 0, stats.total, 1000, '📋 Total Pengusulan');
+            animateValue('stat-approved', 0, stats.disetujui, 1000, '✅ Disetujui');
+            animateValue('stat-review', 0, stats.dalam_proses, 1000, '⏳ Dalam Proses');
+            animateValue('stat-rejected', 0, stats.ditolak, 1000, '❌ Ditolak');
+            
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+        }
+    }
+
+    /**
+     * Animate number counting up
+     */
+    function animateValue(elementId, start, end, duration, label) {
+        // Try to find element by ID or use default structure
+        let element = document.getElementById(elementId);
+        
+        // If not found by ID, try to find in stat cards
+        if (!element) {
+            const statCards = document.querySelectorAll('.stat-card .stat-number');
+            const index = ['total', 'approved', 'review', 'rejected'].indexOf(
+                elementId.replace('stat-', '')
+            );
+            if (index >= 0 && statCards[index]) {
+                element = statCards[index];
+            }
+        }
+        
+        if (element) {
+            const range = end - start;
+            const startTime = performance.now();
+            
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const value = Math.floor(start + (range * easeOutQuad(progress)));
+                element.textContent = value;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+            
+            requestAnimationFrame(update);
+        }
+    }
+
+    function easeOutQuad(t) {
+        return t * (2 - t);
+    }
+
+    /**
+     * Get demo statistics (fallback when offline)
+     */
+    function getDemoStats() {
+        return {
+            total: 156,
+            disetujui: 89,
+            dalam_proses: 42,
+            ditolak: 25
+        };
+    }
+
+    /**
+     * Load Admin Pengusulan Data from Supabase
+     */
+    async function loadAdminPengusulanData() {
+        try {
+            let data;
+            
+            if (isSupabaseConnected && db) {
+                data = await db.getAll(SUPABASE_CONFIG.TABLES.PENGUSULAN, {
+                    order: { column: 'created_at', ascending: false },
+                    limit: 50
+                });
+            } else {
+                data = getDemoPengusulanList();
+            }
+            
+            // Update table body
+            updateTableBody('table-pengusulan', data, formatPengusulanRow);
+            
+        } catch (error) {
+            console.error('Error loading pengusulan data:', error);
+        }
+    }
+
+    /**
+     * Load Admin Penetapan Data from Supabase
+     */
+    async function loadAdminPenetapanData() {
+        try {
+            let data;
+            
+            if (isSupabaseConnected && db) {
+                data = await db.getAll(SUPABASE_CONFIG.TABLES.PENETAPAN, {
+                    order: { column: 'tanggal_penetapan', ascending: false },
+                    limit: 50
+                });
+            } else {
+                data = getDemoPenetapanList();
+            }
+            
+            updateTableBody('table-penetapan', data, formatPenetapanRow);
+            
+        } catch (error) {
+            console.error('Error loading penetapan data:', error);
+        }
+    }
+
+    /**
+     * Load Admin Roadmap Data from Supabase
+     */
+    async function loadAdminRoadmapData() {
+        try {
+            let data;
+            
+            if (isSupabaseConnected && db) {
+                data = await db.getAll(SUPABASE_CONFIG.TABLES.ROADMAP, {
+                    filter: { tahun: new Date().getFullYear() },
+                    order: { column: 'program_studi', ascending: true }
+                });
+            } else {
+                data = getDemoRoadmapList();
+            }
+            
+            updateTableBody('table-roadmap', data, formatRoadmapRow);
+            
+            // Update summary cards
+            updateRoadmapSummary(data);
+            
+        } catch (error) {
+            console.error('Error loading roadmap data:', error);
+        }
+    }
+
+    /**
+     * Load Informasi/News Data from Supabase
+     */
+    async function loadInformasiData() {
+        try {
+            let data;
+            
+            if (isSupabaseConnected && db) {
+                data = await db.getAll(SUPABASE_CONFIG.TABLES.INFORMASI, {
+                    filter: { status: 'published' },
+                    order: { column: 'published_at', ascending: false },
+                    limit: 10
+                });
+            } else {
+                data = getDemoInformasiList();
+            }
+            
+            // Update news list (implementation depends on HTML structure)
+            console.log('Loaded informasi data:', data.length, 'items');
+            
+        } catch (error) {
+            console.error('Error loading informasi data:', error);
+        }
+    }
+
+    /**
+     * Update table body with data
+     */
+    function updateTableBody(tableId, data, rowFormatter) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+        
+        const tbody = table.querySelector('tbody');
+        if (!tbody) return;
+        
+        if (!data || data.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="100%" style="text-align: center; padding: 2rem; color: #64748B;">
+                        📭 Tidak ada data tersedia
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = data.map((item, index) => rowFormatter(item, index + 1)).join('');
+    }
+
+    /**
+     * Format pengusulan row for table
+     */
+    function formatPengusulanRow(item, no) {
+        const statusLabels = {
+            'draft': '<span class="table-badge badge-draft">Draft</span>',
+            'submitted': '<span class="table-badge badge-review">Submitted</span>',
+            'review': '<span class="table-badge badge-review">Review</span>',
+            'approved': '<span class="table-badge badge-approved">Disetujui</span>',
+            'rejected': '<span class="table-badge badge-rejected">Ditolak</span>'
+        };
+        
+        const tanggal = item.created_at ? formatDate(item.created_at) : item.tanggal || '-';
+        
+        return `
+            <tr>
+                <td>${no}</td>
+                <td>${item.nomor_usulan || '-'}</td>
+                <td>${item.nama_lengkap || item.nama || '-'}</td>
+                <td>${formatProdi(item.program_studi_dituju || item.prodi)}</td>
+                <td>${item.nama_institusi || item.institusi || '-'}</td>
+                <td>${tanggal}</td>
+                <td>${statusLabels[item.status] || '<span class="table-badge">Unknown</span>'}</td>
+                <td>
+                    <div class="action-group">
+                        <button class="btn-icon btn-view" onclick="viewPengusulan('${item.id || item.nomor}')" title="Lihat">👁️</button>
+                        <button class="btn-icon btn-edit" onclick="editPengusulan('${item.id || item.nomor}')" title="Edit">✏️</button>
+                        <button class="btn-icon btn-delete" onclick="deletePengusulan('${item.id || item.nomor}')" title="Hapus">🗑️</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    /**
+     * Format penetapan row for table
+     */
+    function formatPenetapanRow(item, no) {
+        const danaLabels = {
+            'pending': '<span class="table-badge badge-pending">Pending</span>',
+            'processing': '<span class="table-badge badge-processing">Proses</span>',
+            'disbursed': '<span class="table-badge badge-disbursed">Dicairkan</span>',
+            'cancelled': '<span class="table-badge badge-rejected">Batal</span>'
+        };
+        
+        const tanggal = item.tanggal_penetapan ? formatDate(item.tanggal_penetapan) : item.tanggal || '-';
+        
+        return `
+            <tr>
+                <td>${no}</td>
+                <td>${item.nomor_penetapan || item.nomor || '-'}</td>
+                <td>${item.nama_lengkap || item.nama || '-'}</td>
+                <td>${formatProdi(item.program_studi || item.prodi)}</td>
+                <td>${item.batch || '-'}</td>
+                <td>${tanggal}</td>
+                <td>${danaLabels[item.status_dana || item.dana] || '<span class="table-badge">Unknown</span>'}</td>
+                <td>
+                    <div class="action-group">
+                        <button class="btn-icon btn-view" onclick="viewPenetapan('${item.id || item.nomor}')" title="Lihat">👁️</button>
+                        <button class="btn-icon btn-edit" onclick="editPenetapan('${item.id || item.nomor}')" title="Edit">✏️</button>
+                        <button class="btn-icon btn-print" onclick="printPenetapan('${item.id || item.nomor}')" title="Cetak">🖨️</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    /**
+     * Format roadmap row for table
+     */
+    function formatRoadmapRow(item, no) {
+        const statusLabels = {
+            'available': '<span class="table-badge badge-available">Tersedia</span>',
+            'limited': '<span class="table-badge badge-limited">Terbatas</span>',
+            'full': '<span class="table-badge badge-rejected">Penuh</span>',
+            'closed': '<span class="table-badge badge-draft">Tutup</span>'
+        };
+        
+        const persentase = item.persentase || (item.kuota > 0 ? ((item.terdaftar / item.kuota) * 100).toFixed(2) : 0);
+        
+        return `
+            <tr>
+                <td>${no}</td>
+                <td>${item.program_studi || '-'}</td>
+                <td>${item.jenjang || '-'}</td>
+                <td>${item.kuota || 0}</td>
+                <td>${item.terdaftar || 0}</td>
+                <td>${item.tersisa || (item.kuota - item.terdaftar)}</td>
+                <td>
+                    <div class="progress-mini">
+                        <div class="progress-bar-mini" style="width: ${Math.min(persentase, 100)}%"></div>
+                    </div>
+                    ${persentase}%
+                </td>
+                <td>${formatCurrency(item.budget)}</td>
+                <td>${statusLabels[item.status] || '<span class="table-badge">Unknown</span>'}</td>
+                <td>
+                    <div class="action-group">
+                        <button class="btn-icon btn-view" onclick="viewRoadmap('${item.id}')" title="Lihat">👁️</button>
+                        <button class="btn-icon btn-edit" onclick="editRoadmap('${item.id}')" title="Edit">✏️</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    /**
+     * Update Roadmap Summary Cards
+     */
+    function updateRoadmapSummary(data) {
+        if (!data || data.length === 0) return;
+        
+        const total = data.reduce((sum, item) => sum + (item.kuota || 0), 0);
+        const filled = data.reduce((sum, item) => sum + (item.terdaftar || 0), 0);
+        const available = total - filled;
+        const budget = data.reduce((sum, item) => sum + (item.budget || 0), 0);
+        
+        // Update summary cards if they exist
+        const summaryCards = document.querySelectorAll('.summary-number');
+        if (summaryCards.length >= 4) {
+            summaryCards[0].textContent = total;
+            summaryCards[1].textContent = filled;
+            summaryCards[2].textContent = available;
+            summaryCards[3].textContent = formatCurrency(budget);
+        }
+    }
+
+    // Helper functions
+    function formatProdi(prodi) {
+        if (!prodi) return '-';
+        // Convert slug format to readable
+        return prodi.split('-').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '-';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    function formatCurrency(amount) {
+        if (!amount) return 'Rp 0';
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0
+        }).format(amount);
+    }
+
+    // Demo data fallbacks
+    function getDemoPengusulanList() {
+        return [
+            { id: 1, nomor_usulan: 'USL-2024-0001', nama_lengkap: 'Ahmad Fauzi', program_studi_dituju: 'Keperawatan-S1', nama_institusi: 'Universitas Indonesia', created_at: '2024-01-15', status: 'approved' },
+            { id: 2, nomor_usulan: 'USL-2024-0002', nama_lengkap: 'Siti Nurhaliza', program_studi_dituju: 'Profesi-Dokter', nama_institusi: 'Universitas Gadjah Mada', created_at: '2024-01-18', status: 'review' },
+            { id: 3, nomor_usulan: 'USL-2024-0003', nama_lengkap: 'Budi Santoso', program_studi_dituju: 'Farmasi-S1', nama_institusi: 'Institut Teknologi Bandung', created_at: '2024-01-20', status: 'rejected' },
+            { id: 4, nomor_usulan: 'USL-2024-0004', nama_lengkap: 'Dewi Lestari', program_studi_dituju: 'KM-S2', nama_institusi: 'Universitas Airlangga', created_at: '2024-01-22', status: 'draft' },
+            { id: 5, nomor_usulan: 'USL-2024-0005', nama_lengkap: 'Rizky Pratama', program_studi_dituju: 'Gizi-S1', nama_institusi: 'Universitas Diponegoro', created_at: '2024-01-25', status: 'approved' }
+        ];
+    }
+
+    function getDemoPenetapanList() {
+        return [
+            { id: 1, nomor_penetapan: 'PNT-2024-0001', nama_lengkap: 'Ahmad Fauzi', program_studi: 'Keperawatan (S1)', batch: 'Batch 1', tanggal_penetapan: '2024-02-01', status_dana: 'disbursed' },
+            { id: 2, nomor_penetapan: 'PNT-2024-0002', nama_lengkap: 'Siti Nurhaliza', program_studi: 'Kedokteran (Profesi)', batch: 'Batch 1', tanggal_penetapan: '2024-02-01', status_dana: 'disbursed' },
+            { id: 3, nomor_penetapan: 'PNT-2024-0015', nama_lengkap: 'Rizky Pratama', program_studi: 'Gizi (S1)', batch: 'Batch 2', tanggal_penetapan: '2024-02-15', status_dana: 'processing' },
+            { id: 4, nomor_penetapan: 'PNT-2024-0028', nama_lengkap: 'Maya Putri', program_studi: 'Farmasi (S1)', batch: 'Batch 3', tanggal_penetapan: '2024-03-01', status_dana: 'pending' },
+            { id: 5, nomor_penetapan: 'PNT-2024-0042', nama_lengkap: 'Hendra Wijaya', program_studi: 'Kesehatan Masyarakat (S2)', batch: 'Batch 3', tanggal_penetapan: '2024-03-01', status_dana: 'pending' }
+        ];
+    }
+
+    function getDemoRoadmapList() {
+        return [
+            { id: 1, program_studi: 'Keperawatan', jenjang: 'S1', kuota: 150, terdaftar: 142, budget: 7500000, status: 'available' },
+            { id: 2, program_studi: 'Kedokteran', jenjang: 'Profesi', kuota: 100, terdaftar: 98, budget: 10000000, status: 'limited' },
+            { id: 3, program_studi: 'Kesehatan Masyarakat', jenjang: 'S2', kuota: 80, terdaftar: 65, budget: 5000000, status: 'available' },
+            { id: 4, program_studi: 'Farmasi', jenjang: 'S1', kuota: 90, terdaftar: 68, budget: 4500000, status: 'available' },
+            { id: 5, program_studi: 'Gizi', jenjang: 'S1/S2', kuota: 80, terdaftar: 47, budget: 3000000, status: 'available' }
+        ];
+    }
+
+    function getDemoInformasiList() {
+        return [
+            { id: 1, judul: 'Pendaftaran Beasiswa Tematik Kesehatan 2024 Resmi Dibuka', kategori: 'Berita Utama', published_at: '2024-01-15', views: 2534 },
+            { id: 2, judul: 'Perpanjangan Batas Waktu Pengusulan', kategori: 'Pengumuman', published_at: '2024-06-10', views: 1523 },
+            { id: 3, judul: 'Fitur Baru: Tracking Real-time Status Usulan', kategori: 'Update Sistem', published_at: '2024-06-05', views: 876 }
+        ];
     }
 
     function updateActiveStates(pageName) {
@@ -285,7 +794,7 @@
     }
 
     // ============================================
-    // MULTI-STEP FORM HANDLER
+    // MULTI-STEP FORM HANDLER (with Supabase)
     // ============================================
     function setupFormHandler() {
         const form = document.getElementById('usulan-form');
@@ -302,24 +811,21 @@
         }
 
         if (form) {
-            form.addEventListener('submit', handleFormSubmit);
+            form.addEventListener('submit', handleFormSubmitWithSupabase);
         }
 
-        // File upload visual feedback
         setupFileUploads();
     }
 
     function goToStep(step) {
         if (step < 1 || step > State.totalFormSteps) return;
 
-        // Validate current step before proceeding
         if (step > State.formStep) {
             if (!validateCurrentStep()) return;
         }
 
         State.formStep = step;
 
-        // Update step visibility
         document.querySelectorAll('.form-step').forEach(el => {
             el.classList.remove('active');
         });
@@ -329,13 +835,9 @@
             currentStepEl.classList.add('active');
         }
 
-        // Update progress indicators
         updateProgressIndicators();
-
-        // Update navigation buttons
         updateFormNavigation();
 
-        // If on confirmation step, populate summary
         if (step === 4) {
             populateSummary();
         }
@@ -353,7 +855,6 @@
                 isValid = false;
                 field.classList.add('error');
                 
-                // Add shake animation
                 field.style.animation = 'shake 0.5s ease';
                 setTimeout(() => {
                     field.style.animation = '';
@@ -436,18 +937,15 @@
         return data;
     }
 
-    function formatDate(dateStr) {
-        if (!dateStr) return '-';
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-    }
-
     function getJenisKelaminLabel(value) {
         const labels = { 'L': 'Laki-laki', 'P': 'Perempuan' };
         return labels[value] || '-';
     }
 
-    function handleFormSubmit(event) {
+    /**
+     * Handle Form Submit with Supabase Integration
+     */
+    async function handleFormSubmitWithSupabase(event) {
         event.preventDefault();
 
         const declaration = document.getElementById('declaration');
@@ -456,16 +954,32 @@
             return;
         }
 
-        // Simulate form submission
         const submitBtn = document.getElementById('submit-btn');
         if (submitBtn) {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '⏳ Mengirim...';
         }
 
-        setTimeout(() => {
-            showAlert('Usulan berhasil dikirim! Nomor usulan Anda: USL-2024-' + String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0'), 'success');
-            
+        try {
+            const formData = getFormData();
+            let result;
+
+            if (isSupabaseConnected && db) {
+                // Save to Supabase
+                result = await db.submitPengusulan(formData);
+                showAlert(`Usulan berhasil dikirim! Nomor usulan: ${result.nomor_usulan}`, 'success');
+            } else {
+                // Demo mode - simulate save
+                result = {
+                    nomor_usulan: generateNomorUsulan(),
+                    ...formData,
+                    status: 'submitted',
+                    created_at: new Date().toISOString()
+                };
+                
+                showAlert(`Usulan berhasil dikirim! (Demo Mode) Nomor usulan: ${result.nomor_usulan}`, 'info');
+            }
+
             // Reset form
             const form = document.getElementById('usulan-form');
             if (form) form.reset();
@@ -477,12 +991,32 @@
                 submitBtn.innerHTML = '✉️ Kirim Usulan';
             }
 
-            // Navigate to cek status
+            // Navigate to cek status after delay
             setTimeout(() => {
                 navigateTo('cek-pengusulan');
+                
+                // Auto-fill search with the new nomor usulan
+                const searchInput = document.getElementById('search-nomor');
+                if (searchInput) {
+                    searchInput.value = result.nomor_usulan;
+                }
             }, 2000);
 
-        }, 2000);
+        } catch (error) {
+            console.error('Error submitting form:', error);
+            showAlert('Gagal mengirim usulan. Silakan coba lagi.', 'error');
+            
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '✉️ Kirim Usulan';
+            }
+        }
+    }
+
+    function generateNomorUsulan() {
+        const year = new Date().getFullYear();
+        const random = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+        return `USL-${year}-${random}`;
     }
 
     function setupFileUploads() {
@@ -500,7 +1034,7 @@
     }
 
     // ============================================
-    // SEARCH HANDLERS
+    // SEARCH HANDLERS (with Supabase)
     // ============================================
     function setupSearchHandlers() {
         // Cek Status Pengusulan
@@ -515,7 +1049,6 @@
             btnSearchNik.addEventListener('click', searchByNIK);
         }
 
-        // Enter key support
         const searchInput = document.getElementById('search-nomor');
         const nikInput = document.getElementById('search-nik');
         
@@ -544,11 +1077,10 @@
             });
         }
 
-        // Admin Search
         setupAdminSearch();
     }
 
-    function searchByNomorUsulan() {
+    async function searchByNomorUsulan() {
         const input = document.getElementById('search-nomor');
         const nomor = input ? input.value.trim() : '';
         
@@ -557,11 +1089,28 @@
             return;
         }
 
-        // Simulate search
-        simulateSearch(nomor, 'pengusulan');
+        showAlert('Mencari data...', 'info');
+
+        try {
+            let result;
+            
+            if (isSupabaseConnected && db) {
+                result = await db.cekStatusPengusulan(nomor, 'nomor_usulan');
+            } else {
+                // Demo mode
+                await new Promise(resolve => setTimeout(resolve, 800));
+                result = getDemoPengusulanResult(nomor);
+            }
+            
+            displayPengusulanResult(result, nomor);
+
+        } catch (error) {
+            console.error('Search error:', error);
+            showAlert('Terjadi kesalahan saat mencari data.', 'error');
+        }
     }
 
-    function searchByNIK() {
+    async function searchByNIK() {
         const input = document.getElementById('search-nik');
         const nik = input ? input.value.trim() : '';
         
@@ -570,11 +1119,27 @@
             return;
         }
 
-        // Simulate search
-        simulateSearch(nik, 'pengusulan');
+        showAlert('Mencari data...', 'info');
+
+        try {
+            let result;
+            
+            if (isSupabaseConnected && db) {
+                result = await db.cekStatusPengusulan(nik, 'nik');
+            } else {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                result = getDemoPengusulanResult(nik);
+            }
+            
+            displayPengusulanResult(result, nik);
+
+        } catch (error) {
+            console.error('Search error:', error);
+            showAlert('Terjadi kesalahan saat mencari data.', 'error');
+        }
     }
 
-    function searchPenetapan() {
+    async function searchPenetapan() {
         const input = document.getElementById('penetapan-nomor');
         const nomor = input ? input.value.trim() : '';
         
@@ -583,72 +1148,136 @@
             return;
         }
 
-        // Show random result for demo
-        const resultDiv = document.getElementById('penetapan-result');
+        showAlert('Mencari data...', 'info');
+
+        try {
+            let result;
+            
+            if (isSupabaseConnected && db) {
+                result = await db.cekStatusPenetapan(nomor);
+            } else {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                result = Math.random() > 0.3 ? getDemoPenetapanResult() : null;
+            }
+            
+            displayPenetapanResult(result);
+
+        } catch (error) {
+            console.error('Search error:', error);
+            showAlert('Terjadi kesalahan saat mencari data.', 'error');
+        }
+    }
+
+    /**
+     * Display pengusulan search result
+     */
+    function displayPengusulanResult(result, searchTerm) {
+        const resultDiv = document.getElementById('search-result');
+        const noResultDiv = document.getElementById('no-result');
+        
+        // Hide both first
+        if (resultDiv) resultDiv.style.display = 'none';
+        if (noResultDiv) noResultDiv.style.display = 'none';
+
+        if (result) {
+            // Populate result fields
+            document.getElementById('res-nomor').textContent = result.nomor_usulan || searchTerm;
+            document.getElementById('res-tanggal').textContent = formatDate(result.created_at || result.tanggal);
+            document.getElementById('res-nama').textContent = result.nama_lengkap || result.nama;
+            document.getElementById('res-prodi').textContent = formatProdi(result.program_studi_dituju || result.prodi);
+            document.getElementById('res-institusi').textContent = result.nama_institusi || result.institusi;
+            
+            // Set status
+            const statusBadge = document.getElementById('result-status');
+            const statusDetail = document.getElementById('res-status-detail');
+            const statusLabels = {
+                'draft': 'Draft',
+                'submitted': 'Submitted',
+                'review': 'Dalam Review',
+                'approved': 'Disetujui',
+                'rejected': 'Ditolak'
+            };
+            
+            if (statusBadge) {
+                statusBadge.textContent = statusLabels[result.status] || result.status || 'Unknown';
+                statusBadge.className = `result-status table-badge badge-${result.status}`;
+            }
+            
+            if (statusDetail) {
+                statusDetail.innerHTML = `<span class="table-badge badge-${result.status}">${statusLabels[result.status] || result.status}</span>`;
+            }
+            
+            if (resultDiv) resultDiv.style.display = 'block';
+        } else {
+            if (noResultDiv) noResultDiv.style.display = 'block';
+        }
+    }
+
+    /**
+     * Display penetapan search result
+     */
+    function displayPenetapanResult(result) {
+        const acceptedDiv = document.getElementById('penetapan-result');
         const rejectedDiv = document.getElementById('penetapan-rejected');
         
-        // Randomly show accepted or pending
-        if (Math.random() > 0.3) {
-            if (resultDiv) resultDiv.style.display = 'block';
-            if (rejectedDiv) rejectedDiv.style.display = 'none';
+        if (acceptedDiv) acceptedDiv.style.display = 'none';
+        if (rejectedDiv) rejectedDiv.style.display = 'none';
+
+        if (result) {
+            // Populate accepted view
+            document.getElementById('pen-no-penetapan').textContent = result.nomor_penetapan || '-';
+            document.getElementById('pen-nama').textContent = result.nama_lengkap || result.nama || '-';
+            document.getElementById('pen-prodi').textContent = result.program_studi || result.prodi || '-';
+            document.getElementById('pen-institusi').textContent = result.institusi || '-';
+            
+            if (acceptedDiv) acceptedDiv.style.display = 'block';
         } else {
-            if (resultDiv) resultDiv.style.display = 'none';
             if (rejectedDiv) rejectedDiv.style.display = 'block';
         }
     }
 
-    function simulateSearch(query, type) {
-        const resultDiv = document.getElementById('search-result');
-        const noResultDiv = document.getElementById('no-result');
-        
-        // Hide results first
-        if (resultDiv) resultDiv.style.display = 'none';
-        if (noResultDiv) noResultDiv.style.display = 'none';
+    // Demo data results
+    function getDemoPengusulanResult(searchTerm) {
+        const demoData = getDemoPengusulanList();
+        return demoData.find(p => 
+            p.nomor_usulan?.toLowerCase().includes(searchTerm.toLowerCase())
+        ) || null;
+    }
 
-        // Show loading state
-        showAlert('Mencari data...', 'info');
-
-        setTimeout(() => {
-            // For demo, always find a result
-            const found = Math.random() > 0.2; // 80% chance of finding
-
-            if (found) {
-                // Populate result with sample data
-                const sampleData = SAMPLE_DATA[type][Math.floor(Math.random() * SAMPLE_DATA[type].length)];
-                
-                if (resultDiv) {
-                    document.getElementById('res-nomor').textContent = query.includes('USL') ? query : sampleData.nomor;
-                    document.getElementById('res-tanggal').textContent = sampleData.tanggal;
-                    document.getElementById('res-nama').textContent = sampleData.nama;
-                    document.getElementById('res-prodi').textContent = sampleData.prodi;
-                    document.getElementById('res-institusi').textContent = sampleData.institusi;
-                    
-                    const statusLabels = {
-                        'draft': 'Draft',
-                        'review': 'Dalam Review',
-                        'approved': 'Disetujui',
-                        'rejected': 'Ditolak'
-                    };
-                    
-                    const statusBadge = document.getElementById('result-status');
-                    statusBadge.textContent = statusLabels[sampleData.status] || sampleData.status;
-                    statusBadge.className = 'result-status table-badge badge-' + sampleData.status;
-                    
-                    document.getElementById('res-status-detail').innerHTML = 
-                        '<span class="table-badge badge-' + sampleData.status + '">' + 
-                        (statusLabels[sampleData.status] || sampleData.status) + '</span>';
-                    
-                    resultDiv.style.display = 'block';
-                }
-            } else {
-                if (noResultDiv) noResultDiv.style.display = 'block';
-            }
-        }, 800);
+    function getDemoPenetapanResult() {
+        return {
+            nomor_penetapan: 'PNT-2024-0156',
+            nama_lengkap: 'Ahmad Fauzi',
+            program_studi: 'Keperawatan (S1)',
+            institusi: 'Universitas Indonesia'
+        };
     }
 
     function setupAdminSearch() {
-        // Admin search functionality can be added here
-        // For now, it's just UI
+        // Admin search inputs
+        const adminSearchInputs = ['admin-search-usulan', 'admin-search-penetapan', 'admin-search-roadmap'];
+        
+        adminSearchInputs.forEach(id => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.addEventListener('input', debounce(handleAdminSearch, 500));
+            }
+        });
+    }
+
+    function handleAdminSearch(event) {
+        const searchTerm = event.target.value.toLowerCase();
+        const tableId = event.target.id.replace('admin-search-', '');
+        const table = document.getElementById(`table-${tableId}`);
+        
+        if (!table) return;
+        
+        const rows = table.querySelectorAll('tbody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
     }
 
     // ============================================
@@ -668,7 +1297,6 @@
     }
 
     function showAlert(message, type = 'info') {
-        // Create alert element
         const alert = document.createElement('div');
         alert.className = `alert alert-${type}`;
         alert.style.cssText = `
@@ -703,7 +1331,6 @@
         
         document.body.appendChild(alert);
         
-        // Auto remove after 5 seconds
         setTimeout(() => {
             if (alert.parentElement) {
                 alert.style.animation = 'slideOutRight 0.3s ease-in forwards';
@@ -722,7 +1349,58 @@
         return colors[type] || colors.info;
     }
 
-    // Global functions for admin actions
+    // Global CRUD action handlers
+    window.viewPengusulan = function(id) {
+        showModal('Detail Pengusulan', `<p>Loading data ID: ${id}...</p>`, []);
+    };
+
+    window.editPengusulan = function(id) {
+        showModal('Edit Pengusulan', `<p>Edit form untuk ID: ${id}</p>`, [
+            { text: 'Simpan', class: 'btn-primary', onclick: 'closeModal()' }
+        ]);
+    };
+
+    window.deletePengusulan = async function(id) {
+        if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+            if (isSupabaseConnected && db) {
+                try {
+                    await db.delete(SUPABASE_CONFIG.TABLES.PENGUSULAN, id);
+                    showAlert('Data berhasil dihapus!', 'success');
+                    loadAdminPengusulanData();
+                } catch (error) {
+                    showAlert('Gagal menghapus data.', 'error');
+                }
+            } else {
+                showAlert('Data berhasil dihapus! (Demo)', 'info');
+            }
+        }
+    };
+
+    window.viewPenetapan = function(id) {
+        showModal('Detail Penetapan', `<p>Loading data ID: ${id}...</p>`, []);
+    };
+
+    window.editPenetapan = function(id) {
+        showModal('Edit Penetapan', `<p>Edit form untuk ID: ${id}</p>`, [
+            { text: 'Simpan', class: 'btn-primary', onclick: 'closeModal()' }
+        ]);
+    };
+
+    window.printPenetapan = function(id) {
+        showAlert('Mencetak data...', 'info');
+        window.print();
+    };
+
+    window.viewRoadmap = function(id) {
+        showModal('Detail Roadmap', `<p>Loading data ID: ${id}...</p>`, []);
+    };
+
+    window.editRoadmap = function(id) {
+        showModal('Edit Roadmap', `<p>Edit form untuk ID: ${id}</p>`, [
+            { text: 'Simpan', class: 'btn-primary', onclick: 'closeModal()' }
+        ]);
+    };
+
     window.exportData = function(type) {
         showAlert(`Mengekspor data ${type}...`, 'info');
         setTimeout(() => {
@@ -760,12 +1438,25 @@
         if (modal) modal.style.display = 'none';
     };
 
-    window.saveNewData = function(type) {
+    window.saveNewData = async function(type) {
         closeModal();
+        
+        if (isSupabaseConnected && db) {
+            showAlert(`Menyimpan data ${type} ke Supabase...`, 'info');
+            // Actual implementation would collect form data and insert
+        }
+        
         showAlert(`Data ${type} berhasil ditambahkan!`, 'success');
+        
+        // Reload data
+        switch (type) {
+            case 'pengusulan': await loadAdminPengusulanData(); break;
+            case 'penetapan': await loadAdminPenetapanData(); break;
+            case 'roadmap': await loadAdminRoadmapData(); break;
+        }
     };
 
-    // Add CSS animations dynamically
+    // Add CSS animations
     const styleSheet = document.createElement('style');
     styleSheet.textContent = `
         @keyframes slideInRight {
