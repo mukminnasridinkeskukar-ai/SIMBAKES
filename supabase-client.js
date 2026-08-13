@@ -16,11 +16,8 @@
 // KONFIGURASI SUPABASE - ISI DENGAN CREDENTIAL ANDA
 // =====================================================
 const SUPABASE_CONFIG = {
-    // ✅ KONFIGURASI SUDAH LENGKAP!
-    
-    url: 'https://boeknpvifamjmddsdopd.supabase.co',
-    
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZWtucHZsZmFtam1kZHNkb3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NzYwNjIsImV4cCI6MjEwMjA1MjA2Mn0.kHj7xEY7Wa4zSJwH0rjhiB3Qf0IHriyPlWoh4rdlv3U'
+    url: 'https://boeknpvlfamjmddsdopd.supabase.co', // e.g., https://abcdefghijk.supabase.co
+    anonKey: 'sb_publishable_-f1IRVdxF37JngpwsKrBUg_KGsSnfj1' // Dari Settings > API > Project API keys > anon public
 };
 
 // =====================================================
@@ -635,7 +632,7 @@ class SimbakesSupabase {
 // =====================================================
 // GLOBAL INSTANCE
 // =====================================================
-const simbakesDB = new SimbakesSupabase();
+const simbakesDB = new SimbakesSimbakes();
 
 // Auto-initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
