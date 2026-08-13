@@ -16,8 +16,12 @@
 // KONFIGURASI SUPABASE - ISI DENGAN CREDENTIAL ANDA
 // =====================================================
 const SUPABASE_CONFIG = {
-    url: 'YOUR_SUPABASE_URL', // e.g., https://abcdefghijk.supabase.co
-    anonKey: 'YOUR_SUPABASE_ANON_KEY' // Dari Settings > API > Project API keys > anon public
+    // ⚠️ GANTI DUA NILAI DI BAWAH INI!
+    
+    url: 'https://boeknpvifamjmddsdopd.supabase.co',  // ✅ Sudah dari screenshot Anda
+    
+    anonKey: 'PASTE_ANON_KEY_ANDA_DISINI'  // ⚠️ Copy dari Settings > API Keys > Publishable key
+    // Contoh: sb_publishable__f1lRVdxF37JngpwsKrBUg_K6sSn...
 };
 
 // =====================================================
