@@ -7224,16 +7224,12 @@ async function submitForm() {
     }
 }
 
-// Helper to get client IP (limited due to browser restrictions)
+// Helper to get client IP (browser tidak bisa akses IP langsung)
+// Mengembalikan '-' karena browser memblokir akses IP untuk privacy
 async function getClientIP() {
-    try {
-        // Using a public IP API (optional, may be blocked by CORS)
-        const resp = await fetch('https://api.ipify.org?format=json');
-        const data = await resp.json();
-        return data.ip || '-';
-    } catch (error) {
-        return '-';
-    }
+    // Browser tidak bisa mengakses IP user secara langsung
+    // API eksternal akan diblokir oleh CORS
+    return '-';
 }
 
 function saveToLocal(data) {
@@ -8233,13 +8229,9 @@ window.handleImageError = function(img, originalUrl) {
     }
 };
 
-// ===== API FETCH HELPER (Supabase) =====
-// Menggunakan Supabase client langsung
-async function fetchAPI(url, options = {}) {
-    // Fungsi ini deprecated - gunakan fungsi Supabase langsung
-    console.warn('[SIMBAKES] fetchAPI() is deprecated, use Supabase functions');
-    return { status: 'error', message: 'Use Supabase functions instead' };
-}
+// ===== API FETCH HELPER (Supabase) - DEPRECATED =====
+// This function is deprecated. Use Supabase client functions directly.
+// Kept for backward compatibility only.
 
 // ===== DASHBOARD v3.0 FUNCTIONS =====
 
@@ -8249,8 +8241,8 @@ async function fetchAPI(url, options = {}) {
 async function renderDashboard() {
     console.log('🔄 Loading Dashboard v3.0...');
     
-    // Track visitor saat dashboard dibuka
-    await trackVisitor({});
+    // Track visitor saat dashboard dibuka (non-critical)
+    trackVisitorSimple().catch(() => {});  // Fire and forget - tidak menunggu
     
     // Fetch semua data secara paralel
     await Promise.all([
@@ -8582,43 +8574,36 @@ function renderStatusDetailPaginated() {
 }
 
 /**
- * Track visitor ke Supabase (opsional)
+ * Track visitor ke Supabase (opsional - non-critical)
+ * Tidak menggunakan API eksternal untuk menghindari CORS/rate limit
  */
-async function trackVisitor({}) {
+async function trackVisitorSimple() {
     try {
-        // Deteksi negara (sederhana - bisa menggunakan API ip-api.com atau similar)
-        let country = 'Detecting...';
-        let ip = '-';
+        // Data dasar yang bisa dikumpulkan tanpa API eksternal
+        const visitorData = {
+            user_agent: navigator.userAgent.substring(0, 200),
+            page: window.location.pathname,
+            referrer: document.referrer || 'direct',
+            language: navigator.language,
+            screen_resolution: `${screen.width}x${screen.height}`,
+            visited_at: new Date().toISOString()
+        };
         
-        try {
-            // Coba ambil info IP (optional, tidak wajib berhasil)
-            const ipResponse = await fetch('https://ipapi.co/json/');
-            if (ipResponse.ok) {
-                const ipData = await ipResponse.json();
-                country = ipData.country_name || 'Unknown';
-                ip = ipData.ip || '-';
+        // Simpan ke Supabase (jika tabel visitors ada dan RLS mengizinkan)
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            const { error } = await supabaseClient
+                .from('visitors')
+                .insert([visitorData]);
+            
+            if (error) {
+                console.warn('[SIMBAKES] Visitor tracking skipped (table may not exist):', error.message);
+            } else {
+                console.log('[SIMBAKES] 🌐 Visitor tracked');
             }
-        } catch (e) {
-            country = 'Unknown';
-            // Lanjutkan meskipun deteksi IP gagal
         }
-        
-        // Kirim data ke Google Sheets
-        const params = new URLSearchParams({
-            action: 'trackVisitor',
-            ip: ip,
-            country: country,
-            userAgent: navigator.userAgent.substring(0, 200),
-            page: 'dashboard'
-        });
-        
-        // Gunakan fetchWithTimeout untuk visitor tracking (non-critical)
-        await trackVisitor(Object.fromEntries(params));
-        
-        console.log('🌐 Visitor tracked:', { ip, country });
     } catch (error) {
-        console.warn('⚠️ Visitor tracking failed (non-critical):', error);
-        // Jangan gagal total jika tracking gagal
+        // Silent fail - visitor tracking tidak kritis
+        console.log('[SIMBAKES] Visitor tracking skipped:', error.message);
     }
 }
 
@@ -9203,10 +9188,10 @@ function loadDataRoadmap() {
 }
 
 /**
- * Fetch Roadmap data from API with pagination, search, filter
+ * Load and Render Roadmap Admin Table with pagination, search, filter
  * Menggunakan Supabase client dan error handling yang lebih baik
  */
-async function fetchRoadmapData() {
+async function loadRoadmapAdminTable() {
     const tbody = document.getElementById('roadmap-table-body');
     
     // Show loading state
@@ -9224,47 +9209,41 @@ async function fetchRoadmapData() {
         const search = document.getElementById('roadmap-search-input').value.trim();
         const statusFilter = document.getElementById('roadmap-status-filter').value;
         
-        // Using fetchRoadmapData() instead
+        // Fetch data using the main fetchRoadmapData function
+        const data = await fetchRoadmapData();
         
-        // Using Supabase client
-        const result = await fetchRoadmapData();
+        // Store all data for filtering
+        roadmapAdminData = data || [];
         
-        if (result.status === 'success') {
-            roadmapAdminData = result.data || [];
-            
-            // Apply client-side filtering
-            let filteredData = roadmapAdminData;
-            
-            if (search) {
-                const searchLower = search.toLowerCase();
-                filteredData = filteredData.filter(row => 
-                    String(row[0] || '').toLowerCase().includes(searchLower) ||
-                    String(row[1] || '').toLowerCase().includes(searchLower) ||
-                    String(row[4] || '').toLowerCase().includes(searchLower) ||
-                    String(row[7] || '').toLowerCase().includes(searchLower)
-                );
-            }
-            
-            if (statusFilter) {
-                filteredData = filteredData.filter(row => 
-                    String(row[8] || '').toLowerCase() === statusFilter.toLowerCase()
-                );
-            }
-            
-            // Calculate pagination
-            roadmapTotalRecords = filteredData.length;
-            roadmapTotalPages = Math.ceil(roadmapTotalRecords / roadmapPageSize);
-            const startIndex = (roadmapCurrentPage - 1) * roadmapPageSize;
-            const endIndex = Math.min(startIndex + roadmapPageSize, roadmapTotalRecords);
-            const paginatedData = filteredData.slice(startIndex, endIndex);
-            
-            renderRoadmapTable(paginatedData, startIndex);
-            updateRoadmapPagination();
-            updateRoadmapStats();
-            
-        } else {
-            throw new Error(result.message || 'Gagal memuat data');
+        // Apply client-side filtering
+        let filteredData = roadmapAdminData;
+        
+        if (search) {
+            const searchLower = search.toLowerCase();
+            filteredData = filteredData.filter(row => 
+                String(row.tahun || row[0] || '').toLowerCase().includes(searchLower) ||
+                String(row.program || row[1] || '').toLowerCase().includes(searchLower) ||
+                String(row.target || row[4] || '').toLowerCase().includes(searchLower) ||
+                String(row.status || row[7] || '').toLowerCase().includes(searchLower)
+            );
         }
+        
+        if (statusFilter) {
+            filteredData = filteredData.filter(row => 
+                String(row.status || row[8] || '').toLowerCase() === statusFilter.toLowerCase()
+            );
+        }
+        
+        // Calculate pagination
+        roadmapTotalRecords = filteredData.length;
+        roadmapTotalPages = Math.ceil(roadmapTotalRecords / roadmapPageSize);
+        const startIndex = (roadmapCurrentPage - 1) * roadmapPageSize;
+        const endIndex = Math.min(startIndex + roadmapPageSize, roadmapTotalRecords);
+        const paginatedData = filteredData.slice(startIndex, endIndex);
+        
+        renderRoadmapTable(paginatedData, startIndex);
+        updateRoadmapPagination();
+        updateRoadmapStats();
         
     } catch (error) {
         console.error('Error fetching roadmap data:', error);
@@ -9787,54 +9766,51 @@ async function submitRoadmapForm(event) {
         status: document.getElementById('rm-status').value
     };
     
+    // Validation complete, proceed with submit
+    const isEdit = roadmapEditingId !== null;
+    const action = isEdit ? 'editRoadmap' : 'addRoadmap';
+    
+    // Add rowIndex for edit
+    if (isEdit) {
+        formData.rowIndex = roadmapEditingId;
+    }
+    
+    console.log('📤 Submitting roadmap:', action, formData);
+    
+    // Disable button dan show loading
+    const btn = document.querySelector('#roadmap-form-modal .btn-primary');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = isEdit ? '⏳ Menyimpan Perubahan...' : '⏳ Menambahkan Data...';
+    }
+    
+    // Save to Supabase
     try {
-        const isEdit = roadmapEditingId !== null;
-        const action = isEdit ? 'editRoadmap' : 'addRoadmap';
-        
-        // Add rowIndex for edit
-        if (isEdit) {
-            formData.rowIndex = roadmapEditingId;
+        if (action === 'add') {
+            const { data, error } = await supabaseClient
+                .from('roadmap')
+                .insert([formData])
+                .select();
+            if (error) throw error;
+        } else {
+            const { data, error } = await supabaseClient
+                .from('roadmap')
+                .update(formData)
+                .eq('id', formData.id)
+                .select();
+            if (error) throw error;
         }
         
-        console.log('📤 Submitting roadmap:', action, formData);
+        showToast(`✅ ${isEdit ? 'Data berhasil diperbarui' : 'Data berhasil ditambahkan'}`, 'success');
+        closeModal('roadmap-form-modal');
+        fetchRoadmapData(); // Refresh table
         
-        // Disable button dan show loading
-        const btn = document.querySelector('#roadmap-form-modal .btn-primary');
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = isEdit ? '⏳ Menyimpan Perubahan...' : '⏳ Menambahkan Data...';
+        // Also refresh the public roadmap page if exists
+        if (typeof loadRoadmapData === 'function') {
+            loadRoadmapData();
         }
-        
-        // Save to Supabase
-        let result;
-        try {
-            if (action === 'add') {
-                const { data, error } = await supabaseClient
-                    .from('roadmap')
-                    .insert([formData])
-                    .select();
-                if (error) throw error;
-                result = { status: 'success', data };
-            } else {
-                const { data, error } = await supabaseClient
-                    .from('roadmap')
-                    .update(formData)
-                    .eq('id', formData.id)
-                    .select();
-                if (error) throw error;
-                result = { status: 'success', data };
-            }
             
-            showToast(`✅ ${isEdit ? 'Data berhasil diperbarui' : 'Data berhasil ditambahkan'}`, 'success');
-            closeModal('roadmap-form-modal');
-            fetchRoadmapData(); // Refresh table
-            
-            // Also refresh the public roadmap page if exists
-            if (typeof loadRoadmapData === 'function') {
-                loadRoadmapData();
-            }
-                
-        } catch (error) {
+    } catch (error) {
         console.error('Error submitting roadmap:', error);
         showToast(`❌ Gagal menyimpan: ${error.message}`, 'error', 5000);
         
