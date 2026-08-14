@@ -7740,6 +7740,53 @@ async function getAllSubmissions(limit = 10000, offset = 0) {
 }
 
 /**
+ * Map formData keys (camelCase) to database columns (snake_case)
+ */
+function mapFormDataToDB(formData) {
+    return {
+        // Informasi Registrasi
+        no_register: formData.noRegister,
+        tanggal_pengajuan: formData.tanggalPengajuan,
+        
+        // Data Pribadi
+        nik: formData.nik,
+        nama_lengkap: formData.namaLengkap,
+        tempat_lahir: formData.tempatLahir,
+        tanggal_lahir: formData.tanggalLahir || null,
+        
+        // Alamat
+        alamat_ktp: formData.alamatKTP,
+        alamat_domisili: formData.alamatDomisili,
+        lama_domisili: formData.lamaDomisili,
+        
+        // Pekerjaan
+        pekerjaan: formData.pekerjaan,
+        posisi: formData.posisi,
+        
+        // Unit & Jurusan
+        unit_kerja: formData.unitKerja,
+        penjelasan: formData.penjelasan,
+        jurusan_tujuan: formData.jurusanTujuan,
+        jenjang_pendidikan: formData.jenjangPendidikan,
+        unit_tujuan: formData.unitTujuan,
+        rencana_tahun: formData.rencanaTahun,
+        
+        // Kontak
+        no_hp: formData.noHP,
+        no_wa: formData.noWA,
+        email: formData.email,
+        
+        // File Upload (Base64)
+        foto: formData.foto || null,
+        dokumen_pdf: formData.dokumenPDF || null,
+        nama_file: formData.namaFile || null,
+        
+        // Status
+        status: formData.status || 'Proses Verifikasi'
+    };
+}
+
+/**
  * Submit New Data to Supabase
  */
 async function submitToSupabase(formData) {
@@ -7748,10 +7795,15 @@ async function submitToSupabase(formData) {
     }
     
     try {
+        // Map camelCase form data to snake_case DB columns
+        const dbData = mapFormDataToDB(formData);
+        
+        console.log('[SIMBAKES] 📤 Mapped data for Supabase:', dbData);
+        
         const { data, error } = await supabaseClient
             .from('submissions')
             .insert([{
-                ...formData,
+                ...dbData,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             }])
@@ -7832,7 +7884,7 @@ async function fetchRoadmapData() {
         const { data, error } = await supabaseClient
             .from('roadmap')
             .select('*')
-            .order('tahun', { ascending: true });
+            .order('tahun_studi', { ascending: true });
             
         if (error) throw error;
         
@@ -8527,29 +8579,29 @@ async function fetchDashboardStats() {
         
         // Hitung total pendaftar
         const { count: total } = await supabaseClient
-            .from('pengajuan')
+            .from('submissions')
             .select('*', { count: 'exact', head: true });
         
         // Hitung berdasarkan status
         const { count: disetujui } = await supabaseClient
-            .from('pengajuan')
+            .from('submissions')
             .select('*', { count: 'exact', head: true })
-            .eq('status', 'Disetujui');
+            .eq('status', 'Diterima');
         
         const { count: ditolak } = await supabaseClient
-            .from('pengajuan')
+            .from('submissions')
             .select('*', { count: 'exact', head: true })
             .eq('status', 'Ditolak');
         
         const { count: perbaikan } = await supabaseClient
-            .from('pengajuan')
+            .from('submissions')
             .select('*', { count: 'exact', head: true })
-            .eq('status', 'Perbaikan');
+            .eq('status', 'Revisi');
         
         const { count: batal } = await supabaseClient
-            .from('pengajuan')
+            .from('submissions')
             .select('*', { count: 'exact', head: true })
-            .eq('status', 'Batal');
+            .eq('status', 'Dibatalkan');
         
         // Update card values dengan animasi
         animateValue('stat-total', total || 0);
@@ -9058,9 +9110,9 @@ async function loadRoadmapData() {
         const unitSelect = document.getElementById('roadmap-filter-unit');
         const statusSelect = document.getElementById('roadmap-filter-status');
         
-        // Build query - start with base query to roadmap_kebutuhan table
+        // Build query - start with base query to roadmap table
         let query = supabaseClient
-            .from('roadmap_kebutuhan')
+            .from('roadmap')
             .select('*', { count: 'exact' });
         
         // Apply filters if values exist (Supabase filters)
@@ -9081,7 +9133,7 @@ async function loadRoadmapData() {
         }
         
         // Order by tahun dan jurusan
-        query = query.order('tahun_mulai_studi', { ascending: true })
+        query = query.order('tahun_studi', { ascending: true })
                    .order('jurusan', { ascending: true });
         
         // Execute query
@@ -9996,6 +10048,7 @@ async function submitRoadmapForm(event) {
         return;
     }
     
+    // Collect form data with camelCase keys
     const formData = {
         kode: kode,
         jurusan: jurusan,
@@ -10008,16 +10061,29 @@ async function submitRoadmapForm(event) {
         status: document.getElementById('rm-status').value
     };
     
+    // Map to snake_case for database
+    const dbData = {
+        kode: formData.kode,
+        jurusan: formData.jurusan,
+        kualifikasi_awal: formData.kualifikasi,
+        jenis_pendidikan: formData.jenisPendidikan,
+        perguruan_tinggi: formData.perguruanTinggi,
+        pekerjaan: formData.pekerjaan,
+        tahun_studi: parseInt(formData.tahunStudi) || null,
+        unit_pendayaguna: formData.unitPendayaguna,
+        status: formData.status
+    };
+    
     // Validation complete, proceed with submit
     const isEdit = roadmapEditingId !== null;
     const action = isEdit ? 'editRoadmap' : 'addRoadmap';
     
-    // Add rowIndex for edit
-    if (isEdit) {
-        formData.rowIndex = roadmapEditingId;
+    // Add id for edit
+    if (isEdit && roadmapEditingId) {
+        dbData.id = roadmapEditingId;
     }
     
-    console.log('📤 Submitting roadmap:', action, formData);
+    console.log('📤 Submitting roadmap:', action, dbData);
     
     // Disable button dan show loading
     const btn = document.querySelector('#roadmap-form-modal .btn-primary');
@@ -10031,14 +10097,14 @@ async function submitRoadmapForm(event) {
         if (action === 'add') {
             const { data, error } = await supabaseClient
                 .from('roadmap')
-                .insert([formData])
+                .insert([dbData])
                 .select();
             if (error) throw error;
         } else {
             const { data, error } = await supabaseClient
                 .from('roadmap')
-                .update(formData)
-                .eq('id', formData.id)
+                .update(dbData)
+                .eq('id', dbData.id)
                 .select();
             if (error) throw error;
         }
