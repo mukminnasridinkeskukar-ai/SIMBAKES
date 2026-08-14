@@ -4117,15 +4117,19 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Waktu</th>
-                                <th>Negara</th>
+                                <th>No</th>
+                                <th>Waktu Kunjungan</th>
                                 <th>Halaman</th>
-                                <th>IP</th>
+                                <th>Browser</th>
+                                <th>Sumber</th>
                             </tr>
                         </thead>
                         <tbody id="recent-visitors-body">
                             <tr>
-                                <td colspan="4" class="loading-cell">Memuat data pengunjung...</td>
+                                <td colspan="5" class="loading-cell">
+                                    <div class="spinner"></div>
+                                    Memuat data pengunjung...
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -7792,7 +7796,8 @@ async function fetchDashboardStats() {
 }
 
 /**
- * Fetch Recent Submissions (5 terbaru) dari Supabase
+ * Get Recent Submissions from Supabase
+ * Fetches latest submissions for dashboard display
  */
 async function getRecentSubmissionsFromSupabase() {
     if (!supabaseClient) {
@@ -7805,10 +7810,11 @@ async function getRecentSubmissionsFromSupabase() {
             .from('submissions')
             .select('*')
             .order('created_at', { ascending: false })
-            .limit(5);
+            .limit(50); // Get more data for pagination
             
         if (error) throw error;
-        console.log(`[SIMBAKES] Recent submissions: ${data?.length || 0}`);
+        
+        console.log(`[SIMBAKES] Recent submissions loaded: ${data?.length || 0} records`);
         return data || [];
     } catch (error) {
         console.error('[SIMBAKES] Error fetching recent submissions:', error);
@@ -7818,10 +7824,23 @@ async function getRecentSubmissionsFromSupabase() {
 
 /**
  * Fetch Submissions by Status dengan Pagination
+ * Returns consistent format for dashboard consumption
  */
 async function fetchDataByStatus(statusFilter, page = 1, perPage = 10) {
+    // Default response
+    const defaultResponse = {
+        status: 'success',
+        data: [],
+        total: 0,
+        count: 0,
+        page: page,
+        perPage: perPage,
+        totalPages: 0
+    };
+    
     if (!supabaseClient) {
-        return { data: [], total: 0 };
+        console.warn('[SIMBAKES] Supabase client not available');
+        return defaultResponse;
     }
     
     try {
@@ -7830,7 +7849,8 @@ async function fetchDataByStatus(statusFilter, page = 1, perPage = 10) {
             .select('*', { count: 'exact' })
             .order('created_at', { ascending: false });
             
-        if (statusFilter && statusFilter !== 'all') {
+        // Apply status filter only if provided and not null (null = all data)
+        if (statusFilter && statusFilter !== 'all' && statusFilter !== null) {
             query = query.eq('status', statusFilter);
         }
         
@@ -7842,15 +7862,21 @@ async function fetchDataByStatus(statusFilter, page = 1, perPage = 10) {
         if (error) throw error;
         
         return {
+            status: 'success',
             data: data || [],
             total: count || 0,
+            count: count || 0,
             page: page,
             perPage: perPage,
             totalPages: Math.ceil((count || 0) / perPage)
         };
     } catch (error) {
         console.error('[SIMBAKES] Error fetching data by status:', error);
-        return { data: [], total: 0 };
+        return {
+            ...defaultResponse,
+            status: 'error',
+            message: error.message || 'Failed to fetch data'
+        };
     }
 }
 
@@ -8976,6 +9002,7 @@ async function fetchRecentSubmissions() {
 
 /**
  * Render Recent Submissions with Pagination
+ * Maps Supabase snake_case fields to table display
  */
 function renderRecentSubmissions() {
     const tbody = document.getElementById('recent-submissions-body');
@@ -8990,16 +9017,27 @@ function renderRecentSubmissions() {
     
     tbody.innerHTML = paginatedResult.data.map((item, index) => {
         const rowNum = (paginatedResult.pageInfo.currentPage - 1) * 10 + index + 1;
+        
+        // Map Supabase snake_case fields to display
+        // Supabase returns: nama_lengkap, jurusan_tujuan, jenjang_pendidikan, unit_tujuan, link_foto
+        const namaLengkap = item.nama_lengkap || item.namaLengkap || '-';
+        const jurusanTujuan = item.jurusan_tujuan || item.jurusanTujuan || '-';
+        const jenjangPendidikan = item.jenjang_pendidikan || item.jenjangPendidikan || '-';
+        const unitTujuan = item.unit_tujuan || item.unitTujuan || '-';
+        const linkFoto = item.link_foto || item.linkFoto || item.foto || '';
+        const status = item.status || 'Pending';
+        
         // Use generatePhotoCell for consistent image handling with fallback
-        const photoHtml = generatePhotoCell(item.linkFoto, item.namaLengkap || '', 'small');
+        const photoHtml = generatePhotoCell(linkFoto, namaLengkap, 'small');
+        
         return `
-            <tr>
+            <tr data-row-number="${rowNum}" data-id="${item.id || ''}">
                 <td>${photoHtml}</td>
-                <td><strong>${item.namaLengkap || '-'}</strong></td>
-                <td>${item.jurusanTujuan || '-'}</td>
-                <td>${item.jenjangPendidikan || '-'}</td>
-                <td>${item.unitTujuan || '-'}</td>
-                <td>${getStatusBadge(item.status)}</td>
+                <td><strong>${namaLengkap}</strong></td>
+                <td>${jurusanTujuan}</td>
+                <td>${jenjangPendidikan}</td>
+                <td>${unitTujuan}</td>
+                <td>${getStatusBadge(status)}</td>
             </tr>
         `;
     }).join('');
@@ -9022,6 +9060,15 @@ async function showStatusDetail(statusFilter) {
     const countEl = document.getElementById('modal-status-count');
     const nameEl = document.getElementById('modal-status-name');
     const tbody = document.getElementById('status-detail-body');
+    
+    // Map UI status filters to actual Supabase status values
+    const statusMapping = {
+        'total': null, // null means no filter (all)
+        'disetujui': 'Diterima',
+        'ditolak': 'Ditolak',
+        'perbaikan': 'Revisi',
+        'batal': 'Dibatalkan'
+    };
     
     // Set title dan status name berdasarkan filter
     const statusConfig = {
@@ -9051,11 +9098,14 @@ async function showStatusDetail(statusFilter) {
     PaginationManager.reset('status-detail');
     
     try {
-        // Using Supabase client
-        const result = await fetchDataByStatus(statusFilter);
+        // Map UI filter to Supabase status value
+        const supabaseStatus = statusMapping[statusFilter];
+        
+        // Using Supabase client with correct status value
+        const result = await fetchDataByStatus(supabaseStatus);
         
         if (result.status === 'success') {
-            countEl.textContent = result.count;
+            countEl.textContent = result.total || result.count || 0;
             
             // Cache data for pagination
             cachedStatusDetail = result.data || [];
@@ -9082,6 +9132,7 @@ async function showStatusDetail(statusFilter) {
 
 /**
  * Render Status Detail with Pagination
+ * Maps Supabase snake_case fields to table display
  */
 function renderStatusDetailPaginated() {
     const tbody = document.getElementById('status-detail-body');
@@ -9104,14 +9155,22 @@ function renderStatusDetailPaginated() {
     
     tbody.innerHTML = paginatedResult.data.map((item, index) => {
         const rowNum = (paginatedResult.pageInfo.currentPage - 1) * 10 + index + 1;
+        
+        // Map Supabase snake_case fields to display
+        const namaLengkap = item.nama_lengkap || item.namaLengkap || '-';
+        const jurusanTujuan = item.jurusan_tujuan || item.jurusanTujuan || '-';
+        const jenjangPendidikan = item.jenjang_pendidikan || item.jenjangPendidikan || '-';
+        const unitTujuan = item.unit_tujuan || item.unitTujuan || '-';
+        const rencanaTahunStudi = item.rencana_tahun_studi || item.rencanaTahunStudi || item.tahun_studi || '-';
+        
         return `
-            <tr>
+            <tr data-id="${item.id || ''}">
                 <td>${rowNum}</td>
-                <td><strong>${item.namaLengkap || '-'}</strong></td>
-                <td>${item.jurusanTujuan || '-'}</td>
-                <td>${item.jenjangPendidikan || '-'}</td>
-                <td>${item.unitTujuan || '-'}</td>
-                <td>${item.rencanaTahunStudi || '-'}</td>
+                <td><strong>${namaLengkap}</strong></td>
+                <td>${jurusanTujuan}</td>
+                <td>${jenjangPendidikan}</td>
+                <td>${unitTujuan}</td>
+                <td>${rencanaTahunStudi}</td>
             </tr>
         `;
     }).join('');
@@ -9290,6 +9349,11 @@ function renderRecentVisitorsTable(visitors) {
 /**
  * Render Recent Visitors with Pagination
  */
+
+/**
+ * Render Recent Visitors Table with Pagination
+ * Uses data from getVisitorStats() which returns proper Supabase format
+ */
 function renderRecentVisitors() {
     const tbody = document.getElementById('recent-visitors-body');
     const container = document.getElementById('pagination-recent-visitors-container');
@@ -9297,7 +9361,7 @@ function renderRecentVisitors() {
     if (!cachedRecentVisitors || cachedRecentVisitors.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="4" class="loading-cell">Belum ada data pengunjung</td>
+                <td colspan="5" class="loading-cell">📭 Belum ada data pengunjung</td>
             </tr>
         `;
         container.innerHTML = '';
@@ -9307,20 +9371,22 @@ function renderRecentVisitors() {
     // Use PaginationManager
     const paginatedResult = PaginationManager.paginate('recent-visitors', cachedRecentVisitors);
     
-    tbody.innerHTML = paginatedResult.data.map(v => {
-        // Format waktu
-        let timeDisplay = '-';
-        if (v.timestamp) {
-            const date = new Date(v.timestamp);
-            timeDisplay = `${date.toLocaleDateString('id-ID')} ${v.jam || date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
-        }
+    tbody.innerHTML = paginatedResult.data.map((v, index) => {
+        // Data comes from getVisitorStats() in this format:
+        // { no, waktu, halaman, browser, referrer }
+        const no = v.no || (index + 1);
+        const waktu = v.waktu || v.timestamp || v.visited_at || '-';
+        const halaman = v.halaman || v.page || '/';
+        const browser = v.browser || v.user_agent ? extractBrowserName(v.user_agent) : 'Unknown';
+        const referrer = v.referrer || '-';
         
         return `
             <tr>
-                <td>${timeDisplay}</td>
-                <td>${v.negara || '-'}</td>
-                <td>${v.halaman || '-'}</td>
-                <td style="font-family: monospace; font-size: 0.8rem;">${v.ip ? v.ip.substring(0, 12) + '...' : '-'}</td>
+                <td><strong>${no}</strong></td>
+                <td>${waktu}</td>
+                <td>${halaman}</td>
+                <td><span class="status-badge status-verify">${browser}</span></td>
+                <td style="font-size: 0.85rem; color: #64748b;">${referrer}</td>
             </tr>
         `;
     }).join('');
@@ -10564,15 +10630,26 @@ async function deleteRoadmap(index) {
 
 // ===== HELPER FUNCTIONS =====
 function getStatusBadge(status) {
+    // Handle both old and new status values for compatibility
     const config = {
-        'Proses Verifikasi': { class: 'status-verify', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>' },
-        'Disetujui': { class: 'status-approved', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>' },
-        'Ditolak': { class: 'status-rejected', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' },
-        'Perbaikan': { class: 'status-revision', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>' },
-        'Batal': { class: 'status-cancelled', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/><line x1="14.83" y1="9.17" x2="18.36" y2="5.64"/><line x1="5.64" y1="18.36" x2="9.17" y2="14.83"/></svg>' }
+        // New Supabase status values
+        'Diterima': { class: 'status-approved', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>', display: 'Diterima' },
+        'Ditolak': { class: 'status-rejected', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>', display: 'Ditolak' },
+        'Revisi': { class: 'status-revision', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>', display: 'Revisi' },
+        'Dibatalkan': { class: 'status-cancelled', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/><line x1="14.83" y1="9.17" x2="18.36" y2="5.64"/><line x1="5.64" y1="18.36" x2="9.17" y2="14.83"/></svg>', display: 'Dibatalkan' },
+        
+        // Legacy/Alternative status values (for backward compatibility)
+        'Disetujui': { class: 'status-approved', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>', display: 'Disetujui' },
+        'Perbaikan': { class: 'status-revision', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>', display: 'Perbaikan' },
+        'Batal': { class: 'status-cancelled', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/><line x1="14.83" y1="9.17" x2="18.36" y2="5.64"/><line x1="5.64" y1="18.36" x2="9.17" y2="14.83"/></svg>', display: 'Batal' },
+        'Proses Verifikasi': { class: 'status-verify', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>', display: 'Proses Verifikasi' },
+        'Pending': { class: 'status-verify', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>', display: 'Pending' },
+        'Draft': { class: 'status-verify', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>', display: 'Draft' }
     };
-    const c = config[status] || config['Proses Verifikasi'];
-    return `<span class="status-badge ${c.class}">${c.icon}${status}</span>`;
+    
+    const c = config[status] || config['Pending'];
+    const displayStatus = c.display || status || 'Pending';
+    return `<span class="status-badge ${c.class}">${c.icon}${displayStatus}</span>`;
 }
 
 function getPriorityClass(p) {
