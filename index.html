@@ -5767,6 +5767,224 @@
 let roadmapCachedData = null;      // Cache untuk data roadmap kebutuhan
 let roadmapFilterOptions = null;   // Options untuk filter dropdowns
 
+// ===== PAGINATION MANAGER (Defined Early - digunakan oleh banyak fungsi) =====
+/**
+ * Universal Pagination Manager - Reusable for any table
+ */
+const PaginationManager = {
+    // Store pagination state for each table
+    states: {},
+    
+    /**
+     * Initialize pagination state for a table
+     * @param {string} tableId - Unique identifier for the table
+     * @param {number} pageSize - Number of rows per page (default: 10)
+     */
+    init(tableId, pageSize = 10) {
+        if (!this.states[tableId]) {
+            this.states[tableId] = {
+                currentPage: 1,
+                pageSize: pageSize,
+                totalRecords: 0,
+                totalPages: 0,
+                cachedData: []
+            };
+        }
+        return this.states[tableId];
+    },
+    
+    /**
+     * Get state for a table
+     */
+    getState(tableId) {
+        return this.states[tableId] || this.init(tableId);
+    },
+    
+    /**
+     * Set data and calculate pagination
+     * @param {string} tableId - Table identifier
+     * @param {Array} data - Full dataset
+     * @returns {Object} Paginated result {data, pageInfo}
+     */
+    paginate(tableId, data) {
+        const state = this.getState(tableId);
+        state.cachedData = data;
+        state.totalRecords = data.length;
+        state.totalPages = Math.ceil(data.length / state.pageSize);
+        
+        // Ensure current page is valid
+        if (state.currentPage > state.totalPages) {
+            state.currentPage = Math.max(1, state.totalPages);
+        }
+        
+        const startIndex = (state.currentPage - 1) * state.pageSize;
+        const endIndex = Math.min(startIndex + state.pageSize, data.length);
+        const paginatedData = data.slice(startIndex, endIndex);
+        
+        return {
+            data: paginatedData,
+            pageInfo: {
+                currentPage: state.currentPage,
+                totalPages: state.totalPages,
+                totalRecords: state.totalRecords,
+                pageSize: state.pageSize,
+                startRecord: data.length > 0 ? startIndex + 1 : 0,
+                endRecord: endIndex,
+                hasNextPage: state.currentPage < state.totalPages,
+                hasPrevPage: state.currentPage > 1
+            }
+        };
+    },
+    
+    /**
+     * Go to specific page
+     */
+    goToPage(tableId, page) {
+        const state = this.getState(tableId);
+        if (page >= 1 && page <= state.totalPages) {
+            state.currentPage = page;
+            return true;
+        }
+        return false;
+    },
+    
+    /**
+     * Next page
+     */
+    nextPage(tableId) {
+        const state = this.getState(tableId);
+        return this.goToPage(tableId, state.currentPage + 1);
+    },
+    
+    /**
+     * Previous page
+     */
+    prevPage(tableId) {
+        const state = this.getState(tableId);
+        return this.goToPage(tableId, state.currentPage - 1);
+    },
+    
+    /**
+     * First page
+     */
+    firstPage(tableId) {
+        return this.goToPage(tableId, 1);
+    },
+    
+    /**
+     * Last page
+     */
+    lastPage(tableId) {
+        const state = this.getState(tableId);
+        return this.goToPage(tableId, state.totalPages);
+    },
+    
+    /**
+     * Change page size
+     */
+    setPageSize(tableId, newSize) {
+        const state = this.getState(tableId);
+        state.pageSize = parseInt(newSize);
+        state.currentPage = 1;
+    },
+    
+    /**
+     * Reset to first page
+     */
+    reset(tableId) {
+        const state = this.getState(tableId);
+        state.currentPage = 1;
+    },
+    
+    /**
+     * Generate pagination controls HTML
+     * @param {string} tableId - Table identifier
+     * @returns {string} HTML string for pagination controls
+     */
+    renderControls(tableId) {
+        const state = this.getState(tableId);
+        const pageInfo = {
+            currentPage: state.currentPage,
+            totalPages: state.totalPages,
+            totalRecords: state.totalRecords,
+            hasNextPage: state.currentPage < state.totalPages,
+            hasPrevPage: state.currentPage > 1
+        };
+        
+        const startRecord = state.totalRecords > 0 ? (state.currentPage - 1) * state.pageSize + 1 : 0;
+        const endRecord = Math.min(state.currentPage * state.pageSize, state.totalRecords);
+        
+        return `
+            <div class="pagination-container" id="pagination-${tableId}">
+                <div class="pagination-info">
+                    Menampilkan <strong>${startRecord}-${endRecord}</strong> dari <strong>${pageInfo.totalRecords}</strong> data
+                </div>
+                <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                    <div class="page-size-selector">
+                        <label>Tampilkan:</label>
+                        <select onchange="PaginationManager.handlePageSizeChange('${tableId}', this)" id="pagesize-${tableId}">
+                            <option value="10" ${state.pageSize == 10 ? 'selected' : ''}>10</option>
+                            <option value="25" ${state.pageSize == 25 ? 'selected' : ''}>25</option>
+                            <option value="50" ${state.pageSize == 50 ? 'selected' : ''}>50</option>
+                            <option value="100" ${state.pageSize == 100 ? 'selected' : ''}>100</option>
+                        </select>
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="btn-pagination" onclick="PaginationManager.firstPage('${tableId}'); PaginationManager.refreshTable('${tableId}');" 
+                            ${!pageInfo.hasPrevPage ? 'disabled' : ''} title="Halaman Pertama">⏮️</button>
+                        <button class="btn-pagination" onclick="PaginationManager.prevPage('${tableId}'); PaginationManager.refreshTable('${tableId}');" 
+                            ${!pageInfo.hasPrevPage ? 'disabled' : ''} title="Halaman Sebelumnya">◀️</button>
+                        <button class="btn-pagination active">${pageInfo.currentPage} / ${pageInfo.totalPages || 1}</button>
+                        <button class="btn-pagination" onclick="PaginationManager.nextPage('${tableId}'); PaginationManager.refreshTable('${tableId}');" 
+                            ${!pageInfo.hasNextPage ? 'disabled' : ''} title="Halaman Selanjutnya">▶️</button>
+                        <button class="btn-pagination" onclick="PaginationManager.lastPage('${tableId}'); PaginationManager.refreshTable('${tableId}');" 
+                            ${!pageInfo.hasNextPage ? 'disabled' : ''} title="Halaman Terakhir">⏭️</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+    
+    /**
+     * Handle page size change
+     */
+    handlePageSizeChange(tableId, selectElement) {
+        this.setPageSize(tableId, selectElement.value);
+        this.refreshTable(tableId);
+    },
+    
+    /**
+     * Refresh table data (to be called after page change)
+     * This will trigger the appropriate render function based on table ID
+     */
+    refreshTable(tableId) {
+        switch(tableId) {
+            case 'recent-submissions':
+                renderRecentSubmissions();
+                break;
+            case 'recent-visitors':
+                renderRecentVisitors();
+                break;
+            case 'status-detail':
+                if (typeof renderStatusDetailPaginated === 'function') {
+                    renderStatusDetailPaginated();
+                }
+                break;
+            case 'roadmap':
+                loadRoadmapData();
+                break;
+            default:
+                console.log(`Refresh handler not found for table: ${tableId}`);
+        }
+    }
+};
+
+// Initialize pagination for all tables (dipanggil setelah definisi)
+PaginationManager.init('recent-submissions', 10);
+PaginationManager.init('recent-visitors', 10);
+PaginationManager.init('status-detail', 10);
+PaginationManager.init('roadmap', 10);
+
 // ===== DEBOUNCE FUNCTIONS (Defined Early) =====
 
 
@@ -11527,229 +11745,7 @@ const originalShowPage = typeof showPage !== 'undefined' ? null : null;
 // We'll use event listener instead
 
 // ============================================================
-// UNIVERSAL PAGINATION SYSTEM v2.0
-// Supports ALL tables with 10 rows per page default
-// ============================================================
-
-/**
- * Universal Pagination Manager - Reusable for any table
- */
-const PaginationManager = {
-    // Store pagination state for each table
-    states: {},
-    
-    /**
-     * Initialize pagination state for a table
-     * @param {string} tableId - Unique identifier for the table
-     * @param {number} pageSize - Number of rows per page (default: 10)
-     */
-    init(tableId, pageSize = 10) {
-        if (!this.states[tableId]) {
-            this.states[tableId] = {
-                currentPage: 1,
-                pageSize: pageSize,
-                totalRecords: 0,
-                totalPages: 0,
-                cachedData: []
-            };
-        }
-        return this.states[tableId];
-    },
-    
-    /**
-     * Get state for a table
-     */
-    getState(tableId) {
-        return this.states[tableId] || this.init(tableId);
-    },
-    
-    /**
-     * Set data and calculate pagination
-     * @param {string} tableId - Table identifier
-     * @param {Array} data - Full dataset
-     * @returns {Object} Paginated result {data, pageInfo}
-     */
-    paginate(tableId, data) {
-        const state = this.getState(tableId);
-        state.cachedData = data;
-        state.totalRecords = data.length;
-        state.totalPages = Math.ceil(data.length / state.pageSize);
-        
-        // Ensure current page is valid
-        if (state.currentPage > state.totalPages) {
-            state.currentPage = Math.max(1, state.totalPages);
-        }
-        
-        const startIndex = (state.currentPage - 1) * state.pageSize;
-        const endIndex = Math.min(startIndex + state.pageSize, data.length);
-        const paginatedData = data.slice(startIndex, endIndex);
-        
-        return {
-            data: paginatedData,
-            pageInfo: {
-                currentPage: state.currentPage,
-                totalPages: state.totalPages,
-                totalRecords: state.totalRecords,
-                pageSize: state.pageSize,
-                startRecord: data.length > 0 ? startIndex + 1 : 0,
-                endRecord: endIndex,
-                hasNextPage: state.currentPage < state.totalPages,
-                hasPrevPage: state.currentPage > 1
-            }
-        };
-    },
-    
-    /**
-     * Go to specific page
-     */
-    goToPage(tableId, page) {
-        const state = this.getState(tableId);
-        if (page >= 1 && page <= state.totalPages) {
-            state.currentPage = page;
-            return true;
-        }
-        return false;
-    },
-    
-    /**
-     * Next page
-     */
-    nextPage(tableId) {
-        const state = this.getState(tableId);
-        return this.goToPage(tableId, state.currentPage + 1);
-    },
-    
-    /**
-     * Previous page
-     */
-    prevPage(tableId) {
-        const state = this.getState(tableId);
-        return this.goToPage(tableId, state.currentPage - 1);
-    },
-    
-    /**
-     * First page
-     */
-    firstPage(tableId) {
-        return this.goToPage(tableId, 1);
-    },
-    
-    /**
-     * Last page
-     */
-    lastPage(tableId) {
-        const state = this.getState(tableId);
-        return this.goToPage(tableId, state.totalPages);
-    },
-    
-    /**
-     * Change page size
-     */
-    setPageSize(tableId, newSize) {
-        const state = this.getState(tableId);
-        state.pageSize = parseInt(newSize);
-        state.currentPage = 1;
-    },
-    
-    /**
-     * Reset to first page
-     */
-    reset(tableId) {
-        const state = this.getState(tableId);
-        state.currentPage = 1;
-    },
-    
-    /**
-     * Generate pagination controls HTML
-     * @param {string} tableId - Table identifier
-     * @returns {string} HTML string for pagination controls
-     */
-    renderControls(tableId) {
-        const state = this.getState(tableId);
-        const pageInfo = {
-            currentPage: state.currentPage,
-            totalPages: state.totalPages,
-            totalRecords: state.totalRecords,
-            hasNextPage: state.currentPage < state.totalPages,
-            hasPrevPage: state.currentPage > 1
-        };
-        
-        const startRecord = state.totalRecords > 0 ? (state.currentPage - 1) * state.pageSize + 1 : 0;
-        const endRecord = Math.min(state.currentPage * state.pageSize, state.totalRecords);
-        
-        return `
-            <div class="pagination-container" id="pagination-${tableId}">
-                <div class="pagination-info">
-                    Menampilkan <strong>${startRecord}-${endRecord}</strong> dari <strong>${pageInfo.totalRecords}</strong> data
-                </div>
-                <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
-                    <div class="page-size-selector">
-                        <label>Tampilkan:</label>
-                        <select onchange="PaginationManager.handlePageSizeChange('${tableId}', this)" id="pagesize-${tableId}">
-                            <option value="10" ${state.pageSize == 10 ? 'selected' : ''}>10</option>
-                            <option value="25" ${state.pageSize == 25 ? 'selected' : ''}>25</option>
-                            <option value="50" ${state.pageSize == 50 ? 'selected' : ''}>50</option>
-                            <option value="100" ${state.pageSize == 100 ? 'selected' : ''}>100</option>
-                        </select>
-                    </div>
-                    <div class="pagination-controls">
-                        <button class="btn-pagination" onclick="PaginationManager.firstPage('${tableId}'); PaginationManager.refreshTable('${tableId}');" 
-                            ${!pageInfo.hasPrevPage ? 'disabled' : ''} title="Halaman Pertama">⏮️</button>
-                        <button class="btn-pagination" onclick="PaginationManager.prevPage('${tableId}'); PaginationManager.refreshTable('${tableId}');" 
-                            ${!pageInfo.hasPrevPage ? 'disabled' : ''} title="Halaman Sebelumnya">◀️</button>
-                        <button class="btn-pagination active">${pageInfo.currentPage} / ${pageInfo.totalPages || 1}</button>
-                        <button class="btn-pagination" onclick="PaginationManager.nextPage('${tableId}'); PaginationManager.refreshTable('${tableId}');" 
-                            ${!pageInfo.hasNextPage ? 'disabled' : ''} title="Halaman Selanjutnya">▶️</button>
-                        <button class="btn-pagination" onclick="PaginationManager.lastPage('${tableId}'); PaginationManager.refreshTable('${tableId}');" 
-                            ${!pageInfo.hasNextPage ? 'disabled' : ''} title="Halaman Terakhir">⏭️</button>
-                    </div>
-                </div>
-            </div>
-        `;
-    },
-    
-    /**
-     * Handle page size change
-     */
-    handlePageSizeChange(tableId, selectElement) {
-        this.setPageSize(tableId, selectElement.value);
-        this.refreshTable(tableId);
-    },
-    
-    /**
-     * Refresh table data (to be called after page change)
-     * This will trigger the appropriate render function based on table ID
-     */
-    refreshTable(tableId) {
-        switch(tableId) {
-            case 'recent-submissions':
-                renderRecentSubmissions();
-                break;
-            case 'recent-visitors':
-                renderRecentVisitors();
-                break;
-            case 'status-detail':
-                if (typeof renderStatusDetailPaginated === 'function') {
-                    renderStatusDetailPaginated();
-                }
-                break;
-            case 'roadmap':
-                loadRoadmapData();
-                break;
-            default:
-                console.log(`Refresh handler not found for table: ${tableId}`);
-        }
-    }
-};
-
-// Initialize pagination for all tables
-PaginationManager.init('recent-submissions', 10);
-PaginationManager.init('recent-visitors', 10);
-PaginationManager.init('status-detail', 10);
-PaginationManager.init('roadmap', 10);
-
-
-// ===== PAGE ACCESS PROTECTION NOTES =====
+// PAGE ACCESS PROTECTION NOTES
 // Proteksi halaman admin SUDAH TERINTEGRASI di dalam fungsi showPage() utama
 // - Menggunakan sistem RBAC: isAdminAuthenticated(), hasPermission()
 // - Hanya data-pengusul & data-roadmap yang diproteksi
