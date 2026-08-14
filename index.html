@@ -6496,23 +6496,23 @@ function initAuthState() {
 /**
  * Handle login from main login page overlay
  */
-function handleAdminLogin(event) {
+async function handleAdminLogin(event) {
     event.preventDefault();
     
     const username = document.getElementById('login-username').value.trim();
     const password = document.getElementById('login-password').value;
     
-    return performAuthentication(username, password, 'main');
+    return await performAuthentication(username, password, 'main');
 }
 
 /**
  * Handle login from sidebar form
  */
-function handleSidebarLogin() {
+async function handleSidebarLogin() {
     const username = document.getElementById('sidebar-username').value.trim();
     const password = document.getElementById('sidebar-password').value;
     
-    performAuthentication(username, password, 'sidebar');
+    await performAuthentication(username, password, 'sidebar');
 }
 
 /**
@@ -6522,39 +6522,129 @@ function handleSidebarLogin() {
  * @param {string} source - 'main' or 'sidebar'
  * @returns {boolean} success status
  */
-function performAuthentication(username, password, source) {
-    // Find user in database
-    const user = ADMIN_USERS.find(u => u.username.toLowerCase() === username.toLowerCase());
-    
+async function performAuthentication(username, password, source) {
     // Show error element reference
     const errorEl = document.getElementById('login-error-msg');
     const errorTextEl = document.getElementById('login-error-text');
     
-    if (!user) {
-        showError(errorEl, errorTextEl, 'Username tidak ditemukan!');
+    if (!username || !password) {
+        showError(errorEl, errorTextEl, 'Username dan password wajib diisi!');
         shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
         return false;
     }
     
-    if (user.password !== password) {
-        showError(errorEl, errorTextEl, 'Password salah!');
-        shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
+    console.log('[SIMBAKES] Attempting login for:', username);
+    
+    try {
+        // ===== STEP 1: Cek di Hardcoded ADMIN_USERS array dulu =====
+        const hardcodedUser = ADMIN_USERS.find(u => u.username.toLowerCase() === username.toLowerCase());
+        
+        if (hardcodedUser) {
+            console.log('[SIMBAKES] User found in hardcoded array');
+            
+            if (hardcodedUser.password !== password) {
+                showError(errorEl, errorTextEl, 'Password salah!');
+                shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
+                return false;
+            }
+            
+            // Login berhasil dengan user hardcoded
+            return handleLoginSuccess(hardcodedUser, source, 'hardcoded');
+        }
+        
+        // ===== STEP 2: Jika tidak ada di array, Cek di Supabase multiusers table =====
+        console.log('[SIMBAKES] User not in hardcoded array, checking Supabase...');
+        
+        // Pastikan Supabase client tersedia
+        let client = supabaseClient;
+        if (!client) {
+            if (typeof initSupabaseClient === 'function') initSupabaseClient();
+            client = supabaseClient;
+        }
+        
+        if (!client) {
+            showError(errorEl, errorTextEl, 'Koneksi database tidak tersedia. Silakan refresh halaman.');
+            return false;
+        }
+        
+        // Query ke Supabase
+        const { data: dbUsers, error } = await client
+            .from('multiusers')
+            .select('*')
+            .or(`username.eq.${username.toLowerCase()},email.eq.${username.toLowerCase()}`)
+            .limit(1);
+        
+        if (error) {
+            console.error('[SIMBAKES] Supabase login error:', error);
+            showError(errorEl, errorTextEl, `Error database: ${error.message}`);
+            return false;
+        }
+        
+        if (!dbUsers || dbUsers.length === 0) {
+            console.log('[SIMBAKES] User not found in Supabase');
+            showError(errorEl, errorTextEl, 'Username tidak ditemukan! Silakan daftar terlebih dahulu.');
+            shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
+            return false;
+        }
+        
+        const dbUser = dbUsers[0];
+        console.log('[SIMBAKES] User found in Supabase:', dbUser.username);
+        
+        // Verifikasi password (bandingkan dengan password_hash)
+        if (dbUser.password_hash !== password) {
+            showError(errorEl, errorTextEl, 'Password salah!');
+            shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
+            return false;
+        }
+        
+        // Cek apakah user aktif
+        if (dbUser.is_active === false) {
+            showError(errorEl, errorTextEl, 'Akun Anda telah dinonaktifkan. Hubungi admin.');
+            return false;
+        }
+        
+        // Format user object supaya konsisten dengan ADMIN_USERS format
+        const formattedUser = {
+            username: dbUser.username,
+            password: dbUser.password_hash,
+            name: dbUser.nama_lengkap,
+            role: dbUser.role,
+            avatar: dbUser.role === 'admin' ? '👑' : '👤',
+            email: dbUser.email,
+            institusi: dbUser.institusi || '',
+            id: dbUser.id,
+            source: 'supabase'
+        };
+        
+        // Login berhasil dengan user dari Supabase
+        return handleLoginSuccess(formattedUser, source, 'supabase');
+        
+    } catch (error) {
+        console.error('[SIMBAKES] Authentication error:', error);
+        showError(errorEl, errorTextEl, `Error: ${error.message}. Silakan coba lagi.`);
         return false;
     }
+}
+
+/**
+ * Handle successful login - update UI and session
+ */
+function handleLoginSuccess(user, source, authSource) {
+    const errorEl = document.getElementById('login-error-msg');
+    const errorTextEl = document.getElementById('login-error-text');
     
-    // Authentication successful!
     currentAdminUser = user;
     
-    // Save session to localStorage
-    saveSession(user);
+    // Save session to localStorage (include auth source info)
+    const sessionData = { ...user, authSource, loginTime: new Date().toISOString() };
+    saveSession(sessionData);
     
     // Update UI
     showLoggedInUI(user);
     
-    // Hide login page/elements
+    // Hide login page/elements & clear form
     if (source === 'main') {
         document.getElementById('login-page')?.classList.add('hidden');
-        // Clear form fields
         document.getElementById('login-username').value = '';
         document.getElementById('login-password').value = '';
         hideError(errorEl);
@@ -6566,8 +6656,9 @@ function performAuthentication(username, password, source) {
     // Start session timer
     startSessionTimer();
     
-    showToast(`✅ Selamat datang, ${user.name}! (${user.role.toUpperCase()})`, 'success');
-    console.log(`✅ Logged in as: ${user.name} [${user.role}]`);
+    const roleDisplay = user.role.toUpperCase();
+    showToast(`✅ Selamat datang, ${user.name}! (${roleDisplay})`, 'success', 5000);
+    console.log(`✅ Logged in as: ${user.name} [${user.role}] via ${authSource}`);
     
     return true;
 }
