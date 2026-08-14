@@ -14447,9 +14447,8 @@ function escapeHtml(text) {
     return div.innerHTML.replace(/"/g, '&quot;');
 }
 
-// Override showPage to load data when entering admin pages
-const originalShowPage = typeof showPage !== 'undefined' ? null : null;
-// We'll use event listener instead
+// Note: originalShowPage already declared above (line ~9381) for Data Penetapan admin module
+// No need to redeclare here - using event listener approach instead
 
 // ============================================================
 // PAGE ACCESS PROTECTION NOTES
