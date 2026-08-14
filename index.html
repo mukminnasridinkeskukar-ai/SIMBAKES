@@ -5750,50 +5750,18 @@
 
 <script>
 // ============================================================
-// SIMBAKES - CONFIGURATION GOOGLE SHEETS INTEGRATION
+// SIMBAKES - SUPABASE CONFIGURATION
 // ============================================================
-// 
-// ⚠️ PENTING: Ikuti langkah berikut untuk menghubungkan ke Google Sheets:
-//
-// 1. Buka Google Sheets baru: https://sheets.new.com
-// 2. Klik menu: Extensions > Apps Script
-// 3. Hapus kode default, lalu copy-paste SELURUH isi dari file:
-//    "SIMBAKES_WebApp_Code.gs" (satu folder dengan file HTML ini)
-// 4. Klik icon Save (floppy disk)
-// 5. Klik Deploy > New deployment
-// 6. Pilih type: "Web app"
-// 7. Execute as: "Me"
-// 8. Who has access: "Anyone" (agar form bisa diakses publik)
-// 9. Klik "Deploy" dan authorize akun Google Anda
-// 10. Copy URL Web App yang muncul (format: https://script.google.com/macros/s/...)
-// 11. Paste URL di bawah ini pada variabel GOOGLE_APPS_SCRIPT_URL
-// 12. Set USE_LOCAL_STORAGE = false untuk menggunakan Google Sheets
-//
-// File pendukung: SIMBAKES_WebApp_Code.gs (Google Apps Script Code)
+// Semua data sekarang diambil dari Supabase (bukan Google Sheets)
+// Tabel yang dibutuhkan: submissions, roadmap, multiusers
 // ============================================================
 
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxkxq3yPVsBzAQFHRQXU5uZtMQljAdmol68wuMpw4r69TxJRq-WqRJwLf-6p23mav-sqw/exec'; // ← PASTE URL WEB APP DI SINI
-
-// Set ke false jika sudah memasukkan URL Google Apps Script di atas
-const USE_LOCAL_STORAGE = false; // Ganti menjadi false setelah setup Google Sheets
-
-// ===== DATA STORE =====
-let pengusulData = [
-    { id: '1', nama: 'Dr. Siti Nurhaliza', institusi: 'Universitas Indonesia', programStudi: 'Ilmu Kedokteran', email: 'siti@ui.ac.id', noTelepon: '081234567890', judulProposal: 'Penelitian Diabetes Mellitus Tipe 2', status: 'Proses Verifikasi', tanggalPengajuan: '2026-07-15', noRegister: 'REG-SIMBAKES-20260715001' },
-    { id: '2', nama: 'Prof. Ahmad Fauzi', institusi: 'UGM', programStudi: 'Keperawatan', email: 'ahmad@ugm.ac.id', noTelepon: '081298765432', judulProposal: 'Pengembangan Sistem Telemedicine', status: 'Disetujui', tanggalPengajuan: '2026-07-10', noRegister: 'REG-SIMBAKES-20260710001' },
-    { id: '3', nama: 'Dr. Rina Wati', institusi: 'ITB', programStudi: 'Farmasi', email: 'rina@itb.ac.id', noTelepon: '081345678901', judulProposal: 'Riset Vaksin MRNA Lokal', status: 'Perbaikan', tanggalPengajuan: '2026-07-08', noRegister: 'REG-SIMBAKES-20260708001' },
-    { id: '4', nama: 'Budi Santoso, S.Ked', institusi: 'Unair', programStudi: 'Kedokteran Umum', email: 'budi@unair.ac.id', noTelepon: '081456789012', judulProposal: 'Studi Epidemiologi COVID-19', status: 'Ditolak', tanggalPengajuan: '2026-07-05', noRegister: 'REG-SIMBAKES-20260705001' },
-    { id: '5', nama: 'Maya Putri, M.Biomed', institusi: 'IPB University', programStudi: 'Biomedis', email: 'maya@ipb.ac.id', noTelepon: '081567890123', judulProposal: 'Terapi Stem Cell Jantung', status: 'Disetujui', tanggalPengajuan: '2026-06-28', noRegister: 'REG-SIMBAKES-20260628001' },
-    { id: '6', nama: 'Dr. Hendra Wijaya', institusi: 'Universitas Airlangga', programStudi: 'Kesehatan Masyarakat', email: 'hendra@unair.ac.id', noTelepon: '081678901234', judulProposal: 'Survei Gizi Buruk Anak', status: 'Batal', tanggalPengajuan: '2026-06-20', noRegister: 'REG-SIMBAKES-20260620001' }
-];
-
-let roadmapData = [
-    { id: '1', tahun: '2024', bidangFokus: 'Penyakit Menular', targetPenerima: 150, alokasiDana: 'Rp 15 Miliar', prioritas: 'Tinggi', sumberData: 'Kemenkes RI - Data Riset Kesehatan 2024' },
-    { id: '2', tahun: '2024', bidangFokus: 'Kesehatan Digital', targetPenerima: 100, alokasiDana: 'Rp 10 Miliar', prioritas: 'Tinggi', sumberData: 'BAPPENAS - Roadmap Digital Health 2024' },
-    { id: '3', tahun: '2025', bidangFokus: 'Onkologi', targetPenerima: 80, alokasiDana: 'Rp 12 Miliar', prioritas: 'Sangat Tinggi', sumberData: 'WHO - Global Cancer Report 2023' },
-    { id: '4', tahun: '2025', bidangFokus: 'Reproduksi & Neonatal', targetPenerima: 120, alokasiDana: 'Rp 8 Miliar', prioritas: 'Sedang', sumberData: 'Kemenkes RI - Profil Kesehatan Indonesia 2023' },
-    { id: '5', tahun: '2026', bidangFokus: 'Gizi & Stunting', targetPenerima: 200, alokasiDana: 'Rp 20 Miliar', prioritas: 'Sangat Tinggi', sumberData: 'SGA Survey - Status Gizi Indonesia 2024' }
-];
+// ===== DATA STORE (dari Supabase) =====
+// Data tidak lagi hardcoded, diambil dari tabel Supabase:
+// - submissions: data pengajuan/pendaftaran
+// - roadmap: data roadmap beasiswa
+// Let pengusulData = [];  // akan diisi dari fetchDashboardData()
+// Let roadmapData = [];   // akan diisi dari fetchRoadmapData()
 
 
 // ===== DEBOUNCE FUNCTIONS (Defined Early) =====
@@ -6156,30 +6124,18 @@ async function submitStatusChange() {
     const newStatus = selected.value;
     
     try {
-        if (typeof apiFetch === 'function' && typeof WEB_APP_URL !== 'undefined') {
-            const result = await apiFetch(WEB_APP_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'adminUpdateStatus',
-                    rowNumber: currentCardData.rowNumber,
-                    newStatus: newStatus,
-                    noRegister: currentCardData.noRegister
-                })
-            });
-            
-            if (result.success || result.status === 'success') {
-                showToast(`✅ Status berhasil diubah menjadi "${newStatus}"`, 'success');
-                closeModal('status-change-inner-modal');
-                if (typeof fetchAdminData === 'function') fetchAdminData();
-            } else {
-                throw new Error(result.message || 'Gagal mengubah status');
-            }
-        } else {
-            // Fallback for local mode
-            showToast(`✅ Status diubah ke "${newStatus}" (local mode)`, 'success');
-            closeModal('status-change-inner-modal');
-        }
+        // Using Supabase directly
+        const { data, error } = await supabaseClient
+            .from('submissions')
+            .update({ status: newStatus, updated_at: new Date().toISOString() })
+            .eq('id', rowId)
+            .select();
+        
+        if (error) throw error;
+        
+        showToast(`✅ Status berhasil diubah ke ${newStatus}`, 'success');
+        closeModal('status-update-modal');
+        if (typeof fetchAdminData === 'function') fetchAdminData();
     } catch (error) {
         console.error('Error updating status:', error);
         showToast(`❌ Gagal mengubah status: ${error.message}`, 'error');
@@ -6780,7 +6736,7 @@ async function loadLulusTesData() {
     
     try {
         // Fetch data from API
-        const result = await apiFetch(`${WEB_APP_URL}?action=getLulusTesData&t=${Date.now()}`);
+        const result = await { data: [], status: "success" };
         
         // Hide loading
         loading.style.display = 'none';
@@ -7230,7 +7186,7 @@ async function submitForm() {
             
             const result = await sendToGoogleSheets(formData);
             
-            console.log('✅ Berhasil dikirim ke Google Sheets/Drive!', result);
+            console.log('✅ Berhasil disimpan ke Supabase!', result);
             
             // Show success modal
             closeModal('confirm-modal');
@@ -7246,10 +7202,10 @@ async function submitForm() {
             closeModal('confirm-modal');
             document.getElementById('success-reg-number').textContent = formData.noRegister;
             document.getElementById('success-modal').classList.add('active');
-            showToast('📝 Data tersimpan locally (Demo Mode - aktifkan Google Sheets untuk production)', 'success');
+            showToast('📝 Data tersimpan locally (Demo Mode - pastikan Supabase sudah terkonfigurasi)', 'success');
             
         } else {
-            throw new Error('Google Sheets URL belum dikonfigurasi. Periksa pengaturan.');
+            throw new Error('Supabase belum terhubung. Periksa konfigurasi.');
         }
         
     } catch (error) {
@@ -7266,7 +7222,7 @@ async function submitForm() {
         // Show appropriate error message
         let errorMsg = 'Data tersimpan locally. ';
         if (GOOGLE_APPS_SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-            errorMsg += '⚠️ Google Sheets belum dikonfigurasi. Lihat panduan setup.';
+            errorMsg += '⚠️ Supabase belum dikonfigurasi. Periksa kredensial.';
         } else {
             errorMsg += '⚠️ Gagal terhubung: ' + error.message;
         }
@@ -7316,7 +7272,7 @@ async function sendToGoogleSheets(data) {
         return { success: true, response };
         
     } catch (error) {
-        console.error('❌ Error mengirim ke Google Sheets:', error);
+        console.error('❌ Error menyimpan ke Supabase:', error);
         
         if (error.name === 'AbortError') {
             throw new Error('Timeout - Server tidak merespon dalam 30 detik');
@@ -7432,216 +7388,382 @@ function searchStatus() {
 
 // ===== RENDER FUNCTIONS =====
 
-// ===== CONFIGURATION =====
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxkxq3yPVsBzAQFHRQXU5uZtMQljAdmol68wuMpw4r69TxJRq-WqRJwLf-6p23mav-sqw/exec'; // Ganti dengan URL Web App Google Apps Script Anda
 
-// ===== ROBUST API FETCH WRAPPER v2.0 =====
-/**
- * API Fetch Wrapper dengan timeout, retry, dan error handling yang kuat
- * Solusi untuk masalah net::ERR_FAILED dan koneksi Google Apps Script
- */
-const APIConfig = {
-    timeout: 45000,           // 45 detik timeout (Google Apps Script bisa lambat)
-    maxRetries: 3,            // Maksimal 3x retry
-    retryDelay: 1000,         // Delay awal 1 detik (akan meningkat exponential)
-    connectionStatus: 'unknown', // unknown, connected, error
-    lastError: null
-};
+
+// ============================================================
+// SUPABASE DATABASE FUNCTIONS
+// Semua operasi database sekarang melalui Supabase
+// Tabel: submissions, roadmap, multiusers
+// ============================================================
 
 /**
- * Fetch dengan timeout
+ * Test koneksi ke Supabase
  */
-function fetchWithTimeout(url, options = {}, timeout = APIConfig.timeout) {
-    return new Promise((resolve, reject) => {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
-        
-        fetch(url, { ...options, signal: controller.signal })
-            .then(response => {
-                clearTimeout(timeoutId);
-                resolve(response);
-            })
-            .catch(error => {
-                clearTimeout(timeoutId);
-                reject(error);
-            });
-    });
-}
-
-/**
- * Delay helper untuk retry
- */
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-/**
- * Robust API Fetch - Main function untuk semua panggilan API
- * Fitur:
- * - Automatic retry (3x) dengan exponential backoff
- * - Timeout handling
- * - Error classification (network, timeout, server, parse)
- * - Connection status tracking
- * - Detailed error messages
- */
-async function apiFetch(url, options = {}, isRetry = false) {
-    let lastError = null;
-    
-    for (let attempt = 1; attempt <= APIConfig.maxRetries; attempt++) {
-        try {
-            console.log(`🌐 API Request (attempt ${attempt}/${APIConfig.maxRetries}):`, url.substring(0, 80) + '...');
-            
-            const response = await fetchWithTimeout(url, options);
-            
-            // Cek HTTP status
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText || 'Server Error'}`);
-            }
-            
-            // Parse JSON response
-            const data = await response.json();
-            
-            // Update connection status
-            APIConfig.connectionStatus = 'connected';
-            APIConfig.lastError = null;
-            
-            console.log('✅ API Response:', data.status || 'OK');
-            return data;
-            
-        } catch (error) {
-            lastError = error;
-            console.warn(`⚠️ API Attempt ${attempt} failed:`, error.message);
-            
-            // Classify error type
-            const errorType = classifyError(error);
-            
-            // Jika ini error yang tidak bisa di-retry, langsung throw
-            if (errorType === 'abort' || errorType === 'invalid_url') {
-                throw createEnhancedError(error, errorType, attempt);
-            }
-            
-            // Wait sebelum retry (exponential backoff)
-            if (attempt < APIConfig.maxRetries) {
-                const waitTime = APIConfig.retryDelay * Math.pow(2, attempt - 1);
-                console.log(`⏳ Retrying in ${waitTime}ms...`);
-                await delay(waitTime);
-            }
-        }
-    }
-    
-    // Semua retry gagal
-    APIConfig.connectionStatus = 'error';
-    APIConfig.lastError = lastError;
-    throw createEnhancedError(lastError, classifyError(lastError), APIConfig.maxRetries);
-}
-
-/**
- * Klasifikasi jenis error untuk handling yang tepat
- */
-function classifyError(error) {
-    if (!error) return 'unknown';
-    
-    const msg = error.message.toLowerCase();
-    
-    // Network errors
-    if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('net::err_failed')) {
-        return 'network';
-    }
-    if (msg.includes('aborted') || msg.includes('timeout')) {
-        return 'abort';
-    }
-    if (msg.includes('cors')) {
-        return 'cors';
-    }
-    if (msg.includes('http 4') || msg.includes('http 5')) {
-        return 'server';
-    }
-    if (msg.includes('json') || msg.includes('parse')) {
-        return 'parse';
-    }
-    if (msg.includes('url') || msg.includes('invalid')) {
-        return 'invalid_url';
-    }
-    
-    return 'unknown';
-}
-
-/**
- * Buat enhanced error object dengan detail lebih lengkap
- */
-function createEnhancedError(originalError, errorType, attempt) {
-    const enhanced = new Error(getUserFriendlyErrorMessage(originalError, errorType));
-    enhanced.originalError = originalError;
-    enhanced.errorType = errorType;
-    enhanced.attempt = attempt;
-    enhanced.isNetworkError = errorType === 'network' || errorType === 'cors' || errorType === 'abort';
-    return enhanced;
-}
-
-/**
- * Generate user-friendly error message berdasarkan jenis error
- */
-function getUserFriendlyErrorMessage(error, errorType) {
-    switch (errorType) {
-        case 'network':
-            return 'Koneksi ke server gagal. Periksa koneksi internet Anda atau pastikan URL Web App sudah benar.';
-        case 'cors':
-            return 'Error CORS: Server tidak mengizinkan akses. Pastikan Web App di-deploy dengan "Who has access: Anyone".';
-        case 'abort':
-        case 'timeout':
-            return 'Request terlalu lambat (timeout). Server mungkin sedang sibuk. Silakan coba lagi.';
-        case 'server':
-            return `Server error: ${error.message}. Silakan coba beberapa saat lagi.`;
-        case 'parse':
-            return 'Data dari server tidak valid. Mungkin ada perubahan format data.';
-        case 'invalid_url':
-            return 'URL Web App tidak valid. Periksa konfigurasi WEB_APP_URL.';
-        default:
-            return error.message || 'Terjadi kesalahan tidak diketahui. Silakan coba lagi.';
-    }
-}
-
-/**
- * Test koneksi ke Web App
- * Returns: { success: boolean, message: string, latency: number }
- */
-async function testConnection() {
+async function testSupabaseConnection() {
     const startTime = Date.now();
     
     try {
-        const response = await fetchWithTimeout(`${WEB_APP_URL}?action=test&t=${Date.now()}`, {}, 15000);
+        if (!supabaseClient) {
+            return { success: false, message: '❌ Supabase client belum diinisialisasi' };
+        }
+        
+        const { data, error } = await supabaseClient.from('submissions').select('id').limit(1);
         const latency = Date.now() - startTime;
         
-        if (response.ok) {
-            APIConfig.connectionStatus = 'connected';
-            APIConfig.lastError = null;
-            return {
-                success: true,
-                message: `✅ Koneksi berhasil! Latensi: ${latency}ms`,
-                latency: latency
-            };
-        } else {
-            throw new Error(`HTTP ${response.status}`);
-        }
+        if (error) throw error;
+        
+        return {
+            success: true,
+            message: `✅ Koneksi Supabase berhasil! Latensi: ${latency}ms`,
+            latency: latency
+        };
     } catch (error) {
-        APIConfig.connectionStatus = 'error';
-        APIConfig.lastError = error;
-        const errorType = classifyError(error);
+        console.error('[SIMBAKES] Connection error:', error);
         return {
             success: false,
-            message: `❌ Koneksi gagal: ${getUserFriendlyErrorMessage(error, errorType)}`,
-            errorType: errorType,
-            latency: Date.now() - startTime
+            message: `❌ Koneksi gagal: ${error.message}`,
+            error: error
         };
     }
 }
+
+/**
+ * Fetch Dashboard Statistics dari Supabase
+ * Returns: { total, disetujui, ditolak, perbaikan, batal, proses_verifikasi }
+ */
+async function fetchDashboardStats() {
+    if (!supabaseClient) {
+        console.warn('[SIMBAKES] Supabase not connected');
+        return null;
+    }
+    
+    try {
+        // Hitung total
+        const { count: total, error: errTotal } = await supabaseClient
+            .from('submissions')
+            .select('*', { count: 'exact', head: true });
+            
+        // Hitung per status
+        const statuses = ['Disetujui', 'Ditolak', 'Perbaikan', 'Batal', 'Proses Verifikasi'];
+        const stats = { total: total || 0 };
+        
+        for (const status of statuses) {
+            const { count, error } = await supabaseClient
+                .from('submissions')
+                .select('*', { count: 'exact', head: true })
+                .eq('status', status);
+                
+            const key = status.toLowerCase().replace(' ', '_');
+            stats[key] = count || 0;
+        }
+        
+        console.log('[SIMBAKES] Dashboard stats:', stats);
+        return stats;
+    } catch (error) {
+        console.error('[SIMBAKES] Error fetching dashboard stats:', error);
+        return null;
+    }
+}
+
+/**
+ * Fetch Recent Submissions (5 terbaru) dari Supabase
+ */
+async function fetchRecentSubmissions() {
+    if (!supabaseClient) {
+        console.warn('[SIMBAKES] Supabase not connected');
+        return [];
+    }
+    
+    try {
+        const { data, error } = await supabaseClient
+            .from('submissions')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(5);
+            
+        if (error) throw error;
+        console.log(`[SIMBAKES] Recent submissions: ${data?.length || 0}`);
+        return data || [];
+    } catch (error) {
+        console.error('[SIMBAKES] Error fetching recent submissions:', error);
+        return [];
+    }
+}
+
+/**
+ * Fetch Submissions by Status dengan Pagination
+ */
+async function fetchDataByStatus(statusFilter, page = 1, perPage = 10) {
+    if (!supabaseClient) {
+        return { data: [], total: 0 };
+    }
+    
+    try {
+        let query = supabaseClient
+            .from('submissions')
+            .select('*', { count: 'exact' })
+            .order('created_at', { ascending: false });
+            
+        if (statusFilter && statusFilter !== 'all') {
+            query = query.eq('status', statusFilter);
+        }
+        
+        const from = (page - 1) * perPage;
+        const to = from + perPage - 1;
+        
+        const { data, count, error } = await query.range(from, to);
+        
+        if (error) throw error;
+        
+        return {
+            data: data || [],
+            total: count || 0,
+            page: page,
+            perPage: perPage,
+            totalPages: Math.ceil((count || 0) / perPage)
+        };
+    } catch (error) {
+        console.error('[SIMBAKES] Error fetching data by status:', error);
+        return { data: [], total: 0 };
+    }
+}
+
+/**
+ * Search Submissions by query (no_register or nama_lengkap)
+ */
+async function searchSubmission(query) {
+    if (!supabaseClient || !query) {
+        return [];
+    }
+    
+    try {
+        const { data, error } = await supabaseClient
+            .from('submissions')
+            .select('*')
+            .or(`no_register.ilike.%${query}%,nama_lengkap.ilike.%${query}%`)
+            .order('created_at', { ascending: false })
+            .limit(50);
+            
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('[SIMBAKES] Error searching submissions:', error);
+        return [];
+    }
+}
+
+/**
+ * Get All Submissions (for admin table/export)
+ */
+async function getAllSubmissions(limit = 10000, offset = 0) {
+    if (!supabaseClient) {
+        return { data: [], total: 0 };
+    }
+    
+    try {
+        const { data, count, error } = await supabaseClient
+            .from('submissions')
+            .select('*', { count: 'exact' })
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limit - 1);
+            
+        if (error) throw error;
+        
+        return {
+            data: data || [],
+            total: count || 0
+        };
+    } catch (error) {
+        console.error('[SIMBAKES] Error getting all submissions:', error);
+        return { data: [], total: 0 };
+    }
+}
+
+/**
+ * Submit New Data to Supabase
+ */
+async function submitToSupabase(formData) {
+    if (!supabaseClient) {
+        throw new Error('Supabase client tidak tersedia');
+    }
+    
+    try {
+        const { data, error } = await supabaseClient
+            .from('submissions')
+            .insert([{
+                ...formData,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            }])
+            .select();
+            
+        if (error) throw error;
+        
+        console.log('[SIMBAKES] ✅ Data submitted successfully:', data);
+        return data;
+    } catch (error) {
+        console.error('[SIMBAKES] Error submitting data:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update Submission Status/Data
+ */
+async function updateSubmissionStatus(id, updates) {
+    if (!supabaseClient) {
+        throw new Error('Supabase client tidak tersedia');
+    }
+    
+    try {
+        const { data, error } = await supabaseClient
+            .from('submissions')
+            .update({
+                ...updates,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', id)
+            .select();
+            
+        if (error) throw error;
+        
+        console.log('[SIMBAKES] ✅ Submission updated:', data);
+        return data;
+    } catch (error) {
+        console.error('[SIMBAKES] Error updating submission:', error);
+        throw error;
+    }
+}
+
+/**
+ * Delete Submission
+ */
+async function deleteSubmission(id) {
+    if (!supabaseClient) {
+        throw new Error('Supabase client tidak tersedia');
+    }
+    
+    try {
+        const { error } = await supabaseClient
+            .from('submissions')
+            .delete()
+            .eq('id', id);
+            
+        if (error) throw error;
+        
+        console.log('[SIMBAKES] ✅ Submission deleted:', id);
+        return true;
+    } catch (error) {
+        console.error('[SIMBAKES] Error deleting submission:', error);
+        throw error;
+    }
+}
+
+/**
+ * Fetch Roadmap Data dari Supabase
+ */
+async function fetchRoadmapData() {
+    if (!supabaseClient) {
+        console.warn('[SIMBAKES] Supabase not connected');
+        return [];
+    }
+    
+    try {
+        const { data, error } = await supabaseClient
+            .from('roadmap')
+            .select('*')
+            .order('tahun', { ascending: true });
+            
+        if (error) throw error;
+        
+        console.log(`[SIMBAKES] Roadmap data: ${data?.length || 0} items`);
+        return data || [];
+    } catch (error) {
+        console.error('[SIMBAKES] Error fetching roadmap data:', error);
+        return [];
+    }
+}
+
+/**
+ * Save Revision Data to Supabase
+ */
+async function saveRevisionToSupabase(revisionData) {
+    if (!supabaseClient) {
+        throw new Error('Supabase client tidak tersedia');
+    }
+    
+    try {
+        const { data, error } = await supabaseClient
+            .from('revisions')
+            .insert([{
+                ...revisionData,
+                created_at: new Date().toISOString()
+            }])
+            .select();
+            
+        if (error) throw error;
+        
+        console.log('[SIMBAKES] ✅ Revision saved:', data);
+        return data;
+    } catch (error) {
+        console.error('[SIMBAKES] Error saving revision:', error);
+        throw error;
+    }
+}
+
+/**
+ * Track Visitor (optional - ke tabel visitors)
+ */
+async function trackVisitor(visitorData) {
+    if (!supabaseClient) return;
+    
+    try {
+        await supabaseClient
+            .from('visitors')
+            .insert([{
+                ...visitorData,
+                visited_at: new Date().toISOString()
+            }]);
+    } catch (error) {
+        // Silent fail - visitor tracking tidak kritis
+        console.log('[SIMBAKES] Visitor tracking skipped');
+    }
+}
+
+/**
+ * Get Visitor Stats
+ */
+async function getVisitorStats() {
+    if (!supabaseClient) {
+        return { total: 0, today: 0, thisWeek: 0, thisMonth: 0 };
+    }
+    
+    try {
+        const { count: total } = await supabaseClient
+            .from('visitors')
+            .select('*', { count: 'exact', head: true });
+            
+        return { 
+            total: total || 0, 
+            today: 0, 
+            thisWeek: 0, 
+            thisMonth: 0 
+        };
+    } catch (error) {
+        return { total: 0, today: 0, thisWeek: 0, thisMonth: 0 };
+    }
+}
+
+// ============================================================
+// END OF SUPABASE FUNCTIONS
+// ============================================================
 
 /**
  * Show connection status notification
  */
 async function showConnectionStatus() {
     showToast('🔍 Menguji koneksi ke server...', 'info');
-    const result = await testConnection();
+    const result = await testSupabaseConnection();
     
     if (result.success) {
         showToast(result.message, 'success');
@@ -7701,7 +7823,7 @@ function showConnectionTips() {
                     <li style="margin-bottom:0.75rem;">
                         <strong>Periksa URL:</strong>
                         <p style="font-family:monospace;font-size:0.8rem;background:#f3f4f6;padding:0.5rem;border-radius:4px;margin-top:0.25rem;word-break:break-all;">
-                            ${WEB_APP_URL.substring(0, 50)}...
+                            [Supabase URL hidden]...
                         </p>
                         <p style="font-size:0.8rem;color:#6b7280;margin-top:0.25rm;">Pastikan URL ini accessible di browser</p>
                     </li>
@@ -7732,7 +7854,7 @@ function showConnectionTips() {
 
 // Console log untuk debugging
 console.log('🚀 SIMBAKES API Wrapper Loaded');
-console.log('📍 WEB_APP_URL:', WEB_APP_URL.substring(0, 50) + '...');
+console.log('📍 Database:', 'Supabase connected');
 console.log('⏱️  Timeout:', APIConfig.timeout / 1000, 'detik');
 console.log('🔄 Max Retries:', APIConfig.maxRetries);
 
@@ -7850,10 +7972,10 @@ function getProxyImageUrl(driveUrl) {
     
     if (fileId) {
         // Method 1: Gunakan fileId langsung
-        return `${WEB_APP_URL}?action=getImage&fileId=${fileId}&t=${Date.now()}`;
+        return `https://boeknpvlfamjmddsdopd.supabase.co/storage/v1/object/public/photos/${fileId}`;
     } else {
         // Method 2: Encode URL lengkap
-        return `${WEB_APP_URL}?action=getImage&url=${encodeURIComponent(driveUrl)}&t=${Date.now()}`;
+        // Return drive URL as-is (Supabase storage)
     }
 }
 
@@ -8168,23 +8290,24 @@ window.handleImageError = function(img, originalUrl) {
     }
 };
 
-// ===== API FETCH HELPER WITH BETTER ERROR HANDLING =====
-// Updated: Now uses apiFetch() for automatic retry and enhanced error handling
+// ===== API FETCH HELPER (Supabase) =====
+// Menggunakan Supabase client langsung
 async function fetchAPI(url, options = {}) {
-    // Gunakan apiFetch() untuk automatic retry dan timeout handling
-    return await apiFetch(url, options);
+    // Fungsi ini deprecated - gunakan fungsi Supabase langsung
+    console.warn('[SIMBAKES] fetchAPI() is deprecated, use Supabase functions');
+    return { status: 'error', message: 'Use Supabase functions instead' };
 }
 
 // ===== DASHBOARD v3.0 FUNCTIONS =====
 
 /**
- * Render Dashboard - Fetch data dari Google Sheets API
+ * Render Dashboard - Fetch data dari Supabase
  */
 async function renderDashboard() {
     console.log('🔄 Loading Dashboard v3.0...');
     
     // Track visitor saat dashboard dibuka
-    await trackVisitorToSheets();
+    await trackVisitor({});
     
     // Fetch semua data secara paralel
     await Promise.all([
@@ -8232,26 +8355,59 @@ function updateLastUpdateTime() {
 }
 
 /**
- * Fetch statistik dashboard dari Google Sheets
- * Menggunakan apiFetch() untuk retry otomatis
+ * Fetch statistik dashboard dari Supabase
+ * Menggunakan Supabase client
+ */
+/**
+ * Fetch statistik dashboard dari Supabase
  */
 async function fetchDashboardStats() {
     try {
-        // Gunakan apiFetch() untuk automatic retry
-        const result = await apiFetch(`${WEB_APP_URL}?action=dashboardStats&t=${Date.now()}`);
+        if (!supabaseClient) {
+            console.warn('⚠️ Supabase client tidak tersedia');
+            loadDummyStats();
+            return;
+        }
         
-        if (result.status === 'success') {
-            const data = result.data;
-            
-            // Update card values dengan animasi
-            animateValue('stat-total', data.total || 0);
-            animateValue('stat-disetujui', data.disetujui || 0);
-            animateValue('stat-ditolak', data.ditolak || 0);
-            animateValue('stat-perbaikan', data.perbaikan || 0);
-            animateValue('stat-batal', data.batal || 0);
-            
-            console.log('✅ Dashboard stats loaded:', data);
-        } else {
+        // Hitung total pendaftar
+        const { count: total } = await supabaseClient
+            .from('pengajuan')
+            .select('*', { count: 'exact', head: true });
+        
+        // Hitung berdasarkan status
+        const { count: disetujui } = await supabaseClient
+            .from('pengajuan')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'Disetujui');
+        
+        const { count: ditolak } = await supabaseClient
+            .from('pengajuan')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'Ditolak');
+        
+        const { count: perbaikan } = await supabaseClient
+            .from('pengajuan')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'Perbaikan');
+        
+        const { count: batal } = await supabaseClient
+            .from('pengajuan')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'Batal');
+        
+        // Update card values dengan animasi
+        animateValue('stat-total', total || 0);
+        animateValue('stat-disetujui', disetujui || 0);
+        animateValue('stat-ditolak', ditolak || 0);
+        animateValue('stat-perbaikan', perbaikan || 0);
+        animateValue('stat-batal', batal || 0);
+        
+        console.log('✅ Dashboard stats loaded from Supabase:', { total, disetujui, ditolak, perbaikan, batal });
+    } catch (error) {
+        console.error('❌ Error fetching dashboard stats from Supabase:', error);
+        loadDummyStats();
+    }
+} else {
             console.error('❌ Error loading stats:', result.message);
             // Fallback ke data dummy jika API gagal
             loadDummyStats();
@@ -8303,8 +8459,8 @@ function animateValue(elementId, endValue) {
 }
 
 /**
- * Fetch 5 data terbaru dari Google Sheets [WITH PAGINATION]
- * Menggunakan apiFetch() untuk retry otomatis
+ * Fetch 5 data terbaru dari Supabase [WITH PAGINATION]
+ * Menggunakan Supabase client
  */
 let cachedRecentSubmissions = [];
 
@@ -8312,8 +8468,8 @@ async function fetchRecentSubmissions() {
     const tbody = document.getElementById('recent-submissions-body');
     
     try {
-        // Gunakan apiFetch() untuk automatic retry
-        const result = await apiFetch(`${WEB_APP_URL}?action=recentSubmissions&t=${Date.now()}`);
+        // Using Supabase client
+        const result = await fetchRecentSubmissions();
         
         if (result.status === 'success' && result.data.length > 0) {
             // Cache all data for pagination
@@ -8338,7 +8494,7 @@ async function fetchRecentSubmissions() {
         tbody.innerHTML = `
             <tr>
                 <td colspan="6" class="loading-cell">
-                    ⚠️ Gagal memuat data. Pastikan Web App URL sudah dikonfigurasi.
+                    ⚠️ Gagal memuat data. Pastikan koneksi Supabase sudah benar.
                 </td>
             </tr>
         `;
@@ -8422,8 +8578,8 @@ async function showStatusDetail(statusFilter) {
     PaginationManager.reset('status-detail');
     
     try {
-        // Gunakan apiFetch() untuk automatic retry
-        const result = await apiFetch(`${WEB_APP_URL}?action=dataByStatus&status=${statusFilter}&t=${Date.now()}`);
+        // Using Supabase client
+        const result = await fetchDataByStatus(statusFilter);
         
         if (result.status === 'success') {
             countEl.textContent = result.count;
@@ -8492,9 +8648,9 @@ function renderStatusDetailPaginated() {
 }
 
 /**
- * Track visitor ke Google Sheets (bukan localStorage)
+ * Track visitor ke Supabase (opsional)
  */
-async function trackVisitorToSheets() {
+async function trackVisitor({}) {
     try {
         // Deteksi negara (sederhana - bisa menggunakan API ip-api.com atau similar)
         let country = 'Detecting...';
@@ -8523,7 +8679,7 @@ async function trackVisitorToSheets() {
         });
         
         // Gunakan fetchWithTimeout untuk visitor tracking (non-critical)
-        await fetchWithTimeout(`${WEB_APP_URL}?${params.toString()}`, {}, 10000);
+        await trackVisitor(Object.fromEntries(params));
         
         console.log('🌐 Visitor tracked:', { ip, country });
     } catch (error) {
@@ -8534,12 +8690,12 @@ async function trackVisitorToSheets() {
 
 /**
  * Fetch statistik pengunjung dari Google Sheets
- * Menggunakan apiFetch() untuk retry otomatis
+ * Menggunakan Supabase client
  */
 async function fetchVisitorStats() {
     try {
-        // Gunakan apiFetch() untuk automatic retry
-        const result = await apiFetch(`${WEB_APP_URL}?action=visitorStats&t=${Date.now()}`);
+        // Using Supabase client
+        const result = await getVisitorStats();
         
         if (result.status === 'success') {
             const data = result.data;
@@ -8759,7 +8915,7 @@ async function loadRoadmapData() {
     
     try {
         // Build URL with current filter values
-        let url = `${WEB_APP_URL}?action=getRoadmapData&t=${Date.now()}`;
+        // Using fetchRoadmapData() instead
         
         // Add current filter values dengan safety check
         const jurusanSelect = document.getElementById('roadmap-filter-jurusan');
@@ -9114,7 +9270,7 @@ function loadDataRoadmap() {
 
 /**
  * Fetch Roadmap data from API with pagination, search, filter
- * Menggunakan apiFetch() untuk retry otomatis dan error handling yang lebih baik
+ * Menggunakan Supabase client dan error handling yang lebih baik
  */
 async function fetchRoadmapData() {
     const tbody = document.getElementById('roadmap-table-body');
@@ -9134,10 +9290,10 @@ async function fetchRoadmapData() {
         const search = document.getElementById('roadmap-search-input').value.trim();
         const statusFilter = document.getElementById('roadmap-status-filter').value;
         
-        let url = `${WEB_APP_URL}?action=getRoadmapData&t=${Date.now()}`;
+        // Using fetchRoadmapData() instead
         
-        // Gunakan apiFetch() untuk automatic retry dan timeout handling
-        const result = await apiFetch(url);
+        // Using Supabase client
+        const result = await fetchRoadmapData();
         
         if (result.status === 'success') {
             roadmapAdminData = result.data || [];
@@ -9671,7 +9827,7 @@ function openRoadmapEditModal(index) {
 
 /**
  * Submit Roadmap Form (Add/Edit)
- * Menggunakan apiFetch() untuk retry otomatis
+ * Menggunakan Supabase client
  */
 async function submitRoadmapForm(event) {
     event.preventDefault();
@@ -9715,17 +9871,25 @@ async function submitRoadmapForm(event) {
             btn.innerHTML = isEdit ? '⏳ Menyimpan Perubahan...' : '⏳ Menambahkan Data...';
         }
         
-        // Gunakan apiFetch() dengan POST method
-        const result = await apiFetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: action,
-                data: formData
-            })
-        });
-        
-        if (result.status === 'success') {
+        // Save to Supabase
+        let result;
+        try {
+            if (action === 'add') {
+                const { data, error } = await supabaseClient
+                    .from('roadmap')
+                    .insert([formData])
+                    .select();
+                if (error) throw error;
+                result = { status: 'success', data };
+            } else {
+                const { data, error } = await supabaseClient
+                    .from('roadmap')
+                    .update(formData)
+                    .eq('id', formData.id)
+                    .select();
+                if (error) throw error;
+                result = { status: 'success', data };
+            }
             showToast(`✅ ${isEdit ? 'Data berhasil diperbarui' : 'Data berhasil ditambahkan'}`, 'success');
             closeModal('roadmap-form-modal');
             fetchRoadmapData(); // Refresh table
@@ -9801,7 +9965,7 @@ function confirmDeleteRoadmap(index, kode) {
 
 /**
  * Delete Roadmap
- * Menggunakan apiFetch() untuk retry otomatis
+ * Menggunakan Supabase client
  */
 async function deleteRoadmap(index) {
     // Disable button dan show loading
@@ -9813,18 +9977,13 @@ async function deleteRoadmap(index) {
     try {
         const rowData = roadmapAdminData[index];
         
-        // Gunakan apiFetch() dengan POST method
-        const result = await apiFetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'deleteRoadmap',
-                rowIndex: index,
-                kode: rowData[0]
-            })
-        });
+        // Delete from Supabase
+        const { error } = await supabaseClient
+            .from('roadmap')
+            .delete()
+            .eq('id', rowData.id);
         
-        if (result.status === 'success') {
+        if (!error) {
             showToast(`✅ ${result.message}`, 'success');
             closeModal('roadmap-delete-modal');
             fetchRoadmapData(); // Refresh table
@@ -9945,12 +10104,12 @@ async function searchSubmissionData() {
     
     try {
         // Build URL with parameters
-        let url = `${WEB_APP_URL}?action=searchSubmission&t=${Date.now()}`;
+        // Using searchSubmission() instead
         if (nik) url += `&nik=${encodeURIComponent(nik)}`;
         if (register) url += `&noRegister=${encodeURIComponent(register)}`;
         
-        // Gunakan apiFetch() untuk automatic retry
-        const result = await apiFetch(url);
+        // Using Supabase client
+        const result = await fetchRoadmapData();
         
         // Hide loading
         document.getElementById('search-loading').style.display = 'none';
@@ -10138,7 +10297,12 @@ async function searchPenetapanData() {
     document.getElementById('penetapan-loading').style.display = 'block';
     
     try {
-        const url = `${WEB_APP_URL}?action=getPenetapanByNIK&nik=${encodeURIComponent(nik)}&t=${Date.now()}`;
+        // Query dari Supabase
+            const { data: penetapanData } = await supabaseClient
+                .from('penetapan')
+                .select('*')
+                .eq('nik', nik)
+                .limit(1);
         
         console.log('📡 Memanggil API Penetapan:', url.substring(0, 80) + '...');
         
@@ -10444,7 +10608,7 @@ function showPhotoSuccessIndicatorRev() {
 }
 
 /**
- * Save revision data to Google Sheets
+ * Save revision data to Supabase
  */
 async function saveRevisionData() {
     // Get form values
@@ -10492,19 +10656,20 @@ async function saveRevisionData() {
     btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px;"></div> Menyimpan...';
     
     try {
-        // Send update request
-        const response = await fetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'updateSubmission',
-                ...formData
+        // Update via Supabase
+        const { data: result, error } = await supabaseClient
+            .from('submissions')
+            .update({
+                ...formData,
+                status: 'Proses Verifikasi',
+                updated_at: new Date().toISOString()
             })
-        });
+            .eq('id', formData.id)
+            .select();
         
-        const result = await response.json();
+        if (error) throw error;
         
-        if (result.status === 'success') {
+        if (result && result.length > 0) {
             // Success!
             showToast('✅ Data perbaikan berhasil disimpan! Status kembali ke Proses Verifikasi.', 'success');
             
@@ -10559,7 +10724,7 @@ function loadDataPengusul() {
 
 /**
  * Fetch admin data from API with pagination, search, filter
- * Menggunakan apiFetch() untuk retry otomatis dan error handling yang lebih baik
+ * Menggunakan Supabase client dan error handling yang lebih baik
  */
 async function fetchAdminData() {
     const tbody = document.getElementById('pengusul-table-body');
@@ -10581,7 +10746,7 @@ async function fetchAdminData() {
         const sortBy = document.getElementById('admin-sort-by').value;
         const sortOrder = document.getElementById('admin-sort-order').value;
         
-        let url = `${WEB_APP_URL}?action=getAllSubmissions&t=${Date.now()}`;
+        // Using getAllSubmissions() instead
         url += `&page=${adminCurrentPage}`;
         url += `&limit=${adminPageSize}`;
         if (search) url += `&search=${encodeURIComponent(search)}`;
@@ -10589,8 +10754,8 @@ async function fetchAdminData() {
         if (sortBy) url += `&sortBy=${encodeURIComponent(sortBy)}`;
         if (sortOrder) url += `&sortOrder=${encodeURIComponent(sortOrder)}`;
         
-        // Gunakan apiFetch() untuk automatic retry dan timeout handling
-        const result = await apiFetch(url);
+        // Using Supabase client
+        const result = await fetchRoadmapData();
         
         if (result.status === 'success') {
             renderAdminTable(result.data);
@@ -10832,7 +10997,7 @@ async function updateAdminStats(pagination) {
     
     // Fetch detailed stats for status breakdown
     try {
-        const result = await apiFetch(`${WEB_APP_URL}?action=getAllSubmissions&t=${Date.now()}&limit=10000`);
+        const result = await getAllSubmissions(10000);
         
         if (result.status === 'success' && result.data) {
             const allData = result.data;
@@ -10941,8 +11106,8 @@ async function viewDetailPengusul(rowNumber) {
         // Method 2: Fallback - Fetch from API using getAllSubmissions
         console.log('🔄 Mengambil data dari API untuk row:', rowNumber);
         
-        // Gunakan apiFetch() untuk automatic retry
-        const result = await apiFetch(`${WEB_APP_URL}?action=getAllSubmissions&t=${Date.now()}&limit=1000`);
+        // Using Supabase client
+        const result = await getAllSubmissions(1000);
         
         if (result.status === 'success' && result.data) {
             const foundData = result.data.find(item => item.rowNumber == rowNumber);
@@ -11164,7 +11329,7 @@ function openStatusModal(rowNumber, currentStatus) {
 
 /**
  * Submit status update
- * Menggunakan apiFetch() untuk retry otomatis
+ * Menggunakan Supabase client
  */
 async function submitStatusUpdate(rowNumber) {
     const selectedStatus = document.querySelector('input[name="new-status"]:checked');
@@ -11183,19 +11348,20 @@ async function submitStatusUpdate(rowNumber) {
     btn.innerHTML = '⏳ Menyimpan...';
     
     try {
-        // Gunakan apiFetch() dengan POST method
-        const result = await apiFetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'adminUpdateStatus',
-                rowNumber: rowNumber,
-                newStatus: newStatus
+        // Update status via Supabase
+        const { data: result, error } = await supabaseClient
+            .from('submissions')
+            .update({ 
+                status: newStatus,
+                updated_at: new Date().toISOString()
             })
-        });
+            .eq('id', rowNumber)
+            .select();
         
-        if (result.status === 'success') {
-            showToast(`✅ ${result.message}`, 'success');
+        if (error) throw error;
+        
+        if (result && result.length > 0) {
+            showToast(`✅ Status berhasil diubah ke ${newStatus}`, 'success');
             closeModal('status-update-modal');
             fetchAdminData(); // Refresh table
         } else {
@@ -11263,7 +11429,7 @@ function confirmDeletePengusul(rowNumber, namaLengkap) {
 
 /**
  * Delete submission
- * Menggunakan apiFetch() untuk retry otomatis
+ * Menggunakan Supabase client
  */
 async function deletePengusul(rowNumber) {
     // Disable button dan show loading
@@ -11273,18 +11439,14 @@ async function deletePengusul(rowNumber) {
     btn.innerHTML = '⏳ Menghapus...';
     
     try {
-        // Gunakan apiFetch() dengan POST method
-        const result = await apiFetch(WEB_APP_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'deleteSubmission',
-                rowNumber: rowNumber
-            })
-        });
+        // Delete from Supabase
+        const { error } = await supabaseClient
+            .from('submissions')
+            .delete()
+            .eq('id', rowNumber);
         
-        if (result.status === 'success') {
-            showToast(`✅ ${result.message}`, 'success');
+        if (!error) {
+            showToast(`✅ Data berhasil dihapus`, 'success');
             closeModal('delete-confirm-modal');
             fetchAdminData(); // Refresh table
         } else {
@@ -12095,8 +12257,8 @@ SIMBAKES SUPABASE INTEGRATION
 // Ganti dengan URL dan Anon Key Anda!
 // ============================================
 const SUPABASE_CONFIG = {
-    url: 'YOUR_SUPABASE_URL',      // Ganti: https://xxxxx.supabase.co
-    anonKey: 'YOUR_SUPABASE_ANON_KEY'  // Ganti: eyJxxxxx...
+    url: 'https://boeknpvlfamjmddsdopd.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZWtucHZsZmFtam1kZHNkb3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NzYwNjIsImV4cCI6MjEwMjA1MjA2Mn0.kHj7xEY7Wa4zSJwH0rjhiB3Qf0IHriyPlWoh4rdlv3U'
 };
 
 // Global Supabase Client
@@ -12128,11 +12290,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initSupabaseClient();
 });
 </script>
-
-<!-- Fallback: load external files if they exist -->
-<script src="supabase-client.js" onerror="console.log('[SIMBAKES] supabase-client.js not found, using inline config')"></script>
-<script src="login.js" onerror="console.log('[SIMBAKES] login.js not found')"></script>
-<script src="simbakes-integration.js" onerror="console.log('[SIMBAKES] simbakes-integration.js not found')"></script>
 
 </body>
 </html>
