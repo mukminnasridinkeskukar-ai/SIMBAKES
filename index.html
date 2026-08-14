@@ -12082,12 +12082,57 @@ document.addEventListener('DOMContentLoaded', () => {
 SIMBAKES SUPABASE INTEGRATION
 - Jangan hapus script di bawah ini!
 - File ini menghubungkan template ke database Supabase
-- Urutan loading: supabase-client.js dulu, lalu login.js, lalu simbakes-integration.js
 ======================================================
 -->
-<script src="supabase-client.js"></script>
-<script src="login.js"></script>
-<script src="simbakes-integration.js"></script>
+
+<!-- Supabase JS Client CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Supabase Configuration & Client Initialization -->
+<script>
+// ============================================
+// SUPABASE CONFIGURATION
+// Ganti dengan URL dan Anon Key Anda!
+// ============================================
+const SUPABASE_CONFIG = {
+    url: 'YOUR_SUPABASE_URL',      // Ganti: https://xxxxx.supabase.co
+    anonKey: 'YOUR_SUPABASE_ANON_KEY'  // Ganti: eyJxxxxx...
+};
+
+// Global Supabase Client
+let supabaseClient = null;
+
+function initSupabaseClient() {
+    try {
+        if (typeof window.supabase !== 'undefined' && 
+            SUPABASE_CONFIG.url && 
+            SUPABASE_CONFIG.anonKey &&
+            SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_URL') {
+            
+            supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+            console.log('[SIMBAKES] ✅ Supabase client initialized');
+            return true;
+        } else {
+            console.warn('[SIMBAKES] ⚠️ Supabase belum dikonfigurasi');
+            console.log('[SIMBAKES] Silakan isi SUPABASE_URL dan SUPABASE_ANON_KEY');
+            return false;
+        }
+    } catch (error) {
+        console.error('[SIMBAKES] ❌ Error initializing Supabase:', error);
+        return false;
+    }
+}
+
+// Initialize on DOM ready
+document.addEventListener('DOMContentLoaded', function() {
+    initSupabaseClient();
+});
+</script>
+
+<!-- Fallback: load external files if they exist -->
+<script src="supabase-client.js" onerror="console.log('[SIMBAKES] supabase-client.js not found, using inline config')"></script>
+<script src="login.js" onerror="console.log('[SIMBAKES] login.js not found')"></script>
+<script src="simbakes-integration.js" onerror="console.log('[SIMBAKES] simbakes-integration.js not found')"></script>
 
 </body>
 </html>
