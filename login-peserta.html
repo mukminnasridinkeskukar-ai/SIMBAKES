@@ -985,11 +985,40 @@
                     }
                 }
                 
-                // Create Supabase client using REST API approach (more secure)
+                // Clean URL - remove trailing slashes and /rest/v1
+                let cleanUrl = SUPABASE_URL.replace(/\/+$/, '');  // Remove trailing slashes
+                cleanUrl = cleanUrl.replace('/rest/v1', '');     // Remove /rest/v1 for JS client
+                cleanUrl = cleanUrl.replace('/rest', '');        // Remove /rest also
+                
+                console.log('🔗 Initializing Supabase with URL:', cleanUrl.substring(0, 40) + '...');
+                
+                // Create Supabase client dengan options yang proper
                 supabaseClient = window.supabase.createClient(
-                    SUPABASE_URL.replace('/rest/v1', ''),  // Remove /rest/v1 for JS client
-                    SUPABASE_ANON_KEY
+                    cleanUrl,
+                    SUPABASE_ANON_KEY,
+                    {
+                        auth: {
+                            autoRefreshToken: false,  // Tidak perlu refresh token untuk RPC
+                            persistSession: false      // Jangan persist session auth (kita pakai custom session)
+                        },
+                        global: {
+                            headers: {
+                                'x-application-name': 'simbakes-peserta-login'
+                            }
+                        }
+                    }
                 );
+                
+                // Test connection dengan simple query
+                supabaseClient.from('multiusers').select('id').limit(1)
+                    .then(({ error }) => {
+                        if (error) {
+                            console.warn('⚠️ Supabase connection test warning:', error.message);
+                            // Jangan throw error - mungkin karena RLS, tapi RPC tetap bisa dipanggil
+                        } else {
+                            console.log('✅ Supabase connection test successful');
+                        }
+                    });
                 
                 supabaseStatus.initialized = true;
                 console.log('✅ Supabase client initialized successfully');
@@ -1106,29 +1135,65 @@
         }
         
         // ============================================================
-        // SECURE AUTHENTICATION FUNCTION
+        // SECURE AUTHENTICATION FUNCTION (via Supabase RPC)
         // ============================================================
         async function authenticateUser(username, password) {
-            // Call the secure RPC function
-            const response = await fetch(`${SUPABASE_URL}rpc/fn_authenticate_peserta`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'apikey': SUPABASE_ANON_KEY,
-                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                },
-                body: JSON.stringify({
-                    p_username: username,
-                    p_password: password
-                })
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                throw new Error(errorData?.message || `HTTP Error: ${response.status}`);
+            // Validasi: Pastikan Supabase client sudah terinisialisasi
+            if (!supabaseClient || !supabaseStatus.initialized) {
+                throw new Error('Supabase client belum siap. Silakan refresh halaman.');
             }
             
-            return response.json();
+            console.log('🔐 Calling RPC fn_authenticate_peserta for user:', username);
+            
+            // Gunakan Supabase JS Client untuk memanggil RPC function
+            // Ini lebih aman dan otomatis handle headers/auth
+            const { data, error } = await supabaseClient.rpc('fn_authenticate_peserta', {
+                p_username: username,
+                p_password: password
+            });
+            
+            if (error) {
+                console.error('❌ RPC Error details:', {
+                    message: error.message,
+                    code: error.code,
+                    hint: error.hint,
+                    details: error.details
+                });
+                
+                // Handle specific error codes
+                if (error.code === '42501' || error.message.includes('permission')) {
+                    throw new Error('Izin ditolak. Pastikan SQL function sudah dibuat dengan SECURITY DEFINER.');
+                } else if (error.code === '42883' || error.message.includes('does not exist')) {
+                    throw new Error('Function fn_authenticate_peserta tidak ditemukan. Jalankan SQL setup terlebih dahulu.');
+                } else if (error.code === '23505') {
+                    throw new Error('Constraint violation. Data mungkin duplikat.');
+                }
+                
+                throw new Error(error.message || 'Gagal mengautentikasi');
+            }
+            
+            console.log('✅ RPC Response received:', data ? 'success' : 'null');
+            return data;
+        }
+        
+        // ============================================================
+        // SECURE LOGOUT FUNCTION (via Supabase RPC)
+        // ============================================================
+        async function logoutFromServer(sessionToken) {
+            try {
+                const { data, error } = await supabaseClient.rpc('fn_logout_peserta', {
+                    p_session_token: sessionToken
+                });
+                
+                if (error) {
+                    console.warn('Logout RPC warning:', error);
+                }
+                
+                return data;
+            } catch (e) {
+                console.warn('Server logout failed:', e);
+                return null;
+            }
         }
         
         // ============================================================
@@ -1384,21 +1449,8 @@
                 
                 if (session && session.sessionToken) {
                     // Call logout RPC to invalidate server-side session
-                    try {
-                        await fetch(`${SUPABASE_URL}rpc/fn_logout_peserta`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'apikey': SUPABASE_ANON_KEY,
-                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                            },
-                            body: JSON.stringify({
-                                p_session_token: session.sessionToken
-                            })
-                        });
-                    } catch (e) {
-                        console.warn('Server logout failed, clearing local session anyway:', e);
-                    }
+                    // Menggunakan Supabase Client (lebih aman)
+                    await logoutFromServer(session.sessionToken);
                 }
                 
                 // Always clear local session
