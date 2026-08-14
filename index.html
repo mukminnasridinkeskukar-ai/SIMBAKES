@@ -3969,6 +3969,500 @@
             }
         }
     </style>
+    
+    <!-- ===== ADDITIONAL CSS FOR DATA PENETAPAN ADMIN TABLE ===== -->
+    <style>
+        /* ===== DATA PENETAPAN TABLE STYLING ===== */
+        #penetapan-data-table tbody tr {
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        #penetapan-data-table tbody tr:hover {
+            background: linear-gradient(135deg, #faf5ff, #f3e8ff) !important;
+            transform: scale(1.005);
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
+        }
+
+        #penetapan-data-table tbody tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        #penetapan-data-table td {
+            padding: 1rem;
+            vertical-align: middle;
+            font-size: 0.875rem;
+            color: #475569;
+        }
+
+        /* Photo Cell Styling - PERFECT DISPLAY */
+        .penetapan-photo-cell {
+            width: 60px;
+            height: 60px;
+        }
+
+        .penetapan-photo-img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 3px solid #e9d5ff;
+            box-shadow: 0 4px 8px rgba(124, 58, 237, 0.15);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .penetapan-photo-img:hover {
+            transform: scale(1.15);
+            border-color: #7c3aed;
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+            z-index: 10;
+            position: relative;
+        }
+
+        .penetapan-photo-placeholder {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            border: 3px solid #e9d5ff;
+        }
+
+        /* Status Badge Styling */
+        .status-badge-penetapan {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.4rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: capitalize;
+            letter-spacing: 0.3px;
+        }
+
+        .status-lulus {
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+
+        .status-pending {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #854d0e;
+            border: 1px solid #fcd34d;
+        }
+
+        .status-ditolak {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .status-proses {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        /* CRUD Action Buttons */
+        .action-buttons-container {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            flex-wrap: nowrap;
+        }
+
+        .btn-action {
+            padding: 0.5rem 0.85rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            white-space: nowrap;
+        }
+
+        .btn-view {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-view:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-edit:hover {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Photo Modal for Admin Table */
+        .photo-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 20000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .photo-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .photo-modal-content {
+            max-width: 500px;
+            width: 100%;
+            transform: scale(0.9);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .photo-modal-overlay.active .photo-modal-content {
+            transform: scale(1);
+        }
+
+        .photo-modal-img {
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+        }
+
+        .photo-modal-close {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            width: 48px;
+            height: 48px;
+            background: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #475569;
+            transition: all 0.2s;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .photo-modal-close:hover {
+            transform: rotate(90deg) scale(1.1);
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* Edit Modal Styling */
+        .edit-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 20000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .edit-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .edit-modal {
+            background: white;
+            border-radius: 24px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9) translateY(30px);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35);
+        }
+
+        .edit-modal-overlay.active .edit-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .edit-modal-header {
+            background: linear-gradient(135deg, #7c3aed, #a78bfa);
+            padding: 2rem;
+            border-radius: 24px 24px 0 0;
+            color: white;
+            position: relative;
+        }
+
+        .edit-modal-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .edit-modal-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin: 0.5rem 0 0 0;
+        }
+
+        .edit-modal-body {
+            padding: 2rem;
+        }
+
+        .edit-form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .form-group-edit {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .form-label-edit {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            font-weight: 700;
+        }
+
+        .form-input-edit {
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            background: #f8fafc;
+        }
+
+        .form-input-edit:focus {
+            outline: none;
+            border-color: #7c3aed;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+        }
+
+        .edit-modal-footer {
+            padding: 1.5rem 2rem;
+            border-top: 2px solid #f1f5f9;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            background: #f8fafc;
+            border-radius: 0 0 24px 24px;
+        }
+
+        .btn-save-edit {
+            padding: 0.75rem 2rem;
+            background: linear-gradient(135deg, #7c3aed, #a78bfa);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-save-edit:hover {
+            background: linear-gradient(135deg, #6d28d9, #7c3aed);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(124, 58, 237, 0.4);
+        }
+
+        .btn-cancel-edit {
+            padding: 0.75rem 2rem;
+            background: white;
+            color: #64748b;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel-edit:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        /* Delete Confirmation Modal */
+        .delete-confirm-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(220, 38, 38, 0.2);
+            backdrop-filter: blur(8px);
+            z-index: 25000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .delete-confirm-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .delete-confirm-box {
+            background: white;
+            border-radius: 20px;
+            max-width: 450px;
+            width: 100%;
+            padding: 2.5rem;
+            text-align: center;
+            transform: scale(0.9);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 25px 80px rgba(220, 38, 38, 0.3);
+        }
+
+        .delete-confirm-overlay.active .delete-confirm-box {
+            transform: scale(1);
+        }
+
+        .delete-icon-wrapper {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2.5rem;
+        }
+
+        .delete-confirm-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #991b1b;
+            margin: 0 0 0.75rem;
+        }
+
+        .delete-confirm-message {
+            color: #64748b;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin: 0 0 2rem;
+        }
+
+        .delete-confirm-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .btn-confirm-delete {
+            padding: 0.75rem 2rem;
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-confirm-delete:hover {
+            background: linear-gradient(135deg, #b91c1c, #dc2626);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
+        }
+
+        .btn-cancel-delete {
+            padding: 0.75rem 2rem;
+            background: white;
+            color: #64748b;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel-delete:hover {
+            background: #f1f5f9;
+        }
+
+        /* Responsive adjustments for admin table */
+        @media (max-width: 1200px) {
+            #penetapan-data-table th:nth-child(n+7),
+            #penetapan-data-table td:nth-child(n+7) {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #penetapan-data-table th:nth-child(n+6),
+            #penetapan-data-table td:nth-child(n+6) {
+                display: none;
+            }
+
+            .action-buttons-container {
+                flex-direction: column;
+                gap: 0.35rem;
+            }
+
+            .btn-action {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -4114,6 +4608,10 @@
                         <button class="nav-item amber" onclick="showPage('data-roadmap')" id="nav-data-roadmap">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
                             Data Existing Roadmap
+                        </button>
+                        <button class="nav-item purple" onclick="showPage('data-penetapan')" id="nav-data-penetapan">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                            Data Penetapan
                         </button>
                         <button class="btn-logout" onclick="adminLogout()">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -6112,6 +6610,156 @@
             </div>
         </div>
 
+        <!-- ===== DATA PENETAPAN PAGE (Admin Only) ===== -->
+        <div class="page" id="page-data-penetapan">
+            <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;background:linear-gradient(135deg,#7c3aed 0%,#a78bfa 50%,#c4b5fd 100%);border-radius:16px;padding:1.5rem 2rem;color:white;margin-bottom:1.5rem;">
+                <div style="display:flex;align-items:center;gap:1rem;">
+                    <div style="width:56px;height:56px;background:rgba(255,255,255,0.2);backdrop-filter:blur(10px);border-radius:14px;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,0.3);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="28" height="28"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    </div>
+                    <div>
+                        <h2 style="margin:0;font-size:1.5rem;font-weight:700;">📋 Data Penetapan</h2>
+                        <p style="margin:0.25rem 0 0 0;font-size:0.9rem;opacity:0.9;">Kelola data penetapan penerima beasiswa kesehatan</p>
+                    </div>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                    <button class="btn btn-primary btn-sm" onclick="exportDataPenetapan()" style="background:white;color:#7c3aed;border:none;">
+                        📥 Export
+                    </button>
+                    <button class="btn btn-sm" onclick="refreshDataPenetapan()" style="background:rgba(255,255,255,0.2);color:white;border:none;">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="admin-stats-bar" id="penetapan-stats-bar" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;">
+                <div class="admin-stat-item" style="background:white;padding:1.25rem;border-radius:12px;box-shadow:0 2px 8px rgba(124,58,237,0.1);border-left:4px solid #7c3aed;">
+                    <div class="admin-stat-icon" style="background:#ede9fe;color:#7c3aed;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;">📊</div>
+                    <div class="admin-stat-info">
+                        <span class="admin-stat-value" id="stat-total-penetapan" style="font-size:1.75rem;font-weight:700;color:#5b21b6;">0</span>
+                        <span class="admin-stat-label" style="font-size:0.8rem;color:#7c3aed;font-weight:600;">Total Data</span>
+                    </div>
+                </div>
+                <div class="admin-stat-item" style="background:white;padding:1.25rem;border-radius:12px;box-shadow:0 2px 8px rgba(22,163,74,0.1);border-left:4px solid #16a34a;">
+                    <div class="admin-stat-icon" style="background:#dcfce7;color:#16a34a;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;">✅</div>
+                    <div class="admin-stat-info">
+                        <span class="admin-stat-value" id="stat-lulus-penetapan" style="font-size:1.75rem;font-weight:700;color:#166534;">0</span>
+                        <span class="admin-stat-label" style="font-size:0.8rem;color:#16a34a;font-weight:600;">Lulus</span>
+                    </div>
+                </div>
+                <div class="admin-stat-item" style="background:white;padding:1.25rem;border-radius:12px;box-shadow:0 2px 8px rgba(234,179,8,0.1);border-left:4px solid #eab308;">
+                    <div class="admin-stat-icon" style="background:#fefce8;color:#ca8a04;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;">⏳</div>
+                    <div class="admin-stat-info">
+                        <span class="admin-stat-value" id="stat-pending-penetapan" style="font-size:1.75rem;font-weight:700;color:#854d0e;">0</span>
+                        <span class="admin-stat-label" style="font-size:0.8rem;color:#ca8a04;font-weight:600;">Pending</span>
+                    </div>
+                </div>
+                <div class="admin-stat-item" style="background:white;padding:1.25rem;border-radius:12px;box-shadow:0 2px 8px rgba(239,68,68,0.1);border-left:4px solid #ef4444;">
+                    <div class="admin-stat-icon" style="background:#fef2f2;color:#dc2626;width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;">❌</div>
+                    <div class="admin-stat-info">
+                        <span class="admin-stat-value" id="stat-ditolak-penetapan" style="font-size:1.75rem;font-weight:700;color:#991b1b;">0</span>
+                        <span class="admin-stat-label" style="font-size:0.8rem;color:#dc2626;font-weight:600;">Ditolak</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search & Filter Bar -->
+            <div style="background:white;padding:1.25rem;border-radius:12px;margin-bottom:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+                <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
+                    <div style="flex:1;min-width:250px;position:relative;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" width="18" height="18" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        <input type="text" id="penetapan-search-input" placeholder="Cari nama, NIK, jurusan..." style="width:100%;padding:0.65rem 1rem 0.65rem 2.5rem;border:2px solid #e2e8f0;border-radius:10px;font-size:0.9rem;transition:border-color 0.2s;" oninput="filterPenetapanData()">
+                    </div>
+                    <select id="penetapan-filter-status" onchange="filterPenetapanData()" style="padding:0.65rem 1rem;border:2px solid #e2e8f0;border-radius:10px;font-size:0.9rem;background:white;cursor:pointer;">
+                        <option value="">Semua Status</option>
+                        <option value="Lulus">Lulus</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Ditolak">Ditolak</option>
+                        <option value="Proses">Dalam Proses</option>
+                    </select>
+                    <select id="penetapan-filter-jurusan" onchange="filterPenetapanData()" style="padding:0.65rem 1rem;border:2px solid #e2e8f0;border-radius:10px;font-size:0.9rem;background:white;cursor:pointer;">
+                        <option value="">Semua Jurusan</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="penetapan-loading-state" style="text-align:center;padding:4rem;background:white;border-radius:16px;">
+                <div style="display:inline-block;width:48px;height:48px;border:4px solid #e9d5ff;border-top:4px solid #7c3aed;border-radius:50%;animation:spin 1s linear infinite;"></div>
+                <p style="margin-top:1rem;color:#64748b;font-weight:500;">Memuat data Penetapan...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="penetapan-error-state" style="display:none;text-align:center;padding:3rem;background:white;border-radius:16px;border:2px solid #fecaca;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" width="48" height="48" style="margin-bottom:1rem;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                <h3 style="color:#991b1b;margin:0 0 0.5rem;">Gagal Memuat Data</h3>
+                <p style="color:#b91c1c;margin:0 0 1rem;" id="penetapan-error-message">Terjadi kesalahan saat mengambil data</p>
+                <button onclick="refreshDataPenetapan()" style="padding:0.65rem 1.5rem;background:#dc2626;color:white;border:none;border-radius:10px;cursor:pointer;font-weight:600;">🔄 Coba Lagi</button>
+            </div>
+
+            <!-- Empty State -->
+            <div id="penetapan-empty-state" style="display:none;text-align:center;padding:4rem;background:white;border-radius:16px;border:2px dashed #e9d5ff;">
+                <div style="width:80px;height:80px;background:#f5f3ff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" width="36" height="36"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                </div>
+                <h3 style="color:#5b21b6;margin:0 0 0.5rem;">Belum Ada Data Penetapan</h3>
+                <p style="color:#7c3aed;margin:0;">Data penetapan akan ditampilkan di sini setelah proses penetapan dilakukan</p>
+            </div>
+
+            <!-- Data Table Container -->
+            <div id="penetapan-table-container" style="display:none;">
+                <div class="table-container modern-table" style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(124,58,237,0.1);">
+                    <table style="width:100%;border-collapse:collapse;" id="penetapan-data-table">
+                        <thead>
+                            <tr style="background:linear-gradient(135deg,#7c3aed,#a78bfa);color:white;">
+                                <th style="padding:1rem;text-align:left;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">No</th>
+                                <th style="padding:1rem;text-align:left;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">Foto</th>
+                                <th style="padding:1rem;text-align:left;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">Nama Lengkap</th>
+                                <th style="padding:1rem;text-align:left;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">NIK</th>
+                                <th style="padding:1rem;text-align:left;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">Jurusan</th>
+                                <th style="padding:1rem;text-align:left;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">Jenjang</th>
+                                <th style="padding:1rem;text-align:left;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">Perguruan Tinggi</th>
+                                <th style="padding:1rem;text-align:left;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">Unit Kerja</th>
+                                <th style="padding:1rem;text-align:left;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">Status</th>
+                                <th style="padding:1rem;text-align:center;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.5px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="penetapan-tbody">
+                            <!-- Data rows will be dynamically inserted -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Controls -->
+                <div class="pagination-container" id="penetapan-pagination-container" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-top:1.5rem;padding:1.25rem;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+                    <div class="pagination-info" style="color:#64748b;font-size:0.875rem;">
+                        Menampilkan <strong id="penetapan-showing">0-0</strong> dari <strong id="penetapan-total">0</strong> data
+                    </div>
+                    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                        <div class="page-size-selector" style="display:flex;align-items:center;gap:0.5rem;">
+                            <label style="color:#64748b;font-size:0.875rem;font-weight:500;">Tampilkan:</label>
+                            <select id="penetapan-page-size" onchange="changePenetapanPageSize()" style="padding:0.5rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.875rem;cursor:pointer;background:white;">
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        <div class="pagination-controls" style="display:flex;gap:0.5rem;">
+                            <button class="btn-pagination" onclick="goToPenetapanPage(1)" id="penetapan-btn-first" disabled style="padding:0.5rem 0.75rem;border:2px solid #e2e8f0;background:white;border-radius:8px;cursor:pointer;font-size:0.875rem;">⏮️</button>
+                            <button class="btn-pagination" onclick="goToPenetapanPrevPage()" id="penetapan-btn-prev" disabled style="padding:0.5rem 0.75rem;border:2px solid #e2e8f0;background:white;border-radius:8px;cursor:pointer;font-size:0.875rem;">◀️</button>
+                            <button class="btn-pagination" onclick="goToPenetapanNextPage()" id="penetapan-btn-next" disabled style="padding:0.5rem 0.75rem;border:2px solid #e2e8f0;background:white;border-radius:8px;cursor:pointer;font-size:0.875rem;">▶️</button>
+                            <button class="btn-pagination" onclick="goToPenetapanLastPage()" id="penetapan-btn-last" disabled style="padding:0.5rem 0.75rem;border:2px solid #e2e8f0;background:white;border-radius:8px;cursor:pointer;font-size:0.875rem;">⏭️</button>
+                        </div>
+                        <div class="page-indicator" style="color:#64748b;font-size:0.875rem;font-weight:500;">
+                            Halaman <strong id="penetapan-current-page">1</strong> dari <strong id="penetapan-total-pages">1</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 </div>
 
@@ -7857,6 +8505,893 @@ function closePesertaDetailModal() {
         }, 300);
     }
 }
+
+// ===== DATA PENETAPAN ADMIN - FULL CRUD FUNCTIONS =====
+
+// Global variables for Penetapan Admin
+let penetapanAllData = [];           // Store ALL data from Supabase
+let penetapanFilteredData = [];      // Store filtered data for display
+let penetapanCurrentPage = 1;
+let penetapanPageSize = 10;
+let penetapanEditingId = null;       // Track which record is being edited
+
+/**
+ * Initialize and Load Data Penetapan when page is shown
+ */
+function initPenetapanAdmin() {
+    console.log('🔄 Initializing Data Penetapan Admin...');
+    
+    // Initialize pagination
+    PaginationManager.init('penetapan', penetapanPageSize);
+    
+    // Load data from Supabase
+    refreshDataPenetapan();
+}
+
+/**
+ * Refresh/Reload Data from Supabase
+ */
+async function refreshDataPenetapan() {
+    const loadingEl = document.getElementById('penetapan-loading-state');
+    const errorEl = document.getElementById('penetapan-error-state');
+    const emptyEl = document.getElementById('penetapan-empty-state');
+    const tableContainer = document.getElementById('penetapan-table-container');
+    
+    // Show loading state
+    loadingEl.style.display = 'block';
+    errorEl.style.display = 'none';
+    emptyEl.style.display = 'none';
+    tableContainer.style.display = 'none';
+    
+    try {
+        console.log('📡 Fetching data penetapan from Supabase...');
+        
+        // Fetch ALL records from penetapan table
+        const { data: penetapanData, error: supabaseError } = await supabaseClient
+            .from('penetapan')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .order('nama_lengkap', { ascending: true });
+        
+        if (supabaseError) {
+            throw new Error(supabaseError.message || 'Gagal mengambil data dari server');
+        }
+        
+        console.log(`✅ Received ${penetapanData?.length || 0} records from Supabase`);
+        
+        // Store all data globally
+        penetapanAllData = penetapanData || [];
+        penetapanFilteredData = [...penetapanAllData];
+        
+        // Hide loading
+        loadingEl.style.display = 'none';
+        
+        // Check if empty
+        if (penetapanAllData.length === 0) {
+            emptyEl.style.display = 'block';
+            updatePenetapanStats();
+            return;
+        }
+        
+        // Update stats
+        updatePenetapanStats();
+        
+        // Populate jurusan filter dropdown
+        populateJurusanFilter();
+        
+        // Render table with pagination
+        renderPenetapanTable();
+        
+        // Show table container
+        tableContainer.style.display = 'block';
+        
+    } catch (err) {
+        console.error('❌ Error loading data penetapan:', err);
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'block';
+        document.getElementById('penetapan-error-message').textContent = err.message || 'Terjadi kesalahan saat memuat data';
+    }
+}
+
+/**
+ * Update Statistics Cards
+ */
+function updatePenetapanStats() {
+    const total = penetapanAllData.length;
+    
+    // Count by status
+    const lulusCount = penetapanAllData.filter(item => {
+        const status = (item.status_penetapan || item.statusPenetapan || item.status || '').toLowerCase();
+        return status.includes('lulus') || status.includes('approve') || status.includes('diterima');
+    }).length;
+    
+    const pendingCount = penetapanAllData.filter(item => {
+        const status = (item.status_penetapan || item.statusPenetapan || item.status || '').toLowerCase();
+        return status.includes('pending') || status.includes('proses') || status === '' || status === '-';
+    }).length;
+    
+    const ditolakCount = penetapanAllData.filter(item => {
+        const status = (item.status_penetapan || item.statusPenetapan || item.status || '').toLowerCase();
+        return status.includes('tolak') || status.includes('reject') || status.includes('ditolak');
+    }).length;
+    
+    // Update DOM with animation
+    animateValue('stat-total-penetapan', total);
+    animateValue('stat-lulus-penetapan', lulusCount);
+    animateValue('stat-pending-penetapan', pendingCount);
+    animateValue('stat-ditolak-penetapan', ditolakCount);
+}
+
+/**
+ * Animate number value change
+ */
+function animateValue(elementId, endValue) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    
+    const startValue = parseInt(el.textContent) || 0;
+    const duration = 500;
+    const startTime = performance.now();
+    
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+        
+        const currentValue = Math.round(startValue + (endValue - startValue) * easeProgress);
+        el.textContent = currentValue;
+        
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        }
+    }
+    
+    requestAnimationFrame(update);
+}
+
+/**
+ * Populate Jurusan Filter Dropdown
+ */
+function populateJurusanFilter() {
+    const select = document.getElementById('penetapan-filter-jurusan');
+    if (!select) return;
+    
+    // Get unique jurusan values
+    const jurusanSet = new Set();
+    penetapanAllData.forEach(item => {
+        const jurusan = item.jurusan_tujuan || item.jurusanTujuan || item.jurusan || '';
+        if (jurusan && jurusan !== '-') {
+            jurusanSet.add(jurusan);
+        }
+    });
+    
+    // Clear existing options except first
+    select.innerHTML = '<option value="">Semua Jurusan</option>';
+    
+    // Add options sorted alphabetically
+    Array.from(jurusanSet).sort().forEach(jurusan => {
+        const option = document.createElement('option');
+        option.value = jurusan;
+        option.textContent = jurusan;
+        select.appendChild(option);
+    });
+}
+
+/**
+ * Filter Data based on search input and dropdowns
+ */
+function filterPenetapanData() {
+    const searchTerm = (document.getElementById('penetapan-search-input')?.value || '').toLowerCase();
+    const statusFilter = document.getElementById('penetapan-filter-status')?.value || '';
+    const jurusanFilter = document.getElementById('penetapan-filter-jurusan')?.value || '';
+    
+    console.log('🔍 Filtering data...', { searchTerm, statusFilter, jurusanFilter });
+    
+    // Filter from all data
+    penetapanFilteredData = penetapanAllData.filter(item => {
+        // Search term filter (search in nama, NIK, jurusan)
+        const namaLengkap = (item.nama_lengkap || item.namaLengkap || '').toLowerCase();
+        const nik = (item.nik || item.no_ktp || '').toLowerCase();
+        const jurusan = (item.jurusan_tujuan || item.jurusanTujuan || item.jurusan || '').toLowerCase();
+        const pt = (item.perguruan_tinggi || item.perguruanTinggi || '').toLowerCase();
+        
+        const matchesSearch = !searchTerm || 
+            namaLengkap.includes(searchTerm) || 
+            nik.includes(searchTerm) ||
+            jurusan.includes(searchTerm) ||
+            pt.includes(searchTerm);
+        
+        // Status filter
+        const status = (item.status_penetapan || item.statusPenetapan || item.status || '').toLowerCase();
+        const matchesStatus = !statusFilter || 
+            status === statusFilter.toLowerCase() ||
+            (statusFilter === 'Proses' && (status.includes('proses') || status === '' || status === '-'));
+        
+        // Jurusan filter
+        const itemJurusan = item.jurusan_tujuan || item.jurusanTujuan || item.jurusan || '';
+        const matchesJurusan = !jurusanFilter || itemJurusan === jurusanFilter;
+        
+        return matchesSearch && matchesStatus && matchesJurusan;
+    });
+    
+    // Reset to page 1 and re-render
+    penetapanCurrentPage = 1;
+    renderPenetapanTable();
+}
+
+/**
+ * Render Table with Pagination
+ */
+function renderPenetapanTable() {
+    const tbody = document.getElementById('penetapan-tbody');
+    if (!tbody) return;
+    
+    // Calculate pagination
+    const totalRecords = penetapanFilteredData.length;
+    const totalPages = Math.ceil(totalRecords / penetapanPageSize);
+    
+    // Ensure current page is valid
+    if (penetapanCurrentPage > totalPages) penetapanCurrentPage = Math.max(1, totalPages);
+    
+    // Slice data for current page
+    const startIndex = (penetapanCurrentPage - 1) * penetapanPageSize;
+    const endIndex = Math.min(startIndex + penetapanPageSize, totalRecords);
+    const pageData = penetapanFilteredData.slice(startIndex, endIndex);
+    
+    // Clear and render rows
+    tbody.innerHTML = '';
+    
+    if (pageData.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="10" style="text-align:center;padding:3rem;color:#64748b;">
+                    <div style="font-size:2rem;margin-bottom:0.5rem;">🔍</div>
+                    <p>Tidak ada data yang cocok dengan filter</p>
+                </td>
+            </tr>
+        `;
+    } else {
+        pageData.forEach((item, index) => {
+            const row = createPenetapanRow(item, startIndex + index + 1);
+            tbody.appendChild(row);
+        });
+    }
+    
+    // Update pagination info
+    updatePenetPaginationInfo(totalRecords, startIndex, endIndex, totalPages);
+}
+
+/**
+ * Create Table Row for each record - WITH PERFECT PHOTO DISPLAY
+ */
+function createPenetapanRow(item, rowNum) {
+    const row = document.createElement('tr');
+    
+    // Field mapping helper
+    const getField = (obj, ...keys) => {
+        for (const key of keys) {
+            if (obj[key]) return obj[key];
+        }
+        return '-';
+    };
+    
+    // Extract fields
+    const id = item.id;
+    const namaLengkap = getField(item, 'nama_lengkap', 'namaLengkap');
+    const nik = getField(item, 'nik', 'no_ktp');
+    const jurusan = getField(item, 'jurusan_tujuan', 'jurusanTujuan', 'jurusan');
+    const jenjang = getField(item, 'jenjang_pendidikan', 'jenjangPendidikan', 'jenjang');
+    const perguruanTinggi = getField(item, 'perguruan_tinggi', 'perguruanTinggi', 'pt');
+    const unitKerja = getField(item, 'unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayagunaan');
+    const linkFoto = getField(item, 'link_foto', 'linkFoto', 'foto', 'photo');
+    const statusPenetapan = getField(item, 'status_penetapan', 'statusPenetapan', 'status', 'Pending');
+    
+    // Photo handling - ENSURE PERFECT DISPLAY
+    const hasPhoto = linkFoto && linkFoto.trim() !== '' && linkFoto !== '-';
+    const photoSrc = hasPhoto ? linkFoto : '';
+    
+    // Status badge class
+    const statusLower = statusPenetapan.toLowerCase();
+    let statusClass = 'status-pending';
+    let statusIcon = '⏳';
+    
+    if (statusLower.includes('lulus') || statusLower.includes('approve')) {
+        statusClass = 'status-lulus';
+        statusIcon = '✅';
+    } else if (statusLower.includes('tolak') || statusLower.includes('reject')) {
+        statusClass = 'status-ditolak';
+        statusIcon = '❌';
+    } else if (statusLower.includes('proses')) {
+        statusClass = 'status-proses';
+        statusIcon = '🔄';
+    }
+    
+    row.innerHTML = `
+        <td style="font-weight:600;color:#7c3aed;">${rowNum}</td>
+        <td class="penetapan-photo-cell">
+            ${hasPhoto ? 
+                `<img src="${escapeHtml(photoSrc)}" 
+                     alt="Foto ${escapeHtml(namaLengkap)}" 
+                     class="penetapan-photo-img"
+                     onclick="event.stopPropagation(); showPhotoModal('${escapeHtml(photoSrc)}', '${escapeHtml(namaLengkap)}')"
+                     onerror="this.outerHTML='<div class=\\'penetapan-photo-placeholder\\'>👤</div>'"
+                     loading="lazy">` :
+                `<div class="penetapan-photo-placeholder">👤</div>`
+            }
+        </td>
+        <td style="font-weight:600;color:#1e293b;">${escapeHtml(namaLengkap)}</td>
+        <td><span style="font-family:monospace;background:#f1f5f9;padding:0.25rem 0.5rem;border-radius:6px;font-size:0.8rem;">${escapeHtml(nik)}</span></td>
+        <td>${escapeHtml(jurusan)}</td>
+        <td><span style="background:#ede9fe;color:#7c3aed;padding:0.25rem 0.65rem;border-radius:8px;font-size:0.8rem;font-weight:600;">${escapeHtml(jenjang)}</span></td>
+        <td>${escapeHtml(perguruanTinggi)}</td>
+        <td>${escapeHtml(unitKerja)}</td>
+        <td>
+            <span class="status-badge-penetapan ${statusClass}">
+                ${statusIcon} ${escapeHtml(statusPenetapan)}
+            </span>
+        </td>
+        <td>
+            <div class="action-buttons-container">
+                <button class="btn-action btn-view" onclick="event.stopPropagation(); viewPenetapanDetail(${id})" title="Lihat Detail">
+                    👁️ Lihat
+                </button>
+                <button class="btn-action btn-edit" onclick="event.stopPropagation(); openEditPenetapanModal(${id})" title="Edit Data">
+                    ✏️ Edit
+                </button>
+                <button class="btn-action btn-delete" onclick="event.stopPropagation(); confirmDeletePenetapan(${id}, '${escapeHtml(namaLengkap)}')" title="Hapus Data">
+                    🗑️ Hapus
+                </button>
+            </div>
+        </td>
+    `;
+    
+    return row;
+}
+
+/**
+ * Update Pagination Controls Info
+ */
+function updatePenetPaginationInfo(total, start, end, pages) {
+    // Update showing text
+    const showingEl = document.getElementById('penetapan-showing');
+    const totalEl = document.getElementById('penetapan-total');
+    const currentPageEl = document.getElementById('penetapan-current-page');
+    const totalPagesEl = document.getElementById('penetapan-total-pages');
+    
+    if (showingEl) showingEl.textContent = total > 0 ? `${start}-${end}` : '0-0';
+    if (totalEl) totalEl.textContent = total;
+    if (currentPageEl) currentPageEl.textContent = penetapanCurrentPage;
+    if (totalPagesEl) totalPagesEl.textContent = pages || 1;
+    
+    // Update button states
+    const btnFirst = document.getElementById('penetapan-btn-first');
+    const btnPrev = document.getElementById('penetapan-btn-prev');
+    const btnNext = document.getElementById('penetapan-btn-next');
+    const btnLast = document.getElementById('penetapan-btn-last');
+    
+    if (btnFirst) btnFirst.disabled = penetapanCurrentPage <= 1;
+    if (btnPrev) btnPrev.disabled = penetapanCurrentPage <= 1;
+    if (btnNext) btnNext.disabled = penetapanCurrentPage >= pages;
+    if (btnLast) btnLast.disabled = penetapanCurrentPage >= pages;
+}
+
+/**
+ * Pagination Navigation Functions
+ */
+function goToPenetapanPage(page) {
+    penetapanCurrentPage = page;
+    renderPenetapanTable();
+}
+
+function goToPenetapanPrevPage() {
+    if (penetapanCurrentPage > 1) {
+        penetapanCurrentPage--;
+        renderPenetapanTable();
+    }
+}
+
+function goToPenetapanNextPage() {
+    const totalPages = Math.ceil(penetapanFilteredData.length / penetapanPageSize);
+    if (penetapanCurrentPage < totalPages) {
+        penetapanCurrentPage++;
+        renderPenetapanTable();
+    }
+}
+
+function goToPenetapanLastPage() {
+    const totalPages = Math.ceil(penetapanFilteredData.length / penetapanPageSize);
+    penetapanCurrentPage = totalPages;
+    renderPenetapanTable();
+}
+
+function changePenetapanPageSize() {
+    const select = document.getElementById('penetapan-page-size');
+    penetapanPageSize = parseInt(select?.value) || 10;
+    penetapanCurrentPage = 1;
+    renderPenetapanTable();
+}
+
+/**
+ * ===== PHOTO MODAL FUNCTIONALITY =====
+ * Display full-size photo in modal overlay
+ */
+function showPhotoModal(photoSrc, nama) {
+    // Remove existing modal
+    const existingModal = document.getElementById('photo-modal-overlay');
+    if (existingModal) existingModal.remove();
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'photo-modal-overlay';
+    modal.className = 'photo-modal-overlay';
+    modal.onclick = (e) => {
+        if (e.target === modal) closePhotoModal();
+    };
+    
+    modal.innerHTML = `
+        <div class="photo-modal-content">
+            <img src="${escapeHtml(photoSrc)}" alt="Foto ${escapeHtml(nama)}" class="photo-modal-img" 
+                 onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👤</text></svg>'">
+            <button class="photo-modal-close" onclick="closePhotoModal()">✕</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+    
+    // Trigger animation
+    requestAnimationFrame(() => {
+        modal.classList.add('active');
+    });
+}
+
+function closePhotoModal() {
+    const modal = document.getElementById('photo-modal-overlay');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            modal.remove();
+            document.body.style.overflow = '';
+        }, 300);
+    }
+}
+
+/**
+ * ===== VIEW DETAIL FUNCTIONALITY =====
+ * View complete detail in a read-only modal
+ */
+async function viewPenetapanDetail(recordId) {
+    try {
+        // Find the record from cached data
+        const record = penetapanAllData.find(item => item.id === recordId);
+        if (!record) throw new Error('Data tidak ditemukan');
+        
+        // Reuse peserta detail modal but with admin view
+        showPesertaDetailModal(record);
+        
+    } catch (err) {
+        console.error('Error viewing detail:', err);
+        showToast('❌ Gagal menampilkan detail: ' + err.message, 'error');
+    }
+}
+
+/**
+ * ===== EDIT FUNCTIONALITY =====
+ * Open edit modal with form pre-filled with existing data
+ */
+async function openEditPenetapanModal(recordId) {
+    try {
+        // Find the record
+        const record = penetapanAllData.find(item => item.id === recordId);
+        if (!record) throw new Error('Data tidak ditemukan');
+        
+        penetapanEditingId = recordId;
+        
+        // Field mapping helper
+        const getField = (obj, ...keys) => {
+            for (const key of keys) {
+                if (obj[key]) return obj[key];
+            }
+            return '';
+        };
+        
+        // Remove existing edit modal
+        const existingModal = document.getElementById('edit-penetapan-modal');
+        if (existingModal) existingModal.remove();
+        
+        // Create edit modal
+        const modal = document.createElement('div');
+        modal.id = 'edit-penetapan-modal';
+        modal.className = 'edit-modal-overlay';
+        modal.onclick = (e) => {
+            if (e.target === modal) closeEditPenetapanModal();
+        };
+        
+        modal.innerHTML = `
+            <div class="edit-modal" onclick="event.stopPropagation()">
+                <div class="edit-modal-header">
+                    <h2 class="edit-modal-title">✏️ Edit Data Penetapan</h2>
+                    <p class="edit-modal-subtitle">Perbaiki data untuk ${escapeHtml(getField(record, 'nama_lengkap', 'namaLengkap'))}</p>
+                    <button class="photo-modal-close" onclick="closeEditPenetapanModal()" style="top:1rem;right:1rem;">✕</button>
+                </div>
+                
+                <form id="edit-penetapan-form" onsubmit="event.preventDefault(); savePenetapanChanges();" class="edit-modal-body">
+                    <div class="edit-form-grid">
+                        <div class="form-group-edit">
+                            <label class="form-label-edit">Nama Lengkap *</label>
+                            <input type="text" name="nama_lengkap" class="form-input-edit" 
+                                   value="${escapeHtml(getField(record, 'nama_lengkap', 'namaLengkap'))}" required>
+                        </div>
+                        
+                        <div class="form-group-edit">
+                            <label class="form-label-edit">NIK *</label>
+                            <input type="text" name="nik" class="form-input-edit" 
+                                   value="${escapeHtml(getField(record, 'nik', 'no_ktp'))}" 
+                                   maxlength="16" pattern="[0-9]*" required>
+                        </div>
+                        
+                        <div class="form-group-edit">
+                            <label class="form-label-edit">Jurusan Tujuan *</label>
+                            <input type="text" name="jurusan_tujuan" class="form-input-edit" 
+                                   value="${escapeHtml(getField(record, 'jurusan_tujuan', 'jurusanTujuan', 'jurusan'))}" required>
+                        </div>
+                        
+                        <div class="form-group-edit">
+                            <label class="form-label-edit">Jenjang Pendidikan *</label>
+                            <select name="jenjang_pendidikan" class="form-input-edit" required>
+                                <option value="">Pilih Jenjang</option>
+                                <option value="D3" ${getField(record, 'jenjang_pendidikan', 'jenjangPendidikan') === 'D3' ? 'selected' : ''}>D3 (Diploma)</option>
+                                <option value="D4" ${getField(record, 'jenjang_pendidikan', 'jenjangPendidikan') === 'D4' ? 'selected' : ''}>D4 (Diploma Terapan)</option>
+                                <option value "S1" ${getField(record, 'jenjang_pendidikan', 'jenjangPendidikan') === 'S1' ? 'selected' : ''}>S1 (Sarjana)</option>
+                                <option value="S2" ${getField(record, 'jenjang_pendidikan', 'jenjangPendidikan') === 'S2' ? 'selected' : ''}>S2 (Magister)</option>
+                                <option value="S3" ${getField(record, 'jenjang_pendidikan', 'jenjangPendidikan') === 'S3' ? 'selected' : ''}>S3 (Doktor)</option>
+                                <option value="Spesialis" ${getField(record, 'jenjang_pendidikan', 'jenjangPendidikan').includes('Spesialis') ? 'selected' : ''}>Spesialis</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group-edit">
+                            <label class="form-label-edit">Perguruan Tinggi *</label>
+                            <input type="text" name="perguruan_tinggi" class="form-input-edit" 
+                                   value="${escapeHtml(getField(record, 'perguruan_tinggi', 'perguruanTinggi', 'pt'))}" required>
+                        </div>
+                        
+                        <div class="form-group-edit">
+                            <label class="form-label-edit">Unit Kerja / Pendayagunaan *</label>
+                            <input type="text" name="unit_kerja" class="form-input-edit" 
+                                   value="${escapeHtml(getField(record, 'unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayagunaan'))}" required>
+                        </div>
+                        
+                        <div class="form-group-edit">
+                            <label class="form-label-edit">No SK Penetapan</label>
+                            <input type="text" name="no_sk_penetapan" class="form-input-edit" 
+                                   value="${escapeHtml(getField(record, 'no_sk_penetapan', 'noSKPenetapan', 'no_sk'))}">
+                        </div>
+                        
+                        <div class="form-group-edit">
+                            <label class="form-label-edit">Tanggal Penetapan</label>
+                            <input type="text" name="tanggal_penetapan" class="form-input-edit" 
+                                   value="${escapeHtml(getField(record, 'tanggal_penetapan', 'tanggalPenetapan', 'tanggal'))}"
+                                   placeholder="Format: DD Month YYYY (contoh: 15 Januari 2026)">
+                        </div>
+                        
+                        <div class="form-group-edit">
+                            <label class="form-label-edit">Status Penetapan *</label>
+                            <select name="status_penetapan" class="form-input-edit" required>
+                                <option value="Pending" ${(getField(record, 'status_penetapan', 'statusPenetapan', 'status') || 'Pending').includes('Pending') || (getField(record, 'status_penetapan', 'statusPenetapan', 'status') || '') === '-' ? 'selected' : ''}>Pending</option>
+                                <option value="Dalam Proses" ${getField(record, 'status_penetapan', 'statusPenetapan', 'status').includes('Proses') ? 'selected' : ''}>Dalam Proses</option>
+                                <option value="Lulus" ${getField(record, 'status_penetapan', 'statusPenetapan', 'status').includes('Lulus') ? 'selected' : ''}>Lulus</option>
+                                <option value="Ditolak" ${getField(record, 'status_penetapan', 'statusPenetapan', 'status').includes('Tolak') ? 'selected' : ''}>Ditolak</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group-edit">
+                            <label class="form-label-edit">Link Foto (URL)</label>
+                            <input type="url" name="link_foto" class="form-input-edit" 
+                                   value="${escapeHtml(getField(record, 'link_foto', 'linkFoto', 'foto', 'photo'))}"
+                                   placeholder="https://example.com/foto.jpg">
+                        </div>
+                        
+                        <div class="form-group-edit" style="grid-column: span 2;">
+                            <label class="form-label-edit">Catatan Penetapan</label>
+                            <textarea name="catatan_penetapan" class="form-input-edit" rows="3"
+                                      placeholder="Tambahkan catatan jika diperlukan...">${escapeHtml(getField(record, 'catatan_penetapan', 'catatanPenetapan'))}</textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="edit-modal-footer">
+                        <button type="button" class="btn-cancel-edit" onclick="closeEditPenetapanModal()">
+                            ✕ Batal
+                        </button>
+                        <button type="submit" class="btn-save-edit">
+                            💾 Simpan Perubahan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        document.body.style.overflow = 'hidden';
+        
+        // Trigger animation
+        requestAnimationFrame(() => {
+            modal.classList.add('active');
+        });
+        
+        console.log('📝 Opening edit modal for record ID:', recordId);
+        
+    } catch (err) {
+        console.error('Error opening edit modal:', err);
+        showToast('❌ Gagal membuka form edit: ' + err.message, 'error');
+    }
+}
+
+/**
+ * Save Changes to Supabase
+ */
+async function savePenetapanChanges() {
+    try {
+        if (!penetapanEditingId) throw new Error('Tidak ada record yang sedang diedit');
+        
+        // Gather form data
+        const form = document.getElementById('edit-penetapan-form');
+        const formData = new FormData(form);
+        
+        const updateData = {
+            nama_lengkap: formData.get('nama_lengkap'),
+            nik: formData.get('nik'),
+            jurusan_tujuan: formData.get('jurusan_tujuan'),
+            jenjang_pendidikan: formData.get('jenjang_pendidikan'),
+            perguruan_tinggi: formData.get('perguruan_tinggi'),
+            unit_kerja: formData.get('unit_kerja'),
+            no_sk_penetapan: formData.get('no_sk_penetapan') || null,
+            tanggal_penetapan: formData.get('tanggal_penetapan') || null,
+            status_penetapan: formData.get('status_penetapan'),
+            link_foto: formData.get('link_foto') || null,
+            catatan_penetapan: formData.get('catatan_penetapan') || null,
+            updated_at: new Date().toISOString()
+        };
+        
+        console.log('💾 Saving changes to Supabase:', updateData);
+        
+        // Show loading state on save button
+        const saveBtn = document.querySelector('.btn-save-edit');
+        const originalText = saveBtn.innerHTML;
+        saveBtn.innerHTML = '⏳ Menyimpan...';
+        saveBtn.disabled = true;
+        
+        // Update via Supabase
+        const { data: updatedRecord, error: updateError } = await supabaseClient
+            .from('penetapan')
+            .update(updateData)
+            .eq('id', penetapanEditingId)
+            .select()
+            .single();
+        
+        if (updateError) {
+            throw new Error(updateError.message || 'Gagal menyimpan perubahan');
+        }
+        
+        console.log('✅ Successfully updated record:', updatedRecord);
+        
+        // Close modal
+        closeEditPenetapanModal();
+        
+        // Refresh data
+        await refreshDataPenetapan();
+        
+        // Show success toast
+        showToast('✅ Data berhasil diperbarui!', 'success');
+        
+    } catch (err) {
+        console.error('❌ Error saving changes:', err);
+        showToast('❌ Gagal menyimpan: ' + err.message, 'error');
+        
+        // Reset button
+        const saveBtn = document.querySelector('.btn-save-edit');
+        if (saveBtn) {
+            saveBtn.innerHTML = '💾 Simpan Perubahan';
+            saveBtn.disabled = false;
+        }
+    }
+}
+
+/**
+ * Close Edit Modal
+ */
+function closeEditPenetapanModal() {
+    const modal = document.getElementById('edit-penetapan-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            modal.remove();
+            document.body.style.overflow = '';
+            penetapanEditingId = null;
+        }, 300);
+    }
+}
+
+/**
+ * ===== DELETE FUNCTIONALITY =====
+ * Show delete confirmation modal
+ */
+function confirmDeletePenetapan(recordId, nama) {
+    // Remove existing modal
+    const existingModal = document.getElementById('delete-confirm-modal');
+    if (existingModal) existingModal.remove();
+    
+    // Create confirmation modal
+    const modal = document.createElement('div');
+    modal.id = 'delete-confirm-modal';
+    modal.className = 'delete-confirm-overlay';
+    modal.onclick = (e) => {
+        if (e.target === modal) closeDeleteConfirmModal();
+    };
+    
+    modal.innerHTML = `
+        <div class="delete-confirm-box" onclick="event.stopPropagation()">
+            <div class="delete-icon-wrapper">🗑️</div>
+            <h3 class="delete-confirm-title">Hapus Data Penetapan?</h3>
+            <p class="delete-confirm-message">
+                Anda akan menghapus data penetraran untuk:<br>
+                <strong>${escapeHtml(nama)}</strong><br><br>
+                <span style="color:#dc2626;font-weight:600;">⚠️ Tindakan ini tidak dapat dibatalkan!</span>
+            </p>
+            <div class="delete-confirm-actions">
+                <button class="btn-cancel-delete" onclick="closeDeleteConfirmModal()">
+                    ✕ Batal
+                </button>
+                <button class="btn-confirm-delete" onclick="executeDeletePenetapan(${recordId})">
+                    🗑️ Ya, Hapus
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+    
+    requestAnimationFrame(() => {
+        modal.classList.add('active');
+    });
+}
+
+/**
+ * Execute Delete Operation
+ */
+async function executeDeletePenetapan(recordId) {
+    try {
+        console.log('🗑️ Deleting record ID:', recordId);
+        
+        // Close confirmation modal
+        closeDeleteConfirmModal();
+        
+        // Delete from Supabase
+        const { error: deleteError } = await supabaseClient
+            .from('penetapan')
+            .delete()
+            .eq('id', recordId);
+        
+        if (deleteError) {
+            throw new Error(deleteError.message || 'Gagal menghapus data');
+        }
+        
+        console.log('✅ Successfully deleted record');
+        
+        // Refresh data
+        await refreshDataPenetapan();
+        
+        // Show success toast
+        showToast('🗑️ Data berhasil dihapus!', 'success');
+        
+    } catch (err) {
+        console.error('❌ Error deleting record:', err);
+        showToast('❌ Gagal menghapus: ' + err.message, 'error');
+    }
+}
+
+/**
+ * Close Delete Confirmation Modal
+ */
+function closeDeleteConfirmModal() {
+    const modal = document.getElementById('delete-confirm-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            modal.remove();
+            document.body.style.overflow = '';
+        }, 300);
+    }
+}
+
+/**
+ * Export Data to CSV/Excel format
+ */
+function exportDataPenetapan() {
+    try {
+        if (penetapanFilteredData.length === 0) {
+            showToast('⚠️ Tidak ada data untuk diekspor', 'warning');
+            return;
+        }
+        
+        console.log('📥 Exporting data penetapan...');
+        
+        // Define columns to export
+        const columns = [
+            { key: 'nama_lengkap', altKeys: ['namaLengkap'], header: 'Nama Lengkap' },
+            { key: 'nik', altKeys: ['no_ktp'], header: 'NIK' },
+            { key: 'jurusan_tujuan', altKeys: ['jurusanTujuan', 'jurusan'], header: 'Jurusan Tujuan' },
+            { key: 'jenjang_pendidikan', altKeys: ['jenjangPendidikan', 'jenjang'], header: 'Jenjang Pendidikan' },
+            { key: 'perguruan_tinggi', altKeys: ['perguruanTinggi', 'pt'], header: 'Perguruan Tinggi' },
+            { key: 'unit_kerja', altKeys: ['unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayagunaan'], header: 'Unit Kerja' },
+            { key: 'no_sk_penetapan', altKeys: ['noSKPenetapan', 'no_sk'], header: 'No SK Penetapan' },
+            { key: 'tanggal_penetapan', altKeys: ['tanggalPenetapan', 'tanggal'], header: 'Tanggal Penetapan' },
+            { key: 'status_penetapan', altKeys: ['statusPenetapan', 'status'], header: 'Status' },
+            { key: 'link_foto', altKeys: ['linkFoto', 'foto', 'photo'], header: 'Link Foto' }
+        ];
+        
+        // Create CSV content
+        const headers = columns.map(col => col.header);
+        const rows = penetapanFilteredData.map(item => {
+            return columns.map(col => {
+                let value = item[col.key] || '';
+                // Try alternative keys
+                if (!value && col.altKeys) {
+                    for (const altKey of col.altKeys) {
+                        if (item[altKey]) {
+                            value = item[altKey];
+                            break;
+                        }
+                    }
+                }
+                // Escape for CSV
+                value = String(value).replace(/"/g, '""');
+                if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+                    value = `"${value}"`;
+                }
+                return value;
+            });
+        });
+        
+        const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+        
+        // Create download link
+        const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }); // BOM for Excel UTF-8
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `Data_Penetapan_SIMBAKES_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        showToast('📥 Data berhasil diekspor!', 'success');
+        
+    } catch (err) {
+        console.error('❌ Error exporting data:', err);
+        showToast('❌ Gagal mengekspor data: ' + err.message, 'error');
+    }
+}
+
+// Auto-initialize when page is shown (hook into showPage)
+const originalShowPage = window.showPage || function() {};
+window.showPage = function(pageId) {
+    originalShowPage(pageId);
+    
+    // Initialize penetapan admin when this page is shown
+    if (pageId === 'data-penetapan') {
+        // Small delay to ensure page transition completes
+        setTimeout(() => {
+            initPenetapanAdmin();
+        }, 100);
+    }
+};
+
+console.log('✅ Data Penetapan Admin Module Loaded Successfully');
 
 // ===== FILE HANDLING =====
 
