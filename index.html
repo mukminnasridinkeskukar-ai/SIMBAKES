@@ -9352,18 +9352,18 @@ function renderRoadmapTablePublic(data) {
                 <!-- Kualifikasi Awal -->
                 <td style="vertical-align:middle;">
                     <span style="padding:0.25rem 0.6rem;background:#ede9fe;color:#5b21b6;border-radius:6px;font-size:0.8rem;font-weight:500;">
-                        ${row.kualifikasiAwal || '-'}
+                        ${row.kualifikasi_awal || '-'}
                     </span>
                 </td>
                 
                 <!-- Jenis Pendidikan -->
                 <td style="vertical-align:middle;">
-                    <div style="color:#6d28d9;font-weight:500;">${row.jenisPendidikan || '-'}</div>
+                    <div style="color:#6d28d9;font-weight:500;">${row.jenis_pendidikan || '-'}</div>
                 </td>
                 
                 <!-- Perguruan Tinggi -->
                 <td style="vertical-align:middle;">
-                    <div style="color:#374151;font-weight:500;">${row.perguruanTinggi || '-'}</div>
+                    <div style="color:#374151;font-weight:500;">${row.perguruan_tinggi || '-'}</div>
                 </td>
                 
                 <!-- Pekerjaan -->
@@ -9376,13 +9376,13 @@ function renderRoadmapTablePublic(data) {
                 <!-- Tahun Mulai Studi -->
                 <td style="text-align:center;vertical-align:middle;">
                     <span style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.35rem 0.75rem;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;border-radius:8px;font-size:0.9rem;font-weight:700;">
-                        📅 ${row.tahunMulaiStudi || '-'}
+                        📅 ${row.tahun_studi || '-'}
                     </span>
                 </td>
                 
                 <!-- Unit Pendayaguna -->
                 <td style="vertical-align:middle;">
-                    <div style="color:#047857;font-weight:500;">${row.unitPendayaguna || '-'}</div>
+                    <div style="color:#047857;font-weight:500;">${row.unit_pendayaguna || '-'}</div>
                 </td>
                 
                 <!-- Status -->
@@ -9570,6 +9570,7 @@ async function loadRoadmapAdminTable() {
 
 /**
  * Render Roadmap Admin Table with CRUD buttons in front
+ * Menggunakan OBJECT PROPERTY NAMES (sesuai Supabase response)
  */
 function renderRoadmapTable(data, startIndex) {
     const tbody = document.getElementById('roadmap-table-body');
@@ -9593,8 +9594,19 @@ function renderRoadmapTable(data, startIndex) {
         const actualIndex = startIndex + index;
         const rowNum = startIndex + index + 1;
         
+        // Gunakan PROPERTY NAMES sesuai SQL schema, bukan array index!
+        const kode = row.kode || '';
+        const jurusan = row.jurusan || '-';
+        const kualifikasi = row.kualifikasi_awal || '-';
+        const jenisPendidikan = row.jenis_pendidikan || '-';
+        const perguruanTinggi = row.perguruan_tinggi || '-';
+        const pekerjaan = row.pekerjaan || '-';
+        const tahunStudi = row.tahun_studi || '-';
+        const unitPendayaguna = row.unit_pendayaguna || '-';
+        const status = row.status || 'Kosong';
+        
         html += `
-            <tr data-row-index="${actualIndex}" data-kode="${row[0] || ''}">
+            <tr data-row-index="${actualIndex}" data-kode="${kode}">
                 <!-- CRUD Actions Column (FRONT) -->
                 <td>
                     <div class="crud-actions">
@@ -9604,7 +9616,7 @@ function renderRoadmapTable(data, startIndex) {
                         <button class="btn-crud btn-edit" onclick="openRoadmapEditModal(${actualIndex})" title="Edit Data">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
-                        <button class="btn-crud btn-delete" onclick="confirmDeleteRoadmap(${actualIndex}, '${row[0] || ''}')" title="Hapus Data">
+                        <button class="btn-crud btn-delete" onclick="confirmDeleteRoadmap(${actualIndex}, '${kode}')" title="Hapus Data">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         </button>
                     </div>
@@ -9614,31 +9626,31 @@ function renderRoadmapTable(data, startIndex) {
                 <td style="text-align:center;font-weight:600;color:#64748b;">${rowNum}</td>
                 
                 <!-- Kode -->
-                <td><strong style="color:#667eea;">${row[0] || '-'}</strong></td>
+                <td><strong style="color:#667eea;">${kode}</strong></td>
                 
                 <!-- Jurusan -->
-                <td>${row[1] || '-'}</td>
+                <td>${jurusan}</td>
                 
                 <!-- Kualifikasi Awal -->
-                <td>${row[2] || '-'}</td>
+                <td>${kualifikasi}</td>
                 
                 <!-- Jenis Pendidikan -->
-                <td>${row[3] || '-'}</td>
+                <td>${jenisPendidikan}</td>
                 
                 <!-- Perguruan Tinggi -->
-                <td>${row[4] || '-'}</td>
+                <td>${perguruanTinggi}</td>
                 
                 <!-- Pekerjaan -->
-                <td>${row[5] || '-'}</td>
+                <td>${pekerjaan}</td>
                 
                 <!-- Tahun Studi -->
-                <td style="text-align:center;">${row[6] || '-'}</td>
+                <td style="text-align:center;">${tahunStudi}</td>
                 
                 <!-- Unit Pendayaguna -->
-                <td>${row[7] || '-'}</td>
+                <td>${unitPendayaguna}</td>
                 
                 <!-- Status -->
-                <td>${getRoadmapStatusBadge(row[8])}</td>
+                <td>${getRoadmapStatusBadge(status)}</td>
                 
                 <!-- Row Index (hidden reference) -->
                 <td style="text-align:center;font-family:monospace;font-size:0.7rem;color:#94a3b8;">${actualIndex + 1}</td>
@@ -9651,6 +9663,7 @@ function renderRoadmapTable(data, startIndex) {
 
 /**
  * View detail of a roadmap item
+ * Menggunakan OBJECT PROPERTY NAMES (sesuai Supabase response)
  */
 function viewDetailRoadmap(index) {
     const row = roadmapAdminData[index];
@@ -9670,13 +9683,25 @@ function viewDetailRoadmap(index) {
         document.body.appendChild(modal);
     }
     
+    // Extract data dengan PROPERTY NAMES yang benar
+    const kode = row.kode || '-';
+    const jurusan = row.jurusan || '-';
+    const kualifikasi = row.kualifikasi_awal || '-';
+    const jenisPendidikan = row.jenis_pendidikan || '-';
+    const perguruanTinggi = row.perguruan_tinggi || '-';
+    const pekerjaan = row.pekerjaan || '-';
+    const tahunStudi = row.tahun_studi || '-';
+    const unitPendayaguna = row.unit_pendayaguna || '-';
+    const status = row.status || 'Kosong';
+    const namaPenerima = row.nama_penerima || '-';
+    
     modal.innerHTML = `
         <div class="modal-content modal-large admin-detail-modal">
             <div class="modal-header-modal" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;">
                 <h3 style="display:flex;align-items:center;gap:0.75rem;">
                     🗺️ Detail Roadmap
                     <span style="font-size:0.875rem;background:rgba(255,255,255,0.2);padding:0.25rem 0.75rem;border-radius:20px;">
-                        ${row[0]}
+                        ${kode}
                     </span>
                 </h3>
                 <button class="modal-close-btn" onclick="closeModal('${modalId}')">✕</button>
@@ -9685,39 +9710,39 @@ function viewDetailRoadmap(index) {
                 <div class="detail-grid">
                     <div class="detail-item">
                         <div class="detail-label">Kode</div>
-                        <div class="detail-value"><strong style="color:#667eea;">${row[0] || '-'}</strong></div>
+                        <div class="detail-value"><strong style="color:#667eea;">${kode}</strong></div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Jurusan</div>
-                        <div class="detail-value">${row[1] || '-'}</div>
+                        <div class="detail-value">${jurusan}</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Kualifikasi Awal</div>
-                        <div class="detail-value">${row[2] || '-'}</div>
+                        <div class="detail-value">${kualifikasi}</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Jenis Pendidikan</div>
-                        <div class="detail-value">${row[3] || '-'}</div>
+                        <div class="detail-value">${jenisPendidikan}</div>
                     </div>
                     <div class="detail-item" style="grid-column: span 2;">
                         <div class="detail-label">Perguruan Tinggi</div>
-                        <div class="detail-value">${row[4] || '-'}</div>
+                        <div class="detail-value">${perguruanTinggi}</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Pekerjaan</div>
-                        <div class="detail-value">${row[5] || '-'}</div>
+                        <div class="detail-value">${pekerjaan}</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Tahun Mulai Studi</div>
-                        <div class="detail-value">${row[6] || '-'}</div>
+                        <div class="detail-value">${tahunStudi}</div>
                     </div>
                     <div class="detail-item" style="grid-column: span 2;">
                         <div class="detail-label">Unit Pendayaguna</div>
-                        <div class="detail-value">${row[7] || '-'}</div>
+                        <div class="detail-value">${unitPendayguna}</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Status</div>
-                        <div class="detail-value">${getRoadmapStatusBadge(row[8])}</div>
+                        <div class="detail-value">${getRoadmapStatusBadge(status)}</div>
                     </div>
                 </div>
                 
@@ -9725,7 +9750,7 @@ function viewDetailRoadmap(index) {
                     <button onclick="closeModal('${modalId}'); openRoadmapEditModal(${index});" class="btn btn-sm" style="background:#fef3c7;color:#d97706;">
                         ✏️ Edit Data
                     </button>
-                    <button onclick="closeModal('${modalId}'); confirmDeleteRoadmap(${index}, '${row[0]}');" class="btn btn-sm" style="background:#fee2e2;color:#dc2626;">
+                    <button onclick="closeModal('${modalId}'); confirmDeleteRoadmap(${index}, '${kode}');" class="btn btn-sm" style="background:#fee2e2;color:#dc2626;">
                         🗑️ Hapus Data
                     </button>
                 </div>
@@ -9936,6 +9961,7 @@ function openRoadmapAddModal() {
 
 /**
  * Open Edit Roadmap Modal
+ * Menggunakan OBJECT PROPERTY NAMES (sesuai Supabase response)
  */
 function openRoadmapEditModal(index) {
     const row = roadmapAdminData[index];
@@ -9957,10 +9983,21 @@ function openRoadmapEditModal(index) {
     
     roadmapEditingId = index;
     
+    // Extract data dengan PROPERTY NAMES yang benar (snake_case sesuai SQL schema)
+    const kode = row.kode || '';
+    const jurusan = row.jurusan || '';
+    const kualifikasi = row.kualifikasi_awal || '';
+    const jenisPendidikan = row.jenis_pendidikan || '';
+    const perguruanTinggi = row.perguruan_tinggi || '';
+    const pekerjaan = row.pekerjaan || '';
+    const tahunStudi = row.tahun_studi || '';
+    const unitPendayaguna = row.unit_pendayaguna || '';
+    const status = row.status || 'Kosong';
+    
     modal.innerHTML = `
         <div class="modal-content" style="max-width:700px;">
             <div class="modal-header" style="background:linear-gradient(135deg,#059669,#10b981);color:white;">
-                <h3 class="modal-title">✏️ Edit Data Roadmap - ${row[0]}</h3>
+                <h3 class="modal-title">✏️ Edit Data Roadmap - ${kode}</h3>
                 <button class="modal-close" onclick="closeModal('${modalId}')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -9969,52 +10006,50 @@ function openRoadmapEditModal(index) {
                 <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;">
                     <div>
                         <label style="font-weight:600;display:block;margin-bottom:0.4rem;font-size:0.875rem;">Kode <span class="required">*</span></label>
-                        <input type="text" id="rm-kode" required value="${escapeHtml(row[0])}" style="width:100%;padding:0.7rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;">
+                        <input type="text" id="rm-kode" required value="${escapeHtml(kode)}" style="width:100%;padding:0.7rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;">
                     </div>
                     <div>
                         <label style="font-weight:600;display:block;margin-bottom:0.4rem;font-size:0.875rem;">Jurusan <span class="required">*</span></label>
-                        <input type="text" id="rm-jurusan" required value="${escapeHtml(row[1])}" style="width:100%;padding:0.7rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;">
+                        <input type="text" id="rm-jurusan" required value="${escapeHtml(jurusan)}" style="width:100%;padding:0.7rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;">
                     </div>
                     <div>
                         <label style="font-weight:600;display:block;margin-bottom:0.4rem;font-size:0.875rem;">Kualifikasi Awal</label>
-                        <input type="text" id="rm-kualifikasi" value="${escapeHtml(row[2] || '')}" style="width:100%;padding:0.7rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;">
+                        <input type="text" id="rm-kualifikasi" value="${escapeHtml(kualifikasi)}" style="width:100%;padding:0.7rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;">
                     </div>
                     <div>
                         <label style="font-weight:600;display:block;margin-bottom:0.4rem;font-size:0.875rem;">Jenis Pendidikan</label>
                         <select id="rm-jenis-pendidikan" style="width:100%;padding:0.7rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;">
                             <option value="">Pilih Jenis</option>
-                            <option value="D3" ${row[3] === 'D3' ? 'selected' : ''}>D3 (Diploma)</option>
-                            <option value="D4" ${row[3] === 'D4' ? 'selected' : ''}>D4 (Diploma Terapan)</option>
-                            <option value="S1" ${row[3] === 'S1' ? 'selected' : ''}>S1 (Sarjana)</option>
-                            <option value="S2" ${row[3] === 'S2' ? 'selected' : ''}>S2 (Magister)</option>
-                            <option value="S3" ${row[3] === 'S3' ? 'selected' : ''}>S3 (Doktor)</option>
-                            <option value="Profesi" ${row[3] === 'Profesi' ? 'selected' : ''}>Profesi</option>
-                            <option value="Spesialis" ${row[3] === 'Spesialis' ? 'selected' : ''}>Spesialis</option>
+                            <option value="D3" ${jenisPendidikan === 'D3' ? 'selected' : ''}>D3 (Diploma)</option>
+                            <option value="D4" ${jenisPendidikan === 'D4' ? 'selected' : ''}>D4 (Diploma Terapan)</option>
+                            <option value="S1" ${jenisPendidikan === 'S1' ? 'selected' : ''}>S1 (Sarjana)</option>
+                            <option value="S2" ${jenisPendidikan === 'S2' ? 'selected' : ''}>S2 (Magister)</option>
+                            <option value="S3" ${jenisPendidikan === 'S3' ? 'selected' : ''}>S3 (Doktor)</option>
+                            <option value="Profesi" ${jenisPendidikan === 'Profesi' ? 'selected' : ''}>Profesi</option>
+                            <option value="Spesialis" ${jenisPendidikan === 'Spesialis' ? 'selected' : ''}>Spesialis</option>
                         </select>
                     </div>
                     <div style="grid-column:span 2;">
                         <label style="font-weight:600;display:block;margin-bottom:0.4rem;font-size:0.875rem;">Perguruan Tinggi</label>
-                        <input type="text" id="rm-pt" value="${escapeHtml(row[4] || '')}" style="width:100%;padding:0.7rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;">
+                        <input type="text" id="rm-pt" value="${escapeHtml(perguruanTinggi)}" style="width:100%;padding:0.7rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;">
                     </div>
                     <div>
                         <label style="font-weight:600;display:block;margin-bottom:0.4rem;font-size:0.875rem;">Pekerjaan</label>
-                        <input type="text" id="rm-pekerjaan" value="${escapeHtml(row[5] || '')}" style="width:100%;padding:0.7rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;">
+                        <input type="text" id="rm-pekerjaan" value="${escapeHtml(pekerjaan)}" style="width:100%;padding:0.7rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;">
                     </div>
                     <div>
                         <label style="font-weight:600;display:block;margin-bottom:0.4rem;font-size:0.875rem;">Tahun Mulai Studi</label>
-                        <input type="number" id="rm-tahun" value="${row[6] || ''}" placeholder="Contoh: 2024" min="2020" max="2030" style="width:100%;padding:0.7rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;">
+                        <input type="number" id="rm-tahun" value="${tahunStudi}" placeholder="Contoh: 2024" min="2020" max="2030" style="width:100%;padding:0.7rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;">
                     </div>
                     <div>
                         <label style="font-weight:600;display:block;margin-bottom:0.4rem;font-size:0.875rem;">Unit Pendayaguna</label>
-                        <input type="text" id="rm-unit" value="${escapeHtml(row[7] || '')}" style="width:100%;padding:0.7rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;">
+                        <input type="text" id="rm-unit" value="${escapeHtml(unitPendayaguna)}" style="width:100%;padding:0.7rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;">
                     </div>
                     <div>
                         <label style="font-weight:600;display:block;margin-bottom:0.4rem;font-size:0.875rem;">Status</label>
                         <select id="rm-status" style="width:100%;padding:0.7rem;border:2px solid #e2e8f0;border-radius:8px;font-size:0.9rem;">
-                            <option value="Aktif" ${row[8] === 'Aktif' ? 'selected' : ''}>Aktif</option>
-                            <option value="Pending" ${row[8] === 'Pending' ? 'selected' : ''}>Pending</option>
-                            <option value="Non-Aktif" ${row[8] === 'Non-Aktif' ? 'selected' : ''}>Non-Aktif</option>
-                            <option value="Selesai" ${row[8] === 'Selesai' ? 'selected' : ''}>Selesai</option>
+                            <option value="Terisi" ${status === 'Terisi' ? 'selected' : ''}>Terisi</option>
+                            <option value="Kosong" ${status === 'Kosong' ? 'selected' : ''}>Kosong</option>
                         </select>
                     </div>
                 </div>
@@ -11981,15 +12016,15 @@ document.addEventListener('DOMContentLoaded', function() {
 async function handleUserRegisterFromModal(event) {
     event.preventDefault();
     
-    // Gather form data
+    // Gather form data (HANYA field yang ada di schema SQL!)
     const formData = {
         nama_lengkap: document.getElementById('reg-nama-lengkap').value.trim(),
         email: document.getElementById('reg-email').value.trim().toLowerCase(),
         username: document.getElementById('reg-username').value.trim().toLowerCase(),
         password: document.getElementById('reg-password').value,
         role: document.getElementById('reg-role').value,
-        institusi: document.getElementById('reg-institusi')?.value?.trim() || '',
-        status: 'aktif'
+        institusi: document.getElementById('reg-institusi')?.value?.trim() || ''
+        // CATATAN: Tidak ada field 'status' - di schema pakai 'is_active' (BOOLEAN)
     };
     
     // Validate required fields
