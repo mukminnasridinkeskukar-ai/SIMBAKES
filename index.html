@@ -8812,7 +8812,8 @@ let roadmapCachedData = null;
 let roadmapFilterOptions = null;
 
 /**
- * Main function: Load Roadmap Data from API
+ * Main function: Load Roadmap Data from Supabase
+ * Public Roadmap Page - Menggunakan Supabase client
  */
 async function loadRoadmapData() {
     const loadingEl = document.getElementById('roadmap-loading');
@@ -8830,50 +8831,74 @@ async function loadRoadmapData() {
     tableWrapperEl.style.display = 'none';
     emptyStateEl.style.display = 'none';
     
-    console.log('🔄 Loading Roadmap Kebutuhan data...');
+    console.log('🔄 Loading Roadmap Kebutuhan data dari Supabase...');
     
     try {
-        // Build URL with current filter values
-        // Using fetchRoadmapData() instead
-        
-        // Add current filter values dengan safety check
+        // Get filter values dengan safety check
         const jurusanSelect = document.getElementById('roadmap-filter-jurusan');
         const ptSelect = document.getElementById('roadmap-filter-pt');
         const pekerjaanSelect = document.getElementById('roadmap-filter-pekerjaan');
         const unitSelect = document.getElementById('roadmap-filter-unit');
         const statusSelect = document.getElementById('roadmap-filter-status');
         
-        if (jurusanSelect && jurusanSelect.value) url += `&jurusan=${encodeURIComponent(jurusanSelect.value)}`;
-        if (ptSelect && ptSelect.value) url += `&perguruanTinggi=${encodeURIComponent(ptSelect.value)}`;
-        if (pekerjaanSelect && pekerjaanSelect.value) url += `&pekerjaan=${encodeURIComponent(pekerjaanSelect.value)}`;
-        if (unitSelect && unitSelect.value) url += `&unitPendayaguna=${encodeURIComponent(unitSelect.value)}`;
-        if (statusSelect && statusSelect.value) url += `&status=${encodeURIComponent(statusSelect.value)}`;
+        // Build query - start with base query to roadmap_kebutuhan table
+        let query = supabaseClient
+            .from('roadmap_kebutuhan')
+            .select('*', { count: 'exact' });
         
-        console.log('📡 Memanggil Roadmap API:', url.substring(0, 100) + '...');
+        // Apply filters if values exist (Supabase filters)
+        if (jurusanSelect && jurusanSelect.value) {
+            query = query.ilike('jurusan', `%${jurusanSelect.value}%`);
+        }
+        if (ptSelect && ptSelect.value) {
+            query = query.ilike('perguruan_tinggi', `%${ptSelect.value}%`);
+        }
+        if (pekerjaanSelect && pekerjaanSelect.value) {
+            query = query.eq('pekerjaan', pekerjaanSelect.value);
+        }
+        if (unitSelect && unitSelect.value) {
+            query = query.ilike('unit_pendayaguna', `%${unitSelect.value}%`);
+        }
+        if (statusSelect && statusSelect.value) {
+            query = query.eq('status', statusSelect.value);
+        }
         
-        const result = await fetchAPI(url);
+        // Order by tahun dan jurusan
+        query = query.order('tahun_mulai_studi', { ascending: true })
+                   .order('jurusan', { ascending: true });
+        
+        // Execute query
+        const { data, error, count } = await query;
+        
+        if (error) throw error;
+        
+        console.log(`✅ Berhasil mengambil ${data?.length || 0} data roadmap`);
         
         // Hide loading
         loadingEl.style.display = 'none';
         
-        console.log('✅ Hasil Roadmap:', result);
+        // Cache data for filtering
+        roadmapCachedData = data || [];
         
-        // Cache data and filter options for dropdowns
-        roadmapCachedData = result.data || [];
-        
-        // Populate filter dropdowns if not yet populated
-        if (result.filterOptions && !roadmapFilterOptions) {
-            roadmapFilterOptions = result.filterOptions;
-            populateRoadmapFilterDropdowns(result.filterOptions);
+        // Build filter options from data (if not yet populated)
+        if (!roadmapFilterOptions && data && data.length > 0) {
+            roadmapFilterOptions = {
+                jurusan: [...new Set(data.map(d => d.jurusan).filter(Boolean))].sort(),
+                perguruanTinggi: [...new Set(data.map(d => d.perguruan_tinggi).filter(Boolean))].sort(),
+                pekerjaan: [...new Set(data.map(d => d.pekerjaan).filter(Boolean))],
+                unitPendayaguna: [...new Set(data.map(d => d.unit_pendayaguna).filter(Boolean))].sort(),
+                status: ['Terisi', 'Kosong']
+            };
+            populateRoadmapFilterDropdowns(roadmapFilterOptions);
         }
         
         // Render table or show empty state
-        if (result.data && result.data.length > 0) {
+        if (data && data.length > 0) {
             tableWrapperEl.style.display = 'block';
             emptyStateEl.style.display = 'none';
-            renderRoadmapTablePublic(result.data);
-            updateRoadmapResultCount(result.totalRecords || result.data.length);
-            showToast(`✅ Berhasil memuat ${result.data.length} data roadmap`, 'success');
+            renderRoadmapTablePublic(data);
+            updateRoadmapResultCount(count || data.length);
+            showToast(`✅ Berhasil memuat ${data.length} data roadmap`, 'success');
         } else {
             tableWrapperEl.style.display = 'none';
             emptyStateEl.style.display = 'block';
@@ -9993,6 +10018,7 @@ let revisionFileInfo = null;
 
 /**
  * Main function: Search submission by NIK or Register Number
+ * Menggunakan Supabase client
  */
 async function searchSubmissionData() {
     const nik = document.getElementById('search-nik').value.trim();
@@ -10011,24 +10037,33 @@ async function searchSubmissionData() {
     document.getElementById('search-loading').style.display = 'block';
     
     try {
-        // Build URL with parameters
-        // Using searchSubmission() instead
-        if (nik) url += `&nik=${encodeURIComponent(nik)}`;
-        if (register) url += `&noRegister=${encodeURIComponent(register)}`;
+        // Query dari Supabase - cari berdasarkan NIK atau nomor register
+        let query = supabaseClient
+            .from('submissions')
+            .select('*')
+            .limit(1);
         
-        // Using Supabase client
-        const result = await fetchRoadmapData();
+        if (nik) {
+            query = query.eq('nik', nik);
+        } else if (register) {
+            query = query.eq('no_register', register);
+        }
+        
+        const { data: submissionData, error } = await query;
+        
+        if (error) throw error;
+        
+        console.log('✅ Hasil pencarian:', submissionData);
         
         // Hide loading
         document.getElementById('search-loading').style.display = 'none';
         
-        if (result.status === 'success' && result.found) {
-            // Data found - display in card
-            currentSearchResult = result.data;
-            displaySearchResult(result.data);
+        // Check if data found
+        if (submissionData && submissionData.length > 0) {
+            currentSearchResult = submissionData[0];
+            displaySearchResult(submissionData[0]);
         } else {
-            // Data not found
-            showNotFound(result.message || 'Data tidak ditemukan');
+            showNotFound(`Data dengan ${nik ? 'NIK' : 'Nomor Register'} "${nik || register}" tidak ditemukan`);
         }
         
     } catch (error) {
@@ -10206,25 +10241,24 @@ async function searchPenetapanData() {
     
     try {
         // Query dari Supabase
-            const { data: penetapanData } = await supabaseClient
-                .from('penetapan')
-                .select('*')
-                .eq('nik', nik)
-                .limit(1);
+        const { data: penetapanData, error } = await supabaseClient
+            .from('penetapan')
+            .select('*')
+            .eq('nik', nik)
+            .limit(1);
         
-        console.log('📡 Memanggil API Penetapan:', url.substring(0, 80) + '...');
+        if (error) throw error;
         
-        const result = await fetchAPI(url);
+        console.log('✅ Hasil pencarian penetapan:', penetapanData);
         
         // Hide loading
         document.getElementById('penetapan-loading').style.display = 'none';
         
-        console.log('✅ Hasil pencarian penetapan:', result);
-        
-        if (result.found && result.data) {
-            displayPenetapanResult(result.data);
+        // Check if data found
+        if (penetapanData && penetapanData.length > 0) {
+            displayPenetapanResult(penetapanData[0]);
         } else {
-            showPenetapanNotFound(result.message || `Data penetapan dengan NIK "${nik}" tidak ditemukan`);
+            showPenetapanNotFound(`Data penetapan dengan NIK "${nik}" tidak ditemukan`);
         }
         
     } catch (error) {
@@ -10631,7 +10665,7 @@ function loadDataPengusul() {
 }
 
 /**
- * Fetch admin data from API with pagination, search, filter
+ * Fetch admin data from Supabase with pagination, search, filter
  * Menggunakan Supabase client dan error handling yang lebih baik
  */
 async function fetchAdminData() {
@@ -10643,7 +10677,7 @@ async function fetchAdminData() {
             <td colspan="29" style="text-align:center;padding:3rem;color:#64748b;">
                 <div class="spinner"></div>
                 <p style="margin-top:1rem;">Memuat data pengusul...</p>
-                <p style="font-size:0.8rem;color:#94a3b8;margin-top:0.5rem;">Menghubungkan ke server...</p>
+                <p style="font-size:0.8rem;color:#94a3b8;margin-top:0.5rem;">Menghubungkan ke server Supabase...</p>
             </td>
         </tr>
     `;
@@ -10654,23 +10688,66 @@ async function fetchAdminData() {
         const sortBy = document.getElementById('admin-sort-by').value;
         const sortOrder = document.getElementById('admin-sort-order').value;
         
-        // Using getAllSubmissions() instead
-        url += `&page=${adminCurrentPage}`;
-        url += `&limit=${adminPageSize}`;
-        if (search) url += `&search=${encodeURIComponent(search)}`;
-        if (statusFilter) url += `&statusFilter=${encodeURIComponent(statusFilter)}`;
-        if (sortBy) url += `&sortBy=${encodeURIComponent(sortBy)}`;
-        if (sortOrder) url += `&sortOrder=${encodeURIComponent(sortOrder)}`;
+        // Build query ke tabel submissions di Supabase
+        let query = supabaseClient
+            .from('submissions')
+            .select('*', { count: 'exact' });
         
-        // Using Supabase client
-        const result = await fetchRoadmapData();
+        // Apply search filter (search in multiple columns)
+        if (search) {
+            query = query.or(`nama_lengkap.ilike.%${search}%,nik.ilike.%${search}%,no_register.ilike.%${search}%,email.ilike.%${search}%`);
+        }
         
-        if (result.status === 'success') {
-            renderAdminTable(result.data);
-            updatePagination(result.pagination);
-            updateAdminStats(result.pagination);
+        // Apply status filter
+        if (statusFilter) {
+            query = query.eq('status', statusFilter);
+        }
+        
+        // Apply sorting
+        const sortColumn = sortBy || 'created_at';
+        const order = sortOrder === 'desc' ? false : true;
+        query = query.order(sortColumn, { ascending: order });
+        
+        // Apply pagination
+        const fromRange = (adminCurrentPage - 1) * adminPageSize;
+        const toRange = fromRange + adminPageSize - 1;
+        query = query.range(fromRange, toRange);
+        
+        // Execute query
+        const { data, error, count } = await query;
+        
+        if (error) throw error;
+        
+        console.log(`✅ Berhasil mengambil ${data?.length || 0} data pengusul`);
+        
+        // Render table
+        if (data && data.length > 0) {
+            renderAdminTable(data);
+            
+            // Update pagination info
+            const totalPages = Math.ceil((count || 0) / adminPageSize);
+            updatePagination({
+                currentPage: adminCurrentPage,
+                totalPages: totalPages,
+                totalRecords: count || 0,
+                pageSize: adminPageSize
+            });
+            
+            // Update stats
+            updateAdminStats({
+                totalRecords: count || 0,
+                filteredRecords: count || 0
+            });
         } else {
-            throw new Error(result.message || 'Gagal memuat data');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="29" style="text-align:center;padding:3rem;color:#64748b;">
+                        <p style="font-size:2rem;margin-bottom:0.5rem;">📭</p>
+                        <p style="font-weight:600;margin-bottom:0.5rem;">Tidak Ada Data</p>
+                        <p style="font-size:0.875rem;color:#94a3b8;">Tidak ditemukan data pengusul dengan filter ini</p>
+                    </td>
+                </tr>
+            `;
         }
         
     } catch (error) {
