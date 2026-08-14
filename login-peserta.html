@@ -983,8 +983,8 @@
                             <button class="btn btn-secondary" onclick="resetToSearch()">
                                 🔍 Cari Peserta Lain
                             </button>
-                            <button class="btn btn-secondary" onclick="window.location.reload()">
-                                🏠 Kembali/Login
+                            <button class="btn btn-primary" onclick="returnToSimbakes()">
+                                🏠 Kembali ke SIMBAKES
                             </button>
                         </div>
                     </div>
@@ -1386,6 +1386,15 @@
                 <span class="status-icon">${statusConfig.icon}</span>
                 <span>${escapeHtml(statusConfig.text)}</span>
             `;
+            
+            // 💾 SIMPAN SESSION ke localStorage untuk integrasi dengan SIMBAKES (index.html)
+            // Session ini akan dibaca oleh index.html saat user kembali
+            const sessionData = savePesertaSession(data);
+            
+            // Kirim callback ke opener window (jika ada)
+            sendCallbackToOpener(sessionData);
+            
+            console.log('🎉 Profile rendered & session saved for:', data.nama_lengkap || data.nama || 'Peserta');
         }
         
         // ============================================================
@@ -1509,6 +1518,97 @@
         }
         
         // ============================================================
+        // SESSION & REDIRECT TO SIMBAKES
+        // ============================================================
+        
+        /**
+         * Simpan session peserta ke localStorage untuk digunakan oleh SIMBAKES (index.html)
+         * Dipanggil setelah data peserta berhasil ditemukan ditampilkan
+         */
+        function savePesertaSession(data) {
+            const sessionData = {
+                success: true,
+                isLoggedIn: true,
+                nama: data.nama_lengkap || data.nama || 'Peserta',
+                nik: data.nik || '',
+                email: data.email || '',
+                status: data.status || data.status_pendaftaran || data.status_verifikasi || '',
+                loginTime: new Date().toISOString(),
+                data: data // Semua data peserta untuk keperluan lanjutan
+            };
+            
+            // Simpan session
+            localStorage.setItem('simbakes_peserta_session', JSON.stringify(sessionData));
+            
+            console.log('✅ Peserta session saved:', sessionData.nama);
+            return sessionData;
+        }
+        
+        /**
+         * Dapatkan URL return ke SIMBAKES (index.html)
+         * Jika tidak ada, gunakan default path relatif
+         */
+        function getReturnUrl() {
+            // Cek URL yang disimpan oleh index.html saat membuka halaman ini
+            const savedUrl = localStorage.getItem('simbakes_return_url');
+            
+            if (savedUrl) {
+                return savedUrl;
+            }
+            
+            // Default paths untuk berbagai kemungkinan lokasi hosting
+            const possiblePaths = [
+                './',                    // Folder yang sama
+                '../',                   // Satu level up
+                '/index.html',           // Root domain
+                '/',                     // Root
+                './SIMBAKES_Supabase%20(25).html',  // File langsung
+                '../upload/SIMBAKES_Supabase%20(25).html'  // Path upload
+            ];
+            
+            // Return default (folder yang sama)
+            return './';
+        }
+        
+        /**
+         * Kembali ke SIMBAKES (index.html) dengan session aktif
+         * Fungsi ini dipanggil oleh tombol "Kembali ke SIMBAKES"
+         */
+        function returnToSimbakes() {
+            console.log('🏠 Returning to SIMBAKES...');
+            
+            const returnUrl = getReturnUrl();
+            
+            // Tampilkan notifikasi
+            showToast('info', '🔄 Mengalihkan...', 'Anda akan dialihkan kembali ke SIMBAKES');
+            
+            // Delay sedikit agar user melihat notifikasi
+            setTimeout(() => {
+                window.location.href = returnUrl;
+            }, 800);
+        }
+        
+        /**
+         * Kirim callback ke opener window (jika dibuka di popup/tab baru)
+         * Untuk komunikasi antar tab/window
+         */
+        function sendCallbackToOpener(loginData) {
+            try {
+                // Jika dibuka via window.open(), kirim postMessage
+                if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage({
+                        type: 'PESERTA_LOGIN_SUCCESS',
+                        data: loginData
+                    }, '*'); // Gunakan origin spesifik di production
+                    
+                    console.log('📤 Callback sent to opener window');
+                }
+            } catch (e) {
+                console.warn('⚠️ Could not send callback to opener:', e.message);
+            }
+        }
+        
+        // ============================================================
         // EVENT HANDLERS
         // ============================================================
         
@@ -1566,8 +1666,9 @@
             setTimeout(() => elements.nikInput.focus(), 500);
         });
         
-        // Expose reset function globally
+        // Expose functions globally
         window.resetToSearch = resetToSearch;
+        window.returnToSimbakes = returnToSimbakes;
     </script>
 </body>
 </html>

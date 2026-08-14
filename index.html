@@ -15339,212 +15339,251 @@ function openTopbarLogin() {
 }
 
 /**
- * Open Login Peserta Modal - Khusus untuk Peserta Beasiswa
- * Membuka modal/form login untuk peserta yang sudah terdaftar
+ * Open Login Peserta - Redirect ke halaman login-peserta.html (standalone)
+ * Halaman standalone ini memiliki fitur pencarian lengkap berdasarkan NIK/Email
  */
 function openPesertaLogin() {
-    // Cek apakah sudah ada modal login peserta, jika tidak buat dinamis
-    let pesertaModal = document.getElementById('peserta-login-modal');
+    console.log('[SIMBAKES] Redirecting to Login Peserta page...');
     
-    if (!pesertaModal) {
-        // Buat modal dinamis jika belum ada
-        pesertaModal = document.createElement('div');
-        pesertaModal.id = 'peserta-login-modal';
-        pesertaModal.className = 'modal-overlay';
-        pesertaModal.innerHTML = `
-            <div class="modal-content" style="max-width:450px; border-radius:20px; overflow:hidden;">
-                <!-- Header dengan gradient hijau -->
-                <div style="background:linear-gradient(135deg,#059669,#047857); padding:1.75rem 2rem; text-align:center;">
-                    <div style="width:70px; height:70px; background:rgba(255,255,255,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="32" height="32">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                        </svg>
-                    </div>
-                    <h2 style="color:white; font-size:1.5rem; font-weight:700; margin:0;">Login Peserta</h2>
-                    <p style="color:rgba(255,255,255,0.9); font-size:0.9rem; margin:0.5rem 0 0;">Masuk ke akun peserta beasiswa Anda</p>
-                </div>
-                
-                <!-- Body -->
-                <div style="padding:2rem;">
-                    <form id="peserta-login-form" onsubmit="handlePesertaLogin(event)">
-                        <!-- Username/Email -->
-                        <div style="margin-bottom:1.25rem;">
-                            <label style="display:block; font-size:0.875rem; font-weight:600; color:#374151; margin-bottom:0.5rem;">
-                                Username atau Email
-                            </label>
-                            <input type="text" id="peserta-username" required 
-                                   style="width:100%; padding:0.875rem 1rem; border:2px solid #e5e7eb; border-radius:10px; font-size:1rem; transition:border-color 0.2s;"
-                                   placeholder="Masukkan username atau email"
-                                   onfocus="this.style.borderColor='#059669'"
-                                   onblur="this.style.borderColor='#e5e7eb'">
-                        </div>
-                        
-                        <!-- Password -->
-                        <div style="margin-bottom:1.5rem;">
-                            <label style="display:block; font-size:0.875rem; font-weight:600; color:#374151; margin-bottom:0.5rem;">
-                                Password
-                            </label>
-                            <input type="password" id="peserta-password" required 
-                                   style="width:100%; padding:0.875rem 1rem; border:2px solid #e5e7eb; border-radius:10px; font-size:1rem; transition:border-color 0.2s;"
-                                   placeholder="Masukkan password"
-                                   onfocus="this.style.borderColor='#059669'"
-                                   onblur="this.style.borderColor='#e5e7eb'">
-                        </div>
-                        
-                        <!-- Error Message Area -->
-                        <div id="peserta-login-error" style="display:none; background:#fef2f2; border-left:4px solid #ef4444; padding:0.875rem 1rem; border-radius:0 8px 8px 0; margin-bottom:1rem;">
-                            <p style="margin:0; color:#dc2626; font-size:0.875rem;" id="peserta-login-error-text"></p>
-                        </div>
-                        
-                        <!-- Submit Button -->
-                        <button type="submit" id="peserta-login-submit-btn"
-                                style="width:100%; padding:1rem; background:linear-gradient(135deg,#059669,#047857); color:white; border:none; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:0.5rem;"
-                                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(5,150,105,0.35)'"
-                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10,17 15,12 10,7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                            Masuk sebagai Peserta
-                        </button>
-                    </form>
-                    
-                    <!-- Divider -->
-                    <div style="display:flex; align-items:center; margin:1.5rem 0; gap:1rem;">
-                        <div style="flex:1; height:1px; background:#e5e7eb;"></div>
-                        <span style="color:#9ca3af; font-size:0.875rem;">atau</span>
-                        <div style="flex:1; height:1px; background:#e5e7eb;"></div>
-                    </div>
-                    
-                    <!-- Register Link -->
-                    <p style="text-align:center; margin:0; font-size:0.875rem; color:#6b7280;">
-                        Belum punya akun? 
-                        <a href="#" onclick="closePesertaLogin(); openRegisterModal(); return false;" 
-                           style="color:#059669; font-weight:600; text-decoration:none;">Daftar di Sini</a>
-                    </p>
-                </div>
-                
-                <!-- Close Button -->
-                <button onclick="closePesertaLogin()" 
-                        style="position:absolute; top:1rem; right:1rem; width:36px; height:36px; border-radius:50%; border:none; background:rgba(255,255,255,0.2); color:white; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.25rem; transition:background 0.2s;"
-                        onmouseover="this.style.background='rgba(255,255,255,0.3)'"
-                        onmouseout="this.style.background='rgba(255,255,255,0.2)'">✕</button>
-            </div>
-        `;
-        
-        // Tambahkan ke body
-        document.body.appendChild(pesertaModal);
-        
-        // Tambahkan event listener untuk close di luar modal
-        pesertaModal.addEventListener('click', function(e) {
-            if (e.target === pesertaModal) {
-                closePesertaLogin();
-            }
-        });
-    }
+    // Simpan URL saat ini untuk redirect kembali setelah login berhasil
+    const currentUrl = window.location.href;
+    const currentPage = getCurrentPageId();
     
-    // Tampilkan modal
-    pesertaModal.classList.add('active');
-    document.body.style.overflow = 'hidden'; // Prevent background scroll
+    // Simpan ke localStorage untuk digunakan oleh login-peserta.html
+    localStorage.setItem('simbakes_return_url', currentUrl);
+    localStorage.setItem('simbakes_return_page', currentPage);
+    localStorage.setItem('simbakes_login_timestamp', Date.now().toString());
     
-    // Reset form
-    const form = document.getElementById('peserta-login-form');
-    if (form) form.reset();
+    // Redirect ke halaman login peserta standalone
+    // Asumsi: login-peserta.html berada di folder yang sama atau /download/
+    const loginPageUrl = getLoginPageUrl();
     
-    // Hide error
-    hidePesertaLoginError();
+    console.log('[SIMBAKES] Opening:', loginPageUrl);
     
-    // Focus pada field pertama
-    setTimeout(() => {
-        const usernameField = document.getElementById('peserta-username');
-        if (usernameField) usernameField.focus();
-    }, 400);
-    
-    console.log('[SIMBAKES] Peserta login modal opened');
+    // Buka di tab/window yang sama (bukan popup)
+    window.location.href = loginPageUrl;
 }
 
 /**
- * Handle Peserta Login Form Submit
+ * Helper: Tentukan URL halaman login peserta
+ * Mendukung berbagai lokasi hosting
  */
-async function handlePesertaLogin(event) {
-    event.preventDefault();
+function getLoginPageUrl() {
+    // Cek jika sudah di environment yang sama (relative path)
+    const possiblePaths = [
+        './login-peserta.html',           // Folder yang sama
+        '../login-peserta.html',          // Satu level up
+        '/login-peserta.html',            // Root domain
+        '/download/login-peserta.html',   // Path download
+        'login-peserta.html'              // Default
+    ];
     
-    const username = document.getElementById('peserta-username').value.trim();
-    const password = document.getElementById('peserta-password').value;
-    const submitBtn = document.getElementById('peserta-login-submit-btn');
-    const originalBtnText = submitBtn.innerHTML;
+    // Untuk development/testing, gunakan path relatif
+    return './login-peserta.html';
+}
+
+/**
+ * Helper: Dapatkan ID halaman saat ini untuk restore state
+ */
+function getCurrentPageId() {
+    const activePage = document.querySelector('.page.active');
+    if (activePage) return activePage.id;
     
-    try {
-        // Disable button dan tampilkan loading
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = `
-            <div class="spinner" style="border-color:rgba(255,255,255,0.3); border-top-color:white; width:20px; height:20px;"></div>
-            Memproses...
-        `;
+    // Cek dari hash/URL
+    if (window.location.hash) return window.location.hash.replace('#', '');
+    
+    return 'dashboard'; // Default
+}
+
+/**
+ * Handle callback dari login-peserta.html (jika dibuka di popup/new tab)
+ * Dipanggil via postMessage atau localStorage event
+ */
+function handlePesertaLoginCallback(loginData) {
+    console.log('[SIMBAKES] Received login callback:', loginData);
+    
+    if (loginData && loginData.success) {
+        // Set session data
+        localStorage.setItem('simbakes_peserta_session', JSON.stringify({
+            isLoggedIn: true,
+            nama: loginData.nama || loginData.nama_lengkap || 'Peserta',
+            nik: loginData.nik || '',
+            email: loginData.email || '',
+            status: loginData.status || '',
+            loginTime: new Date().toISOString(),
+            data: loginData.data || null
+        }));
         
-        // Panggil fungsi autentikasi dengan source 'peserta'
-        const success = await performAuthentication(username, password, 'peserta');
+        // Update UI untuk menunjukkan status login peserta
+        updateUIForLoggedInPeserta(loginData);
         
-        if (success) {
-            // Tutup modal
-            closePesertaLogin();
-            
-            // Tampilkan sukses toast
-            showToast('✅ Login berhasil! Selamat datang, Peserta.', 'success', 4000);
-            
-            // Redirect atau update UI sesuai kebutuhan
-            // Misalnya: tampilkan halaman dashboard peserta
-            setTimeout(() => {
-                // Opsional: navigasi ke halaman tertentu
-                console.log('[SIMBAKES] Peserta logged in successfully');
-            }, 500);
-        } else {
-            showPesertaLoginError('Username atau password salah. Silakan coba lagi.');
+        // Tampilkan notifikasi sukses
+        showToast?.('success', '✅ Login Berhasil', `Selamat datang, ${loginData.nama || 'Peserta'}!`);
+        
+        // Redirect ke halaman yang diminta (jika ada)
+        const returnUrl = localStorage.getItem('simbakes_return_page');
+        if (returnUrl && returnUrl !== 'dashboard') {
+            showPage?.(returnUrl);
         }
-    } catch (error) {
-        console.error('[SIMBAKES] Peserta login error:', error);
-        showPesertaLoginError('Terjadi kesalahan saat login. Silakan coba lagi nanti.');
-    } finally {
-        // Restore button
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnText;
     }
 }
 
 /**
- * Show Peserta Login Error Message
+ * Update UI setelah peserta berhasil login
  */
-function showPesertaLoginError(message) {
-    const errorDiv = document.getElementById('peserta-login-error');
-    const errorText = document.getElementById('peserta-login-error-text');
-    if (errorDiv && errorText) {
-        errorText.textContent = message;
-        errorDiv.style.display = 'block';
+function updateUIForLoggedInPeserta(loginData) {
+    // Update tombol login peserta menjadi info akun
+    const loginBtn = document.getElementById('topbar-peserta-login-btn');
+    if (loginBtn) {
+        const nama = loginData?.nama || loginData?.nama_lengkap || 'Peserta';
+        loginBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+            </svg>
+            ${nama.substring(0, 15)}${nama.length > 15 ? '...' : ''}
+        `;
+        loginBtn.onclick = showPesertaDashboard;
+        loginBtn.style.background = 'linear-gradient(135deg, #059669, #047857)';
+        loginBtn.title = 'Klik untuk lihat dashboard peserta';
     }
+    
+    console.log('[SIMBAKES] UI updated for logged-in peserta');
 }
 
 /**
- * Hide Peserta Login Error Message
+ * Tampilkan dashboard/info untuk peserta yang sudah login
  */
-function hidePesertaLoginError() {
-    const errorDiv = document.getElementById('peserta-login-error');
-    if (errorDiv) {
-        errorDiv.style.display = 'none';
+function showPesertaDashboard() {
+    // Ambil data session
+    const sessionData = localStorage.getItem('simbakes_peserta_session');
+    if (!sessionData) {
+        openPesertaLogin(); // Belum login, buka halaman login
+        return;
     }
+    
+    const session = JSON.parse(sessionData);
+    
+    // Tampilkan modal dengan info peserta
+    showModalPesertaInfo(session);
 }
 
 /**
- * Close Peserta Login Modal
+ * Modal info peserta yang sudah login
  */
-function closePesertaLogin() {
-    const modal = document.getElementById('peserta-login-modal');
+function showModalPesertaInfo(session) {
+    // Buat atau update modal info peserta
+    let infoModal = document.getElementById('peserta-info-modal');
+    
+    if (!infoModal) {
+        infoModal = document.createElement('div');
+        infoModal.id = 'peserta-info-modal';
+        infoModal.className = 'modal-overlay';
+        document.body.appendChild(infoModal);
+    }
+    
+    const statusConfig = getStatusBadgeConfig(session.status || '');
+    
+    infoModal.innerHTML = `
+        <div class="modal-content" style="max-width:500px; border-radius:20px; overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#059669,#047857); padding:2rem; text-align:center;">
+                <div style="width:80px; height:80px; background:rgba(255,255,255,0.25); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:2rem;">
+                    👤
+                </div>
+                <h2 style="color:white; font-size:1.5rem; font-weight:700; margin:0;">${escapeHtml(session.nama)}</h2>
+                <p style="color:rgba(255,255,255,0.9); font-size:0.9rem;">Status: ${statusConfig.text}</p>
+            </div>
+            
+            <div style="padding:1.5rem;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:1.5rem;">
+                    ${session.nik ? `<div style="background:#f9fafb; padding:12px; border-radius:10px;"><small style="color:#6b7280; display:block; margin-bottom:4px;">NIK</small><strong>${escapeHtml(session.nik)}</strong></div>` : ''}
+                    ${session.email ? `<div style="background:#f9fafb; padding:12px; border-radius:10px;"><small style="color:#6b7280; display:block; margin-bottom:4px;">Email</small><strong>${escapeHtml(session.email)}</strong></div>` : ''}
+                </div>
+                
+                <div style="text-align:center; margin-bottom:1rem;">
+                    <span style="display:inline-flex; align-items:center; gap:8px; padding:10px 24px; border-radius:50px; background:${statusConfig.bg}; color:white; font-weight:700;">
+                        ${statusConfig.icon} ${statusConfig.text}
+                    </span>
+                </div>
+                
+                <div style="display:flex; gap:10px;">
+                    <button onclick="closePesertaInfoModal()" style="flex:1; padding:12px; background:#f3f4f6; color:#374151; border:none; border-radius:10px; font-weight:600; cursor:pointer;">
+                        Tutup
+                    </button>
+                    <button onclick="logoutPeserta()" style="flex:1; padding:12px; background:#fee2e2; color:#dc2626; border:none; border-radius:10px; font-weight:600; cursor:pointer;">
+                        🚪 Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    infoModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    // Close on backdrop click
+    infoModal.addEventListener('click', function(e) {
+        if (e.target === infoModal) closePesertaInfoModal();
+    });
+}
+
+/**
+ * Close modal info peserta
+ */
+function closePesertaInfoModal() {
+    const modal = document.getElementById('peserta-info-modal');
     if (modal) {
         modal.classList.remove('active');
-        document.body.style.overflow = ''; // Restore scrolling
-        
-        // Optional: remove modal dari DOM setelah animasi selesai
-        setTimeout(() => {
-            // modal.remove(); // Uncomment jika ingin hapus permanen
-        }, 300);
+        document.body.style.overflow = '';
     }
+}
+
+/**
+ * Logout peserta
+ */
+function logoutPeserta() {
+    if (confirm('Apakah Anda yakin ingin logout?')) {
+        localStorage.removeItem('simbakes_peserta_session');
+        closePesertaInfoModal();
+        
+        // Reset tombol login
+        const loginBtn = document.getElementById('topbar-peserta-login-btn');
+        if (loginBtn) {
+            loginBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                Login Peserta
+            `;
+            loginBtn.onclick = openPesertaLogin;
+            loginBtn.style.background = '';
+            loginBtn.title = '';
+        }
+        
+        showToast?.('info', '👋 Logout Berhasil', 'Anda telah keluar dari akun peserta');
+        
+        // Redirect ke halaman login
+        setTimeout(() => openPesertaLogin(), 500);
+    }
+}
+
+/**
+ * Helper: Get status badge config
+ */
+function getStatusBadgeConfig(status) {
+    if (!status) return { icon: '⏳', text: 'Menunggu Proses', bg: 'linear-gradient(135deg, #f59e0b, #d97706)' };
+    
+    const s = String(status).toLowerCase();
+    
+    if (s.includes('direkomendasikan') || s.includes('approved') || s.includes('lulus') || s.includes('aktif')) {
+        return { icon: '✅', text: status, bg: 'linear-gradient(135deg, #22c55e, #16a34a)' };
+    }
+    if (s.includes('ditolak') || s.includes('rejected') || s.includes('gagal')) {
+        return { icon: '❌', text: status, bg: 'linear-gradient(135deg, #ef4444, #dc2626)' };
+    }
+    
+    return { icon: '⏳', text: status, bg: 'linear-gradient(135deg, #f59e0b, #d97706)' };
 }
 
 // =====================================================
