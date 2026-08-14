@@ -1087,6 +1087,53 @@
             background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%);
         }
 
+        /* Login Peserta Button - Green/Teal Theme */
+        .topbar-peserta-login-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+            margin-right: 8px;
+        }
+
+        .topbar-peserta-login-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+            background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+        }
+
+        /* Login Admin Button - Blue Theme */
+        .topbar-login-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+        }
+
+        .topbar-login-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+        }
+
         /* ===== USER REGISTRATION MODAL (NEW!) ===== */
         .register-modal-overlay {
             position: fixed;
@@ -1291,6 +1338,31 @@
             }
             
             .topbar-register-btn {
+                padding: 0.5rem;
+                border-radius: 50%;
+                min-width: 42px;
+                justify-content: center;
+            }
+            
+            /* Mobile styling for Peserta Login button */
+            .topbar-peserta-login-btn span {
+                display: none; /* Hide text on mobile, show only icon */
+            }
+            
+            .topbar-peserta-login-btn {
+                padding: 0.5rem;
+                border-radius: 50%;
+                min-width: 42px;
+                justify-content: center;
+                margin-right: 6px;
+            }
+            
+            /* Mobile styling for Admin Login button */
+            .topbar-login-btn span {
+                display: none; /* Hide text on mobile, show only icon */
+            }
+            
+            .topbar-login-btn {
                 padding: 0.5rem;
                 border-radius: 50%;
                 min-width: 42px;
@@ -3842,13 +3914,19 @@
     <main class="main-content">
     <!-- TOP BAR - Login/Admin Area (Fixed Top Right) -->
     <div class="topbar" id="topbar">
-        <!-- User Registration Button (NEW!) -->
+        <!-- User Registration Button -->
         <button class="topbar-register-btn" id="topbar-register-btn" onclick="openRegisterModal()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
             Daftar User
         </button>
 
-        <!-- Login Button (shown when not logged in) -->
+        <!-- Login Peserta Button (NEW!) -->
+        <button class="topbar-peserta-login-btn" id="topbar-peserta-login-btn" onclick="openPesertaLogin()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Login Peserta
+        </button>
+
+        <!-- Login Admin Button (shown when not logged in) -->
         <button class="topbar-login-btn" id="topbar-login-btn" onclick="openTopbarLogin()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10,17 15,12 10,7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
             Login Admin
@@ -12358,6 +12436,215 @@ function openTopbarLogin() {
     }
 }
 
+/**
+ * Open Login Peserta Modal - Khusus untuk Peserta Beasiswa
+ * Membuka modal/form login untuk peserta yang sudah terdaftar
+ */
+function openPesertaLogin() {
+    // Cek apakah sudah ada modal login peserta, jika tidak buat dinamis
+    let pesertaModal = document.getElementById('peserta-login-modal');
+    
+    if (!pesertaModal) {
+        // Buat modal dinamis jika belum ada
+        pesertaModal = document.createElement('div');
+        pesertaModal.id = 'peserta-login-modal';
+        pesertaModal.className = 'modal-overlay';
+        pesertaModal.innerHTML = `
+            <div class="modal-content" style="max-width:450px; border-radius:20px; overflow:hidden;">
+                <!-- Header dengan gradient hijau -->
+                <div style="background:linear-gradient(135deg,#059669,#047857); padding:1.75rem 2rem; text-align:center;">
+                    <div style="width:70px; height:70px; background:rgba(255,255,255,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="32" height="32">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <h2 style="color:white; font-size:1.5rem; font-weight:700; margin:0;">Login Peserta</h2>
+                    <p style="color:rgba(255,255,255,0.9); font-size:0.9rem; margin:0.5rem 0 0;">Masuk ke akun peserta beasiswa Anda</p>
+                </div>
+                
+                <!-- Body -->
+                <div style="padding:2rem;">
+                    <form id="peserta-login-form" onsubmit="handlePesertaLogin(event)">
+                        <!-- Username/Email -->
+                        <div style="margin-bottom:1.25rem;">
+                            <label style="display:block; font-size:0.875rem; font-weight:600; color:#374151; margin-bottom:0.5rem;">
+                                Username atau Email
+                            </label>
+                            <input type="text" id="peserta-username" required 
+                                   style="width:100%; padding:0.875rem 1rem; border:2px solid #e5e7eb; border-radius:10px; font-size:1rem; transition:border-color 0.2s;"
+                                   placeholder="Masukkan username atau email"
+                                   onfocus="this.style.borderColor='#059669'"
+                                   onblur="this.style.borderColor='#e5e7eb'">
+                        </div>
+                        
+                        <!-- Password -->
+                        <div style="margin-bottom:1.5rem;">
+                            <label style="display:block; font-size:0.875rem; font-weight:600; color:#374151; margin-bottom:0.5rem;">
+                                Password
+                            </label>
+                            <input type="password" id="peserta-password" required 
+                                   style="width:100%; padding:0.875rem 1rem; border:2px solid #e5e7eb; border-radius:10px; font-size:1rem; transition:border-color 0.2s;"
+                                   placeholder="Masukkan password"
+                                   onfocus="this.style.borderColor='#059669'"
+                                   onblur="this.style.borderColor='#e5e7eb'">
+                        </div>
+                        
+                        <!-- Error Message Area -->
+                        <div id="peserta-login-error" style="display:none; background:#fef2f2; border-left:4px solid #ef4444; padding:0.875rem 1rem; border-radius:0 8px 8px 0; margin-bottom:1rem;">
+                            <p style="margin:0; color:#dc2626; font-size:0.875rem;" id="peserta-login-error-text"></p>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <button type="submit" id="peserta-login-submit-btn"
+                                style="width:100%; padding:1rem; background:linear-gradient(135deg,#059669,#047857); color:white; border:none; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:0.5rem;"
+                                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 20px rgba(5,150,105,0.35)'"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10,17 15,12 10,7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                            Masuk sebagai Peserta
+                        </button>
+                    </form>
+                    
+                    <!-- Divider -->
+                    <div style="display:flex; align-items:center; margin:1.5rem 0; gap:1rem;">
+                        <div style="flex:1; height:1px; background:#e5e7eb;"></div>
+                        <span style="color:#9ca3af; font-size:0.875rem;">atau</span>
+                        <div style="flex:1; height:1px; background:#e5e7eb;"></div>
+                    </div>
+                    
+                    <!-- Register Link -->
+                    <p style="text-align:center; margin:0; font-size:0.875rem; color:#6b7280;">
+                        Belum punya akun? 
+                        <a href="#" onclick="closePesertaLogin(); openRegisterModal(); return false;" 
+                           style="color:#059669; font-weight:600; text-decoration:none;">Daftar di Sini</a>
+                    </p>
+                </div>
+                
+                <!-- Close Button -->
+                <button onclick="closePesertaLogin()" 
+                        style="position:absolute; top:1rem; right:1rem; width:36px; height:36px; border-radius:50%; border:none; background:rgba(255,255,255,0.2); color:white; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.25rem; transition:background 0.2s;"
+                        onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.2)'">✕</button>
+            </div>
+        `;
+        
+        // Tambahkan ke body
+        document.body.appendChild(pesertaModal);
+        
+        // Tambahkan event listener untuk close di luar modal
+        pesertaModal.addEventListener('click', function(e) {
+            if (e.target === pesertaModal) {
+                closePesertaLogin();
+            }
+        });
+    }
+    
+    // Tampilkan modal
+    pesertaModal.classList.add('active');
+    document.body.style.overflow = 'hidden'; // Prevent background scroll
+    
+    // Reset form
+    const form = document.getElementById('peserta-login-form');
+    if (form) form.reset();
+    
+    // Hide error
+    hidePesertaLoginError();
+    
+    // Focus pada field pertama
+    setTimeout(() => {
+        const usernameField = document.getElementById('peserta-username');
+        if (usernameField) usernameField.focus();
+    }, 400);
+    
+    console.log('[SIMBAKES] Peserta login modal opened');
+}
+
+/**
+ * Handle Peserta Login Form Submit
+ */
+async function handlePesertaLogin(event) {
+    event.preventDefault();
+    
+    const username = document.getElementById('peserta-username').value.trim();
+    const password = document.getElementById('peserta-password').value;
+    const submitBtn = document.getElementById('peserta-login-submit-btn');
+    const originalBtnText = submitBtn.innerHTML;
+    
+    try {
+        // Disable button dan tampilkan loading
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+            <div class="spinner" style="border-color:rgba(255,255,255,0.3); border-top-color:white; width:20px; height:20px;"></div>
+            Memproses...
+        `;
+        
+        // Panggil fungsi autentikasi dengan source 'peserta'
+        const success = await performAuthentication(username, password, 'peserta');
+        
+        if (success) {
+            // Tutup modal
+            closePesertaLogin();
+            
+            // Tampilkan sukses toast
+            showToast('✅ Login berhasil! Selamat datang, Peserta.', 'success', 4000);
+            
+            // Redirect atau update UI sesuai kebutuhan
+            // Misalnya: tampilkan halaman dashboard peserta
+            setTimeout(() => {
+                // Opsional: navigasi ke halaman tertentu
+                console.log('[SIMBAKES] Peserta logged in successfully');
+            }, 500);
+        } else {
+            showPesertaLoginError('Username atau password salah. Silakan coba lagi.');
+        }
+    } catch (error) {
+        console.error('[SIMBAKES] Peserta login error:', error);
+        showPesertaLoginError('Terjadi kesalahan saat login. Silakan coba lagi nanti.');
+    } finally {
+        // Restore button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
+}
+
+/**
+ * Show Peserta Login Error Message
+ */
+function showPesertaLoginError(message) {
+    const errorDiv = document.getElementById('peserta-login-error');
+    const errorText = document.getElementById('peserta-login-error-text');
+    if (errorDiv && errorText) {
+        errorText.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+}
+
+/**
+ * Hide Peserta Login Error Message
+ */
+function hidePesertaLoginError() {
+    const errorDiv = document.getElementById('peserta-login-error');
+    if (errorDiv) {
+        errorDiv.style.display = 'none';
+    }
+}
+
+/**
+ * Close Peserta Login Modal
+ */
+function closePesertaLogin() {
+    const modal = document.getElementById('peserta-login-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = ''; // Restore scrolling
+        
+        // Optional: remove modal dari DOM setelah animasi selesai
+        setTimeout(() => {
+            // modal.remove(); // Uncomment jika ingin hapus permanen
+        }, 300);
+    }
+}
+
 // =====================================================
 // USER REGISTRATION MODAL FUNCTIONS (NEW!)
 // =====================================================
@@ -12699,9 +12986,12 @@ function closeDropdownOnClickOutside(event) {
  * Update TopBar UI after successful login
  */
 function updateTopbarAfterLogin(user) {
-    // Hide login button
+    // Hide login buttons (Admin & Peserta)
     const loginBtn = document.getElementById('topbar-login-btn');
     if (loginBtn) loginBtn.style.display = 'none';
+    
+    const pesertaLoginBtn = document.getElementById('topbar-peserta-login-btn');
+    if (pesertaLoginBtn) pesertaLoginBtn.style.display = 'none';
     
     // Show user menu
     const userMenu = document.getElementById('topbar-user-menu');
@@ -12713,7 +13003,8 @@ function updateTopbarAfterLogin(user) {
     
     const displayRole = document.getElementById('topbar-display-role');
     if (displayRole) {
-        displayRole.textContent = user.role === 'admin' ? 'Super Administrator' : 'Operator Data';
+        displayRole.textContent = user.role === 'admin' ? 'Super Administrator' : 
+                                  user.role === 'viewer' ? 'Peserta Beasiswa' : 'Operator Data';
     }
     
     // Update avatar
@@ -12729,25 +13020,30 @@ function updateTopbarAfterLogin(user) {
         dropdownAvatar.textContent = user.avatar;
         dropdownAvatar.className = `topbar-dropdown-avatar ${user.role}`;
     }
-    
+
     const dropdownName = document.getElementById('dropdown-name');
     if (dropdownName) dropdownName.textContent = user.name;
     
     const dropdownRole = document.getElementById('dropdown-role');
     if (dropdownRole) {
-        dropdownRole.textContent = user.role === 'admin' ? 'Full Access - Admin' : 'Limited Access - Operator';
+        dropdownRole.textContent = user.role === 'admin' ? 'Full Access - Admin' : 
+                                   user.role === 'viewer' ? 'Peserta Beasiswa - Limited Access' : 
+                                   'Limited Access - Operator';
     }
     
-    console.log('✅ TopBar updated for:', user.name);
+    console.log('✅ TopBar updated for:', user.name, '(' + user.role + ')');
 }
 
 /**
  * Reset TopBar UI after logout
  */
 function resetTopbarAfterLogout() {
-    // Show login button
+    // Show login buttons (Admin & Peserta)
     const loginBtn = document.getElementById('topbar-login-btn');
     if (loginBtn) loginBtn.style.display = '';
+    
+    const pesertaLoginBtn = document.getElementById('topbar-peserta-login-btn');
+    if (pesertaLoginBtn) pesertaLoginBtn.style.display = '';
     
     // Hide user menu
     const userMenu = document.getElementById('topbar-user-menu');
@@ -12756,6 +13052,8 @@ function resetTopbarAfterLogout() {
     // Close dropdown if open
     const dropdown = document.getElementById('user-dropdown');
     if (dropdown) dropdown.classList.remove('show');
+    
+    console.log('🔓 TopBar reset - Login buttons visible');
 }
 
 /**
