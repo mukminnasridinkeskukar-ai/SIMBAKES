@@ -7980,20 +7980,31 @@ async function deleteSubmission(id) {
  * Fetch Roadmap Data dari Supabase
  */
 async function fetchRoadmapData() {
+    // Pastikan Supabase client tersedia
     if (!supabaseClient) {
-        console.warn('[SIMBAKES] Supabase not connected');
+        console.warn('[SIMBAKES] Supabase not connected for roadmap');
         return [];
     }
     
     try {
+        console.log('[SIMBAKES] Fetching roadmap data from Supabase...');
+        
         const { data, error } = await supabaseClient
             .from('roadmap')
             .select('*')
-            .order('tahun_studi', { ascending: true });
+            .order('created_at', { ascending: false });
             
-        if (error) throw error;
+        if (error) {
+            console.error('[SIMBAKES] Roadmap query error:', error);
+            throw error;
+        }
         
-        console.log(`[SIMBAKES] Roadmap data: ${data?.length || 0} items`);
+        console.log(`[SIMBAKES] ✅ Roadmap data loaded: ${data?.length || 0} items`);
+        
+        if (data && data.length > 0) {
+            console.log('[SIMBAKES] Sample roadmap data:', data[0]);
+        }
+        
         return data || [];
     } catch (error) {
         console.error('[SIMBAKES] Error fetching roadmap data:', error);
@@ -9596,14 +9607,21 @@ async function loadRoadmapAdminTable() {
             <td colspan="12" style="text-align:center;padding:3rem;color:#64748b;">
                 <div class="spinner"></div>
                 <p style="margin-top:1rem;">Memuat data roadmap...</p>
-                <p style="font-size:0.8rem;color:#94a3b8;margin-top:0.5rem;">Menghubungkan ke server...</p>
+                <p style="font-size:0.8rem;color:#94a3b8;margin-top:0.5rem;">Menghubungkan ke server Supabase...</p>
             </td>
         </tr>
     `;
     
     try {
-        const search = document.getElementById('roadmap-search-input').value.trim();
-        const statusFilter = document.getElementById('roadmap-status-filter').value;
+        // Pastikan Supabase client tersedia
+        if (!supabaseClient) {
+            throw new Error('Supabase client belum terinisialisasi');
+        }
+        
+        const search = document.getElementById('roadmap-search-input')?.value?.trim() || '';
+        const statusFilter = document.getElementById('roadmap-status-filter')?.value || '';
+        
+        console.log('[SIMBAKES] Loading roadmap admin table...', { search, statusFilter });
         
         // Fetch data using the main fetchRoadmapData function
         const data = await fetchRoadmapData();
@@ -9611,22 +9629,27 @@ async function loadRoadmapAdminTable() {
         // Store all data for filtering
         roadmapAdminData = data || [];
         
-        // Apply client-side filtering
+        // Apply client-side filtering - ✅ BENAR: Gunakan snake_case dari SQL schema
         let filteredData = roadmapAdminData;
         
         if (search) {
             const searchLower = search.toLowerCase();
             filteredData = filteredData.filter(row => 
-                String(row.tahun || row[0] || '').toLowerCase().includes(searchLower) ||
-                String(row.program || row[1] || '').toLowerCase().includes(searchLower) ||
-                String(row.target || row[4] || '').toLowerCase().includes(searchLower) ||
-                String(row.status || row[7] || '').toLowerCase().includes(searchLower)
+                String(row.kode || '').toLowerCase().includes(searchLower) ||
+                String(row.jurusan || '').toLowerCase().includes(searchLower) ||
+                String(row.kualifikasi_awal || '').toLowerCase().includes(searchLower) ||
+                String(row.jenis_pendidikan || '').toLowerCase().includes(searchLower) ||
+                String(row.perguruan_tinggi || '').toLowerCase().includes(searchLower) ||
+                String(row.pekerjaan || '').toLowerCase().includes(searchLower) ||
+                String(row.tahun_studi || '').toLowerCase().includes(searchLower) ||
+                String(row.unit_pendayaguna || '').toLowerCase().includes(searchLower) ||
+                String(row.status || '').toLowerCase().includes(searchLower)
             );
         }
         
-        if (statusFilter) {
+        if (statusFilter && statusFilter !== '') {
             filteredData = filteredData.filter(row => 
-                String(row.status || row[8] || '').toLowerCase() === statusFilter.toLowerCase()
+                String(row.status || '').toLowerCase() === statusFilter.toLowerCase()
             );
         }
         
@@ -9642,27 +9665,44 @@ async function loadRoadmapAdminTable() {
         updateRoadmapStats();
         
     } catch (error) {
-        console.error('Error fetching roadmap data:', error);
+        console.error('[SIMBAKES] Error fetching roadmap data:', error);
+        console.error('[SIMBAKES] Roadmap error details:', {
+            message: error.message,
+            code: error.code,
+            status: error.status
+        });
         
         // Tampilkan pesan error yang lebih informatif
-        const errorMsg = error.message || 'Terjadi kesalahan tidak diketahui';
-        const isNetworkError = error.isNetworkError;
+        let errorMsg = error.message || 'Terjadi kesalahan tidak diketahui';
+        const isNetworkError = !error.status && (error.message?.includes('network') || error.message?.includes('fetch'));
+        
+        // Berikan pesan spesifik
+        if (error.status === 400) {
+            errorMsg = `Error query roadmap (400). Detail: ${error.message}`;
+        } else if (error.status === 401) {
+            errorMsg = 'Error autentikasi (401). RLS Policy mungkin memblokir akses.';
+        } else if (error.status === 404) {
+            errorMsg = 'Tabel roadmap tidak ditemukan. Pastikan SQL schema sudah dijalankan.';
+        }
         
         tbody.innerHTML = `
             <tr>
                 <td colspan="12" style="text-align:center;padding:3rem;color:#dc2626;">
                     <div style="font-size:2.5rem;margin-bottom:1rem;">${isNetworkError ? '🌐' : '⚠️'}</div>
                     <p style="font-weight:600;margin-bottom:0.5rem;">Gagal Memuat Data Roadmap</p>
-                    <p style="font-size:0.875rem;color:#64748b;margin-bottom:1rem;max-width:400px;margin-left:auto;margin-right:auto;">
+                    <p style="font-size:0.875rem;color:#64748b;margin-bottom:1rem;max-width:500px;margin-left:auto;margin-right:auto;">
                         ${errorMsg}
+                    </p>
+                    <p style="font-size:0.75rem;color:#94a3b8;margin-bottom:1rem;">
+                        Error Code: ${error.code || error.status || 'Unknown'}
                     </p>
                     <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-top:1rem;">
                         <button class="btn btn-primary btn-sm" onclick="loadDataRoadmap()" style="margin-top:0.5rem;">
                             🔄 Coba Lagi
                         </button>
-                        ${isNetworkError ? `<button class="btn btn-sm" onclick="showConnectionStatus()" style="background:#fef3c7;color:#d97706;margin-top:0.5rem;">
-                            🔧 Test Koneksi
-                        </button>` : ''}
+                        <button class="btn btn-sm" onclick="location.reload();" style="background:#e0e7ff;color:#4338ca;margin-top:0.5rem;">
+                            🔃 Refresh Halaman
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -11258,10 +11298,24 @@ function renderAdminTable(data) {
     
     let html = '';
     data.forEach((row, index) => {
+        // Gunakan INDEX sebagai row identifier (bukan rowNumber yang tidak ada)
+        const actualIndex = index;
         const rowNum = (adminCurrentPage - 1) * adminPageSize + index + 1;
         
-        // Photo cell - use generatePhotoCell for consistent handling with fallback
-        const photoCell = generatePhotoCell(row.linkFoto, row.namaLengkap || '', 'table');
+        // ✅ BENAR: Gunakan snake_case sesuai SQL schema Supabase
+        const id = row.id || '';
+        const fotoData = row.foto || '';
+        const dokumenData = row.dokumen_pdf || '';
+        
+        // Photo cell - handle base64 or URL
+        let photoCell = '-';
+        if (fotoData && fotoData !== '-' && fotoData !== 'null') {
+            if (fotoData.startsWith('data:image') || fotoData.startsWith('http')) {
+                photoCell = `<img src="${fotoData}" alt="Foto" style="width:40px;height:40px;object-fit:cover;border-radius:8px;border:2px solid #e2e8f0;" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👤</text></svg>'">`;
+            } else {
+                photoCell = `<span title="${fotoData.substring(0, 50)}...">📷 Base64</span>`;
+            }
+        }
         
         // Status badge
         const statusBadge = getTableStatusBadge(row.status);
@@ -11272,18 +11326,36 @@ function renderAdminTable(data) {
             return text.length > maxLen ? text.substring(0, maxLen) + '...' : text;
         };
         
+        // Format dates
+        const formatDate = (dateVal) => {
+            if (!dateVal) return '-';
+            try {
+                const d = new Date(dateVal);
+                return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+            } catch { return '-'; }
+        };
+        
+        const formatDateTime = (dateVal) => {
+            if (!dateVal) return '-';
+            try {
+                const d = new Date(dateVal);
+                return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + 
+                       ' ' + d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            } catch { return '-'; }
+        };
+        
         html += `
-            <tr data-row-number="${row.rowNumber}" data-foto="${row.linkFoto || '-'}" data-dokumen="${row.linkDokumen || '-'}">
+            <tr data-id="${id}" data-index="${actualIndex}">
                 <!-- CRUD Actions Column -->
                 <td>
                     <div class="crud-actions">
-                        <button class="btn-crud btn-view" onclick="viewDetailPengusul(${row.rowNumber})" title="Lihat Detail">
+                        <button class="btn-crud btn-view" onclick="viewDetailPengusul('${id}')" title="Lihat Detail">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         </button>
-                        <button class="btn-crud btn-status" onclick="openStatusModal(${row.rowNumber}, '${escapeHtml(row.status)}')" title="Ubah Status">
+                        <button class="btn-crud btn-status" onclick="openStatusModal('${id}', '${escapeHtml(row.status || '')}')" title="Ubah Status">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
-                        <button class="btn-crud btn-delete" onclick="confirmDeletePengusul(${row.rowNumber}, '${escapeHtml(row.namaLengkap)}')" title="Hapus Data">
+                        <button class="btn-crud btn-delete" onclick="confirmDeletePengusul('${id}', '${escapeHtml(row.nama_lengkap || '')}')" title="Hapus Data">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         </button>
                     </div>
@@ -11296,28 +11368,28 @@ function renderAdminTable(data) {
                 <td style="text-align:center;font-weight:600;color:#64748b;">${rowNum}</td>
                 
                 <!-- No Register -->
-                <td><strong style="color:#2563eb;">${row.noRegister || '-'}</strong></td>
+                <td><strong style="color:#2563eb;">${row.no_register || '-'}</strong></td>
                 
                 <!-- NIK -->
                 <td style="font-family:monospace;">${row.nik || '-'}</td>
                 
-                <!-- Nama Lengkap -->
-                <td><strong>${row.namaLengkap || '-'}</strong></td>
+                <!-- Nama Lengkap ✅ snake_case -->
+                <td><strong>${row.nama_lengkap || '-'}</strong></td>
                 
-                <!-- Tempat Lahir -->
-                <td>${row.tempatLahir || '-'}</td>
+                <!-- Tempat Lahir ✅ snake_case -->
+                <td>${row.tempat_lahir || '-'}</td>
                 
-                <!-- Tanggal Lahir -->
-                <td>${formatDate(row.tanggalLahir)}</td>
+                <!-- Tanggal Lahir ✅ snake_case -->
+                <td>${formatDate(row.tanggal_lahir)}</td>
                 
-                <!-- Alamat KTP -->
-                <td title="${escapeHtml(row.alamatKTP || '')}">${truncate(row.alamatKTP)}</td>
+                <!-- Alamat KTP ✅ snake_case -->
+                <td title="${escapeHtml(row.alamat_ktp || '')}">${truncate(row.alamat_ktp)}</td>
                 
-                <!-- Alamat Domisili -->
-                <td title="${escapeHtml(row.alamatDomisili || '')}">${truncate(row.alamatDomisili)}</td>
+                <!-- Alamat Domisili ✅ snake_case -->
+                <td title="${escapeHtml(row.alamat_domisili || '')}">${truncate(row.alamat_domisili)}</td>
                 
-                <!-- Lama Domisili -->
-                <td style="text-align:center;">${row.lamaDomisili ? row.lamaDomisili + ' thn' : '-'}</td>
+                <!-- Lama Domisili ✅ snake_case -->
+                <td style="text-align:center;">${row.lama_domisili ? row.lama_domisili + ' thn' : '-'}</td>
                 
                 <!-- Pekerjaan -->
                 <td>${row.pekerjaan || '-'}</td>
@@ -11325,66 +11397,65 @@ function renderAdminTable(data) {
                 <!-- Posisi/Jabatan -->
                 <td>${row.posisi || '-'}</td>
                 
-                <!-- Unit Kerja -->
-                <td title="${escapeHtml(row.unitKerja || '')}">${truncate(row.unitKerja, 35)}</td>
+                <!-- Unit Kerja ✅ snake_case -->
+                <td title="${escapeHtml(row.unit_kerja || '')}">${truncate(row.unit_kerja, 35)}</td>
                 
                 <!-- Penjelasan/Narasi -->
                 <td title="${escapeHtml(row.penjelasan || '')}">${truncate(row.penjelasan, 40)}</td>
                 
-                <!-- Jurusan Tujuan -->
-                <td>${row.jurusanTujuan || '-'}</td>
+                <!-- Jurusan Tujuan ✅ snake_case -->
+                <td>${row.jurusan_tujuan || '-'}</td>
                 
-                <!-- Jenjang Pendidikan -->
-                <td>${row.jenjangPendidikan || '-'}</td>
+                <!-- Jenjang Pendidikan ✅ snake_case -->
+                <td>${row.jenjang_pendidikan || '-'}</td>
                 
-                <!-- Unit Tujuan Pemanfaatan -->
-                <td>${row.unitTujuan || '-'}</td>
+                <!-- Unit Tujuan Pemanfaatan ✅ snake_case -->
+                <td>${row.unit_tujuan || '-'}</td>
                 
-                <!-- Rencana Tahun Studi -->
-                <td style="text-align:center;">${row.rencanaTahun || '-'}</td>
+                <!-- Rencana Tahun Studi ✅ snake_case -->
+                <td style="text-align:center;">${row.rencana_tahun || '-'}</td>
                 
-                <!-- No HP -->
-                <td>${row.noHP || '-'}</td>
+                <!-- No HP ✅ snake_case -->
+                <td>${row.no_hp || '-'}</td>
                 
-                <!-- No WhatsApp -->
-                <td>${row.noWA || '-'}</td>
+                <!-- No WhatsApp ✅ snake_case -->
+                <td>${row.no_wa || '-'}</td>
                 
                 <!-- Email -->
                 <td style="color:#2563eb;" title="${row.email || ''}">${truncate(row.email, 30)}</td>
                 
-                <!-- Nama File Dokumen -->
-                <td title="${row.namaFile || ''}">${truncate(row.namaFile, 25)}</td>
+                <!-- Nama File Dokumen ✅ snake_case -->
+                <td title="${row.nama_file || ''}">${truncate(row.nama_file, 25)}</td>
                 
                 <!-- Status -->
                 <td>${statusBadge}</td>
                 
-                <!-- Tanggal Pengajuan -->
-                <td style="font-size:0.75rem;">${formatDateTime(row.timestamp)}</td>
+                <!-- Tanggal Pengajuan ✅ gunakan created_at -->
+                <td style="font-size:0.75rem;">${formatDateTime(row.created_at)}</td>
                 
-                <!-- Link Foto -->
+                <!-- Link Foto ✅ base64 preview -->
                 <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;">
-                    ${row.linkFoto && row.linkFoto !== '-' 
-                        ? `<a href="${row.linkFoto}" target="_blank" style="color:#059669;text-decoration:none;font-size:0.75rem;">📷 Lihat Foto</a>` 
+                    ${fotoData && fotoData !== '-' && fotoData !== 'null'
+                        ? `<a href="#" onclick="showPhotoModal('${id}'); return false;" style="color:#059669;text-decoration:none;font-size:0.75rem;">📷 Lihat Foto</a>` 
                         : '-'}
                 </td>
                 
-                <!-- Link Dokumen -->
+                <!-- Link Dokumen ✅ base64 preview -->
                 <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;">
-                    ${row.linkDokumen && row.linkDokumen !== '-' 
-                        ? `<a href="${row.linkDokumen}" target="_blank" style="color:#2563eb;text-decoration:none;font-size:0.75rem;">📄 Lihat Dokumen</a>` 
+                    ${dokumenData && dokumenData !== '-' && dokumenData !== 'null'
+                        ? `<a href="#" onclick="showDocumentModal('${id}'); return false;" style="color:#2563eb;text-decoration:none;font-size:0.75rem;">📄 Lihat Dokumen</a>` 
                         : '-'}
                 </td>
                 
-                <!-- Row Number (hidden reference) -->
-                <td style="text-align:center;font-family:monospace;font-size:0.7rem;color:#94a3b8;">${row.rowNumber}</td>
+                <!-- ID Reference (hidden) -->
+                <td style="text-align:center;font-family:monospace;font-size:0.7rem;color:#94a3b8;" title="UUID: ${id}">${id ? id.substring(0, 8) + '...' : '-'}</td>
             </tr>
         `;
     });
     
     tbody.innerHTML = html;
     
-    // Initialize async photo loading for all images in admin table
-    initAsyncPhotos(tbody);
+    console.log(`[SIMBAKES] ✅ Rendered ${data.length} rows in admin table`);
 }
 
 /**
@@ -11514,57 +11585,70 @@ function refreshDataPengusul() {
 }
 
 /**
- * View detail of a submission - FIXED: Get data from table row or API
+ * View detail of a submission - FIXED: Get data by ID from Supabase
  */
-async function viewDetailPengusul(rowNumber) {
+async function viewDetailPengusul(id) {
     try {
-        // Method 1: Try to get data from table row directly (faster)
-        const rowElement = document.querySelector(`tr[data-row-number="${rowNumber}"]`);
+        console.log('[SIMBAKES] Viewing detail for ID:', id);
         
-        if (rowElement) {
-            // Extract data from table cells
-            const cells = rowElement.querySelectorAll('td');
-            if (cells.length >= 24) {
-                const data = {
-                    rowNumber: rowNumber,
-                    noRegister: cells[3]?.textContent?.trim() || '',
-                    namaLengkap: cells[5]?.textContent?.trim() || '',
-                    nik: cells[4]?.textContent?.trim() || '',
-                    jurusanTujuan: cells[15]?.textContent?.trim() || '',
-                    jenjangPendidikan: cells[16]?.textContent?.trim() || '',
-                    unitTujuan: cells[17]?.textContent?.trim() || '',
-                    rencanaTahun: cells[18]?.textContent?.trim() || '',
-                    status: cells[22]?.textContent?.trim() || '',
-                    email: cells[20]?.textContent?.trim() || '',
-                    linkFoto: rowElement.getAttribute('data-foto') || '-',
-                    linkDokumen: rowElement.getAttribute('data-dokumen') || '-'
-                };
-                
-                console.log('✅ Data dari tabel:', data);
-                showDetailModal(data);
-                return;
-            }
+        if (!id || id === 'undefined') {
+            showToast('❌ ID tidak valid', 'error');
+            return;
         }
         
-        // Method 2: Fallback - Fetch from API using getAllSubmissions
-        console.log('🔄 Mengambil data dari API untuk row:', rowNumber);
-        
-        // Using Supabase client
-        const result = await getAllSubmissions(1000);
-        
-        if (result.status === 'success' && result.data) {
-            const foundData = result.data.find(item => item.rowNumber == rowNumber);
-            
-            if (foundData) {
-                showDetailModal(foundData);
-                return;
-            }
+        // Query data dari Supabase berdasarkan ID
+        if (!supabaseClient) {
+            throw new Error('Supabase client tidak tersedia');
         }
         
-        showToast('❌ Data tidak ditemukan', 'error');
+        const { data, error } = await supabaseClient
+            .from('submissions')
+            .select('*')
+            .eq('id', id)
+            .single();
+        
+        if (error) throw error;
+        
+        if (!data) {
+            showToast('❌ Data tidak ditemukan', 'error');
+            return;
+        }
+        
+        console.log('[SIMBAKES] ✅ Data ditemukan:', data.no_register);
+        
+        // Format data untuk modal - gunakan snake_case dari Supabase
+        const formattedData = {
+            id: data.id,
+            noRegister: data.no_register || '-',
+            namaLengkap: data.nama_lengkap || '-',
+            nik: data.nik || '-',
+            tempatLahir: data.tempat_lahir || '-',
+            tanggalLahir: data.tanggal_lahir || '-',
+            alamatKTP: data.alamat_ktp || '-',
+            alamatDomisili: data.alamat_domisili || '-',
+            lamaDomisili: data.lama_domisili || '-',
+            pekerjaan: data.pekerjaan || '-',
+            posisi: data.posisi || '-',
+            unitKerja: data.unit_kerja || '-',
+            penjelasan: data.penjelasan || '-',
+            jurusanTujuan: data.jurusan_tujuan || '-',
+            jenjangPendidikan: data.jenjang_pendidikan || '-',
+            unitTujuan: data.unit_tujuan || '-',
+            rencanaTahun: data.rencana_tahun || '-',
+            noHP: data.no_hp || '-',
+            noWA: data.no_wa || '-',
+            email: data.email || '-',
+            namaFile: data.nama_file || '-',
+            status: data.status || '-',
+            created_at: data.created_at,
+            foto: data.foto || null,
+            dokumen_pdf: data.dokumen_pdf || null
+        };
+        
+        showDetailModal(formattedData);
         
     } catch (error) {
-        console.error('Error viewing detail:', error);
+        console.error('[SIMBAKES] Error viewing detail:', error);
         showToast('❌ Gagal memuat detail: ' + error.message, 'error');
     }
 }
@@ -11702,10 +11786,13 @@ function showDetailModal(data) {
 }
 
 /**
- * Open status update modal
+ * Open status update modal - FIXED: Use ID instead of rowNumber
  */
-function openStatusModal(rowNumber, currentStatus) {
+function openStatusModal(id, currentStatus) {
     const modalId = 'status-update-modal';
+    
+    // Simpan ID untuk digunakan saat submit
+    window.currentStatusUpdateId = id;
     
     let modal = document.getElementById(modalId);
     if (!modal) {
@@ -11742,7 +11829,7 @@ function openStatusModal(rowNumber, currentStatus) {
             </div>
             <div class="status-update-form">
                 <p style="margin-bottom:1rem;color:#64748b;">
-                    Baris: <strong>#${rowNumber}</strong> | Status saat ini: <strong>${currentStatus}</strong>
+                    ID: <strong>${id ? id.substring(0, 8) + '...' : '-'}</strong> | Status saat ini: <strong>${currentStatus || '-'}</strong>
                 </p>
                 <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Pilih Status Baru:</label>
                 <div class="status-options">
@@ -11750,7 +11837,7 @@ function openStatusModal(rowNumber, currentStatus) {
                 </div>
                 <div style="margin-top:1.5rem;display:flex;gap:0.75rem;justify-content:flex-end;">
                     <button class="btn" style="background:#f1f5f9;color:#475569;" onclick="closeModal('${modalId}')">Batal</button>
-                    <button class="btn btn-primary" onclick="submitStatusUpdate(${rowNumber})">💾 Simpan Perubahan</button>
+                    <button class="btn btn-primary" onclick="submitStatusUpdate()">💾 Simpan Perubahan</button>
                 </div>
             </div>
         </div>
@@ -11771,66 +11858,63 @@ function openStatusModal(rowNumber, currentStatus) {
 }
 
 /**
- * Submit status update
- * Menggunakan Supabase client
+ * Submit status update to Supabase - FIXED: Use saved ID
  */
-async function submitStatusUpdate(rowNumber) {
-    const selectedStatus = document.querySelector('input[name="new-status"]:checked');
-    
-    if (!selectedStatus) {
-        showToast('❌ Pilih status baru terlebih dahulu!', 'error');
-        return;
-    }
-    
-    const newStatus = selectedStatus.value;
-    
-    // Disable button dan show loading
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '⏳ Menyimpan...';
-    
+async function submitStatusUpdate() {
     try {
-        // Update status via Supabase
-        const { data: result, error } = await supabaseClient
+        const newStatus = document.querySelector('input[name="new-status"]:checked')?.value;
+        const id = window.currentStatusUpdateId;
+        
+        if (!newStatus) {
+            showToast('❌ Pilih status baru terlebih dahulu', 'error');
+            return;
+        }
+        
+        if (!id) {
+            showToast('❌ ID tidak valid', 'error');
+            return;
+        }
+        
+        console.log('[SIMBAKES] Updating status for ID:', id, 'to:', newStatus);
+        
+        if (!supabaseClient) {
+            throw new Error('Supabase client tidak tersedia');
+        }
+        
+        const { data, error } = await supabaseClient
             .from('submissions')
             .update({ 
                 status: newStatus,
                 updated_at: new Date().toISOString()
             })
-            .eq('id', rowNumber)
-            .select();
+            .eq('id', id)
+            .select()
+            .single();
         
         if (error) throw error;
         
-        if (result && result.length > 0) {
-            showToast(`✅ Status berhasil diubah ke ${newStatus}`, 'success');
-            closeModal('status-update-modal');
-            fetchAdminData(); // Refresh table
-        } else {
-            throw new Error(result.message || 'Gagal mengubah status');
-        }
+        console.log('[SIMBAKES] ✅ Status updated:', data.status);
+        
+        closeModal('status-update-modal');
+        showToast(`✅ Status berhasil diubah menjadi: ${newStatus}`, 'success');
+        
+        // Refresh table
+        loadDataPengusul();
         
     } catch (error) {
-        console.error('Error updating status:', error);
-        showToast(`❌ Gagal mengubah status: ${error.message}`, 'error', 5000);
-        
-        // Tampilkan tips jika network error
-        if (error.isNetworkError) {
-            setTimeout(() => showConnectionTips(), 1500);
-        }
-    } finally {
-        // Restore button
-        btn.disabled = false;
-        btn.innerHTML = originalText;
+        console.error('[SIMBAKES] Error updating status:', error);
+        showToast(`❌ Gagal update status: ${error.message}`, 'error');
     }
 }
 
 /**
- * Confirm delete submission
+ * Confirm delete submission - FIXED: Use ID instead of rowNumber
  */
-function confirmDeletePengusul(rowNumber, namaLengkap) {
+function confirmDeletePengusul(id, namaLengkap) {
     const modalId = 'delete-confirm-modal';
+    
+    // Simpan ID untuk digunakan saat konfirmasi hapus
+    window.currentDeleteId = id;
     
     let modal = document.getElementById(modalId);
     if (!modal) {
@@ -11856,12 +11940,12 @@ function confirmDeletePengusul(rowNumber, namaLengkap) {
                     <p style="color:#64748b;font-size:0.875rem;">Tindakan ini tidak dapat dibatalkan!</p>
                 </div>
                 <div style="background:#fef2f2;border:1px solid #fecaca;padding:1rem;border-radius:8px;margin-bottom:1.5rem;">
-                    <p style="font-size:0.875rem;"><strong>Nama:</strong> ${namaLengkap}</p>
-                    <p style="font-size:0.875rem;"><strong>Baris:</strong> #${rowNumber}</p>
+                    <p style="font-size:0.875rem;"><strong>Nama:</strong> ${namaLengkap || '-'}</p>
+                    <p style="font-size:0.875rem;"><strong>ID:</strong> ${id ? id.substring(0, 8) + '...' : '-'}</p>
                 </div>
                 <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
                     <button class="btn" style="background:#f1f5f9;color:#475569;" onclick="closeModal('${modalId}')">Batal</button>
-                    <button class="btn" style="background:#dc2626;color:white;" onclick="deletePengusul(${rowNumber})">🗑️ Ya, Hapus</button>
+                    <button class="btn" style="background:#dc2626;color:white;" onclick="deletePengusul()">🗑️ Ya, Hapus</button>
                 </div>
             </div>
         </div>
@@ -11871,45 +11955,46 @@ function confirmDeletePengusul(rowNumber, namaLengkap) {
 }
 
 /**
- * Delete submission
- * Menggunakan Supabase client
+ * Delete submission - FIXED: Use saved ID from window.currentDeleteId
  */
-async function deletePengusul(rowNumber) {
-    // Disable button dan show loading
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '⏳ Menghapus...';
-    
+async function deletePengusul() {
     try {
+        const id = window.currentDeleteId;
+        
+        if (!id) {
+            showToast('❌ ID tidak valid', 'error');
+            return;
+        }
+        
+        console.log('[SIMBAKES] Deleting submission with ID:', id);
+        
+        if (!supabaseClient) {
+            throw new Error('Supabase client tidak tersedia');
+        }
+        
         // Delete from Supabase
         const { error } = await supabaseClient
             .from('submissions')
             .delete()
-            .eq('id', rowNumber);
+            .eq('id', id);
         
-        if (!error) {
-            showToast(`✅ Data berhasil dihapus`, 'success');
-            closeModal('delete-confirm-modal');
-            fetchAdminData(); // Refresh table
-        } else {
-            throw new Error(result.message || 'Gagal menghapus data');
-        }
+        if (error) throw error;
+        
+        console.log('[SIMBAKES] ✅ Data deleted successfully');
+        
+        showToast(`✅ Data berhasil dihapus`, 'success');
+        closeModal('delete-confirm-modal');
+        
+        // Refresh table
+        loadDataPengusul();
         
     } catch (error) {
-        console.error('Error deleting submission:', error);
+        console.error('[SIMBAKES] Error deleting submission:', error);
         showToast(`❌ Gagal menghapus: ${error.message}`, 'error', 5000);
-        
-        // Tampilkan tips jika network error
-        if (error.isNetworkError) {
-            setTimeout(() => showConnectionTips(), 1500);
-        }
-    } finally {
-        // Restore button
-        btn.disabled = false;
-        btn.innerHTML = originalText;
     }
 }
+
+/**
 
 /**
  * Export data to CSV
