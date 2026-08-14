@@ -5763,6 +5763,9 @@
 // Let pengusulData = [];  // akan diisi dari fetchDashboardData()
 // Let roadmapData = [];   // akan diisi dari fetchRoadmapData()
 
+// ===== GLOBAL VARIABLES (Dideklarasikan di awal sebelum fungsi) =====
+let roadmapCachedData = null;      // Cache untuk data roadmap kebutuhan
+let roadmapFilterOptions = null;   // Options untuk filter dropdowns
 
 // ===== DEBOUNCE FUNCTIONS (Defined Early) =====
 
@@ -8800,16 +8803,12 @@ function renderDashboard_legacy() {
     `).join('');
 }
 
+// ===== ROADMAP KEBUTUHAN FUNCTIONS v2.0 =====
+
 function renderRoadmap() {
     // Load roadmap data from API when page is shown
     loadRoadmapData();
 }
-
-// ===== ROADMAP KEBUTUHAN FUNCTIONS v2.0 =====
-
-// Store cached data and filter options
-let roadmapCachedData = null;
-let roadmapFilterOptions = null;
 
 /**
  * Main function: Load Roadmap Data from Supabase
