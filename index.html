@@ -3742,10 +3742,10 @@
                     <label class="register-form-label">Peran/Akun *</label>
                     <select class="register-form-select" id="reg-role" required>
                         <option value="">Pilih peran akun</option>
-                        <option value="peserta">🎓 Peserta Beasiswa (Tenaga Kesehatan)</option>
-                        <option value="admin_sekolah">🏫 Admin Institusi Pendidikan</option>
-                        <option value="admin_dinkes">🏥 Admin Dinas Kesehatan</option>
-                        <option value="reviewer">📋 Reviewer/Penilai Proposal</option>
+                        <option value="viewer">🎓 Peserta Beasiswa (Tenaga Kesehatan)</option>
+                        <option value="admin">🏫 Admin Institusi Pendidikan</option>
+                        <option value="admin">🏥 Admin Dinas Kesehatan</option>
+                        <option value="viewer">📋 Reviewer/Penilai Proposal</option>
                     </select>
                 </div>
                 
@@ -5984,6 +5984,20 @@ PaginationManager.init('recent-submissions', 10);
 PaginationManager.init('recent-visitors', 10);
 PaginationManager.init('status-detail', 10);
 PaginationManager.init('roadmap', 10);
+
+// ===== ADMIN PAGINATION VARIABLES (Declared Early to avoid TDZ errors) =====
+let adminCurrentPage = 1;
+let adminPageSize = 10;
+let adminTotalPages = 0;
+let adminTotalRecords = 0;
+let roadmapCurrentPage = 1;
+let roadmapPageSize = 10;
+let roadmapTotalPages = 0;
+let roadmapTotalRecords = 0;
+
+// ===== DEBOUNCE TIMEOUT VARIABLES =====
+let adminSearchTimeout = null;
+let roadmapSearchTimeout = null;
 
 // ===== DEBOUNCE FUNCTIONS (Defined Early) =====
 
@@ -9464,13 +9478,10 @@ function renderPengusulTable() {
 
 /**
  * Global variables for Roadmap Admin
+ * NOTE: Pagination variables declared early at top of script to avoid TDZ errors
  */
 let roadmapAdminData = [];
 let roadmapEditingId = null;
-let roadmapCurrentPage = 1;
-let roadmapPageSize = 10;
-let roadmapTotalPages = 0;
-let roadmapTotalRecords = 0;
 
 
 /**
@@ -10967,11 +10978,8 @@ function searchStatus() {
 
 /**
  * Global variables for admin data management
+ * NOTE: Pagination variables declared early at top of script to avoid TDZ errors
  */
-let adminCurrentPage = 1;
-let adminPageSize = 10;
-let adminTotalPages = 0;
-let adminTotalRecords = 0;
 
 
 /**
@@ -11980,7 +11988,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const institusiGroup = document.getElementById('reg-institusi-group');
             if (institusiGroup) {
                 // Show institusi field for admin roles
-                if (this.value === 'admin_sekolah' || this.value === 'admin_dinkes') {
+                if (this.value === 'admin') {
                     institusiGroup.style.display = 'block';
                     document.getElementById('reg-institusi').required = true;
                 } else {
@@ -12064,25 +12072,43 @@ async function handleUserRegisterFromModal(event) {
     try {
         console.log('[SIMBAKES] Registering user:', formData.username);
         
-        // Use dynamic Supabase client resolution
+        // Use dynamic Supabase client resolution - PRIORITAS: supabaseClient global
         let client = null;
         
-        if (typeof simbakesDB !== 'undefined' && simbakesDB.isInitialized && simbakesDB.client) {
-            client = simbakesDB.client;
-            console.log('[SIMBAKES] Using simbakesDB.client for registration');
-        } else if (typeof supabaseClient !== 'undefined') {
+        // 1. Coba global supabaseClient (paling reliable)
+        if (!client && typeof supabaseClient !== 'undefined' && supabaseClient !== null) {
             client = supabaseClient;
-            console.log('[SIMBAKES] Using global supabaseClient');
-        } else if (typeof window.supabase !== 'undefined' && typeof SUPABASE_CONFIG !== 'undefined') {
+            console.log('[SIMBAKES] ✅ Using global supabaseClient for registration');
+        }
+        
+        // 2. Coba simbakesDB
+        if (!client && typeof simbakesDB !== 'undefined' && simbakesDB.isInitialized && simbakesDB.client) {
+            client = simbakesDB.client;
+            console.log('[SIMBAKES] ✅ Using simbakesDB.client for registration');
+        }
+        
+        // 3. Buat client baru dari config
+        if (!client && typeof window.supabase !== 'undefined' && typeof SUPABASE_CONFIG !== 'undefined') {
             if (SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey && SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_URL') {
                 client = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
-                console.log('[SIMBAKES] Created new Supabase client');
+                console.log('[SIMBAKES] ✅ Created new Supabase client from config');
+            }
+        }
+        
+        // 4. Force init jika belum ada
+        if (!client && typeof initSupabaseClient === 'function') {
+            initSupabaseClient();
+            if (typeof supabaseClient !== 'undefined' && supabaseClient !== null) {
+                client = supabaseClient;
+                console.log('[SIMBAKES] ✅ Initialized and using supabaseClient');
             }
         }
         
         if (!client) {
-            throw new Error('Supabase client tidak tersedia. Pastikan supabase-client.js sudah dimuat dengan benar.');
+            throw new Error('Supabase client tidak tersedia. Pastikan koneksi internet stabil dan refresh halaman.');
         }
+        
+        console.log('[SIMBAKES] Client ready, checking existing user...');
         
         // Check if username or email already exists
         const { data: existingUser } = await client
@@ -12146,7 +12172,27 @@ async function handleUserRegisterFromModal(event) {
         
     } catch (error) {
         console.error('[SIMBAKES] Registration error:', error);
-        showRegisterAlert(`Gagal mendaftar: ${error.message}. Silakan coba lagi.`, 'error');
+        console.error('[SIMBAKES] Error details:', {
+            message: error.message,
+            code: error.code,
+            status: error.status,
+            hint: error.hint
+        });
+        
+        // Berikan pesan error yang spesifik
+        let errorMsg = error.message || 'Terjadi kesalahan tidak diketahui';
+        
+        if (error.status === 401 || error.code === '401' || errorMsg.includes('401')) {
+            errorMsg = 'Error autentikasi (401). Ini biasanya karena RLS Policy di Supabase belum diatur dengan benar. Silakan jalankan script FIX_RLS_Registration_v2.sql di Supabase SQL Editor.';
+        } else if (error.status === 403 || errorMsg.includes('403') || errorMsg.includes('row-level security')) {
+            errorMsg = 'Error izin akses (403/RLS). Policy tabel multiusers belum mengizinkan INSERT publik. Jalankan script FIX_RLS_Registration_v2.sql di Supabase SQL Editor.';
+        } else if (errorMsg.includes('duplicate') || errorMsg.includes('already exists')) {
+            errorMsg = 'Username atau email sudah terdaftar. Gunakan yang lain.';
+        } else if (errorMsg.includes('password')) {
+            errorMsg = 'Error pada field password. Pastikan password valid.';
+        }
+        
+        showRegisterAlert(`Gagal mendaftar: ${errorMsg}`, 'error');
         resetRegisterButton();
     }
 }
