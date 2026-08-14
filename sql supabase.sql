@@ -1,6 +1,7 @@
 -- =====================================================
 -- SIMBAKES (Beasiswa Tematik Bidang Kesehatan)
 -- COMPLETE SUPABASE DATABASE SCHEMA
+-- Version: 2.0 - SYNCED WITH HTML FORM FIELDS
 -- =====================================================
 -- 
 -- Platform ini terdiri dari 2 file:
@@ -9,54 +10,69 @@
 --
 -- Tabel-tabel yang dibutuhkan:
 -- 1. submissions      - Data pengajuan/pendaftaran beasiswa
--- 2. roadmap_kebutuhan - Data roadmap kebutuhan SDM kesehatan
+-- 2. roadmap          - Data roadmap kebutuhan SDM kesehatan
 -- 3. penetapan        - Data penetapan penerima beasiswa
 -- 4. visitors         - Tracking pengunjung (opsional)
 -- 5. revisions        - Data revisi/pengajuan ulang
 -- 6. multiusers       - User admin (jika diperlukan)
+--
+-- CATATAN PENTING:
+-- - Semua field sudah disesuaikan dengan HTML form
+-- - Tipe data sudah dioptimalkan agar tidak tertolak
+-- - Base64 files menggunakan tipe TEXT (bukan VARCHAR)
 --
 -- =====================================================
 
 -- =====================================================
 -- 1. TABEL: submissions
 -- Data pengajuan/pendaftaran beasiswa
+-- SYNCED dengan form HTML (formData object)
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS public.submissions (
     -- Primary Key
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     
-    -- Data Pribadi
-    nik VARCHAR(16) NOT NULL,                              -- NIK (16 digit)
-    no_register VARCHAR(50) UNIQUE,                        -- Nomor register otomatis
-    nama_lengkap VARCHAR(255) NOT NULL,                    -- Nama lengkap
-    tempat_lahir VARCHAR(100),                             -- Tempat lahir
-    tanggal_lahir DATE,                                    -- Tanggal lahir
-    jenis_kelamin VARCHAR(10),                             -- L/P
-    status_pernikahan VARCHAR(20),                         -- Status pernikahan
+    -- Informasi Registrasi (dari form HTML)
+    no_register VARCHAR(50),                                -- Nomor register otomatis (reg-nomor)
+    tanggal_pengajuan VARCHAR(100),                         -- Tanggal & waktu pengajuan (reg-tanggal)
     
-    -- Kontak
-    email VARCHAR(255),
-    no_hp VARCHAR(20),                                     -- Nomor HP/WA
-    alamat TEXT,
+    -- Data Pribadi (dari form HTML)
+    nik VARCHAR(16),                                        -- NIK (nik) - dibuat nullable untuk fleksibilitas
+    nama_lengkap VARCHAR(255),                              -- Nama lengkap (nama-lengkap)
+    tempat_lahir VARCHAR(255),                              -- Tempat lahir (tempat-lahir)
+    tanggal_lahir DATE,                                     -- Tanggal lahir (tanggal-lahir)
     
-    -- Data Pendidikan/Jurusan
-    jurusan_tujuan VARCHAR(255) NOT NULL,                  -- Jurusan/spesialisasi tujuan
-    jenjang_pendidikan VARCHAR(50),                        -- S1, S2, Sp1, Sp2, dll
-    perguruan_tinggi VARCHAR(255),                         -- Universitas tujuan
-    institusi VARCHAR(255),                                -- Institusi/asal unit kerja
-    unit_kerja VARCHAR(255),                               -- Unit penempatan
+    -- Alamat (dari form HTML)
+    alamat_ktp TEXT,                                        -- Alamat KTP (alamat-ktp)
+    alamat_domisili TEXT,                                   -- Alamat domisili (alamat-domisili)
+    lama_domisili VARCHAR(100),                             -- Lama domisili (lama-domisili)
     
-    -- Data Beasiswa
-    program_studi TEXT,                                    -- Detail program studi
-    penjelasan TEXT,                                       -- Penjelasan/alasan
-    link_foto VARCHAR(500),                               -- URL foto
-    link_pdf VARCHAR(500),                                -- URL dokumen PDF
+    -- Pekerjaan (dari form HTML)
+    pekerjaan VARCHAR(50),                                  -- Status pekerjaan (pekerjaan)
+    posisi VARCHAR(255),                                    -- Posisi/Jabatan (posisi)
+    
+    -- Unit & Jurusan (dari form HTML)
+    unit_kerja VARCHAR(255),                                -- Unit kerja saat ini (unit-kerja)
+    penjelasan TEXT,                                        -- Penjelasan/alasan (penjelasan)
+    jurusan_tujuan VARCHAR(255),                            -- Jurusan/spesialisasi tujuan (jurusan-tujuan)
+    jenjang_pendidikan VARCHAR(50),                         -- Jenjang pendidikan (jenjang-pendidikan)
+    unit_tujuan VARCHAR(255),                               -- Unit penempatan tujuan (unit-tujuan)
+    rencana_tahun VARCHAR(50),                              -- Rencana tahun studi (rencana-tahun)
+    
+    -- Kontak (dari form HTML)
+    no_hp VARCHAR(20),                                      -- Nomor HP (no-hp)
+    no_wa VARCHAR(20),                                      -- Nomor WA (no-wa)
+    email VARCHAR(255),                                     -- Email (email)
+    
+    -- File Upload (Base64 encoded - butuh TEXT bukan VARCHAR!)
+    foto TEXT,                                              -- Foto pasfoto (base64)
+    dokumen_pdf TEXT,                                       -- Dokumen PDF (base64)
+    nama_file VARCHAR(255),                                 -- Nama file asli (namaFile)
     
     -- Status & Admin
-    status VARCHAR(50) DEFAULT 'Proses Verifikasi'         -- Status: Proses Verifikasi, Diterima, Ditolak, Revisi
-        CHECK (status IN ('Proses Verifikasi', 'Diterima', 'Ditolak', 'Revisi', 'Pending')),
-    catatan_admin TEXT,                                    -- Catatan dari admin
+    status VARCHAR(50) DEFAULT 'Proses Verifikasi',         -- Status pengajuan
+    catatan_admin TEXT,                                     -- Catatan dari admin
     
     -- Timestamps
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -71,56 +87,58 @@ CREATE INDEX IF NOT EXISTS idx_submissions_email ON public.submissions(email);
 CREATE INDEX IF NOT EXISTS idx_submissions_jurusan ON public.submissions(jurusan_tujuan);
 CREATE INDEX IF NOT EXISTS idx_submissions_created ON public.submissions(created_at DESC);
 
-COMMENT ON TABLE public.submissions IS 'Tabel data pengajuan/pendaftaran beasiswa SIMBAKES';
+COMMENT ON TABLE public.submissions IS 'Tabel data pengajuan/pendaftaran beasiswa SIMBAKES - Synced with HTML form';
 
 
 -- =====================================================
--- 2. TABEL: roadmap_kebutuhan
+-- 2. TABEL: roadmap
 -- Data roadmap kebutuhan SDM Kesehatan
+-- NAMA TABEL: 'roadmap' (sesuai yang dipakai di HTML)
 -- =====================================================
 
-CREATE TABLE IF NOT EXISTS public.roadmap_kebutuhan (
+CREATE TABLE IF NOT EXISTS public.roadmap (
     -- Primary Key
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     
-    -- Data Beasiswa/Jurusan
-    jurusan VARCHAR(255) NOT NULL,                          -- Nama program/jurusan beasiswa
-    kualifikasi_awal VARCHAR(255) DEFAULT '',               -- Kualifikasi awal yang dipersyaratkan
-    jenis_pendidikan VARCHAR(50) NOT NULL,                  -- Jenis pendidikan: Sp1, Sp2, S1, S2, D-3, D-4, dll
+    -- Data Beasiswa/Jurusan (dari form HTML)
+    kode VARCHAR(50),                                       -- Kode roadmap (rm-kode)
+    jurusan VARCHAR(255) NOT NULL,                          -- Nama program/jurusan (rm-jurusan)
+    kualifikasi_awal VARCHAR(255) DEFAULT '',               -- Kualifikasi awal (rm-kualifikasi)
+    jenis_pendidikan VARCHAR(50) NOT NULL,                  -- Jenis pendidikan (rm-jenis-pendidikan)
     
-    -- Institusi Pendidikan
-    perguruan_tinggi VARCHAR(255) NOT NULL,                 -- Nama universitas/institusi
+    -- Institusi Pendidikan (dari form HTML)
+    perguruan_tinggi VARCHAR(255) NOT NULL,                 -- Nama universitas (rm-pt)
     
-    -- Status Kepegawaian
-    pekerjaan VARCHAR(20) NOT NULL DEFAULT 'Non ASN',       -- Status kepegawaian: 'PNS' atau 'Non ASN'
+    -- Status Kepegawaian (dari form HTML)
+    pekerjaan VARCHAR(50) NOT NULL DEFAULT 'Non ASN',       -- Status kepegawaian (rm-pekerjaan)
     
-    -- Timeline
-    tahun_mulai_studi INTEGER NOT NULL,                     -- Tahun mulai studi (2025-2029)
+    -- Timeline (dari form HTML)
+    tahun_studi INTEGER NOT NULL,                           -- Tahun mulai studi (rm-tahun)
     
-    -- Penempatan
-    unit_pendayaguna VARCHAR(255) NOT NULL,                -- Unit/tempat penugasan (RSUD/Puskesmas/Dinkes)
+    -- Penempatan (dari form HTML)
+    unit_pendayaguna VARCHAR(255) NOT NULL,                -- Unit/tempat penugasan (rm-unit)
     
-    -- Status Pengisian
+    -- Status Pengisian (dari form HTML)
     status VARCHAR(20) NOT NULL DEFAULT 'Kosong'           -- Status: 'Terisi' atau 'Kosong'
-        CHECK (status IN ('Terisi', 'Kosong')),
+        CHECK (status IN ('Terisi', 'Kosong', '')),
     
     -- Data Penerima (jika terisi)
-    nama_penerima TEXT DEFAULT '',                           -- Nama penerima beasiswa (kosong jika belum terisi)
+    nama_penerima TEXT DEFAULT '',                           -- Nama penerima beasiswa
     
     -- Metadata
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Index untuk roadmap_kebutuhan
-CREATE INDEX IF NOT EXISTS idx_roadmap_status ON public.roadmap_kebutuhan(status);
-CREATE INDEX IF NOT EXISTS idx_roadmap_tahun ON public.roadmap_kebutuhan(tahun_mulai_studi);
-CREATE INDEX IF NOT EXISTS idx_roadmap_unit ON public.roadmap_kebutuhan(unit_pendayaguna);
-CREATE INDEX IF NOT EXISTS idx_roadmap_jenis_pendidikan ON public.roadmap_kebutuhan(jenis_pendidikan);
-CREATE INDEX IF NOT EXISTS idx_roadmap_unit_status ON public.roadmap_kebutuhan(unit_pendayaguna, status);
-CREATE INDEX IF NOT EXISTS idx_roadmap_tahun_status ON public.roadmap_kebutuhan(tahun_mulai_studi, status);
+-- Index untuk roadmap
+CREATE INDEX IF NOT EXISTS idx_roadmap_status ON public.roadmap(status);
+CREATE INDEX IF NOT EXISTS idx_roadmap_tahun ON public.roadmap(tahun_studi);
+CREATE INDEX IF NOT EXISTS idx_roadmap_unit ON public.roadmap(unit_pendayaguna);
+CREATE INDEX IF NOT EXISTS idx_roadmap_jenis_pendidikan ON public.roadmap(jenis_pendidikan);
+CREATE INDEX IF NOT EXISTS idx_roadmap_unit_status ON public.roadmap(unit_pendayaguna, status);
+CREATE INDEX IF NOT EXISTS idx_roadmap_tahun_status ON public.roadmap(tahun_studi, status);
 
-COMMENT ON TABLE public.roadmap_kebutuhan IS 'Tabel Roadmap Kebutuhan SDM Kesehatan SIMBAKES';
+COMMENT ON TABLE public.roadmap IS 'Tabel Roadmap Kebutuhan SDM Kesehatan SIMBAKES - Nama tabel: roadmap (bukan roadmap_kebutuhan)';
 
 
 -- =====================================================
@@ -133,11 +151,10 @@ CREATE TABLE IF NOT EXISTS public.penetapan (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     
     -- Data Identitas
-    nik VARCHAR(16) NOT NULL,                              -- NIK penerima
+    nik VARCHAR(16),                                        -- NIK penerima
     nama_lengkap VARCHAR(255) NOT NULL,                    -- Nama lengkap
     tempat_lahir VARCHAR(100),
     tanggal_lahir DATE,
-    jenis_kelamin VARCHAR(10),
     
     -- Data Beasiswa
     no_register VARCHAR(50),                               -- Nomor register
@@ -145,11 +162,11 @@ CREATE TABLE IF NOT EXISTS public.penetapan (
     jenjang VARCHAR(50),                                   -- Jenjang pendidikan
     perguruan_tinggi VARCHAR(255),                         -- Universitas
     unit_kerja VARCHAR(255),                               -- Unit penempatan
-    pekerjaan VARCHAR(20) DEFAULT 'Non ASN',              -- PNS/Non ASN
+    pekerjaan VARCHAR(50) DEFAULT 'Non ASN',              -- PNS/Non ASN
     
     -- Status Penetapan
     status_penetapan VARCHAR(50) DEFAULT 'Aktif'           -- Aktif, Selesai, Dibatalkan
-        CHECK (status_penetapan IN ('Aktif', 'Selesai', 'Dibatalkan')),
+        CHECK (status_penetapan IN ('Aktif', 'Selesai', 'Dibatalkan', 'Pending')),
     
     -- Dokumen
     link_foto VARCHAR(500),
@@ -216,7 +233,8 @@ CREATE TABLE IF NOT EXISTS public.revisions (
     nik VARCHAR(16),
     no_register VARCHAR(50),
     
-    -- Data Revisi
+    -- Data Revisi (dari form revisi HTML)
+    row_number VARCHAR(50),                                 -- Nomor baris (revision-row-number)
     field_name VARCHAR(100) NOT NULL,                     -- Field yang direvisi
     old_value TEXT,                                        -- Nilai lama
     new_value TEXT,                                        -- Nilai baru
@@ -224,7 +242,7 @@ CREATE TABLE IF NOT EXISTS public.revisions (
     
     -- Status
     status VARCHAR(50) DEFAULT 'Pending Review'
-        CHECK (status IN ('Pending Review', 'Approved', 'Rejected')),
+        CHECK (status IN ('Pending Review', 'Approved', 'Rejected', 'Pending')),
     
     -- Metadata
     reviewed_by VARCHAR(255),                              -- Admin yang mereview
@@ -253,10 +271,14 @@ CREATE TABLE IF NOT EXISTS public.multiusers (
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,                   -- Hashed password
     
-    -- Profile
+    -- Profile (dari form register HTML)
+    username VARCHAR(255) UNIQUE NOT NULL,                 -- Username login
     nama_lengkap VARCHAR(255) NOT NULL,
     role VARCHAR(50) DEFAULT 'admin'                       -- Role: superadmin, admin, viewer
         CHECK (role IN ('superadmin', 'admin', 'viewer')),
+    
+    -- Additional Info
+    institusi VARCHAR(255) DEFAULT '',                     -- Institusi (optional)
     
     -- Status
     is_active BOOLEAN DEFAULT true,
@@ -269,6 +291,7 @@ CREATE TABLE IF NOT EXISTS public.multiusers (
 
 -- Index untuk multiusers
 CREATE INDEX IF NOT EXISTS idx_multiusers_email ON public.multiusers(email);
+CREATE INDEX IF NOT EXISTS idx_multiusers_username ON public.multiusers(username);
 CREATE INDEX IF NOT EXISTS idx_multiusers_role ON public.multiusers(role);
 
 COMMENT ON TABLE public.multiusers IS 'Tabel user admin SIMBAKES';
@@ -294,9 +317,9 @@ CREATE TRIGGER on_update_submissions
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_updated_at();
 
-DROP TRIGGER IF EXISTS on_update_roadmap_kebutuhan ON public.roadmap_kebutuhan;
-CREATE TRIGGER on_update_roadmap_kebutuhan
-    BEFORE UPDATE ON public.roadmap_kebutuhan
+DROP TRIGGER IF EXISTS on_update_roadmap ON public.roadmap;
+CREATE TRIGGER on_update_roadmap
+    BEFORE UPDATE ON public.roadmap
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_updated_at();
 
@@ -320,7 +343,7 @@ CREATE TRIGGER on_update_multiusers
 
 -- Enable RLS
 ALTER TABLE public.submissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.roadmap_kebutuhan ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.roadmap ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.penetapan ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.visitors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.revisions ENABLE ROW LEVEL SECURITY;
@@ -332,37 +355,36 @@ CREATE POLICY "submissions_select_public" ON public.submissions
     FOR SELECT
     USING (true);
 
--- Hanya authenticated yang bisa INSERT
-CREATE POLICY "submissions_insert_authenticated" ON public.submissions
+-- Semua user bisa INSERT (form publik)
+CREATE POLICY "submissions_insert_public" ON public.submissions
     FOR INSERT
-    WITH CHECK (auth.role() = 'authenticated');
+    WITH CHECK (true);
 
--- Hanya authenticated yang bisa UPDATE
+-- Hanya authenticated yang bisa UPDATE/DELETE
 CREATE POLICY "submissions_update_authenticated" ON public.submissions
     FOR UPDATE
     USING (auth.role() = 'authenticated');
 
--- Hanya authenticated yang bisa DELETE
 CREATE POLICY "submissions_delete_authenticated" ON public.submissions
     FOR DELETE
     USING (auth.role() = 'authenticated');
 
--- ===== POLICIES: roadmap_kebutuhan =====
+-- ===== POLICIES: roadmap =====
 -- Semua user bisa READ (public dashboard)
-CREATE POLICY "roadmap_select_public" ON public.roadmap_kebutuhan
+CREATE POLICY "roadmap_select_public" ON public.roadmap
     FOR SELECT
     USING (true);
 
 -- Hanya authenticated yang bisa INSERT/UPDATE/DELETE
-CREATE POLICY "roadmap_insert_authenticated" ON public.roadmap_kebutuhan
+CREATE POLICY "roadmap_insert_authenticated" ON public.roadmap
     FOR INSERT
     WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY "roadmap_update_authenticated" ON public.roadmap_kebutuhan
+CREATE POLICY "roadmap_update_authenticated" ON public.roadmap
     FOR UPDATE
     USING (auth.role() = 'authenticated');
 
-CREATE POLICY "roadmap_delete_authenticated" ON public.roadmap_kebutuhan
+CREATE POLICY "roadmap_delete_authenticated" ON public.roadmap
     FOR DELETE
     USING (auth.role() = 'authenticated');
 
@@ -428,22 +450,22 @@ CREATE POLICY "multiusers_insert_superadmin" ON public.multiusers
 -- =====================================================
 
 /*
--- Sample data untuk roadmap_kebutuhan (dari CSV)
-INSERT INTO public.roadmap_kebutuhan (
-    jurusan, kualifikasi_awal, jenis_pendidikan, 
-    perguruan_tinggi, pekerjaan, tahun_mulai_studi, 
+-- Sample data untuk roadmap (dari CSV)
+INSERT INTO public.roadmap (
+    kode, jurusan, kualifikasi_awal, jenis_pendidikan, 
+    perguruan_tinggi, pekerjaan, tahun_studi, 
     unit_pendayaguna, status, nama_penerima
 ) VALUES 
-('Spesialis Jantung dan Pembuluh Darah', 'Dokter Umum', 'Sp1', 
+('RM001', 'Spesialis Jantung dan Pembuluh Darah', 'Dokter Umum', 'Sp1', 
  'Universitas Hasanuddin', 'Non ASN', 2026, 
  'RSUD Aji Muhammad Parikesit', 'Terisi', 'dr. Cassandra Savira Alisa'),
-('Spesialis Jantung - Intervensi', 'Dokter Spesialis Jantung', 'Sp2', 
+('RM002', 'Spesialis Jantung - Intervensi', 'Dokter Spesialis Jantung', 'Sp2', 
  'Universitas Airlangga', 'Non ASN', 2026, 
  'RSUD Aji Muhammad Parikesit', 'Kosong', ''),
-('NERS', 'D-3', 'D-4 + Profesi', 
+('RM003', 'NERS', 'D-3', 'D-4 + Profesi', 
  'POLTEKKES KEMENKES KALTIM', 'Non ASN', 2026, 
- 'RSUD Aji Batara Agung Dewa Sakti', '', ''),
-('Kedokteran Keluarga Layanan Primer (KKLP)', '', 'Sp1', 
+ 'RSUD Aji Batara Agung Dewa Sakti', 'Kosong', ''),
+('RM004', 'Kedokteran Keluarga Layanan Primer (KKLP)', '', 'Sp1', 
  'Universitas Indonesia', 'PNS', 2026, 
  'Dinas Kesehatan (Puskesmas)', 'Kosong', '');
 */
@@ -451,13 +473,14 @@ INSERT INTO public.roadmap_kebutuhan (
 -- Sample data untuk submissions (contoh)
 /*
 INSERT INTO public.submissions (
-    nik, no_register, nama_lengkap, email, no_hp,
-    jurusan_tujuan, jenjang_pendidikan, perguruan_tinggi,
-    institusi, unit_kerja, status
+    no_register, tanggal_pengajuan, nik, nama_lengkap, email, no_hp, no_wa,
+    jurusan_tujuan, jenjang_pendidikan, unit_kerja, unit_tujuan, rencana_tahun,
+    pekerjaan, posisi, status
 ) VALUES 
-('1234567890123456', 'REG-2026-001', 'Ahmad Fauzi', 'ahmad@email.com', '081234567890',
- 'Spesialis Jantung', 'Sp1', 'Universitas Hasanuddin',
- 'RSUD Aji Muhammad Parikesit', 'RSUD Aji Muhammad Parikesit', 'Proses Verifikasi');
+('REG-2026-001', '15/01/2026, 14:30:00 WIB', '1234567890123456', 'Ahmad Fauzi', 
+ 'ahmad@email.com', '081234567890', '081234567890',
+ 'Spesialis Jantung', 'Sp1', 'RSUD Aji Muhammad Parikesit', 'RSUD Aji Muhammad Parikesit', '2026',
+ 'Non ASN', 'Dokter Umum', 'Proses Verifikasi');
 */
 
 
@@ -521,9 +544,9 @@ SELECT
     ROUND(COUNT(CASE WHEN status = 'Terisi' THEN 1 END)::numeric / 
           NULLIF(COUNT(*), 0) * 100, 2) as persentase_terisi,
     COUNT(DISTINCT unit_pendayaguna) as total_unit,
-    MIN(tahun_mulai_studi) as tahun_awal,
-    MAX(tahun_mulai_studi) as tahun_akhir
-FROM public.roadmap_kebutuhan;
+    MIN(tahun_studi) as tahun_awal,
+    MAX(tahun_studi) as tahun_akhir
+FROM public.roadmap;
 
 -- View: Roadmap by Unit
 CREATE OR REPLACE VIEW public.v_roadmap_by_unit AS
@@ -534,20 +557,20 @@ SELECT
     COUNT(CASE WHEN status = 'Kosong' THEN 1 END) as kosong,
     ROUND(COUNT(CASE WHEN status = 'Terisi' THEN 1 END)::numeric / 
           NULLIF(COUNT(*), 0) * 100, 2) as persentase_terisi
-FROM public.roadmap_kebutuhan
+FROM public.roadmap
 GROUP BY unit_pendayaguna
 ORDER BY total_kebutuhan DESC;
 
 -- View: Roadmap by Year
 CREATE OR REPLACE VIEW public.v_roadmap_by_year AS
 SELECT 
-    tahun_mulai_studi,
+    tahun_studi,
     COUNT(*) as total_kebutuhan,
     COUNT(CASE WHEN status = 'Terisi' THEN 1 END) as terisi,
     COUNT(CASE WHEN status = 'Kosong' THEN 1 END) as kosong
-FROM public.roadmap_kebutuhan
-GROUP BY tahun_mulai_studi
-ORDER BY tahun_mulai_studi;
+FROM public.roadmap
+GROUP BY tahun_studi
+ORDER BY tahun_studi;
 
 
 -- =====================================================
@@ -556,14 +579,14 @@ ORDER BY tahun_mulai_studi;
 
 /*
 ═══════════════════════════════════════════════════════════
-           CARA MENGGUNAKAN SIMBAKES
+           CARA MENGGUNAKAN SIMBAKES v2.0
 ═══════════════════════════════════════════════════════════
 
 LANGKAH 1: Setup Supabase Project
 -----------------------------------
 1. Buat project baru di https://supabase.com
 2. Copy URL dan Anon Key dari Settings > API
-3. Update konfigurasi di file HTML (line ~12243):
+3. Update konfigurasi di file HTML:
    
    const SUPABASE_CONFIG = {
        url: 'YOUR_SUPABASE_URL',
@@ -583,11 +606,11 @@ Jika ada data CSV yang diimport:
 
 Opsi A: Via Dashboard
 1. Table Editor > Import > Upload CSV
-2. Pilih tabel tujuan
+2. Pilih tabel tujuan (roadmap)
 3. Mapping kolom sesuai header CSV
 
 Opsi B: Via SQL
-\copy public.roadmap_kebutuhan(jurusan, kualifikasi_awal, ...) 
+\copy public.roadmap(kode, jurusan, ...) 
 FROM '/path/to/file.csv' DELIMITER ',' CSV HEADER;
 
 LANGKAH 4: Deploy HTML
@@ -597,19 +620,52 @@ LANGKAH 4: Deploy HTML
 3. Buka browser dan test!
 
 ═══════════════════════════════════════════════════════════
-            STRUKTUR TABEL
+            STRUKTUR TABEL (SYNCED)
 ═══════════════════════════════════════════════════════════
 
 ┌─────────────────┬──────────────────────────────────────┐
 │     TABEL       │            DESKRIPSI                 │
 ├─────────────────┼──────────────────────────────────────┤
-│ submissions     │ Data pendaftar/beasiswa              │
-│ roadmap_kebutuhan│ Kebutuhan SDM per jurusan/unit      │
+│ submissions     │ Data pendaftar/beasiswa (26 kolom)   │
+│ roadmap         │ Kebutuhan SDM per jurusan/unit       │
 │ penetapan       │ Data penerima resmi                 │
 │ visitors        │ Tracking pengunjung (opsional)       │
 │ revisions       │ Data revisi pengajuan               │
-│ multiusers      │ User admin (jika perlu)             │
+│ multiusers      │ User admin (login/register)         │
 └─────────────────┴──────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════
+     PERUBAHAN DARI v1.0 → v2.0 (IMPORTANT!)
+═══════════════════════════════════════════════════════════
+
+✅ TABEL:
+   - 'roadmap_kebutuhan' → 'roadmap' (sesuai HTML)
+
+✅ SUBMISSIONS (kolom baru):
+   - tanggal_pengajuan (dari reg-tanggal)
+   - alamat_ktp (dari alamat-ktp)
+   - alamat_domisili (dari alamat-domisili)
+   - lama_domisili (dari lama-domisili)
+   - pekerjaan (dari pekerjaan)
+   - posisi (dari posisi)
+   - unit_tujuan (dari unit-tujuan)
+   - rencana_tahun (dari rencana-tahun)
+   - no_wa (dari no-wa)
+   - foto (TEXT untuk base64, bukan VARCHAR)
+   - dokumen_pdf (TEXT untuk base64, bukan VARCHAR)
+   - nama_file (dari namaFile)
+
+✅ ROADMAP (kolom baru):
+   - kode (dari rm-kode)
+   - tahun_mulai_studi → tahun_studi (sesuai HTML)
+
+✅ MULTIUSERS (kolom baru):
+   - username (untuk login)
+
+✅ TIPE DATA:
+   - Semua kolom opsional (tidak NOT NULL kecuali wajib)
+   - Base64 files pakai TEXT (bukan VARCHAR 500)
+   - Status CHECK constraints lebih longgar
 
 ═══════════════════════════════════════════════════════════
             CATATAN PENTING
@@ -630,6 +686,44 @@ LANGKAH 4: Deploy HTML
    - RLS (Row Level Security) aktif
    - Anon key aman untuk client-side
    - Jangan expose service_role_key!
+
+📝 FIELD MAPPING (HTML → SQL):
+   
+   Submissions:
+   - noRegister → no_register
+   - tanggalPengajuan → tanggal_pengajuan
+   - nik → nik
+   - namaLengkap → nama_lengkap
+   - tempatLahir → tempat_lahir
+   - tanggalLahir → tanggal_lahir
+   - alamatKTP → alamat_ktp
+   - alamatDomisili → alamat_domisili
+   - lamaDomisili → lama_domisili
+   - pekerjaan → pekerjaan
+   - posisi → posisi
+   - unitKerja → unit_kerja
+   - penjelasan → penjelasan
+   - jurusanTujuan → jurusan_tujuan
+   - jenjangPendidikan → jenjang_pendidikan
+   - unitTujuan → unit_tujuan
+   - rencanaTahun → rencana_tahun
+   - noHP → no_hp
+   - noWA → no_wa
+   - email → email
+   - foto → foto (TEXT)
+   - dokumenPDF → dokumen_pdf (TEXT)
+   - namaFile → nama_file
+   
+   Roadmap:
+   - kode → kode
+   - jurusan → jurusan
+   - kualifikasi → kualifikasi_awal
+   - jenisPendidikan → jenis_pendidikan
+   - perguruanTinggi → perguruan_tinggi
+   - pekerjaan → pekerjaan
+   - tahunStudi → tahun_studi
+   - unitPendayaguna → unit_pendayaguna
+   - status → status
 
 ═══════════════════════════════════════════════════════════
 */

@@ -12077,10 +12077,10 @@ async function handleUserRegisterFromModal(event) {
                 nama_lengkap: formData.nama_lengkap,
                 email: formData.email,
                 username: formData.username,
-                password: formData.password, // In production, hash this!
+                password_hash: formData.password, // In production, use bcrypt/hash!
                 role: formData.role,
                 institusi: formData.institusi || '',
-                status: 'aktif',
+                is_active: true,  // Boolean, bukan string 'aktif'
                 created_at: new Date().toISOString()
             }])
             .select()
