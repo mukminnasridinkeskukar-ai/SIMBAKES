@@ -3615,6 +3615,359 @@
         .lulus-tes-peserta-list::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+
+        /* ===== LULUS TES MASUK PT - INDIVIDUAL CARD STYLING ===== */
+        .peserta-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            border: 2px solid transparent;
+        }
+
+        .peserta-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .peserta-card-photo-wrapper {
+            position: relative;
+            width: 100%;
+            height: 220px;
+            overflow: hidden;
+        }
+
+        .peserta-card-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+
+        .peserta-card:hover .peserta-card-photo {
+            transform: scale(1.08);
+        }
+
+        .peserta-card-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60%;
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .peserta-card-name-badge {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            right: 12px;
+            color: white;
+            z-index: 2;
+        }
+
+        .peserta-card-name-badge h4 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            line-height: 1.3;
+        }
+
+        .peserta-card-body {
+            padding: 1rem 1.25rem;
+        }
+
+        .peserta-card-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .peserta-card-info-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            font-size: 0.875rem;
+            color: #475569;
+        }
+
+        .peserta-card-info-icon {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            font-size: 0.75rem;
+            margin-top: 1px;
+        }
+
+        .peserta-card-info-text {
+            line-height: 1.4;
+        }
+
+        .peserta-card-info-text strong {
+            color: #1e293b;
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 2px;
+            opacity: 0.7;
+        }
+
+        .peserta-card-view-btn {
+            margin-top: 0.75rem;
+            width: 100%;
+            padding: 0.65rem;
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .peserta-card-view-btn:hover {
+            background: linear-gradient(135deg, #047857, #059669);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+
+        /* Color Variations for Individual Cards */
+        .card-color-1 { border-color: #fecaca; }
+        .card-color-1 .peserta-card-info-icon { background: #fef2f2; color: #dc2626; }
+        .card-color-1 .peserta-card-view-btn { background: linear-gradient(135deg, #dc2626, #ef4444); }
+        
+        .card-color-2 { border-color: #bfdbfe; }
+        .card-color-2 .peserta-card-info-icon { background: #eff6ff; color: #2563eb; }
+        .card-color-2 .peserta-card-view-btn { background: linear-gradient(135deg, #2563eb, #3b82f6); }
+        
+        .card-color-3 { border-color: #bbf7d0; }
+        .card-color-3 .peserta-card-info-icon { background: #f0fdf4; color: #16a34a; }
+        .card-color-3 .peserta-card-view-btn { background: linear-gradient(135deg, #16a34a, #22c55e); }
+        
+        .card-color-4 { border-color: #e9d5ff; }
+        .card-color-4 .peserta-card-info-icon { background: #faf5ff; color: #9333ea; }
+        .card-color-4 .peserta-card-view-btn { background: linear-gradient(135deg, #9333ea, #a855f7); }
+        
+        .card-color-5 { border-color: #fed7aa; }
+        .card-color-5 .peserta-card-info-icon { background: #fff7ed; color: #ea580c; }
+        .card-color-5 .peserta-card-view-btn { background: linear-gradient(135deg, #ea580c, #f97316); }
+        
+        .card-color-6 { border-color: #fbcfe8; }
+        .card-color-6 .peserta-card-info-icon { background: #fdf2f8; color: #db2777; }
+        .card-color-6 .peserta-card-view-btn { background: linear-gradient(135deg, #db2777, #ec4899); }
+        
+        .card-color-7 { border-color: #a5f3fc; }
+        .card-color-7 .peserta-card-info-icon { background: #ecfeff; color: #0891b2; }
+        .card-color-7 .peserta-card-view-btn { background: linear-gradient(135deg, #0891b2, #06b6d4); }
+        
+        .card-color-8 { border-color: #fef08a; }
+        .card-color-8 .peserta-card-info-icon { background: #fefce8; color: #ca8a04; }
+        .card-color-8 .peserta-card-view-btn { background: linear-gradient(135deg, #ca8a04, #eab308); }
+        
+        .card-color-9 { border-color: #c7d2fe; }
+        .card-color-9 .peserta-card-info-icon { background: #eef2ff; color: #6366f1; }
+        .card-color-9 .peserta-card-view-btn { background: linear-gradient(135deg, #6366f1, #818cf8); }
+        
+        .card-color-10 { border-color: #99f6e4; }
+        .card-color-10 .peserta-card-info-icon { background: #f0fdfa; color: #14b8a6; }
+        .card-color-10 .peserta-card-view-btn { background: linear-gradient(135deg, #14b8a6, #2dd4bf); }
+
+        /* ===== POPUP MODAL STYLING ===== */
+        .peserta-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .peserta-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .peserta-modal {
+            background: white;
+            border-radius: 24px;
+            max-width: 520px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9) translateY(30px);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 25px 80px rgba(0,0,0,0.35);
+        }
+
+        .peserta-modal-overlay.active .peserta-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .peserta-modal-photo-section {
+            position: relative;
+            height: 300px;
+            overflow: hidden;
+            border-radius: 24px 24px 0 0;
+        }
+
+        .peserta-modal-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .peserta-modal-photo-gradient {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 120px;
+            background: linear-gradient(to top, white 0%, transparent 100%);
+        }
+
+        .peserta-modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: #475569;
+            transition: all 0.2s;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .peserta-modal-close:hover {
+            background: white;
+            transform: rotate(90deg) scale(1.1);
+            color: #dc2626;
+        }
+
+        .peserta-modal-body {
+            padding: 2rem;
+            margin-top: -50px;
+            position: relative;
+            z-index: 5;
+        }
+
+        .peserta-modal-name {
+            font-size: 1.65rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 0.5rem 0;
+            line-height: 1.3;
+        }
+
+        .peserta-modal-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 1rem;
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+            color: #166534;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .peserta-modal-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .peserta-modal-field {
+            background: #f8fafc;
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            border-left: 4px solid #3b82f6;
+            transition: all 0.2s;
+        }
+
+        .peserta-modal-field:hover {
+            background: #f1f5f9;
+            transform: translateX(4px);
+        }
+
+        .peserta-modal-field-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+            display: block;
+        }
+
+        .peserta-modal-field-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .peserta-modal-field-icon {
+            font-size: 1.1rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .peserta-modal {
+                max-width: 100%;
+                border-radius: 20px;
+                margin: 0.5rem;
+            }
+            
+            .peserta-modal-photo-section {
+                height: 240px;
+            }
+            
+            .peserta-modal-body {
+                padding: 1.5rem;
+                margin-top: -40px;
+            }
+            
+            .peserta-modal-name {
+                font-size: 1.35rem;
+            }
+
+            .peserta-card-photo-wrapper {
+                height: 180px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -7182,8 +7535,8 @@ function adminLogin() {
 // ===== LULUS TES MASUK PT - DATA LOADING =====
 
 /**
- * Load data Lulus Tes Masuk PT dari Sheet Data Penetapan
- * Menampilkan dalam bentuk Cards berdasarkan Jurusan Tujuan
+ * Load data Lulus Tes Masuk PT dari Supabase tabel penetapan
+ * Menampilkan dalam bentuk Kartu individual per peserta
  */
 async function loadLulusTesData() {
     const container = document.getElementById('lulus-tes-container');
@@ -7204,37 +7557,44 @@ async function loadLulusTesData() {
     document.getElementById('lulus-total-jurusan').textContent = '...';
     
     try {
-        // Fetch data from API
-        const result = await { data: [], status: "success" };
+        console.log('📡 Mengambil data penetapan dari Supabase...');
+        
+        // Fetch ALL data from penetapan table via Supabase
+        const { data: penetapanData, error: supabaseError } = await supabaseClient
+            .from('penetapan')
+            .select('*')
+            .order('nama_lengkap', { ascending: true });
         
         // Hide loading
         loading.style.display = 'none';
         
-        if (result.status === 'success') {
-            const data = result.data || [];
-            const totalRecords = result.totalRecords || 0;
-            const totalJurusan = result.totalJurusan || 0;
-            
-            // Update stats
-            document.getElementById('lulus-total-peserta').textContent = totalRecords;
-            document.getElementById('lulus-total-jurusan').textContent = totalJurusan;
-            
-            // Check if empty
-            if (data.length === 0) {
-                empty.style.display = 'block';
-                stats.style.display = 'none';
-                return;
-            }
-            
-            // Render cards for each jurusan
-            renderLulusTesCards(data);
-            
-        } else {
-            throw new Error(result.message || 'Gagal memuat data');
+        if (supabaseError) {
+            throw new Error(supabaseError.message || 'Gagal mengambil data dari server');
         }
         
+        console.log('✅ Data penetapan diterima:', penetapanData?.length, 'records');
+        
+        // Check if data exists
+        if (!penetapanData || penetapanData.length === 0) {
+            empty.style.display = 'block';
+            stats.style.display = 'none';
+            return;
+        }
+        
+        // Calculate unique jurusan for stats
+        const uniqueJurusan = [...new Set(penetapanData.map(item => 
+            item.jurusan_tujuan || item.jurusanTujuan || '-'
+        ))];
+        
+        // Update stats
+        document.getElementById('lulus-total-peserta').textContent = penetapanData.length;
+        document.getElementById('lulus-total-jurusan').textContent = uniqueJurusan.length;
+        
+        // Render individual cards for each peserta
+        renderPesertaCards(penetapanData);
+        
     } catch (err) {
-        console.error('Error loading Lulus Tes data:', err);
+        console.error('❌ Error loading Lulus Tes data:', err);
         loading.style.display = 'none';
         error.style.display = 'block';
         document.getElementById('lulus-tes-error-msg').textContent = err.message || 'Terjadi kesalahan saat memuat data';
@@ -7243,86 +7603,259 @@ async function loadLulusTesData() {
 }
 
 /**
- * Render Cards untuk setiap Jurusan Tujuan
- * @param {Array} data - Array of jurusan groups with peserta
+ * Render Individual Cards untuk setiap Peserta
+ * Setiap kartu menampilkan foto dan info singkat dengan warna berbeda
+ * @param {Array} data - Array of peserta records from penetapan table
  */
-function renderLulusTesCards(data) {
+function renderPesertaCards(data) {
     const container = document.getElementById('lulus-tes-container');
     container.innerHTML = '';
     
-    // Color palette for different jurusan
-    const jurusanColors = [
-        'lulus-jurusan-1',   // Merah - Ilmu Kedokteran
-        'lulus-jurusan-2',   // Biru - Keperawatan
-        'lulus-jurusan-3',   // Hijau - Kesehatan Masyarakat
-        'lulus-jurusan-4',   // Ungu - Farmasi
-        'lulus-jurusan-5',   // Oranye - Gizi
-        'lulus-jurusan-6',   // Pink - Kebidanan
-        'lulus-jurusan-7',   // Cyan - Fisioterapi
-        'lulus-jurusan-8',   // Kuning - TLM
-        'lulus-jurusan-9',   // Indigo - Psikologi
-        'lulus-jurusan-10'   // Teal - Kedokteran Gigi
+    // Color palette for individual cards (10 colors, cycling)
+    const cardColors = [
+        'card-color-1',   // Merah
+        'card-color-2',   // Biru
+        'card-color-3',   // Hijau
+        'card-color-4',   // Ungu
+        'card-color-5',   // Oranye
+        'card-color-6',   // Pink
+        'card-color-7',   // Cyan
+        'card-color-8',   // Kuning
+        'card-color-9',   // Indigo
+        'card-color-10'   // Teal
     ];
-    
-    // Icon mapping for jurusan
-    const jurusanIcons = {
-        'kedokteran': '🩺',
-        'keperawatan': '👩‍⚕️',
-        'kesehatan masyarakat': '🏥',
-        'farmasi': '💊',
-        'gizi': '🥗',
-        'kebidanan': '🤱',
-        'fisioterapi': '🏃‍♂️',
-        'tlm': '🔬',
-        'teknologi laboratorium': '🔬',
-        'psikologi': '🧠',
-        'kedokteran gigi': '🦷'
-    };
-    
-    data.forEach((jurusanGroup, index) => {
-        const colorClass = jurusanColors[index % jurusanColors.length] || 'lulus-jurusan-default';
-        
-        // Find matching icon based on jurusan name
-        let icon = '🎓'; // default icon
-        const jurusanLower = jurusanGroup.jurusan.toLowerCase();
-        for (const [key, value] of Object.entries(jurusanIcons)) {
-            if (jurusanLower.includes(key)) {
-                icon = value;
-                break;
-            }
+
+    // Field mapping helper (snake_case from Supabase -> display)
+    const getField = (item, ...keys) => {
+        for (const key of keys) {
+            if (item[key]) return item[key];
         }
+        return '-';
+    };
+
+    data.forEach((peserta, index) => {
+        const colorClass = cardColors[index % cardColors.length];
         
-        // Build card HTML
+        // Extract fields with fallback mapping
+        const namaLengkap = getField(peserta, 'nama_lengkap', 'namaLengkap');
+        const jurusan = getField(peserta, 'jurusan_tujuan', 'jurusanTujuan', 'jurusan');
+        const jenjang = getField(peserta, 'jenjang_pendidikan', 'jenjangPendidikan', 'jenjang');
+        const perguruanTinggi = getField(peserta, 'perguruan_tinggi', 'perguruanTinggi', 'pt');
+        const unitKerja = getField(peserta, 'unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayagunaan');
+        const linkFoto = getField(peserta, 'link_foto', 'linkFoto', 'foto', 'photo');
+        const statusPenetapan = getField(peserta, 'status_penetapan', 'statusPenetapan', 'status', 'Lulus');
+
+        // Generate photo source (use placeholder if no photo)
+        const photoSrc = linkFoto && linkFoto !== '-' ? linkFoto : '';
+        const hasPhoto = photoSrc && photoSrc.trim() !== '';
+
+        // Create card element
         const card = document.createElement('div');
-        card.className = 'lulus-tes-card';
+        card.className = `peserta-card ${colorClass}`;
+        card.onclick = () => showPesertaDetailModal(peserta);
+        
         card.innerHTML = `
-            <div class="lulus-tes-card-header ${colorClass}">
-                <h3 class="lulus-tes-card-title">
-                    <span>${icon}</span>
-                    <span>${escapeHtml(jurusanGroup.jurusan)}</span>
-                </h3>
-                <span class="lulus-tes-card-badge">${jurusanGroup.jumlah} Peserta</span>
-            </div>
-            <div class="lulus-tes-card-body">
-                <div class="lulus-tes-peserta-list">
-                    ${jurusanGroup.peserta.map(peserta => `
-                        <div class="lulus-tes-peserta-item">
-                            <div class="lulus-tes-peserta-name">${escapeHtml(peserta.namaLengkap)}</div>
-                            <div class="lulus-tes-peserta-detail">
-                                <div><strong>Jenjang Pendidikan:</strong> ${escapeHtml(peserta.jenjangPendidikan)}</div>
-                                <div><strong>Unit Tujuan Pemanfaatan:</strong> ${escapeHtml(peserta.unitTujuan)}</div>
-                                <div><strong>Rencana Tahun Studi:</strong> ${escapeHtml(peserta.rencanaTahunStudi)}</div>
-                            </div>
-                        </div>
-                    `).join('')}
+            <div class="peserta-card-photo-wrapper">
+                ${hasPhoto ? 
+                    `<img src="${escapeHtml(photoSrc)}" alt="${escapeHtml(namaLengkap)}" class="peserta-card-photo" onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);display:flex;align-items:center;justify-content:center;font-size:4rem;\\'>👤</div>'">` :
+                    `<div style="width:100%;height:100%;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);display:flex;align-items:center;justify-content:center;font-size:5rem;">👤</div>`
+                }
+                <div class="peserta-card-overlay"></div>
+                <div class="peserta-card-name-badge">
+                    <h4>${escapeHtml(namaLengkap)}</h4>
                 </div>
+            </div>
+            <div class="peserta-card-body">
+                <div class="peserta-card-info">
+                    <div class="peserta-card-info-item">
+                        <span class="peserta-card-info-icon">🎓</span>
+                        <span class="peserta-card-info-text">
+                            <strong>Jurusan</strong>
+                            ${escapeHtml(jurusan)}
+                        </span>
+                    </div>
+                    <div class="peserta-card-info-item">
+                        <span class="peserta-card-info-icon">📚</span>
+                        <span class="peserta-card-info-text">
+                            <strong>Jenjang</strong>
+                            ${escapeHtml(jenjang)}
+                        </span>
+                    </div>
+                    <div class="peserta-card-info-item">
+                        <span class="peserta-card-info-icon">🏛️</span>
+                        <span class="peserta-card-info-text">
+                            <strong>Perguruan Tinggi</strong>
+                            ${escapeHtml(perguruanTinggi)}
+                        </span>
+                    </div>
+                    <div class="peserta-card-info-item">
+                        <span class="peserta-card-info-icon">🏢</span>
+                        <span class="peserta-card-info-text">
+                            <strong>Unit Kerja</strong>
+                            ${escapeHtml(unitKerja)}
+                        </span>
+                    </div>
+                </div>
+                <button class="peserta-card-view-btn" onclick="event.stopPropagation(); showPesertaDetailModal(${JSON.stringify(peserta).replace(/"/g, '&quot;')})">
+                    👁️ Lihat Detail
+                </button>
             </div>
         `;
         
         container.appendChild(card);
     });
     
-    console.log(`✅ Rendered ${data.length} cards for Lulus Tes Masuk PT`);
+    console.log(`✅ Rendered ${data.length} kartu peserta untuk Lulus Tes Masuk PT`);
+}
+
+/**
+ * Show Popup Modal with Photo and Complete Data
+ * @param {Object} peserta - Single peserta record from penetapan table
+ */
+function showPesertaDetailModal(peserta) {
+    // Remove existing modal if any
+    const existingModal = document.getElementById('peserta-detail-modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Field mapping helper
+    const getField = (item, ...keys) => {
+        for (const key of keys) {
+            if (item[key]) return item[key];
+        }
+        return '-';
+    };
+
+    // Extract all fields
+    const namaLengkap = getField(peserta, 'nama_lengkap', 'namaLengkap');
+    const nik = getField(peserta, 'nik', 'no_ktp');
+    const jurusan = getField(peserta, 'jurusan_tujuan', 'jurusanTujuan', 'jurusan');
+    const jenjang = getField(peserta, 'jenjang_pendidikan', 'jenjangPendidikan', 'jenjang');
+    const perguruanTinggi = getField(peserta, 'perguruan_tinggi', 'perguruanTinggi', 'pt');
+    const unitKerja = getField(peserta, 'unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayagunaan');
+    const linkFoto = getField(peserta, 'link_foto', 'linkFoto', 'foto', 'photo');
+    const noSK = getField(peserta, 'no_sk_penetapan', 'noSKPenetapan', 'no_sk');
+    const tanggalPenetapan = getField(peserta, 'tanggal_penetapan', 'tanggalPenetapan', 'tanggal');
+    const statusPenetapan = getField(peserta, 'status_penetapan', 'statusPenetapan', 'status', 'Lulus');
+
+    const photoSrc = linkFoto && linkFoto !== '-' ? linkFoto : '';
+    const hasPhoto = photoSrc && photoSrc.trim() !== '';
+
+    // Create modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.id = 'peserta-detail-modal';
+    modalOverlay.className = 'peserta-modal-overlay';
+    modalOverlay.onclick = (e) => {
+        if (e.target === modalOverlay) closePesertaDetailModal();
+    };
+
+    modalOverlay.innerHTML = `
+        <div class="peserta-modal">
+            <div class="peserta-modal-photo-section">
+                ${hasPhoto ? 
+                    `<img src="${escapeHtml(photoSrc)}" alt="${escapeHtml(namaLengkap)}" class="peserta-modal-photo">` :
+                    `<div style="width:100%;height:100%;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);display:flex;align-items:center;justify-content:center;font-size:6rem;">👤</div>`
+                }
+                <div class="peserta-modal-photo-gradient"></div>
+                <button class="peserta-modal-close" onclick="closePesertaDetailModal()">✕</button>
+            </div>
+            <div class="peserta-modal-body">
+                <h2 class="peserta-modal-name">${escapeHtml(namaLengkap)}</h2>
+                <div class="peserta-modal-status">
+                    ✅ ${escapeHtml(statusPenetapan)}
+                </div>
+                <div class="peserta-modal-grid">
+                    <div class="peserta-modal-field">
+                        <span class="peserta-modal-field-label">Nama Lengkap</span>
+                        <div class="peserta-modal-field-value">
+                            <span class="peserta-modal-field-icon">👤</span>
+                            ${escapeHtml(namaLengkap)}
+                        </div>
+                    </div>
+                    <div class="peserta-modal-field">
+                        <span class="peserta-modal-field-label">NIK</span>
+                        <div class="peserta-modal-field-value">
+                            <span class="peserta-modal-field-icon">🆔</span>
+                            <span style="font-family:monospace;">${escapeHtml(nik)}</span>
+                        </div>
+                    </div>
+                    <div class="peserta-modal-field">
+                        <span class="peserta-modal-field-label">Jurusan</span>
+                        <div class="peserta-modal-field-value">
+                            <span class="peserta-modal-field-icon">🎓</span>
+                            ${escapeHtml(jurusan)}
+                        </div>
+                    </div>
+                    <div class="peserta-modal-field">
+                        <span class="peserta-modal-field-label">Jenjang Pendidikan</span>
+                        <div class="peserta-modal-field-value">
+                            <span class="peserta-modal-field-icon">📚</span>
+                            ${escapeHtml(jenjang)}
+                        </div>
+                    </div>
+                    <div class="peserta-modal-field">
+                        <span class="peserta-modal-field-label">Perguruan Tinggi</span>
+                        <div class="peserta-modal-field-value">
+                            <span class="peserta-modal-field-icon">🏛️</span>
+                            ${escapeHtml(perguruanTinggi)}
+                        </div>
+                    </div>
+                    <div class="peserta-modal-field">
+                        <span class="peserta-modal-field-label">Unit Pendayagunaan / Kerja</span>
+                        <div class="peserta-modal-field-value">
+                            <span class="peserta-modal-field-icon">🏢</span>
+                            ${escapeHtml(unitKerja)}
+                        </div>
+                    </div>
+                    ${noSK && noSK !== '-' ? `
+                    <div class="peserta-modal-field">
+                        <span class="peserta-modal-field-label">No SK Penetapan</span>
+                        <div class="peserta-modal-field-value">
+                            <span class="peserta-modal-field-icon">📄</span>
+                            ${escapeHtml(noSK)}
+                        </div>
+                    </div>
+                    ` : ''}
+                    ${tanggalPenetapan && tanggalPenetapan !== '-' ? `
+                    <div class="peserta-modal-field">
+                        <span class="peserta-modal-field-label">Tanggal Penetapan</span>
+                        <div class="peserta-modal-field-value">
+                            <span class="peserta-modal-field-icon">📅</span>
+                            ${escapeHtml(tanggalPenetapan)}
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modalOverlay);
+
+    // Trigger animation
+    requestAnimationFrame(() => {
+        modalOverlay.classList.add('active');
+    });
+
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+
+    console.log('📋 Menampilkan detail peserta:', namaLengkap);
+}
+
+/**
+ * Close Peserta Detail Modal
+ */
+function closePesertaDetailModal() {
+    const modal = document.getElementById('peserta-detail-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            modal.remove();
+            document.body.style.overflow = '';
+        }, 300);
+    }
 }
 
 // ===== FILE HANDLING =====
