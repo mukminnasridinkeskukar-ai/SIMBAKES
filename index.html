@@ -4032,6 +4032,274 @@
             border: 3px solid #e9d5ff;
         }
 
+        /* ============================================================
+           🖼️ SMART PHOTO SYSTEM v2.0 - COMPREHENSIVE STYLES
+           ============================================================ */
+        
+        /* Base Container */
+        .smart-photo-container {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 10px;
+            background: #f8fafc;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .smart-photo-container:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Size Variants */
+        .smart-photo-thumb { width: 50px; height: 50px; }
+        .smart-photo-small { width: 60px; height: 60px; }
+        .smart-photo-medium { width: 120px; height: 120px; }
+        .smart-photo-large { width: 200px; height: 200px; }
+        
+        /* Image Element */
+        .smart-photo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+            transition: opacity 0.3s ease;
+        }
+        
+        /* Skeleton Loading Animation */
+        .smart-photo-skeleton {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+            background-size: 200% 100%;
+            animation: skeleton-shimmer 1.5s infinite;
+            border-radius: 10px;
+        }
+        
+        @keyframes skeleton-shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        .skeleton-animation {
+            width: 40%;
+            height: 40%;
+            background: rgba(148, 163, 184, 0.3);
+            border-radius: 50%;
+            margin-bottom: 8px;
+        }
+        
+        .skeleton-text {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        
+        /* Placeholder States */
+        .smart-photo-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+            border-radius: 10px;
+        }
+        
+        .smart-photo-placeholder-icon {
+            font-size: 2rem;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        
+        .smart-photo-placeholder-text {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-align: center;
+            padding: 0 8px;
+        }
+        
+        /* Error State */
+        .smart-photo-error {
+            background: linear-gradient(135deg, #fef2f2, #fee2e2) !important;
+        }
+        
+        .smart-photo-error .smart-photo-placeholder-icon {
+            font-size: 1.75rem;
+        }
+        
+        .smart-photo-error-hint {
+            font-size: 0.6rem;
+            color: #dc2626;
+            margin-top: 4px;
+            padding: 2px 6px;
+            background: #fecaca;
+            border-radius: 4px;
+        }
+        
+        /* State Attributes */
+        .smart-photo-container[data-photo-state="loading"] .smart-photo-img {
+            opacity: 0;
+        }
+        
+        .smart-photo-container[data-photo-state="loaded"] .smart-photo-skeleton,
+        .smart-photo-container[data-photo-state="loaded"] .smart-photo-placeholder {
+            display: none !important;
+        }
+        
+        .smart-photo-container[data-photo-state="loaded"] .smart-photo-img {
+            opacity: 1;
+            display: block !important;
+        }
+        
+        .smart-photo-container[data-photo-state="error"] .smart-photo-img,
+        .smart-photo-container[data-photo-state="error"] .smart-photo-skeleton {
+            display: none !important;
+        }
+        
+        .smart-photo-container[data-photo-state="error"] .smart-photo-placeholder {
+            display: flex !important;
+        }
+        
+        .smart-photo-container[data-photo-state="placeholder"] .smart-photo-placeholder {
+            display: flex !important;
+        }
+        
+        /* ============================================================
+           SMART PHOTO MODAL STYLES
+           ============================================================ */
+        .smart-photo-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            animation: modalFadeIn 0.25s ease-out;
+        }
+        
+        .smart-photo-modal-overlay.closing {
+            animation: modalFadeOut 0.2s ease-in forwards;
+        }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes modalFadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        .smart-photo-modal-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes modalSlideIn {
+            from { 
+                transform: scale(0.9) translateY(20px); 
+                opacity: 0; 
+            }
+            to { 
+                transform: scale(1) translateY(0); 
+                opacity: 1; 
+            }
+        }
+        
+        .smart-photo-modal-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            font-size: 1.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .smart-photo-modal-close:hover {
+            background: rgba(220, 38, 38, 0.9);
+            transform: scale(1.1);
+        }
+        
+        .smart-modal-image-wrapper {
+            max-width: 85vw;
+            max-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            overflow: hidden;
+        }
+        
+        .smart-modal-image-wrapper img {
+            max-width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+            border-radius: 0;
+        }
+        
+        .smart-modal-info {
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid #e2e8f0;
+            background: white;
+        }
+        
+        .smart-modal-info h4 {
+            margin: 0;
+            font-size: 1rem;
+            color: #1e293b;
+            font-weight: 600;
+        }
+        
+        .smart-modal-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: #eff6ff;
+            color: #2563eb;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .smart-modal-link:hover {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
         /* Status Badge Styling */
         .status-badge-penetapan {
             display: inline-flex;
@@ -8293,9 +8561,9 @@ function renderPesertaCards(data) {
         const linkFoto = getField(peserta, 'link_foto', 'linkFoto', 'foto', 'photo');
         const statusPenetapan = getField(peserta, 'status_penetapan', 'statusPenetapan', 'status', 'Lulus');
 
-        // Generate photo source (use placeholder if no photo)
-        const photoSrc = linkFoto && linkFoto !== '-' ? linkFoto : '';
-        const hasPhoto = photoSrc && photoSrc.trim() !== '';
+        // Generate SMART PHOTO HTML dengan multi-fallback support
+        const safeNama = escapeHtml(namaLengkap);
+        const photoHtml = generateSmartPhotoHtml(linkFoto, safeNama, 'medium');
 
         // Create card element
         const card = document.createElement('div');
@@ -8304,13 +8572,10 @@ function renderPesertaCards(data) {
         
         card.innerHTML = `
             <div class="peserta-card-photo-wrapper">
-                ${hasPhoto ? 
-                    `<img src="${escapeHtml(photoSrc)}" alt="${escapeHtml(namaLengkap)}" class="peserta-card-photo" onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);display:flex;align-items:center;justify-content:center;font-size:4rem;\\'>👤</div>'">` :
-                    `<div style="width:100%;height:100%;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);display:flex;align-items:center;justify-content:center;font-size:5rem;">👤</div>`
-                }
+                ${photoHtml || `<div style="width:100%;height:100%;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);display:flex;align-items:center;justify-content:center;font-size:5rem;">👤</div>`}
                 <div class="peserta-card-overlay"></div>
                 <div class="peserta-card-name-badge">
-                    <h4>${escapeHtml(namaLengkap)}</h4>
+                    <h4>${safeNama}</h4>
                 </div>
             </div>
             <div class="peserta-card-body">
@@ -8387,8 +8652,12 @@ function showPesertaDetailModal(peserta) {
     const tanggalPenetapan = getField(peserta, 'tanggal_penetapan', 'tanggalPenetapan', 'tanggal');
     const statusPenetapan = getField(peserta, 'status_penetapan', 'statusPenetapan', 'status', 'Lulus');
 
-    const photoSrc = linkFoto && linkFoto !== '-' ? linkFoto : '';
-    const hasPhoto = photoSrc && photoSrc.trim() !== '';
+    // Generate SMART PHOTO HTML dengan resolusi MAX untuk modal
+    const safeNama = escapeHtml(namaLengkap);
+    const modalPhotoHtml = generateSmartPhotoHtml(linkFoto, safeNama, 'large');
+    
+    // Get best URL for click-to-zoom functionality
+    const bestPhotoUrl = getBestImageUrl(linkFoto, 'max');
 
     // Create modal overlay
     const modalOverlay = document.createElement('div');
@@ -8400,13 +8669,11 @@ function showPesertaDetailModal(peserta) {
 
     modalOverlay.innerHTML = `
         <div class="peserta-modal">
-            <div class="peserta-modal-photo-section">
-                ${hasPhoto ? 
-                    `<img src="${escapeHtml(photoSrc)}" alt="${escapeHtml(namaLengkap)}" class="peserta-modal-photo">` :
-                    `<div style="width:100%;height:100%;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);display:flex;align-items:center;justify-content:center;font-size:6rem;">👤</div>`
-                }
+            <div class="peserta-modal-photo-section" style="cursor:pointer;" onclick="if('${bestPhotoUrl}' && '${bestPhotoUrl}'.length > 10) openPhotoModal('${bestPhotoUrl}', '${safeNama}', '${escapeHtml(linkFoto)}')">
+                ${modalPhotoHtml || `<div style="width:100%;height:100%;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);display:flex;align-items:center;justify-content:center;font-size:6rem;">👤</div>`}
                 <div class="peserta-modal-photo-gradient"></div>
-                <button class="peserta-modal-close" onclick="closePesertaDetailModal()">✕</button>
+                <button class="peserta-modal-close" onclick="event.stopPropagation();closePesertaDetailModal()">✕</button>
+                ${linkFoto && linkFoto !== '-' ? `<div class="peserta-modal-zoom-hint" style="position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,0.6);color:white;padding:6px 12px;border-radius:20px;font-size:0.75rem;display:flex;align-items:center;gap:4px;">🔍 Klik untuk perbesar</div>` : ''}
             </div>
             <div class="peserta-modal-body">
                 <h2 class="peserta-modal-name">${escapeHtml(namaLengkap)}</h2>
@@ -8786,9 +9053,9 @@ function createPenetapanRow(item, rowNum) {
     const linkFoto = getField(item, 'link_foto', 'linkFoto', 'foto', 'photo');
     const statusPenetapan = getField(item, 'status_penetapan', 'statusPenetapan', 'status', 'Pending');
     
-    // Photo handling - ENSURE PERFECT DISPLAY
-    const hasPhoto = linkFoto && linkFoto.trim() !== '' && linkFoto !== '-';
-    const photoSrc = hasPhoto ? linkFoto : '';
+    // Generate SMART PHOTO HTML dengan multi-fallback support
+    const safeNama = escapeHtml(namaLengkap);
+    const photoCellHtml = generateSmartPhotoHtml(linkFoto, `Foto ${safeNama}`, 'small');
     
     // Status badge class
     const statusLower = statusPenetapan.toLowerCase();
@@ -8809,15 +9076,7 @@ function createPenetapanRow(item, rowNum) {
     row.innerHTML = `
         <td style="font-weight:600;color:#7c3aed;">${rowNum}</td>
         <td class="penetapan-photo-cell">
-            ${hasPhoto ? 
-                `<img src="${escapeHtml(photoSrc)}" 
-                     alt="Foto ${escapeHtml(namaLengkap)}" 
-                     class="penetapan-photo-img"
-                     onclick="event.stopPropagation(); showPhotoModal('${escapeHtml(photoSrc)}', '${escapeHtml(namaLengkap)}')"
-                     onerror="this.outerHTML='<div class=\\'penetapan-photo-placeholder\\'>👤</div>'"
-                     loading="lazy">` :
-                `<div class="penetapan-photo-placeholder">👤</div>`
-            }
+            ${photoCellHtml}
         </td>
         <td style="font-weight:600;color:#1e293b;">${escapeHtml(namaLengkap)}</td>
         <td><span style="font-family:monospace;background:#f1f5f9;padding:0.25rem 0.5rem;border-radius:6px;font-size:0.8rem;">${escapeHtml(nik)}</span></td>
@@ -10781,6 +11040,616 @@ async function tryProxyImage(imgElement, placeholderElement, photoUrl, cacheKey)
     }
 }
 
+// ============================================================
+// 🖼️ GOOGLE DRIVE IMAGE HANDLER v2.0 - COMPREHENSIVE SYSTEM
+// ============================================================
+// Fitur:
+// - Deteksi otomatis SEMUA format URL Google Drive
+// - Ekstrak FILE_ID dari berbagai pola URL
+// - 7+ endpoint fallback dengan thumbnail & high-res
+// - Lazy loading dengan Intersection Observer
+// - Aspect ratio preservation
+// - Smart error handling (permission, private, broken)
+// - Placeholder dengan animasi
+// - Cache optimization
+// ============================================================
+
+/**
+ * ENHANCED: Ekstrak File ID dari SEMUA format Google Drive URL
+ * Mendukung:
+ * - Standard: drive.google.com/file/d/FILE_ID/view
+ * - Open: drive.google.com/open?id=FILE_ID
+ * - UC Export: drive.google.com/uc?export=view&id=FILE_ID
+ * - Short: docs.google.com/file/d/FILE_ID
+ * - Direct ID: FILE_ID saja (33 karakter)
+ * - Thumbnail: drive.google.com/thumbnail?id=FILE_ID
+ * - Folder sharing: drive.google.com/drive/folders/FILE_ID
+ * - Sharing link: https://drive.google.com/file/d/FILE_ID?usp=sharing
+ * - Embed: https://drive.google.com/file/d/FILE_ID/preview
+ */
+function extractFileIdEnhanced(driveUrl) {
+    if (!driveUrl || driveUrl === '-' || typeof driveUrl !== 'string') return '';
+    
+    const url = driveUrl.trim();
+    let fileId = '';
+    
+    // Pattern 1: /file/d/FILE_ID/view atau /file/d/FILE_ID/?usp=sharing
+    const match1 = url.match(/\/file\/d\/([a-zA-Z0-9-_]{25,})/);
+    if (match1 && match1[1]) fileId = match1[1];
+    
+    // Pattern 2: ?id=FILE_ID or &id=FILE_ID (parameter)
+    if (!fileId) {
+        const match2 = url.match(/[?&]id=([a-zA-Z0-9-_]{25,})/);
+        if (match2 && match2[1]) fileId = match2[1];
+    }
+    
+    // Pattern 3: /d/FILE_ID (shortened URL / direct path)
+    if (!fileId) {
+        const match3 = url.match(/\/d\/([a-zA-Z0-9-_]{33})/);
+        if (match3 && match3[1]) fileId = match3[1];
+    }
+    
+    // Pattern 4: open?id=FILE_ID
+    if (!fileId) {
+        const match4 = url.match(/open\?id=([a-zA-Z0-9-_]{25,})/);
+        if (match4 && match4[1]) fileId = match4[1];
+    }
+    
+    // Pattern 5: thumbnails.googleusercontent.com/vi/FILE_ID/
+    if (!fileId) {
+        const match5 = url.match(/thumbnails\.googleusercontent\.com\/vi\/([a-zA-Z0-9-_]+)/);
+        if (match5 && match5[1]) fileId = match5[1];
+    }
+    
+    // Pattern 6: lh3.googleusercontent.com/d/FILE_ID=
+    if (!fileId) {
+        const match6 = url.match(/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9-_]+)/);
+        if (match6 && match6[1]) fileId = match6[1];
+    }
+    
+    // Pattern 7: Jika URL sendiri adalah FILE_ID (33 karakter alphanumeric)
+    if (!fileId && /^[a-zA-Z0-9-_]{25,}$/.test(url)) {
+        fileId = url;
+    }
+    
+    // Pattern 8: googleusercontent.com/a/.../FILE_ID (shared via Gmail/Drive)
+    if (!fileId) {
+        const match8 = url.match(/googleusercontent\.com\/a\/[^/]+\/[^/]+\/([a-zA-Z0-9-_]+)/);
+        if (match8 && match8[1]) fileId = match8[1];
+    }
+    
+    return fileId;
+}
+
+/**
+ * Generate MULTIPLE Google Drive image URLs untuk sebuah File ID
+ * Urutan berdasarkan reliabilitas (paling reliable pertama)
+ * 
+ * @param {string} fileId - Google Drive File ID
+ * @param {string} size - 'thumb' (100px), 'small' (200px), 'medium' (500px), 'large' (1000px), 'max' (2200px)
+ * @returns {string[]} Array of URLs to try in order
+ */
+function generateDriveImageUrls(fileId, size = 'medium') {
+    if (!fileId) return [];
+    
+    // Size mapping untuk berbagai endpoint
+    const sizeMap = {
+        thumb: { lh3: 'w100-h100', uc: 'w100', thumb: 'w100', api: '100' },
+        small: { lh3: 'w200-h200', uc: 'w200', thumb: 'w200', api: '200' },
+        medium: { lh3: 'w400-h400', uc: 'w400', thumb: 'w400', api: '400' },
+        large: { lh3: 'w800-h800', uc: 'w800', thumb: 'w800', api: '800' },
+        max: { lh3: 's2200', uc: 'w2200-h1500', thumb: 'w2200-h1500', api: '2200' }
+    };
+    
+    const s = sizeMap[size] || sizeMap.medium;
+    
+    return [
+        // ENDPOINT 1: LH3 Google Content (THUMBNAIL SERVICE) - PALING RELIABLE
+        `https://lh3.googleusercontent.com/d/${fileId}=${s.lh3}`,
+        
+        // ENDPOINT 2: Drive UC Export (View Mode) - BACKUP UTAMA
+        `https://drive.google.com/thumbnail?id=${fileId}&sz=${s.thumb}`,
+        
+        // ENDPOINT 3: Drive UC Export dengan authkey support
+        `https://drive.google.com/uc?export=view&id=${fileId}`,
+        
+        // ENDPOINT 4: Google Thumbnails API
+        `https://thumbnails.googleusercontent.com/vi/${fileId}/${s.thumb}`,
+        
+        // ENDPOINT 5: LH3 alternative format (tanpa parameter)
+        `https://lh3.googleusercontent.com/p/${fileId}`,
+        
+        // ENDPOINT 6: Docs viewer sebagai image (fallback)
+        `https://docs.google.com/document/d/${fileId}/preview`,
+        
+        // ENDPOINT 7: Web proxy via Google (last resort)
+        `https://drive.google.com/uc?export=download&id=${fileId}`
+    ];
+}
+
+/**
+ * Detect jika URL adalah Google Drive URL
+ * @param {string} url - URL to check
+ * @returns {boolean}
+ */
+function isGoogleDriveUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    return url.includes('drive.google.com') || 
+           url.includes('googleusercontent.com') ||
+           url.includes('google.com/file/d/') ||
+           url.includes('docs.google.com');
+}
+
+/**
+ * Get best image URL for display
+ * Konversi otomatis Google Drive URL ke format yang kompatibel
+ * 
+ * @param {string} photoUrl - Original URL from database
+ * @param {string} size - Size preference: 'thumb', 'small', 'medium', 'large', 'max'
+ * @returns {string} Best URL to use (or empty string if invalid)
+ */
+function getBestImageUrl(photoUrl, size = 'medium') {
+    if (!photoUrl || photoUrl === '-' || photoUrl.length < 10) return '';
+    
+    // Jika sudah data URL (base64), return as-is
+    if (photoUrl.startsWith('data:image/')) return photoUrl;
+    
+    // Jika sudah direct URL dan bukan drive/google, return as-is
+    if (photoUrl.startsWith('http') && !isGoogleDriveUrl(photoUrl)) return photoUrl;
+    
+    // Jika sudah googleusercontent URL dengan ukuran, return as-is
+    if (photoUrl.includes('lh3.googleusercontent.com') && photoUrl.includes('=')) return photoUrl;
+    
+    // Extract file ID dan generate best URL
+    const fileId = extractFileIdEnhanced(photoUrl);
+    
+    if (fileId) {
+        const urls = generateDriveImageUrls(fileId, size);
+        return urls[0] || ''; // Return most reliable URL
+    }
+    
+    // Tidak bisa extract, return original (mungkin sudah direct URL)
+    return photoUrl;
+}
+
+/**
+ * Create SMART PHOTO ELEMENT with comprehensive features:
+ * - Automatic Google Drive URL conversion
+ * - Multi-level fallback (tries all endpoints)
+ * - Lazy loading with Intersection Observer
+ * - Aspect ratio preservation
+ * - Loading skeleton animation
+ * - Error handling with clear messages
+ * - Click to open full resolution
+ * 
+ * @param {Object} options - Configuration options
+ * @param {string} options.url - Original photo URL from database
+ * @param {string} options.alt - Alt text for accessibility
+ * @param {string} options.size - 'thumb'|'small'|'medium'|'large'|'max'
+ * @param {boolean} options.lazy - Enable lazy loading (default: true)
+ * @param {boolean} options.clickable - Enable click to zoom (default: true)
+ * @param {string} options.className - Additional CSS classes
+ * @param {Function} options.onError - Custom error callback
+ * @returns {HTMLElement} Container div with image
+ */
+function createSmartPhotoElement(options = {}) {
+    const {
+        url: originalUrl,
+        alt = 'Foto',
+        size = 'medium',
+        lazy = true,
+        clickable = true,
+        className = '',
+        onError = null
+    } = options;
+    
+    // Create container
+    const container = document.createElement('div');
+    container.className = `smart-photo-container smart-photo-${size} ${className}`.trim();
+    container.setAttribute('data-photo-state', 'loading');
+    
+    // Validate URL
+    if (!originalUrl || originalUrl === '-' || originalUrl.length < 10) {
+        container.setAttribute('data-photo-state', 'placeholder');
+        container.innerHTML = `
+            <div class="smart-photo-placeholder">
+                <span class="smart-photo-placeholder-icon">👤</span>
+                <span class="smart-photo-placeholder-text">Tidak ada foto</span>
+            </div>
+        `;
+        return container;
+    }
+    
+    // Store original URL for reference
+    container.setAttribute('data-original-url', originalUrl);
+    
+    // Create loading skeleton
+    const skeleton = document.createElement('div');
+    skeleton.className = 'smart-photo-skeleton';
+    skeleton.innerHTML = `
+        <div class="skeleton-animation"></div>
+        <span class="skeleton-text">Memuat foto...</span>
+    `;
+    container.appendChild(skeleton);
+    
+    // Create actual image element (hidden initially)
+    const img = document.createElement('img');
+    img.className = 'smart-photo-img';
+    img.alt = alt;
+    img.setAttribute('data-original-url', originalUrl);
+    img.style.display = 'none';
+    container.appendChild(img);
+    
+    // Create placeholder (shown on error)
+    const placeholder = document.createElement('div');
+    placeholder.className = 'smart-photo-placeholder smart-photo-error';
+    placeholder.style.display = 'none';
+    placeholder.innerHTML = `
+        <span class="smart-photo-placeholder-icon">📷</span>
+        <span class="smart-photo-placeholder-text">Foto tidak tersedia</span>
+        <span class="smart-photo-error-hint">File mungkin privat atau dihapus</span>
+    `;
+    container.appendChild(placeholder);
+    
+    // Function to try loading image with fallback chain
+    async function loadWithFallback() {
+        container.setAttribute('data-photo-state', 'loading');
+        skeleton.style.display = 'flex';
+        img.style.display = 'none';
+        placeholder.style.display = 'none';
+        
+        // Get all possible URLs
+        const fileId = extractFileIdEnhanced(originalUrl);
+        let urlsToTry = [];
+        
+        if (fileId) {
+            urlsToTry = generateDriveImageUrls(fileId, size);
+        } else {
+            // Not a Drive URL, try as-is
+            urlsToTry = [originalUrl];
+        }
+        
+        // Try each URL sequentially
+        let loaded = false;
+        
+        for (let i = 0; i < urlsToTry.length; i++) {
+            if (loaded) break;
+            
+            const currentUrl = urlsToTry[i];
+            
+            try {
+                const success = await new Promise((resolve) => {
+                    const testImg = new Image();
+                    const timeout = setTimeout(() => resolve(false), 6000); // 6s timeout per attempt
+                    
+                    testImg.onload = () => {
+                        clearTimeout(timeout);
+                        // Validasi: gambar harus memiliki dimensi yang wajar
+                        if (testImg.naturalWidth > 20 && testImg.naturalHeight > 20) {
+                            resolve(true);
+                        } else {
+                            console.warn(`⚠️ URL ${i+1} returned invalid dimensions:`, currentUrl.substring(0, 50));
+                            resolve(false);
+                        }
+                    };
+                    
+                    testImg.onerror = (e) => {
+                        clearTimeout(timeout);
+                        console.warn(`⚠️ URL ${i+1} failed:`, currentUrl.substring(0, 50));
+                        resolve(false);
+                    };
+                    
+                    testImg.src = currentUrl;
+                });
+                
+                if (success) {
+                    img.src = currentUrl;
+                    img.style.display = 'block';
+                    skeleton.style.display = 'none';
+                    placeholder.style.display = 'none';
+                    container.setAttribute('data-photo-state', 'loaded');
+                    loaded = true;
+                    
+                    // Cache successful URL
+                    const cacheKey = originalUrl.substring(0, 100);
+                    if (!window._photoSuccessCache) window._photoSuccessCache = new Map();
+                    window._photoSuccessCache.set(cacheKey, currentUrl);
+                    
+                    console.log(`✅ Photo loaded via method ${i + 1}:`, currentUrl.substring(0, 60));
+                    break;
+                }
+                
+            } catch (err) {
+                console.warn(`⚠️ Error trying URL ${i + 1}:`, err.message);
+            }
+            
+            // Small delay between attempts
+            if (i < urlsToTry.length - 1) {
+                await new Promise(r => setTimeout(r, 150));
+            }
+        }
+        
+        // All URLs failed
+        if (!loaded) {
+            img.style.display = 'none';
+            skeleton.style.display = 'none';
+            placeholder.style.display = 'flex';
+            container.setAttribute('data-photo-state', 'error');
+            
+            // Mark in fail cache
+            if (!window._photoFailCache) window._photoFailCache = new Set();
+            window._photoFailCache.add(originalUrl.substring(0, 100));
+            
+            // Call custom error handler if provided
+            if (typeof onError === 'function') {
+                onError(originalUrl, 'All endpoints failed');
+            }
+            
+            console.warn('❌ All photo loading methods failed for:', originalUrl.substring(0, 50));
+        }
+    }
+    
+    // Lazy loading with Intersection Observer
+    if (lazy && 'IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    observer.unobserve(container);
+                    loadWithFallback();
+                }
+            });
+        }, { rootMargin: '50px' });
+        
+        observer.observe(container);
+    } else {
+        // No lazy load, load immediately
+        loadWithFallback();
+    }
+    
+    // Click to open full resolution
+    if (clickable) {
+        container.style.cursor = 'pointer';
+        container.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (container.getAttribute('data-photo-state') === 'loaded') {
+                openPhotoModal(img.src, alt, originalUrl);
+            }
+        });
+    }
+    
+    return container;
+}
+
+/**
+ * Open Photo Modal with Full Resolution Image
+ * Global function untuk membuka modal foto besar
+ */
+function openPhotoModal(src, alt = 'Foto', originalUrl = '') {
+    // Remove existing modal
+    const existing = document.getElementById('smart-photo-modal');
+    if (existing) existing.remove();
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'smart-photo-modal';
+    modal.className = 'smart-photo-modal-overlay';
+    modal.innerHTML = `
+        <div class="smart-photo-modal-content">
+            <button class="smart-photo-modal-close" onclick="closePhotoModal()">&times;</button>
+            <div class="smart-modal-image-wrapper">
+                <img src="${src}" alt="${alt}" id="smart-modal-img" 
+                     onerror="this.parentElement.innerHTML='<div style=\\'padding:40px;text-align:center;color:#94a3b8;\\'><div style=\\'font-size:4rem;\\'>📷</div><p>Gagal memuat foto</p></div>'">
+            </div>
+            <div class="smart-modal-info">
+                <h4>${alt}</h4>
+                ${originalUrl ? `<a href="${originalUrl}" target="_blank" class="smart-modal-link">🔗 Buka di Google Drive</a>` : ''}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closePhotoModal();
+    });
+    
+    // Close on Escape key
+    document.addEventListener('keydown', function escHandler(e) {
+        if (e.key === 'Escape') {
+            closePhotoModal();
+            document.removeEventListener('keydown', escHandler);
+        }
+    });
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+}
+
+/**
+ * Close Photo Modal
+ */
+function closePhotoModal() {
+    const modal = document.getElementById('smart-photo-modal');
+    if (modal) {
+        modal.classList.add('closing');
+        setTimeout(() => modal.remove(), 300);
+    }
+    document.body.style.overflow = '';
+}
+
+/**
+ * Generate HTML string untuk Smart Photo (untuk digunakan di template literals)
+ * Versi ringan yang tetap mendukung multi-fallback
+ * 
+ * @param {string} photoUrl - Original URL
+ * @param {string} alt - Alt text
+ * @param {string} size - Size: 'thumb', 'small', 'medium', 'large'
+ * @returns {string} HTML string
+ */
+function generateSmartPhotoHtml(photoUrl, alt = '', size = 'small') {
+    if (!photoUrl || photoUrl === '-' || photoUrl.length < 10) {
+        return `<div class="smart-photo-container smart-photo-${size}" data-photo-state="placeholder">
+            <div class="smart-photo-placeholder">
+                <span class="smart-photo-placeholder-icon">👤</span>
+            </div>
+        </div>`;
+    }
+    
+    const safeAlt = escapeHtml(alt || 'Foto');
+    const safeUrl = escapeHtml(photoUrl);
+    const bestUrl = getBestImageUrl(photoUrl, size);
+    const safeBestUrl = escapeHtml(bestUrl);
+    
+    // Size classes
+    const sizeClasses = {
+        thumb: 'width:50px;height:50px;',
+        small: 'width:60px;height:60px;',
+        medium: 'width:120px;height:120px;',
+        large: 'width:200px;height:200px;'
+    };
+    
+    const inlineStyle = sizeClasses[size] || sizeClasses.small;
+    
+    return `<div class="smart-photo-container smart-photo-${size}" 
+             data-photo-state="loading"
+             data-original-url="${safeUrl}"
+             style="${inlineStyle}">
+        <div class="smart-photo-skeleton" style="${inlineStyle}">
+            <div class="skeleton-animation"></div>
+        </div>
+        <img src="${safeBestUrl}" 
+             alt="${safeAlt}"
+             class="smart-photo-img"
+             data-original-url="${safeUrl}"
+             style="${inlineStyle}object-fit:cover;border-radius:8px;display:none;"
+             onload="this.style.display='block';this.previousElementSibling.style.display='none';this.parentElement.dataset.photoState='loaded';"
+             onerror="handleSmartPhotoError(this)">
+        <div class="smart-photo-placeholder smart-photo-error" style="${inlineStyle}display:none;">
+            <span class="smart-photo-placeholder-icon">👤</span>
+        </div>
+    </div>`;
+}
+
+/**
+ * Global error handler untuk Smart Photo images
+ * Tries fallback URLs sequentially
+ */
+window.handleSmartPhotoError = function(img) {
+    const container = img.closest('.smart-photo-container');
+    if (!container) return;
+    
+    const originalUrl = img.getAttribute('data-original-url');
+    if (!originalUrl) {
+        showPhotoErrorState(container);
+        return;
+    }
+    
+    // Get current URL index from data attribute
+    let currentIndex = parseInt(container.getAttribute('data-url-index') || '0');
+    const fileId = extractFileIdEnhanced(originalUrl);
+    
+    if (!fileId) {
+        showPhotoErrorState(container);
+        return;
+    }
+    
+    // Get all possible URLs
+    const allUrls = generateDriveImageUrls(fileId, 'medium');
+    
+    // Try next URL
+    if (currentIndex < allUrls.length - 1) {
+        currentIndex++;
+        container.setAttribute('data-url-index', currentIndex.toString());
+        
+        const nextUrl = allUrls[currentIndex];
+        console.log(`🔄 Trying fallback URL ${currentIndex + 1}:`, nextUrl.substring(0, 50));
+        
+        // Test URL first
+        const testImg = new Image();
+        testImg.onload = () => {
+            if (testImg.naturalWidth > 20) {
+                img.src = nextUrl;
+                img.style.display = 'block';
+                container.querySelector('.smart-photo-skeleton').style.display = 'none';
+                container.querySelector('.smart-photo-placeholder').style.display = 'none';
+                container.setAttribute('data-photo-state', 'loaded');
+            } else {
+                window.handleSmartPhotoError(img); // Try next
+            }
+        };
+        testImg.onerror = () => window.handleSmartPhotoError(img); // Try next
+        testImg.src = nextUrl;
+    } else {
+        // All URLs failed
+        showPhotoErrorState(container);
+    }
+};
+
+/**
+ * Show error state for photo container
+ */
+function showPhotoErrorState(container) {
+    if (!container) return;
+    
+    const img = container.querySelector('.smart-photo-img');
+    const skeleton = container.querySelector('.smart-photo-skeleton');
+    const placeholder = container.querySelector('.smart-photo-placeholder');
+    
+    if (img) img.style.display = 'none';
+    if (skeleton) skeleton.style.display = 'none';
+    if (placeholder) {
+        placeholder.style.display = 'flex';
+        placeholder.classList.add('smart-photo-error');
+        placeholder.innerHTML = `
+            <span class="smart-photo-placeholder-icon">📷</span>
+            <span class="smart-photo-error-hint">Tidak dapat memuat</span>
+        `;
+    }
+    
+    container.setAttribute('data-photo-state', 'error');
+}
+
+/**
+ * Initialize semua smart photos dalam container setelah render
+ * Dipanggil manual setelah innerHTML assignment
+ */
+function initSmartPhotos(container) {
+    if (!container) return;
+    
+    // Find all containers that need initialization
+    const photos = container.querySelectorAll('.smart-photo-container[data-photo-state="loading"]');
+    
+    photos.forEach(photoContainer => {
+        const img = photoContainer.querySelector('.smart-photo-img');
+        const originalUrl = photoContainer.getAttribute('data-original-url');
+        
+        if (img && originalUrl) {
+            // Trigger load with error handling
+            img.onload = () => {
+                img.style.display = 'block';
+                const skeleton = photoContainer.querySelector('.smart-photo-skeleton');
+                if (skeleton) skeleton.style.display = 'none';
+                photoContainer.setAttribute('data-photo-state', 'loaded');
+            };
+            
+            img.onerror = () => window.handleSmartPhotoError(img);
+            
+            // If src is empty, trigger error to start fallback
+            if (!img.src || img.src === window.location.href) {
+                window.handleSmartPhotoError(img);
+            }
+        }
+    });
+}
+
+console.log('✅ Google Drive Image Handler v2.0 Loaded');
+
+/**
+ * DEPRECATED: Use generateSmartPhotoHtml() instead
+ * Kept for backward compatibility - now delegates to new system
+ */
+
 /**
  * Sync version of setPhotoWithFallback untuk penggunaan sederhana
  * (tanpa await, langsung set src)
@@ -10827,46 +11696,12 @@ function setPhotoSync(imgElement, placeholderElement, photoUrl) {
 
 /**
  * Generate HTML untuk photo cell di tabel
- * Dengan automatic fallback handling
+ * DEPRECATED: Now delegates to generateSmartPhotoHtml() for better fallback support
+ * Kept for backward compatibility
  */
 function generatePhotoCell(linkFoto, nama = '', size = 'small') {
-    if (!linkFoto || linkFoto === '-' || linkFoto.length < 10) {
-        if (size === 'small') {
-            return `<div class="photo-placeholder-small">👤</div>`;
-        } else if (size === 'table') {
-            return `<div class="table-photo-wrapper"><span class="table-photo-placeholder">👤</span></div>`;
-        } else {
-            return `<div style="width:120px;height:150px;background:#f1f5f9;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:2rem;">👤</div>`;
-        }
-    }
-    
-    const directUrl = getDirectImageUrl(linkFoto);
-    const safeName = nama ? escapeHtml(nama) : 'Foto';
-    const safeUrl = escapeHtml(linkFoto); // Store original URL for fallback
-    
-    if (size === 'small') {
-        return `<img src="${directUrl}" alt="${safeName}" class="photo-cell" 
-            data-photo-url="${safeUrl}"
-            onload="this.style.display='block'"
-            onerror="handleImageError(this, '${safeUrl}')">`;
-    } else if (size === 'table') {
-        return `<div class="table-photo-wrapper">
-            <img src="${directUrl}" alt="${safeName}" 
-                data-photo-url="${safeUrl}"
-                onerror="handleImageError(this, '${safeUrl}')">
-        </div>`;
-    } else {
-        return `<div style="position:relative;width:120px;height:150px;">
-            <img src="${directUrl}" alt="${safeName}" 
-                data-photo-url="${safeUrl}"
-                style="width:120px;height:150px;object-fit:cover;border-radius:12px;border:3px solid #e2e8f0;"
-                onerror="handleImageError(this, '${safeUrl}')">
-            <div style="position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:#f1f5f9;border-radius:12px;color:#94a3b8;">
-                <span style="font-size:2rem;">👤</span>
-                <span style="font-size:0.75rem;">Foto tidak tersedia</span>
-            </div>
-        </div>`;
-    }
+    // Delegate to new smart photo system with multi-fallback support
+    return generateSmartPhotoHtml(linkFoto, nama || 'Foto', size);
 }
 
 /**
