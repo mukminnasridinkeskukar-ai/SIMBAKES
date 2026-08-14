@@ -6137,7 +6137,6 @@ async function submitStatusChange() {
         closeModal('status-update-modal');
         if (typeof fetchAdminData === 'function') fetchAdminData();
     } catch (error) {
-
         console.error('Error updating status:', error);
         showToast(`❌ Gagal mengubah status: ${error.message}`, 'error');
     }
@@ -7176,16 +7175,11 @@ async function submitForm() {
     });
     
     try {
-        // Check if Google Sheets is configured
-        const isGoogleSheetsConfigured = !USE_LOCAL_STORAGE && 
-                                         GOOGLE_APPS_SCRIPT_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE' &&
-                                         GOOGLE_APPS_SCRIPT_URL.trim() !== '';
+        // Send to Supabase
+        console.log('🚀 Mengirim ke Supabase...');
         
-        if (isGoogleSheetsConfigured) {
-            // Send to Google Sheets/Drive
-            console.log('🚀 Mengirim ke Google Sheets/Drive...');
-            
-            const result = await sendToGoogleSheets(formData);
+        if (supabaseClient) {
+            const result = await submitToSupabase(formData);
             
             console.log('✅ Berhasil disimpan ke Supabase!', result);
             
@@ -7193,20 +7187,17 @@ async function submitForm() {
             closeModal('confirm-modal');
             document.getElementById('success-reg-number').textContent = formData.noRegister;
             document.getElementById('success-modal').classList.add('active');
-            showToast('✅ Pengajuan berhasil! Foto & dokumen tersimpan di Google Drive.', 'success');
+            showToast('✅ Pengajuan berhasil dikirim!', 'success');
             
-        } else if (USE_LOCAL_STORAGE) {
-            // Save to localStorage as fallback/demo mode
-            console.log('💾 Menyimpan ke localStorage (demo mode)...');
+        } else {
+            // Fallback to localStorage
+            console.log('💾 Menyimpan ke localStorage (Supabase tidak terhubung)...');
             saveToLocal(formData);
             
             closeModal('confirm-modal');
             document.getElementById('success-reg-number').textContent = formData.noRegister;
             document.getElementById('success-modal').classList.add('active');
-            showToast('📝 Data tersimpan locally (Demo Mode - pastikan Supabase sudah terkonfigurasi)', 'success');
-            
-        } else {
-            throw new Error('Supabase belum terhubung. Periksa konfigurasi.');
+            showToast('📝 Data tersimpan locally (Supabase belum terkonfigurasi)', 'success');
         }
         
     } catch (error) {
@@ -7220,65 +7211,16 @@ async function submitForm() {
         document.getElementById('success-reg-number').textContent = formData.noRegister;
         document.getElementById('success-modal').classList.add('active');
         
-        // Show appropriate error message
-        let errorMsg = 'Data tersimpan locally. ';
-        if (GOOGLE_APPS_SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-            errorMsg += '⚠️ Supabase belum dikonfigurasi. Periksa kredensial.';
-        } else {
-            errorMsg += '⚠️ Gagal terhubung: ' + error.message;
-        }
-        showToast(errorMsg, 'error');
+        showToast(`⚠️ Gagal ke Supabase: ${error.message}. Data tersimpan locally.`, 'error');
         
         console.error('Detail Error:', {
             message: error.message,
-            urlConfigured: GOOGLE_APPS_SCRIPT_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE',
-            useLocalStorage: USE_LOCAL_STORAGE
+            supabaseConnected: !!supabaseClient
         });
         
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = 'Ya, Kirim Sekarang';
-    }
-}
-
-async function sendToGoogleSheets(data) {
-    console.log('📤 Mengirim data ke Google Sheets...');
-    console.log('🔗 URL:', GOOGLE_APPS_SCRIPT_URL);
-    
-    // Prepare payload - convert photo to base64 if needed
-    const payload = {
-        ...data,
-        foto: typeof data.foto === 'string' ? data.foto.split(',')[1] : null, // Remove base64 prefix
-        ipAddress: await getClientIP(),
-        userAgent: navigator.userAgent
-    };
-    
-    try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-        
-        const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors', // Required for cross-origin requests to Google Apps Script
-            headers: { 
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload),
-            signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        
-        console.log('✅ Response status:', response.status);
-        return { success: true, response };
-        
-    } catch (error) {
-        console.error('❌ Error menyimpan ke Supabase:', error);
-        
-        if (error.name === 'AbortError') {
-            throw new Error('Timeout - Server tidak merespon dalam 30 detik');
-        }
-        throw error;
     }
 }
 
@@ -7469,7 +7411,7 @@ async function fetchDashboardStats() {
 /**
  * Fetch Recent Submissions (5 terbaru) dari Supabase
  */
-async function fetchRecentSubmissions() {
+async function getRecentSubmissionsFromSupabase() {
     if (!supabaseClient) {
         console.warn('[SIMBAKES] Supabase not connected');
         return [];
@@ -8408,15 +8350,6 @@ async function fetchDashboardStats() {
         console.error('❌ Error fetching dashboard stats from Supabase:', error);
         loadDummyStats();
     }
-} else {
-            console.error('❌ Error loading stats:', result.message);
-            // Fallback ke data dummy jika API gagal
-            loadDummyStats();
-        }
-    } catch (error) {
-        console.error('❌ Error fetching dashboard stats:', error);
-        loadDummyStats();
-    }
 }
 
 /**
@@ -8469,15 +8402,15 @@ async function fetchRecentSubmissions() {
     const tbody = document.getElementById('recent-submissions-body');
     
     try {
-        // Using Supabase client
-        const result = await fetchRecentSubmissions();
+        // Using Supabase client - get data directly
+        const data = await getRecentSubmissionsFromSupabase();
         
-        if (result.status === 'success' && result.data.length > 0) {
+        if (data && data.length > 0) {
             // Cache all data for pagination
-            cachedRecentSubmissions = result.data;
+            cachedRecentSubmissions = data;
             renderRecentSubmissions();
             
-            console.log(`✅ Loaded ${result.data.length} recent submissions`);
+            console.log(`✅ Loaded ${data.length} recent submissions`);
         } else {
             cachedRecentSubmissions = [];
             tbody.innerHTML = `
