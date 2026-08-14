@@ -15587,6 +15587,598 @@ function getStatusBadgeConfig(status) {
 }
 
 // =====================================================
+// MULTI-USER SESSION INTEGRATION (NEW! - SQL Schema Integration)
+// =====================================================
+
+/**
+ * SIMBAKES Multi-User Authentication Integration
+ * Handles sessions from both login-peserta.html (peserta) and admin login (superadmin/operator/admin)
+ * 
+ * ROLE-BASED ACCESS CONTROL MATRIX:
+ * ┌─────────────┬─────────────────────────────────────────────────┐
+ * │ ROLE        │ ACCESSIBLE MENUS                                │
+ * ├─────────────┼─────────────────────────────────────────────────┤
+ * │ superadmin  │ ALL menus + User Management + Settings          │
+ * │ operator    │ Data Pengusul ONLY                              │
+ * │ admin       │ Data Roadmap + Penetapan                        │
+ * │ peserta     │ Portal Peserta ONLY (no admin access)           │
+ * └─────────────┴─────────────────────────────────────────────────┘
+ */
+
+// Global user state object for role-based access control
+const SIMBAKES_USER_STATE = {
+    isLoggedIn: false,
+    userRole: null,      // 'superadmin' | 'operator' | 'admin' | 'peserta'
+    userId: null,
+    nama: null,
+    email: null,
+    permissions: {
+        canAccessDashboard: false,
+        canAccessDataPengusul: false,
+        canAccessRoadmap: false,
+        canAccessPenetapan: false,
+        canAccessUserManagement: false,
+        canAccessSettings: false,
+        canAccessPesertaPortal: false
+    },
+    sessionData: null,
+    initialized: false
+};
+
+/**
+ * Initialize authentication state on page load
+ * Call this function when DOM is ready
+ */
+function initSimbakesAuth() {
+    console.log('[SIMBAKES AUTH] Initializing authentication system...');
+    
+    // Check for existing sessions (priority: admin > peserta)
+    const adminSession = localStorage.getItem('simbakes_admin_session');
+    const pesertaSession = localStorage.getItem('simbakes_peserta_session');
+    
+    if (adminSession) {
+        try {
+            const session = JSON.parse(adminSession);
+            if (session.isLoggedIn && new Date(session.expiresAt) > new Date()) {
+                setAdminSession(session);
+                console.log('[SIMBAKES AUTH] Admin session restored:', session.nama, 'as', session.userRole);
+            } else {
+                // Session expired
+                clearAdminSession();
+            }
+        } catch (e) {
+            console.error('[SIMBAKES AUTH] Error parsing admin session:', e);
+            clearAdminSession();
+        }
+    } else if (pesertaSession) {
+        try {
+            const session = JSON.parse(pesertaSession);
+            if (session.isLoggedIn && new Date(session.expiresAt) > new Date()) {
+                setPesertaSession(session);
+                console.log('[SIMBAKES AUTH] Peserta session restored:', session.nama);
+            } else {
+                clearPesertaSession();
+            }
+        } catch (e) {
+            console.error('[SIMBAKES AUTH] Error parsing peserta session:', e);
+            clearPesertaSession();
+        }
+    }
+    
+    // Listen for messages from login-peserta.html (if opened in popup)
+    window.addEventListener('message', handleCrossOriginMessage);
+    
+    // Apply role-based UI restrictions
+    applyRoleBasedUI();
+    
+    SIMBAKES_USER_STATE.initialized = true;
+    console.log('[SIMBAKES AUTH] Initialization complete. Role:', SIMBAKES_USER_STATE.userRole || 'none');
+}
+
+/**
+ * Handle cross-origin messages from login pages
+ */
+function handleCrossOriginMessage(event) {
+    if (event.data && event.data.type === 'PESERTA_LOGIN_SUCCESS') {
+        console.log('[SIMBAKES AUTH] Received login success message from popup/tab');
+        
+        if (event.data.data && event.data.data.success) {
+            const sessionData = event.data.data;
+            
+            // Determine session type based on role
+            if (sessionData.userRole === 'peserta' || !sessionData.userRole) {
+                // Peserta session
+                const fullSession = localStorage.getItem('simbakes_peserta_session');
+                if (fullSession) {
+                    setPesertaSession(JSON.parse(fullSession));
+                    showToast?.('success', '✅ Login Berhasil', `Selamat datang, ${sessionData.nama}!`);
+                }
+            } else {
+                // Admin session
+                const fullSession = localStorage.getItem('simbakes_admin_session');
+                if (fullSession) {
+                    setAdminSession(JSON.parse(fullSession));
+                    showToast?.('success', '✅ Login Admin Berhasil', `Selamat datang, ${sessionData.nama} (${sessionData.userRole})`);
+                }
+            }
+            
+            applyRoleBasedUI();
+        }
+    }
+}
+
+/**
+ * Set admin session state (for superadmin/operator/admin roles)
+ */
+function setAdminSession(session) {
+    SIMBAKES_USER_STATE.isLoggedIn = true;
+    SIMBAKES_USER_STATE.userRole = session.userRole;  // superadmin, operator, or admin
+    SIMBAKES_USER_STATE.userId = session.userId;
+    SIMBAKES_USER_STATE.nama = session.nama;
+    SIMBAKES_USER_STATE.email = session.email;
+    SIMBAKES_USER_STATE.permissions = session.permissions || getDefaultPermissions(session.userRole);
+    SIMBAKES_USER_STATE.sessionData = session;
+    
+    // Update UI for logged-in admin
+    updateUIForLoggedInAdmin(session);
+}
+
+/**
+ * Set peserta session state
+ */
+function setPesertaSession(session) {
+    SIMBAKES_USER_STATE.isLoggedIn = true;
+    SIMBAKES_USER_STATE.userRole = 'peserta';
+    SIMBAKES_USER_STATE.userId = session.userId;
+    SIMBAKES_USER_STATE.nama = session.nama;
+    SIMBAKES_USER_STATE.email = session.email;
+    SIMBAKES_USER_STATE.permissions = session.permissions || getDefaultPermissions('peserta');
+    SIMBAKES_USER_STATE.sessionData = session;
+    
+    // Update UI for logged-in peserta
+    updateUIForLoggedInPeserta({
+        nama: session.nama,
+        nama_lengkap: session.nama,
+        nik: session.nik,
+        email: session.email,
+        status: session.status
+    });
+}
+
+/**
+ * Get default permissions for a role
+ */
+function getDefaultPermissions(role) {
+    const matrix = {
+        superadmin: {
+            canAccessDashboard: true,
+            canAccessDataPengusul: true,
+            canAccessRoadmap: true,
+            canAccessPenetapan: true,
+            canAccessUserManagement: true,
+            canAccessSettings: true,
+            canAccessPesertaPortal: false
+        },
+        operator: {
+            canAccessDashboard: false,
+            canAccessDataPengusul: true,
+            canAccessRoadmap: false,
+            canAccessPenetapan: false,
+            canAccessUserManagement: false,
+            canAccessSettings: false,
+            canAccessPesertaPortal: false
+        },
+        admin: {
+            canAccessDashboard: true,
+            canAccessDataPengusul: false,
+            canAccessRoadmap: true,
+            canAccessPenetapan: true,
+            canAccessUserManagement: false,
+            canAccessSettings: false,
+            canAccessPesertaPortal: false
+        },
+        peserta: {
+            canAccessDashboard: false,
+            canAccessDataPengusul: false,
+            canAccessRoadmap: false,
+            canAccessPenetapan: false,
+            canAccessUserManagement: false,
+            canAccessSettings: false,
+            canAccessPesertaPortal: true
+        }
+    };
+    
+    return matrix[role] || matrix.peserta;
+}
+
+/**
+ * Update UI for logged-in ADMIN users (superadmin/operator/admin)
+ */
+function updateUIForLoggedInAdmin(session) {
+    // Update or create topbar user info
+    let userInfoBtn = document.getElementById('topbar-user-info-btn');
+    
+    if (!userInfoBtn) {
+        // Create user info button next to login peserta button
+        const loginPesertaBtn = document.getElementById('topbar-peserta-login-btn');
+        if (loginPesertaBtn) {
+            userInfoBtn = document.createElement('button');
+            userInfoBtn.id = 'topbar-user-info-btn';
+            userInfoBtn.className = 'topbar-user-info-btn';
+            loginPesertaBtn.parentNode.insertBefore(userInfoBtn, loginPesertaBtn.nextSibling);
+        }
+    }
+    
+    if (userInfoBtn) {
+        const roleColors = {
+            superadmin: 'linear-gradient(135deg, #7c3aed, #6d28d9)',   // Purple
+            operator: 'linear-gradient(135deg, #2563eb, #1d4ed8)',     // Blue
+            admin: 'linear-gradient(135deg, #0891b2, #0e7490)'         // Cyan
+        };
+        
+        const roleLabels = {
+            superadmin: 'Superadmin',
+            operator: 'Operator',
+            admin: 'Administrator'
+        };
+        
+        const nama = session.nama || session.nama_lengkap || 'User';
+        const role = session.userRole || 'admin';
+        
+        userInfoBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+            </svg>
+            ${nama.substring(0, 15)}${nama.length > 15 ? '...' : ''}
+            <span class="role-badge">${roleLabels[role] || role}</span>
+        `;
+        userInfoBtn.style.background = roleColors[role] || roleColors.admin;
+        userInfoBtn.onclick = showAdminUserInfo;
+        userInfoBtn.title = `${roleLabels[role] || role} - Klik untuk info akun`;
+        
+        // Add CSS for role badge if not exists
+        if (!document.getElementById('simbakes-role-badge-style')) {
+            const style = document.createElement('style');
+            style.id = 'simbakes-role-badge-style';
+            style.textContent = `
+                .topbar-user-info-btn .role-badge {
+                    background: rgba(255,255,255,0.25);
+                    padding: 2px 8px;
+                    border-radius: 10px;
+                    font-size: 0.7rem;
+                    margin-left: 6px;
+                    font-weight: 600;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+    
+    // Hide login peserta button for admin users (optional - comment out if you want both visible)
+    // hideLoginPesertaButton();
+    
+    console.log('[SIMBAKES AUTH] UI updated for logged-in admin:', session.nama);
+}
+
+/**
+ * Show admin user info modal
+ */
+function showAdminUserInfo() {
+    const session = SIMBAKES_USER_STATE.sessionData;
+    if (!session) return;
+    
+    const roleColors = {
+        superadmin: { bg: '#7c3aed', icon: '👑', label: 'Super Administrator' },
+        operator: { bg: '#2563eb', icon: '⚙️', label: 'Operator' },
+        admin: { bg: '#0891b2', icon: '🛡️', label: 'Administrator' }
+    };
+    
+    const roleConfig = roleColors[session.userRole] || roleColors.admin;
+    
+    // Create modal
+    let modal = document.getElementById('admin-info-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'admin-info-modal';
+        modal.className = 'modal-overlay';
+        document.body.appendChild(modal);
+    }
+    
+    const permissionList = Object.entries(SIMBAKES_USER_STATE.permissions)
+        .filter(([key, value]) => value)
+        .map(([key]) => {
+            const labels = {
+                canAccessDashboard: '📊 Dashboard Admin',
+                canAccessDataPengusul: '👥 Data Pengusul',
+                canAccessRoadmap: '🗺️ Data Roadmap',
+                canAccessPenetapan: '✅ Penetapan',
+                canAccessUserManagement: '👤 Manajemen User',
+                canAccessSettings: '⚙️ Pengaturan'
+            };
+            return `<li style="padding:6px 0;">${labels[key] || key}</li>`;
+        })
+        .join('');
+    
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width:500px; border-radius:20px; overflow:hidden;">
+            <div style="background:${roleConfig.bg}; padding:2rem; text-align:center;">
+                <div style="width:80px; height:80px; background:rgba(255,255,255,0.25); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:2rem;">
+                    ${roleConfig.icon}
+                </div>
+                <h2 style="color:white; font-size:1.5rem; font-weight:700; margin:0;">${escapeHtml(session.nama)}</h2>
+                <p style="color:rgba(255,255,255,0.9); font-size:0.9rem;">${roleConfig.label}</p>
+                <p style="color:rgba(255,255,255,0.8); font-size:0.85rem;">${escapeHtml(session.email)}</p>
+            </div>
+            
+            <div style="padding:1.5rem;">
+                <h4 style="margin-bottom:12px; color:#374151;">✅ Akses yang Dimiliki:</h4>
+                <ul style="list-style:none; padding:0; background:#f9fafb; border-radius:12px; padding:16px; margin-bottom:1.5rem;">
+                    ${permissionList || '<li style="color:#9ca3af;">Tidak ada akses khusus</li>'}
+                </ul>
+                
+                <div style="display:flex; gap:10px;">
+                    <button onclick="closeAdminInfoModal()" style="flex:1; padding:12px; background:#f3f4f6; color:#374151; border:none; border-radius:10px; font-weight:600; cursor:pointer;">
+                        Tutup
+                    </button>
+                    <button onclick="logoutAdmin()" style="flex:1; padding:12px; background:#fee2e2; color:#dc2626; border:none; border-radius:10px; font-weight:600; cursor:pointer;">
+                        🚪 Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) closeAdminInfoModal();
+    });
+}
+
+function closeAdminInfoModal() {
+    const modal = document.getElementById('admin-info-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+/**
+ * Logout admin user
+ */
+function logoutAdmin() {
+    if (confirm('Apakah Anda yakin ingin logout dari akun Administrator?')) {
+        clearAdminSession();
+        closeAdminInfoModal();
+        showToast?.('info', '👋 Logout Berhasil', 'Anda telah keluar dari akun Administrator');
+        
+        // Reload page to reset all state
+        setTimeout(() => window.location.reload(), 1000);
+    }
+}
+
+/**
+ * Clear admin session data
+ */
+function clearAdminSession() {
+    localStorage.removeItem('simbakes_admin_session');
+    localStorage.removeItem('simbakes_user_role');
+    localStorage.removeItem('simbakes_login_time');
+    
+    // Reset user state
+    SIMBAKES_USER_STATE.isLoggedIn = false;
+    SIMBAKES_USER_STATE.userRole = null;
+    SIMBAKES_USER_STATE.userId = null;
+    SIMBAKES_USER_STATE.nama = null;
+    SIMBAKES_USER_STATE.email = null;
+    SIMBAKES_USER_STATE.permissions = getDefaultPermissions(null);
+    SIMBAKES_USER_STATE.sessionData = null;
+    
+    // Remove admin info button
+    const userInfoBtn = document.getElementById('topbar-user-info-btn');
+    if (userInfoBtn) userInfoBtn.remove();
+    
+    // Show login peserta button again
+    showLoginPesertaButton();
+    
+    console.log('[SIMBAKES AUTH] Admin session cleared');
+}
+
+/**
+ * Apply role-based UI restrictions
+ * This hides/shows menu items based on user's role and permissions
+ */
+function applyRoleBasedUI() {
+    if (!SIMBAKES_USER_STATE.isLoggedIn) {
+        // Not logged in - show public UI
+        console.log('[SIMBAKES AUTH] No active session - showing public UI');
+        return;
+    }
+    
+    const role = SIMBAKES_USER_STATE.userRole;
+    const perms = SIMBAKES_USER_STATE.permissions;
+    
+    console.log(`[SIMBAKES AUTH] Applying restrictions for role: ${role}`, perms);
+    
+    // Define menu items that should be restricted
+    const restrictedMenus = [
+        { id: 'menu-dashboard-admin', perm: 'canAccessDashboard', label: 'Dashboard Admin' },
+        { id: 'menu-data-pengusul', perm: 'canAccessDataPengusul', label: 'Data Pengusul' },
+        { id: 'menu-roadmap', perm: 'canAccessRoadmap', label: 'Data Roadmap' },
+        { id: 'menu-penetapan', perm: 'canAccessPenetapan', label: 'Penetapan' },
+        { id: 'menu-users', perm: 'canAccessUserManagement', label: 'Manajemen User' },
+        { id: 'menu-settings', perm: 'canAccessSettings', label: 'Pengaturan' }
+    ];
+    
+    // Apply restrictions
+    restrictedMenus.forEach(menu => {
+        if (!perms[menu.perm]) {
+            hideMenuItem(menu.id, menu.label);
+        } else {
+            showMenuItem(menu.id);
+        }
+    });
+    
+    // Special handling for peserta role
+    if (role === 'peserta') {
+        restrictToPesertaView();
+    }
+}
+
+/**
+ * Hide a menu item by ID
+ */
+function hideMenuItem(menuId, label) {
+    // Try multiple selectors
+    const selectors = [
+        `[data-menu="${menuId}"]`,
+        `#${menuId}`,
+        `[data-page="${menuId}"]`,
+        `button[data-action="${menuId}"]`
+    ];
+    
+    let element = null;
+    for (const selector of selectors) {
+        element = document.querySelector(selector);
+        if (element) break;
+    }
+    
+    if (element) {
+        element.style.display = 'none';
+        element.setAttribute('data-hidden-by-auth', 'true');
+        element.setAttribute('data-original-display', element.style.display || '');
+        console.log(`[SIMBAKES AUTH] Hidden menu: ${label || menuId}`);
+    }
+}
+
+/**
+ * Show a menu item by ID (restore if hidden by auth)
+ */
+function showMenuItem(menuId) {
+    const selectors = [
+        `[data-menu="${menuId}"]`,
+        `#${menuId}`,
+        `[data-page="${menuId}"]`,
+        `button[data-action="${menuId}"]`
+    ];
+    
+    for (const selector of selectors) {
+        const element = document.querySelector(selector);
+        if (element && element.getAttribute('data-hidden-by-auth') === 'true') {
+            element.style.display = '';
+            element.removeAttribute('data-hidden-by-auth');
+            console.log(`[SIMBAKES AUTH] Restored menu: ${menuId}`);
+            break;
+        }
+    }
+}
+
+/**
+ * Restrict view for peserta role only
+ */
+function restrictToPesertaView() {
+    console.log('[SIMBAKES AUTH] Applying peserta-only view restrictions');
+    
+    // Hide all admin-related elements
+    const adminSelectors = [
+        '.admin-only',
+        '[data-require-role="admin"]',
+        '[data-require-role="operator"]',
+        '[data-require-role="superadmin"]'
+    ];
+    
+    adminSelectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(el => {
+            el.style.display = 'none';
+            el.setAttribute('data-hidden-for-peserta', 'true');
+        });
+    });
+    
+    // Show peserta-specific content
+    const pesertaSelectors = [
+        '.peserta-only',
+        '[data-show-role="peserta"]'
+    ];
+    
+    pesertaSelectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(el => {
+            el.style.display = '';
+        });
+    });
+}
+
+/**
+ * Check if current user has specific permission
+ */
+function hasPermission(permission) {
+    if (!SIMBAKES_USER_STATE.isLoggedIn) return false;
+    return !!SIMBAKES_USER_STATE.permissions[permission];
+}
+
+/**
+ * Check if current user has specific role
+ */
+function hasRole(role) {
+    return SIMBAKES_USER_STATE.userRole === role;
+}
+
+/**
+ * Require specific role/permission - redirect if not authorized
+ */
+function requireAuth(requiredRole = null, requiredPermission = null) {
+    if (!SIMBAKES_USER_STATE.isLoggedIn) {
+        // Not logged in - redirect to login
+        openPesertaLogin();
+        return false;
+    }
+    
+    if (requiredRole && SIMBAKES_USER_STATE.userRole !== requiredRole) {
+        showToast?.('error', '🚫 Akses Ditolak', `Anda tidak memiliki akses sebagai ${requiredRole}`);
+        return false;
+    }
+    
+    if (requiredPermission && !hasPermission(requiredPermission)) {
+        showToast?.('error', '🚫 Akses Ditolak', 'Anda tidak memiliki izin untuk mengakses fitur ini');
+        return false;
+    }
+    
+    return true;
+}
+
+/**
+ * Helper: Show login peserta button
+ */
+function showLoginPesertaButton() {
+    const btn = document.getElementById('topbar-peserta-login-btn');
+    if (btn) {
+        btn.style.display = '';
+        btn.classList.remove('hidden');
+    }
+}
+
+/**
+ * Helper: Hide login peserta button
+ */
+function hideLoginPesertaButton() {
+    const btn = document.getElementById('topbar-peserta-login-btn');
+    if (btn) {
+        btn.style.display = 'none';
+        btn.classList.add('hidden');
+    }
+}
+
+// Initialize auth system when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSimbakesAuth);
+} else {
+    initSimbakesAuth();
+}
+
+console.log('[SIMBAKES] Multi-User Auth Integration loaded successfully');
+
+// =====================================================
 // USER REGISTRATION MODAL FUNCTIONS (NEW!)
 // =====================================================
 
