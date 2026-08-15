@@ -4985,6 +4985,25 @@
                     </div>
                 </div>
                 
+                <!-- NIK Field (16 digit) - Sesuai SQL schema multiusers -->
+                <div class="register-form-group">
+                    <label class="register-form-label">
+                        NIK (Nomor Induk Kependudukan) *
+                        <span style="font-weight:normal;color:#6b7280;font-size:11px;">16 digit</span>
+                    </label>
+                    <input type="text" 
+                           class="register-form-input" 
+                           id="reg-nik" 
+                           placeholder="Masukkan 16 digit NIK" 
+                           required 
+                           maxlength="16" 
+                           minlength="16" 
+                           pattern="[0-9]{16}" 
+                           title="NIK harus 16 digit angka"
+                           oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                    <small style="color:#6b7280;font-size:11px;margin-top:4px;display:block;">⚠️ NIK harus sesuai dengan KTP (16 digit angka)</small>
+                </div>
+
                 <div class="register-form-group">
                     <label class="register-form-label">Peran/Akun *</label>
                     <select class="register-form-select" id="reg-role" required>
@@ -4996,9 +5015,10 @@
                     </select>
                 </div>
                 
-                <div class="register-form-group" id="reg-institusi-group" style="display:none;">
-                    <label class="register-form-label">Nama Institusi</label>
-                    <input type="text" class="register-form-input" id="reg-institusi" placeholder="Nama institusi/perusahaan">
+                <!-- Institusi Field - Selalu tampil untuk peserta -->
+                <div class="register-form-group" id="reg-institusi-group">
+                    <label class="register-form-label">Institusi/Asal Instansi *</label>
+                    <input type="text" class="register-form-input" id="reg-institusi" placeholder="Nama rumah sakit, puskesmas, atau institusi" required>
                 </div>
                 
                 <div class="register-form-group">
@@ -5015,7 +5035,7 @@
             </form>
             
             <div class="register-footer-text">
-                Sudah punya akun? <a href="#" onclick="closeRegisterModal(); openTopbarLogin(); return false;">Login di Sini</a>
+                Sudah punya akun? <a href="#" onclick="closeRegisterModal(); openPesertaLogin(); return false;">Login Peserta di Sini</a>
             </div>
             
             <hr style="margin:20px 0;border:none;border-top:1px solid #e5e7eb">
@@ -16296,12 +16316,13 @@ document.addEventListener('DOMContentLoaded', function() {
 async function handleUserRegisterFromModal(event) {
     event.preventDefault();
     
-    // Gather form data (HANYA field yang ada di schema SQL!)
+    // Gather form data (HANYA field yang ada di schema SQL multiusers!)
     const formData = {
         nama_lengkap: document.getElementById('reg-nama-lengkap').value.trim(),
         email: document.getElementById('reg-email').value.trim().toLowerCase(),
         username: document.getElementById('reg-username').value.trim().toLowerCase(),
         password: document.getElementById('reg-password').value,
+        nik: document.getElementById('reg-nik')?.value?.trim() || '',  // NIK 16 digit - sesuai SQL schema
         role: document.getElementById('reg-role').value,
         institusi: document.getElementById('reg-institusi')?.value?.trim() || ''
         // CATATAN: Tidak ada field 'status' - di schema pakai 'is_active' (BOOLEAN)
@@ -16310,6 +16331,12 @@ async function handleUserRegisterFromModal(event) {
     // Validate required fields
     if (!formData.nama_lengkap || !formData.email || !formData.username || !formData.password || !formData.role) {
         showRegisterAlert('Mohon lengkapi semua field yang wajib diisi (*)', 'error');
+        return;
+    }
+    
+    // Validate NIK (16 digit angka) - WAJIB sesuai SQL schema
+    if (!formData.nik || formData.nik.length !== 16 || !/^[0-9]{16}$/.test(formData.nik)) {
+        showRegisterAlert('NIK harus 16 digit angka (sesuai KTP)', 'error');
         return;
     }
     
@@ -16380,65 +16407,62 @@ async function handleUserRegisterFromModal(event) {
             throw new Error('Supabase client tidak tersedia. Pastikan koneksi internet stabil dan refresh halaman.');
         }
         
-        console.log('[SIMBAKES] Client ready, checking existing user...');
+        console.log('[SIMBAKES] Client ready, calling fn_register_peserta RPC...');
         
-        // Check if username or email already exists
-        const { data: existingUser } = await client
-            .from('multiusers')
-            .select('id')
-            .or(`username.eq.${formData.username},email.eq.${formData.email}`)
-            .limit(1);
-        
-        if (existingUser && existingUser.length > 0) {
-            showRegisterAlert('Username atau email sudah terdaftar. Gunakan yang lain.', 'error');
-            resetRegisterButton();
-            return;
-        }
-        
-        // Generate UUID for new user
-        const userId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            const r = Math.random() * 16 | 0;
-            const v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
+        // =====================================================
+        // PANGGIL RPC FUNCTION: fn_register_peserta()
+        // Signature: fn_register_peserta(p_email, p_password, p_username, p_nama_lengkap, p_nik VARCHAR(16), p_institusi)
+        // =====================================================
+        const { data: rpcData, error: rpcError } = await client.rpc('fn_register_peserta', {
+            p_email: formData.email,
+            p_password: formData.password,
+            p_username: formData.username,
+            p_nama_lengkap: formData.nama_lengkap,
+            p_nik: formData.nik,  // NIK 16 digit - sesuai SQL schema
+            p_institusi: formData.institusi || null
         });
         
-        // Insert new user
-        const { data, error } = await client
-            .from('multiusers')
-            .insert([{
-                id: userId,
-                nama_lengkap: formData.nama_lengkap,
-                email: formData.email,
-                username: formData.username,
-                password_hash: formData.password, // In production, use bcrypt/hash!
-                role: formData.role,
-                institusi: formData.institusi || '',
-                is_active: true,  // Boolean, bukan string 'aktif'
-                created_at: new Date().toISOString()
-            }])
-            .select()
-            .single();
+        // Handle RPC errors
+        if (rpcError) {
+            console.error('[SIMBAKES] RPC Error:', rpcError);
+            
+            // Cek error spesifik dari function
+            if (rpcError.message?.includes('username sudah') || rpcError.message?.includes('duplicate key')) {
+                showRegisterAlert('Username sudah digunakan. Silakan pilih username lain.', 'error');
+                resetRegisterButton();
+                return;
+            }
+            
+            if (rpcError.message?.includes('email sudah') || rpcError.message?.includes('unique constraint')) {
+                showRegisterAlert('Email sudah terdaftar. Gunakan email lain.', 'error');
+                resetRegisterButton();
+                return;
+            }
+            
+            if (rpcError.message?.includes('NIK')) {
+                showRegisterAlert('NIK sudah terdaftar di sistem.', 'error');
+                resetRegisterButton();
+                return;
+            }
+            
+            throw rpcError;  // Re-throw untuk catch handler umum
+        }
         
-        if (error) throw error;
-        
-        console.log('[SIMBAKES] ✅ User registered successfully:', data.username);
+        console.log('[SIMBAKES] ✅ RPC Success:', rpcData);
         
         // Success!
-        showRegisterAlert(`✅ Registrasi berhasil! Selamat datang, ${data.nama_lengkap}. Silakan login dengan akun Anda.`, 'success');
+        const successMessage = rpcData?.message || `Registrasi berhasil! Selamat datang, ${formData.nama_lengkap}.`;
+        showRegisterAlert(`✅ ${successMessage}`, 'success');
         
-        // Close modal after delay and redirect to login
+        // Close modal after delay and redirect to LOGIN PESERTA
         setTimeout(() => {
             closeRegisterModal();
             
-            // Open login modal
+            // Redirect ke halaman Login Peserta (bukan admin login!)
             setTimeout(() => {
-                openTopbarLogin();
+                openPesertaLogin();  // Buka login-peserta.html
                 
-                // Pre-fill username in login form
-                const loginUsername = document.getElementById('login-username');
-                if (loginUsername) loginUsername.value = formData.username;
-                
-                showToast(`🎉 Akun berhasil dibuat! Silakan login dengan username: ${formData.username}`, 'success', 5000);
+                showToast(`🎉 Akun peserta berhasil dibuat! NIK: ${formData.nik}. Silakan login.`, 'success', 5000);
             }, 500);
         }, 2000);
         
