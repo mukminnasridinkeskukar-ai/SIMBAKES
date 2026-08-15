@@ -635,6 +635,343 @@
             font-weight: 500;
         }
 
+        /* Field Hint (for Drive links) */
+        .field-hint {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-top: 0.4rem;
+            font-weight: 400;
+        }
+
+        /* ============================================================
+           GOOGLE DRIVE LINK INPUT STYLES (NEW!)
+           ============================================================ */
+        
+        .drive-link-wrapper {
+            position: relative;
+        }
+
+        .drive-link-input-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 4px 4px 4px 14px;
+            transition: all 0.3s ease;
+        }
+
+        .drive-link-input-container:hover {
+            border-color: #059669;
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.08);
+        }
+
+        .drive-link-input-container:focus-within {
+            border-color: #059669;
+            box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.12);
+        }
+
+        .drive-icon {
+            width: 22px;
+            height: 22px;
+            color: #059669;
+            flex-shrink: 0;
+        }
+
+        .drive-link-input {
+            flex: 1;
+            border: none !important;
+            padding: 12px 8px !important;
+            font-size: 0.92rem !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            outline: none !important;
+        }
+
+        .drive-link-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .btn-preview-drive {
+            flex-shrink: 0;
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #059669, #047857);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s ease;
+        }
+
+        .btn-preview-drive:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+            background: linear-gradient(135deg, #047857, #065f46);
+        }
+
+        .btn-preview-drive:active {
+            transform: scale(0.98);
+        }
+
+        /* Preview Container */
+        .drive-preview-container {
+            margin-top: 12px;
+            background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+            border: 2px solid #86efac;
+            border-radius: 14px;
+            overflow: hidden;
+            animation: previewSlideIn 0.3s ease-out;
+        }
+
+        @keyframes previewSlideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(-10px); 
+                max-height: 0;
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+                max-height: 400px;
+            }
+        }
+
+        .drive-preview-container.hidden {
+            display: none;
+        }
+
+        .drive-preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: linear-gradient(90deg, #059669, #047857);
+            color: white;
+        }
+
+        .preview-label {
+            font-weight: 600;
+            font-size: 0.88rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-remove-link {
+            width: 26px;
+            height: 26px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-remove-link:hover {
+            background: rgba(239, 68, 68, 0.8);
+            transform: rotate(90deg);
+        }
+
+        .drive-preview-content {
+            padding: 16px;
+            min-height: 180px;
+            max-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .drive-preview-content.loaded {
+            opacity: 1;
+        }
+
+        .drive-preview-content img {
+            max-width: 100%;
+            max-height: 280px;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+
+        .drive-preview-content.pdf-preview iframe {
+            width: 100%;
+            height: 260px;
+            border: none;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .pdf-fallback {
+            text-align: center;
+            color: #374151;
+        }
+
+        .pdf-fallback svg {
+            color: #dc2626;
+            margin-bottom: 8px;
+        }
+
+        .pdf-fallback p {
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        .btn-open-drive {
+            display: inline-block;
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-open-drive:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .drive-link-hint {
+            padding: 8px 16px;
+            margin: 0;
+            background: rgba(5, 150, 105, 0.08);
+            color: #047857;
+            font-size: 0.82rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        /* Document Requirements Box */
+        .doc-requirements-box {
+            margin-top: 12px;
+            padding: 14px 18px;
+            background: linear-gradient(135deg, #fef2f2, #fff1f2);
+            border: 1.5px solid #fecaca;
+            border-radius: 12px;
+        }
+
+        /* ============================================================
+           TEMPLATE SURAT PERNYATAAN SECTION
+           ============================================================ */
+        
+        .template-section {
+            margin-top: 24px;
+            padding: 20px;
+            background: linear-gradient(135deg, #eff6ff, #f0f9ff);
+            border: 2px solid #93c5fd;
+            border-radius: 16px;
+        }
+
+        .template-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .template-icon {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .template-info h4 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 4px;
+        }
+
+        .template-info p {
+            font-size: 0.87rem;
+            color: #3b82f6;
+            line-height: 1.4;
+        }
+
+        .template-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .btn-download-template {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .btn-download-template:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.45);
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        }
+
+        .btn-download-template:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+
+        .template-link-field {
+            padding: 14px;
+            background: white;
+            border-radius: 10px;
+            border: 1.5px dashed #cbd5e1;
+        }
+
+        .template-link-field label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .template-link-field .form-input {
+            font-size: 0.88rem;
+        }
+
+        .template-upload-section {
+            padding-top: 16px;
+            border-top: 2px dashed #93c5fd;
+        }
+
         /* File Upload Area */
         .file-upload-area {
             border: 2px dashed #cbd5e1;
@@ -5428,19 +5765,39 @@
                         </div>
                     </div>
                     
-                    <div style="display:flex;gap:2rem;align-items:flex-start;">
-                        <div>
-                            <label>Foto Pasfoto <span class="required">*</span></label>
-                            <div class="photo-upload-area" id="photo-upload" onclick="document.getElementById('foto-input').click()">
-                                <div class="photo-upload-placeholder" id="photo-placeholder">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>
-                                    <p>Klik untuk upload<br>Pasfoto 4x6 cm<br>Latar Merah</p>
-                                </div>
-                                <img id="photo-preview" style="display:none;" alt="Preview">
+                    <!-- Foto Pasfoto - Ganti Upload dengan Link Google Drive -->
+                    <div class="form-group">
+                        <label>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align:middle;margin-right:4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>
+                            Foto Pasfoto (Link Google Drive) <span class="required">*</span>
+                        </label>
+                        <div class="drive-link-wrapper">
+                            <div class="drive-link-input-container">
+                                <svg class="drive-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                                <input type="url" 
+                                       class="form-input drive-link-input" 
+                                       id="foto-drive-link" 
+                                       placeholder="Paste link Google Drive foto pasfoto di sini..." 
+                                       oninput="validateDriveLink(this, 'foto-preview-container')"
+                                       onblur="previewDriveContent(this, 'image', 'foto-preview-container')">
+                                <button type="button" class="btn-preview-drive" onclick="openDrivePreview(document.getElementById('foto-drive-link').value, 'image')" title="Preview Foto">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </button>
                             </div>
-                            <input type="file" id="foto-input" accept="image/*" onchange="handlePhotoUpload(this)" style="display:none;">
-                            <p class="photo-hint">⚠️ Format: JPG/PNG, Maks 2MB, Latar belakang MERAH</p>
+                            <!-- Preview Container for Image -->
+                            <div id="foto-preview-container" class="drive-preview-container hidden">
+                                <div class="drive-preview-header">
+                                    <span class="preview-label">📷 Preview Foto</span>
+                                    <button type="button" class="btn-remove-link" onclick="clearDriveLink('foto-drive-link', 'foto-preview-container')" title="Hapus Link">×</button>
+                                </div>
+                                <div class="drive-preview-content">
+                                    <img id="foto-preview-img" src="" alt="Preview Foto" onload="this.parentElement.classList.add('loaded')" onerror="handlePreviewError(this)">
+                                </div>
+                                <p class="drive-link-hint">✓ Link valid - Foto akan ditampilkan di atas</p>
+                            </div>
                         </div>
+                        <p class="field-hint">💡 Upload foto ke Google Drive → Share → Copy link → Paste di sini</p>
+                        <p class="field-hint" style="color:#059669;">Format: JPG/PNG | Ukuran: Pasfoto 4x6 cm | Latar: MERAH</p>
                     </div>
                 </div>
 
@@ -5684,39 +6041,133 @@
                     </div>
                 </div>
 
-                <!-- Section 6: Dokumen Pendukung -->
+                <!-- Section 6: Dokumen Pendukung (Google Drive Links) -->
                 <div class="form-section">
                     <div class="form-section-title">
                         <div class="section-icon icon-red">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
                         </div>
-                        <h3>Dokumen Pendukung</h3>
+                        <h3>Dokumen Pendukung (Link Google Drive)</h3>
                     </div>
                     
+                    <!-- Dokumen PDF Link -->
                     <div class="form-group">
-                        <label>File Dokumen Lengkap (PDF) <span class="required">*</span></label>
-                        <div class="file-upload-area" id="file-upload-area" onclick="document.getElementById('file-dokumen').click()">
-                            <div class="file-upload-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        <label>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align:middle;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            File Dokumen Lengkap (PDF) - Link Google Drive <span class="required">*</span>
+                        </label>
+                        <div class="drive-link-wrapper">
+                            <div class="drive-link-input-container">
+                                <svg class="drive-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                                <input type="url" 
+                                       class="form-input drive-link-input" 
+                                       id="dokumen-drive-link" 
+                                       placeholder="Paste link Google Drive dokumen PDF di sini..." 
+                                       oninput="validateDriveLink(this, 'dokumen-preview-container')"
+                                       onblur="previewDriveContent(this, 'pdf', 'dokumen-preview-container')">
+                                <button type="button" class="btn-preview-drive" onclick="openDrivePreview(document.getElementById('dokumen-drive-link').value, 'pdf')" title="Buka Dokumen">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+                                </button>
                             </div>
-                            <p style="font-weight:600;color:#1e293b;margin-bottom:0.25rem;">Klik untuk upload dokumen</p>
-                            <p style="font-size:0.875rem;color:#64748b;margin-bottom:0.5rem;">Format: PDF | Maksimal: 2MB</p>
-                            <p style="font-size:0.75rem;color:#ef4444;background:#fef2f2;padding:0.5rem;border-radius:6px;display:inline-block;">
-                                ⚠️ Urutan dokumen:<br>
-                                1. KTP<br>
-                                2. Kartu Keluarga<br>
-                                3. Ijazah Terakhir (boleh SKL)<br>
-                                4. Transkrip Nilai<br>
-                                5. STR (khusus yang sudah punya)<br>
-                                6. Surat Permohonan & Surat Kesediaan Pendayagunaan
+                            <!-- Preview Container for PDF -->
+                            <div id="dokumen-preview-container" class="drive-preview-container hidden">
+                                <div class="drive-preview-header">
+                                    <span class="preview-label">📄 Preview Dokumen</span>
+                                    <button type="button" class="btn-remove-link" onclick="clearDriveLink('dokumen-drive-link', 'dokumen-preview-container')" title="Hapus Link">×</button>
+                                </div>
+                                <div class="drive-preview-content pdf-preview">
+                                    <iframe id="dokumen-preview-frame" src="" onload="this.parentElement.classList.add('loaded')" onerror="handlePreviewError(this)"></iframe>
+                                    <div class="pdf-fallback">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg>
+                                        <p>Dokumen PDF terdeteksi</p>
+                                        <a href="#" onclick="window.open(document.getElementById('dokumen-drive-link').value, '_blank'); return false;" class="btn-open-drive">Buka di Tab Baru</a>
+                                    </div>
+                                </div>
+                                <p class="drive-link-hint">✓ Link valid - Klik tombol preview untuk membuka</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Document Requirements Info -->
+                        <div class="doc-requirements-box">
+                            <p style="font-weight:600;color:#dc2626;margin-bottom:0.5rem;">📋 Urutan Dokumen dalam PDF:</p>
+                            <ol style="margin:0;padding-left:1.25rem;font-size:0.85rem;color:#374151;line-height:1.6;">
+                                <li>KTP (Kartu Tanda Penduduk)</li>
+                                <li>Kartu Keluarga (KK)</li>
+                                <li>Ijazah Terakhir (boleh SKL jika belum wisuda)</li>
+                                <li>Transkrip Nilai</li>
+                                <li>STR - Surat Teregistrasi (khusus yang sudah punya)</li>
+                                <li>Surat Permohonan & Surat Kesediaan Pendayagunaan</li>
+                            </ol>
+                            <p style="font-size:0.78rem;color:#6b7280;margin-top:0.5rem;margin-bottom:0;">
+                                💡 Gabungkan semua dokumen menjadi 1 file PDF, lalu upload ke Google Drive
                             </p>
-                            <input type="file" id="file-dokumen" accept=".pdf" onchange="handleFileUpload(this)" style="display:none;">
-                            <div class="file-name hidden" id="file-name-display">
-                                <span id="file-name-text"></span>
-                                <span class="remove-file" onclick="event.stopPropagation();removeFile()">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                </span>
+                        </div>
+                    </div>
+
+                    <!-- Template Surat Pernyataan Section -->
+                    <div class="template-section">
+                        <div class="template-header">
+                            <div class="template-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                             </div>
+                            <div class="template-info">
+                                <h4>📝 Template Surat Pernyataan</h4>
+                                <p>Download template surat pernyataan, isi data, lalu upload ke Google Drive</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Template Download Button & Link Field -->
+                        <div class="template-actions">
+                            <button type="button" class="btn-download-template" onclick="downloadTemplateSuratPernyataan()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Download Template
+                            </button>
+                            
+                            <div class="template-link-field">
+                                <label>Link Template dari Google Drive (Opsional):</label>
+                                <input type="url" 
+                                       class="form-input" 
+                                       id="template-drive-link" 
+                                       placeholder="Jika admin memberikan link khusus, paste di sini...">
+                            </div>
+                        </div>
+                        
+                        <!-- Uploaded Template Link Field -->
+                        <div class="template-upload-section">
+                            <label>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align:middle;margin-right:4px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+                                Link Surat Pernyataan yang Sudah Diisi (Google Drive) <span class="required">*</span>
+                            </label>
+                            <div class="drive-link-wrapper">
+                                <div class="drive-link-input-container">
+                                    <svg class="drive-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                                    <input type="url" 
+                                           class="form-input drive-link-input" 
+                                           id="surat-pernyataan-link" 
+                                           placeholder="Paste link Google Drive surat pernyataan yang sudah diisi..." 
+                                           oninput="validateDriveLink(this, 'surat-preview-container')"
+                                           onblur="previewDriveContent(this, 'pdf', 'surat-preview-container')">
+                                    <button type="button" class="btn-preview-drive" onclick="openDrivePreview(document.getElementById('surat-pernyataan-link').value, 'pdf')" title="Buka Surat Pernyataan">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+                                    </button>
+                                </div>
+                                <div id="surat-preview-container" class="drive-preview-container hidden">
+                                    <div class="drive-preview-header">
+                                        <span class="preview-label">📄 Preview Surat Pernyataan</span>
+                                        <button type="button" class="btn-remove-link" onclick="clearDriveLink('surat-pernyataan-link', 'surat-preview-container')" title="Hapus Link">×</button>
+                                    </div>
+                                    <div class="drive-preview-content pdf-preview">
+                                        <iframe src="" onload="this.parentElement.classList.add('loaded')" onerror="handlePreviewError(this)"></iframe>
+                                        <div class="pdf-fallback">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="40" height="40"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>
+                                            <p>Surat Pernyataan PDF</p>
+                                            <a href="#" onclick="event.preventDefault(); window.open(document.getElementById('surat-pernyataan-link').value, '_blank');" class="btn-open-drive">Buka di Tab Baru</a>
+                                        </div>
+                                    </div>
+                                    <p class="drive-link-hint">✓ Link surat pernyataan valid</p>
+                                </div>
+                            </div>
+                            <p class="field-hint">⚠️ Wajib mengupload surat pernyataan yang sudah ditandatangani</p>
                         </div>
                     </div>
                 </div>
@@ -9860,6 +10311,298 @@ function removeFile() {
     document.getElementById('file-upload-area').classList.remove('has-file');
 }
 
+// ============================================================
+// GOOGLE DRIVE LINK HANDLING FUNCTIONS (NEW!)
+// ============================================================
+
+/**
+ * Validate Google Drive link format and show preview container
+ */
+function validateDriveLink(input, previewContainerId) {
+    const value = input.value.trim();
+    const previewContainer = document.getElementById(previewContainerId);
+    
+    if (!value || value.length < 10) {
+        // Hide preview if link is too short or empty
+        if (previewContainer && !previewContainer.classList.contains('hidden')) {
+            previewContainer.classList.add('hidden');
+        }
+        return false;
+    }
+    
+    // Check if it looks like a valid URL (Google Drive or any URL)
+    const isValidUrl = /^(https?:\/\/)?(www\.)?(drive\.google\.com|docs\.google\.com|[\w.-]+\.[a-z]{2,})/.test(value);
+    
+    if (isValidUrl) {
+        input.style.borderColor = '#86efac';  // Green border for valid
+        return true;
+    } else {
+        input.style.borderColor = '#fca5a5';  // Red border for invalid
+        return false;
+    }
+}
+
+/**
+ * Preview Google Drive content when user leaves the input field
+ * @param {HTMLInputElement} input - The input element with the Drive link
+ * @param {string} type - 'image' or 'pdf'
+ * @param {string} previewContainerId - ID of the preview container
+ */
+function previewDriveContent(input, type, previewContainerId) {
+    const url = input.value.trim();
+    const previewContainer = document.getElementById(previewContainerId);
+    
+    if (!url || url.length < 15) {
+        if (previewContainer) previewContainer.classList.add('hidden');
+        return;
+    }
+    
+    // Convert Google Drive sharing link to direct preview link
+    let previewUrl = convertDriveUrlToPreview(url, type);
+    
+    if (!previewUrl) {
+        console.warn('[DRIVE] Could not generate preview URL for:', url.substring(0, 50));
+        // Still show container but with fallback
+        if (previewContainer) {
+            previewContainer.classList.remove('hidden');
+            updatePreviewContent(previewContainer, type, url);  // Use original URL as fallback
+        }
+        return;
+    }
+    
+    // Show preview container
+    if (previewContainer) {
+        previewContainer.classList.remove('hidden');
+        updatePreviewContent(previewContainer, type, previewUrl);
+        
+        console.log('[DRIVE] ✅ Preview loaded for', type, ':', previewUrl.substring(0, 60) + '...');
+    }
+}
+
+/**
+ * Update preview container content based on type
+ */
+function updatePreviewContent(container, type, url) {
+    if (type === 'image') {
+        const img = container.querySelector('img');
+        if (img) {
+            img.src = url;
+            img.parentElement.classList.remove('loaded');  // Reset loading state
+        }
+    } else if (type === 'pdf') {
+        const iframe = container.querySelector('iframe');
+        if (iframe) {
+            iframe.src = url;
+            iframe.parentElement.classList.remove('loaded');
+        }
+    }
+}
+
+/**
+ * Convert various Google Drive URL formats to previewable URLs
+ */
+function convertDriveUrlToPreview(url, type) {
+    if (!url) return null;
+    
+    // Extract file ID from different Google Drive URL formats
+    let fileId = null;
+    
+    // Format: https://drive.google.com/file/d/FILE_ID/view
+    const fileMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (fileMatch) fileId = fileMatch[1];
+    
+    // Format: https://drive.google.com/open?id=FILE_ID
+    const openMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (!fileId && openMatch) fileId = openMatch[1];
+    
+    // If it's a Google Drive link with file ID
+    if (fileId) {
+        if (type === 'image') {
+            // For images: use thumbnail API
+            return `https://drive.google.com/thumbnail?id=${fileId}&sz=w800-h600`;
+        } else {
+            // For PDFs: use Google Docs viewer
+            return `https://drive.google.com/file/d/${fileId}/preview`;
+        }
+    }
+    
+    // For Google Docs/Sheets links (already viewable)
+    if (url.includes('docs.google.com') || url.includes('sheets.google.com')) {
+        // Convert to embeddable preview
+        if (url.includes('/edit')) {
+            return url.replace('/edit', '/preview');
+        }
+        return url;
+    }
+    
+    // Return original URL for non-Drive links (might work or not)
+    return url;
+}
+
+/**
+ * Open full preview in new tab/window
+ */
+function openDrivePreview(url, type) {
+    if (!url || url.length < 15) {
+        showToast('⚠️ Link belum diisi', 'warning');
+        return;
+    }
+    
+    let previewUrl = convertDriveUrlToPreview(url, type) || url;
+    
+    // Open in new tab
+    window.open(previewUrl, '_blank', 'width=900,height=700,scrollbars=yes,resizable=yes');
+    
+    console.log('[DRIVE] Opening preview:', previewUrl);
+}
+
+/**
+ * Clear drive link and hide preview
+ */
+function clearDriveLink(inputId, previewContainerId) {
+    const input = document.getElementById(inputId);
+    const previewContainer = document.getElementById(previewContainerId);
+    
+    if (input) {
+        input.value = '';
+        input.style.borderColor = '';  // Reset border color
+    }
+    
+    if (previewContainer) {
+        previewContainer.classList.add('hidden');
+    }
+    
+    console.log('[DRIVE] Link cleared:', inputId);
+}
+
+/**
+ * Handle preview error (image load error, etc.)
+ */
+function handlePreviewError(element) {
+    console.warn('[DRIVE] Preview failed to load for:', element.src?.substring(0, 60));
+    
+    const container = element.closest('.drive-preview-content');
+    if (container) {
+        // Show fallback message
+        container.innerHTML = `
+            <div class="pdf-fallback" style="text-align:center;padding:20px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48" style="color:#f59e0b;margin-bottom:12px;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <p style="font-weight:600;color:#92400e;margin-bottom:8px;">Preview tidak tersedia</p>
+                <p style="font-size:0.85rem;color:#a16207;margin-bottom:16px;">File mungkin private atau format tidak didukung</p>
+                <button onclick="this.closest('.drive-preview-container').previousElementSibling.querySelector('.btn-preview-drive').click()" 
+                        class="btn-open-drive" style="cursor:pointer;">
+                    Buka di Tab Baru →
+                </button>
+            </div>
+        `;
+        container.classList.add('loaded');
+    }
+}
+
+/**
+ * Download Template Surat Pernyataan
+ * Opens template from Google Drive or generates a simple template
+ */
+function downloadTemplateSuratPernyataan() {
+    console.log('[TEMPLATE] Downloading Surat Pernyataan template...');
+    
+    // Check if admin provided a custom template link
+    const customTemplateLink = document.getElementById('template-drive-link')?.value?.trim();
+    
+    if (customTemplateLink) {
+        // Open custom template from admin
+        window.open(customTemplateLink, '_blank');
+        showToast('📥 Membuka template dari admin...', 'success');
+        return;
+    }
+    
+    // Default: Generate and download a simple template
+    const templateContent = generateSuratPernyataanTemplate();
+    
+    // Create blob and download
+    const blob = new Blob([templateContent], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Template_Surat_Pernyataan_SIMBAKES.doc';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showToast('📥 Template Surat Pernyataan berhasil didownload!', 'success');
+    console.log('[TEMPLATE] Template downloaded successfully');
+}
+
+/**
+ * Generate Surat Pernyataan template content
+ */
+function generateSuratPernyataanTemplate() {
+    const currentDate = new Date().toLocaleDateString('id-ID', { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+    });
+    
+    return `
+SURAT PERNYATAAN
+
+Yang bertanda tangan di bawah ini:
+
+Nama Lengkap       : ...............................................
+NIK                 : ...............................................
+Tempat, Tgl Lahir   : ...............................................
+Jenis Kelamin       : Laki-laki / Perempuan
+Agama               : ...............................................
+Pekerjaan           : ...............................................
+Institusi           : ...............................................
+Alamat             : ...............................................
+No. HP/WA          : ...............................................
+Email              : ...............................................
+
+Dengan ini menyatakan dengan sesungguhnya bahwa:
+
+1. Saya bersedia mengikuti Program Beasiswa Tematik Bidang Kesehatan yang diselenggarakan oleh Dinas Kesehatan Kabupaten Kutai Kartanegara.
+
+2. Data yang saya sampaikan dalam formulir pendaftaran adalah data yang BENAR dan dapat dipertanggungjawabkan.
+
+3. Saya bersedia memenuhi semua persyaratan dan ketentuan yang berlaku dalam program beasiswa ini.
+
+4. Jika dikemudian hari ditemukan data yang tidak benar/palsu, saya siap menerima konsekuensi pembatalan penerimaan beasiswa.
+
+5. Saya bersedia menyelesaikan pendidikan sesuai jenjang yang saya ajukan dan kembali bertugas di Kabupaten Kutai Kartanegara sesuai perjanjian.
+
+
+Demikian surat pernyataan ini saya buat dengan sebenar-benarnya untuk dapat dipergunakan sebagaimana mestinya.
+
+
+
+Hormat saya,
+
+
+(.....................................................)
+
+Materai Rp. 10.000,-
+
+
+${currentDate}
+    `.trim();
+}
+
+// Make functions globally available
+window.validateDriveLink = validateDriveLink;
+window.previewDriveContent = previewDriveContent;
+window.openDrivePreview = openDrivePreview;
+window.clearDriveLink = clearDriveLink;
+window.handlePreviewError = handlePreviewError;
+window.downloadTemplateSuratPernyataan = downloadTemplateSuratPernyataan;
+
+console.log('[DRIVE LINK] ✅ Google Drive link handler functions initialized');
+
 function formatFileSize(bytes) {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -9900,14 +10643,21 @@ function validateForm() {
         }
     });
     
-    // Check photo
-    if (!uploadedPhoto) {
-        errors.push('Foto Pasfoto');
+    // Check Google Drive links (NEW! - replacing file upload checks)
+    const fotoDriveLink = document.getElementById('foto-drive-link')?.value?.trim();
+    const dokumenDriveLink = document.getElementById('dokumen-drive-link')?.value?.trim();
+    const suratPernyataanLink = document.getElementById('surat-pernyataan-link')?.value?.trim();
+    
+    if (!fotoDriveLink || fotoDriveLink.length < 15) {
+        errors.push('Link Foto Pasfoto (Google Drive)');
     }
     
-    // Check PDF document
-    if (!uploadedPDFBase64) {
-        errors.push('File Dokumen (PDF)');
+    if (!dokumenDriveLink || dokumenDriveLink.length < 15) {
+        errors.push('Link Dokumen PDF (Google Drive)');
+    }
+    
+    if (!suratPernyataanLink || suratPernyataanLink.length < 15) {
+        errors.push('Link Surat Pernyataan (Google Drive)');
     }
     
     // Validate NIK length
@@ -9937,6 +10687,11 @@ function isValidEmail(email) {
 function showConfirmation() {
     if (!validateForm()) return;
     
+    // Get Drive links for confirmation
+    const fotoLink = document.getElementById('foto-drive-link')?.value?.trim();
+    const dokumenLink = document.getElementById('dokumen-drive-link')?.value?.trim();
+    const suratLink = document.getElementById('surat-pernyataan-link')?.value?.trim();
+    
     // Build confirmation list
     const confirmList = document.getElementById('confirm-list');
     confirmList.innerHTML = `
@@ -9952,8 +10707,20 @@ function showConfirmation() {
         <div class="confirm-item"><span class="confirm-label">Durasi Studi</span><span class="confirm-value">${document.getElementById('rencana-tahun').value}</span></div>
         <div class="confirm-item"><span class="confirm-label">No. HP/WA</span><span class="confirm-value">${document.getElementById('no-hp').value} / ${document.getElementById('no-wa').value}</span></div>
         <div class="confirm-item"><span class="confirm-label">Email</span><span class="confirm-value">${document.getElementById('email').value}</span></div>
-        <div class="confirm-item"><span class="confirm-label">Foto</span><span class="confirm-value">✓ Terupload</span></div>
-        <div class="confirm-item"><span class="confirm-label">Dokumen PDF</span><span class="confirm-value">${uploadedFileInfo ? uploadedFileInfo.name : '-'}</span></div>
+        
+        <!-- Google Drive Links (NEW!) -->
+        <div class="confirm-item" style="background:#f0fdf4;border-radius:8px;padding:10px;margin:8px 0;">
+            <span class="confirm-label" style="color:#059669;">📷 Foto Pasfoto (Drive)</span>
+            <span class="confirm-value" style="font-size:0.78rem;max-width:70%;">${fotoLink ? '✓ Link tersedia' : '❌ Belum diisi'}</span>
+        </div>
+        <div class="confirm-item" style="background:#eff6ff;border-radius:8px;padding:10px;margin:8px 0;">
+            <span class="confirm-label" style="color:#2563eb;">📄 Dokumen PDF (Drive)</span>
+            <span class="confirm-value" style="font-size:0.78rem;max-width:70%;">${dokumenLink ? '✓ Link tersedia' : '❌ Belum diisi'}</span>
+        </div>
+        <div class="confirm-item" style="background:#fefce8;border-radius:8px;padding:10px;margin:8px 0;">
+            <span class="confirm-label" style="color:#d97706;">📝 Surat Pernyataan (Drive)</span>
+            <span class="confirm-value" style="font-size:0.78rem;max-width:70%;">${suratLink ? '✓ Link tersedia' : '❌ Belum diisi'}</span>
+        </div>
     `;
     
     document.getElementById('confirm-modal').classList.add('active');
@@ -9964,22 +10731,25 @@ async function submitForm() {
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<div class="spinner"></div> Mengirim...';
     
-    // Validate files are processed
-    if (!uploadedPhoto) {
-        showToast('❌ Silakan upload foto pasfoto terlebih dahulu!', 'error');
+    // Validate Google Drive links are provided (NEW! - replacing file upload checks)
+    const fotoLink = document.getElementById('foto-drive-link')?.value?.trim();
+    const dokumenLink = document.getElementById('dokumen-drive-link')?.value?.trim();
+    
+    if (!fotoLink || fotoLink.length < 15) {
+        showToast('❌ Silakan isi link Google Drive foto pasfoto!', 'error');
         submitBtn.disabled = false;
         submitBtn.innerHTML = 'Ya, Kirim Sekarang';
         return;
     }
     
-    if (!uploadedPDFBase64) {
+    if (!dokumenLink || dokumenLink.length < 15) {
         showToast('❌ Silakan upload dokumen PDF terlebih dahulu!', 'error');
         submitBtn.disabled = false;
         submitBtn.innerHTML = 'Ya, Kirim Sekarang';
         return;
     }
     
-    // Collect form data with files
+    // Collect form data with Google Drive links (NEW! - replacing base64 files)
     const formData = {
         noRegister: document.getElementById('reg-nomor').value,
         tanggalPengajuan: document.getElementById('reg-tanggal').value,
@@ -10002,20 +10772,22 @@ async function submitForm() {
         noWA: document.getElementById('no-wa').value,
         email: document.getElementById('email').value,
         
-        // FILE DATA (Base64 for Google Drive)
-        foto: uploadedPhoto,                    // Base64 photo string
-        dokumenPDF: uploadedPDFBase64,          // Base64 PDF string
-        namaFile: uploadedFileInfo ? uploadedFileInfo.name : null,
+        // GOOGLE DRIVE LINKS (NEW! - replacing base64 files)
+        fotoDriveLink: document.getElementById('foto-drive-link')?.value?.trim(),           // Link foto pasfoto
+        dokumenDriveLink: document.getElementById('dokumen-drive-link')?.value?.trim(),     // Link dokumen PDF
+        suratPernyataanLink: document.getElementById('surat-pernyataan-link')?.value?.trim(), // Link surat pernyataan
+        templateDriveLink: document.getElementById('template-drive-link')?.value?.trim(),     // Link template (optional)
         
         status: 'Proses Verifikasi',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        submissionMethod: 'google_drive_links'  // Flag to indicate new method
     };
     
     console.log('📦 Data form siap dikirim:', {
-        hasFoto: !!formData.foto && formData.foto.length > 100,
-        hasPDF: !!formData.dokumenPDF && formData.dokumenPDF.length > 100,
-        fotoSize: formData.foto ? Math.round(formData.foto.length / 1024) + 'KB' : '-',
-        pdfSize: formData.dokumenPDF ? Math.round(formData.dokumenPDF.length / 1024) + 'KB' : '-'
+        hasFotoLink: !!formData.fotoDriveLink && formData.fotoDriveLink.length > 15,
+        hasDokumenLink: !!formData.dokumenDriveLink && formData.dokumenDriveLink.length > 15,
+        hasSuratPernyataan: !!formData.suratPernyataanLink && formData.suratPernyataanLink.length > 15,
+        submissionMethod: 'Google Drive Links'
     });
     
     try {
