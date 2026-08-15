@@ -10900,32 +10900,59 @@ async function submitForm() {
         // Handle Supabase-specific errors
         const isSupabaseError = error.code || error.message?.includes('Supabase') || 
                                 error.message?.includes('constraint') || error.message?.includes('column') ||
-                                error.message?.includes('relation') || error.message?.includes('null');
+                                error.message?.includes('relation') || error.message?.includes('null') ||
+                                error.message?.includes('400');
         
         if (isSupabaseError) {
             console.error('[SIMBAKES] 💥 SUPABASE ERROR DETECTED:', error);
             
             let errorMessage = `❌ GAGAL MENYIMPAN KE DATABASE!\n\n`;
-            errorMessage += `Error: ${error.message}\n`;
+            
+            // Error details
+            if (error.code) {
+                errorMessage += `🔴 Error Code: ${error.code}\n`;
+            }
+            errorMessage += `📝 Pesan: ${error.message || 'Unknown error'}\n`;
             
             if (error.hint) {
                 errorMessage += `\n💡 Hint: ${error.hint}\n`;
             }
             
-            if (error.code === '23505') {
-                errorMessage += `\n⚠️ Data duplikat terdeteksi (nomor register sudah ada)`;
-            } else if (error.code === '42703' || error.message?.includes('column')) {
-                errorMessage += `\n⚠️ Struktur tabel tidak sesuai. Kolom mungkin belum dibuat di Supabase.`;
-                errorMessage += `\n\n📋 KOLOM YANG DIBUTUHKAN:\n`;
-                errorMessage += `- foto_drive_link (text)\n`;
-                errorMessage += `- dokumen_drive_link (text)\n`;
-                errorMessage += `- surat_pernyataan_link (text)\n`;
-                errorMessage += `- template_drive_link (text)\n`;
-                errorMessage += `- submission_method (text)\n`;
-                errorMessage += `- timestamp (timestamptz)`;
+            if (error.details) {
+                errorMessage += `📋 Detail: ${error.details}\n`;
             }
             
-            errorMessage += `\n\nSolusi:\n1. Periksa console browser (F12) untuk detail error\n2. Pastikan kolom tabel submissions sudah lengkap\n3. Hubungi admin database`;
+            // Specific error solutions
+            if (error.code === '23505') {
+                errorMessage += `\n\n⚠️ SOLUSI - Data Duplikat:`;
+                errorMessage += `\n→ Nomor register atau NIK sudah terdaftar`;
+                errorMessage += `\n→ Gunakan nomor register yang berbeda`;
+            } else if (error.code === '42703' || error.message?.includes('column') || error.message?.includes('does not exist')) {
+                errorMessage += `\n\n⚠️ SOLUSI - Kolom Tidak Ditemukan:`;
+                errorMessage += `\n→ Jalankan script SQL di Supabase Editor:`;
+                errorMessage += `\n   /download/simbakes_fix_submissions_table.sql`;
+                errorMessage += `\n→ Script ini akan membuat semua kolom yang diperlukan`;
+            } else if (error.code === '23502' || error.message?.includes('null')) {
+                errorMessage += `\n\n⚠️ SOLUSI - Field Wajib Kosong:`;
+                errorMessage += `\n→ Pastikan NIK dan nama_lengkap terisi`;
+                errorMessage += `\n→ Pastikan no_register tidak kosong`;
+            } else if (error.message?.includes('400') || error.status === 400) {
+                errorMessage += `\n\n⚠️ SOLUSI - Bad Request (Error 400):`;
+                errorMessage += `\n→ Struktur tabel mungkin tidak sesuai`;
+                errorMessage += `\n→ Jalankan script: simbakes_fix_submissions_table.sql`;
+                errorMessage += `\n→ Periksa RLS policies di Supabase Dashboard`;
+            } else {
+                errorMessage += `\n\n📋 LANGKAH PERBAIKAN:`;
+                errorMessage += `\n1. Buka Supabase Dashboard → SQL Editor`;
+                errorMessage += `\n2. Copy-paste isi file: simbakes_fix_submissions_table.sql`;
+                errorMessage += `\n3. Run script tersebut`;
+                errorMessage += `\n4. Coba submit form kembali`;
+            }
+            
+            errorMessage += `\n\n🔧 DEBUG INFO (untuk admin):`;
+            errorMessage += `\n• Buka F12 → Console tab`;
+            errorMessage += `\n• Cari log: [SIMBAKES] ❌ Supabase Insert Error`;
+            errorMessage += `\n• Lihat detail error lengkap di sana`;
             
             alert(errorMessage);
             
@@ -11858,16 +11885,35 @@ async function submitToSupabase(formData) {
         
         console.log('[SIMBAKES] 📤 Mapped data for Supabase:', dbData);
         
+        // Filter out undefined/null values that might cause issues
+        const cleanData = {};
+        for (const [key, value] of Object.entries(dbData)) {
+            if (value !== undefined && value !== 'undefined') {
+                cleanData[key] = value;
+            }
+        }
+        
+        // Add timestamps
+        cleanData.created_at = new Date().toISOString();
+        cleanData.updated_at = new Date().toISOString();
+        
+        console.log('[SIMBAKES] 📤 Clean data for insert:', cleanData);
+        
         const { data, error } = await supabaseClient
             .from('submissions')
-            .insert([{
-                ...dbData,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            }])
+            .insert([cleanData])
             .select();
             
-        if (error) throw error;
+        if (error) {
+            console.error('[SIMBAKES] ❌ Supabase Insert Error:', {
+                message: error.message,
+                code: error.code,
+                hint: error.hint,
+                details: error.details,
+                fullError: error
+            });
+            throw error;
+        }
         
         console.log('[SIMBAKES] ✅ Data submitted successfully:', data);
         return data;
