@@ -920,8 +920,8 @@
         // ============================================================
         // SUPABASE CONFIGURATION
         // ============================================================
-        const SUPABASE_URL = 'https://xfvpzqjfwlyjqxvqppze.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmdnB6cWpmd2x5anF4dnFwcHplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NjczMTQsImV4cCI6MjA4MTI0MzMxNH0.8nE1d8oHPhIZxFqfg7AhP6JVPxXy8CtYHV_Jl7u0T7w';
+        const SUPABASE_URL = 'https://boeknpvlfamjmddsdopd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZWtucHZsZmFtam1kZHNkb3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NzYwNjIsImV4cCI6MjEwMjA1MjA2Mn0.kHj7xEY7Wa4zSJwH0rjhiB3Qf0IHriyPlWoh4rdlv3U';
         
         // Initialize Supabase Client
         let supabaseClient = null;
@@ -1102,38 +1102,58 @@
                     throw new Error('Koneksi database tidak tersedia. Silakan refresh halaman.');
                 }
                 
-                console.log('[DAFTAR PESERTA] Calling fn_register_peserta RPC...');
+                console.log('[DAFTAR PESERTA] Inserting data to akun_peserta table...');
                 
-                // Call RPC function: fn_register_peserta(p_email, p_password, p_username, p_nama_lengkap, p_nik VARCHAR(16), p_institusi)
-                const { data: rpcData, error: rpcError } = await supabaseClient.rpc('fn_register_peserta', {
-                    p_email: formData.email,
-                    p_password: formData.password,
-                    p_username: formData.username,
-                    p_nama_lengkap: formData.nama_lengkap,
-                    p_nik: formData.nik,
-                    p_institusi: formData.institusi
-                });
+                // Method 1: Try Direct INSERT (Recommended - No RPC needed)
+                const encoder = new TextEncoder();
+                const passwordData = encoder.encode(formData.password + 'simbakes_salt_2024');
+                const hashBuffer = await crypto.subtle.digest('SHA-256', passwordData);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const password_hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
                 
-                // Handle specific RPC errors
-                if (rpcError) {
-                    console.error('[DAFTAR PESERTA] RPC Error:', rpcError);
+                const insertData = {
+                    nama_lengkap: formData.nama_lengkap,
+                    email: formData.email,
+                    username: formData.username,
+                    nik: formData.nik || null,
+                    password_hash: password_hash,
+                    institusi: formData.institusi || '-',
+                    role: 'peserta',
+                    is_active: true,
+                    is_verified: false
+                };
+                
+                console.log('[DAFTAR PESERTA] Inserting:', Object.keys(insertData));
+                
+                const { data: insertData_result, error: insertError } = await supabaseClient
+                    .from('akun_peserta')
+                    .insert([insertData])
+                    .select('id, nama_lengkap, email, username, created_at')
+                    .single();
+                
+                if (insertError) {
+                    console.error('[DAFTAR PESERTA] Insert Error:', insertError);
                     
-                    if (rpcError.message?.includes('username sudah') || rpcError.message?.includes('duplicate key')) {
-                        throw new Error('Username sudah digunakan. Silakan pilih username lain.');
+                    if (insertError.code === '23505') {
+                        const msg = insertError.message.toLowerCase();
+                        if (msg.includes('email')) throw new Error('Email sudah terdaftar. Gunakan email lain.');
+                        if (msg.includes('username')) throw new Error('Username sudah digunakan. Pilih yang lain.');
+                        if (msg.includes('nik')) throw new Error('NIK sudah terdaftar.');
+                        throw new Error('Data duplikat terdeteksi.');
                     }
                     
-                    if (rpcError.message?.includes('email sudah') || rpcError.message?.includes('unique constraint')) {
-                        throw new Error('Email sudah terdaftar di sistem. Gunakan email lain.');
+                    if (insertError.code === '42501' || insertError.message?.includes('permission')) {
+                        throw new Error('Error izin database. Jalankan SQL script di Supabase SQL Editor.');
                     }
                     
-                    if (rpcError.message?.includes('NIK')) {
-                        throw new Error('NIK sudah terdaftar di sistem. Setiap peserta hanya bisa mendaftar sekali.');
+                    if (insertError.code === '42P01') {
+                        throw new Error('Tabel akun_peserta belum ada. Jalankan file SQL terlebih dahulu.');
                     }
                     
-                    throw rpcError;
+                    throw new Error(insertError.message || 'Gagal menyimpan data.');
                 }
                 
-                console.log('[DAFTAR PESERTA] ✅ Registration successful:', rpcData);
+                console.log('[DAFTAR PESERTA] ✅ Registration successful:', insertData_result);
                 
                 // Show success overlay
                 showSuccessOverlay(formData.nama_lengkap);
