@@ -13890,11 +13890,11 @@ function renderRecentVisitors() {
     }
     
     if (!cachedRecentVisitors || cachedRecentVisitors.length === 0) {
-        tbody.innerHTML = \`
+        tbody.innerHTML = `
             <tr>
                 <td colspan="5" class="loading-cell">📭 Belum ada data pengunjung</td>
             </tr>
-        \`;
+        `;
         container.innerHTML = '';
         return;
     }
