@@ -5701,6 +5701,60 @@
                 <div id="pagination-recent-submissions-container"></div>
             </div>
 
+            <!-- ===== STATISTIK PENGUNJUNG REAL-TIME (Supabase) ===== -->
+            <div class="dash-card" style="margin-top: 24px;">
+                <div class="dash-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="font-size: 1.1rem; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+                        📊 Statistik Pengunjung Real-Time
+                    </h3>
+                    <span style="font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 12px;">
+                        Live from Supabase
+                    </span>
+                </div>
+
+                <!-- Visitor Stats Cards Grid -->
+                <div class="visitor-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+                    
+                    <!-- Total Kunjungan -->
+                    <div class="stat-total-visits" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 16px; border-radius: 12px; border-left: 4px solid #3b82f6;">
+                        <div style="font-size: 0.8rem; color: #64748b; font-weight: 500; margin-bottom: 4px;">🌐 Total Kunjungan</div>
+                        <div style="font-size: 1.75rem; font-weight: 700; color: #1e40af;" id="visitor-total">0</div>
+                        <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">Semua waktu</div>
+                    </div>
+
+                    <!-- Hari Ini -->
+                    <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 16px; border-radius: 12px; border-left: 4px solid #22c55e;">
+                        <div style="font-size: 0.8rem; color: #64748b; font-weight: 500; margin-bottom: 4px;">📅 Hari Ini</div>
+                        <div style="font-size: 1.75rem; font-weight: 700; color: #166534;" id="visitor-today">0</div>
+                        <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">Pengunjung baru</div>
+                    </div>
+
+                    <!-- Online Saat Ini -->
+                    <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 16px; border-radius: 12px; border-left: 4px solid #f59e0b;">
+                        <div style="font-size: 0.8rem; color: #64748b; font-weight: 500; margin-bottom: 4px;">🟢 Online Saat Ini</div>
+                        <div style="font-size: 1.75rem; font-weight: 700; color: #92400e;" id="visitor-online">1</div>
+                        <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">Estimasi aktif</div>
+                    </div>
+
+                    <!-- Negara -->
+                    <div style="background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%); padding: 16px; border-radius: 12px; border-left: 4px solid #a855f7;">
+                        <div style="font-size: 0.8rem; color: #64748b; font-weight: 500; margin-bottom: 4px;">🌏 Negara</div>
+                        <div style="font-size: 1.75rem; font-weight: 700; color: #7e22ce;" id="visitor-countries">1</div>
+                        <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">Negara pengunjung</div>
+                    </div>
+                </div>
+
+                <!-- Visitor Chart -->
+                <div style="margin-bottom: 24px;">
+                    <h4 style="font-size: 0.9rem; font-weight: 600; color: #475569; margin-bottom: 12px;">📈 Tren Kunjungan 30 Hari Terakhir</h4>
+                    <div style="background: white; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0;">
+                        <canvas id="visitor-chart" width="800" height="400" style="width: 100%; height: auto;"></canvas>
+                    </div>
+                </div>
+
+
+            </div>
+
 
         </div>
 
@@ -11252,43 +11306,6 @@ async function testSupabaseConnection() {
     }
 }
 
-/**
- * Fetch Dashboard Statistics dari Supabase
- * Returns: { total, disetujui, ditolak, perbaikan, batal, proses_verifikasi }
- */
-async function fetchDashboardStats() {
-    if (!supabaseClient) {
-        console.warn('[SIMBAKES] Supabase not connected');
-        return null;
-    }
-    
-    try {
-        // Hitung total
-        const { count: total, error: errTotal } = await supabaseClient
-            .from('submissions')
-            .select('*', { count: 'exact', head: true });
-            
-        // Hitung per status
-        const statuses = ['Disetujui', 'Ditolak', 'Perbaikan', 'Batal', 'Proses Verifikasi'];
-        const stats = { total: total || 0 };
-        
-        for (const status of statuses) {
-            const { count, error } = await supabaseClient
-                .from('submissions')
-                .select('*', { count: 'exact', head: true })
-                .eq('status', status);
-                
-            const key = status.toLowerCase().replace(' ', '_');
-            stats[key] = count || 0;
-        }
-        
-        console.log('[SIMBAKES] Dashboard stats:', stats);
-        return stats;
-    } catch (error) {
-        console.error('[SIMBAKES] Error fetching dashboard stats:', error);
-        return null;
-    }
-}
 
 /**
  * Get Recent Submissions from Supabase
@@ -11853,8 +11870,6 @@ function showConnectionTips() {
 // Console log untuk debugging
 console.log('🚀 SIMBAKES API Wrapper Loaded');
 console.log('📍 Database:', 'Supabase connected');
-console.log('⏱️  Timeout:', APIConfig.timeout / 1000, 'detik');
-console.log('🔄 Max Retries:', APIConfig.maxRetries);
 
 // ===== GOOGLE DRIVE PHOTO HELPER (ENHANCED v2.0) =====
 /**
@@ -12940,6 +12955,12 @@ function updateLastUpdateTime() {
 /**
  * Fetch statistik dashboard dari Supabase
  */
+/**
+ * Fetch statistik dashboard dari Supabase (OPTIMIZED v2.0)
+ * - Query paralel dengan Promise.all untuk performa lebih baik
+ * - Timeout handling 10 detik per query
+ * - Status konsisten dengan schema Supabase
+ */
 async function fetchDashboardStats() {
     try {
         if (!supabaseClient) {
@@ -12948,42 +12969,67 @@ async function fetchDashboardStats() {
             return;
         }
         
-        // Hitung total pendaftar
-        const { count: total } = await supabaseClient
-            .from('submissions')
-            .select('*', { count: 'exact', head: true });
+        // Timeout helper function (10 detik)
+        const withTimeout = (promise, ms) => Promise.race([
+            promise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), ms))
+        ]);
         
-        // Hitung berdasarkan status
-        const { count: disetujui } = await supabaseClient
-            .from('submissions')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'Diterima');
+        // Jalankan semua query SECARA PARALEL (bukan berurutan)
+        const [
+            totalResult,
+            disetujuiResult,
+            ditolakResult,
+            perbaikanResult,
+            batalResult,
+            prosesResult
+        ] = await Promise.allSettled([
+            withTimeout(
+                supabaseClient.from('submissions').select('*', { count: 'exact', head: true }),
+                10000
+            ),
+            withTimeout(
+                supabaseClient.from('submissions').select('*', { count: 'exact', head: true }).eq('status', 'Disetujui'),
+                10000
+            ),
+            withTimeout(
+                supabaseClient.from('submissions').select('*', { count: 'exact', head: true }).eq('status', 'Ditolak'),
+                10000
+            ),
+            withTimeout(
+                supabaseClient.from('submissions').select('*', { count: 'exact', head: true }).eq('status', 'Perbaikan'),
+                10000
+            ),
+            withTimeout(
+                supabaseClient.from('submissions').select('*', { count: 'exact', head: true }).eq('status', 'Dibatalkan'),
+                10000
+            ),
+            withTimeout(
+                supabaseClient.from('submissions').select('*', { count: 'exact', head: true }).eq('status', 'Proses Verifikasi'),
+                10000
+            )
+        ]);
         
-        const { count: ditolak } = await supabaseClient
-            .from('submissions')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'Ditolak');
-        
-        const { count: perbaikan } = await supabaseClient
-            .from('submissions')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'Revisi');
-        
-        const { count: batal } = await supabaseClient
-            .from('submissions')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'Dibatalkan');
+        // Ekstrak hasil dengan fallback ke 0 jika error
+        const total = totalResult.status === 'fulfilled' ? (totalResult.value.count || 0) : 0;
+        const disetujui = disetujuiResult.status === 'fulfilled' ? (disetujuiResult.value.count || 0) : 0;
+        const ditolak = ditolakResult.status === 'fulfilled' ? (ditolakResult.value.count || 0) : 0;
+        const perbaikan = perbaikanResult.status === 'fulfilled' ? (perbaikanResult.value.count || 0) : 0;
+        const batal = batalResult.status === 'fulfilled' ? (batalResult.value.count || 0) : 0;
         
         // Update card values dengan animasi
-        animateValue('stat-total', total || 0);
-        animateValue('stat-disetujui', disetujui || 0);
-        animateValue('stat-ditolak', ditolak || 0);
-        animateValue('stat-perbaikan', perbaikan || 0);
-        animateValue('stat-batal', batal || 0);
+        animateValue('stat-total', total);
+        animateValue('stat-disetujui', disetujui);
+        animateValue('stat-ditolak', ditolak);
+        animateValue('stat-perbaikan', perbaikan);
+        animateValue('stat-batal', batal);
         
-        console.log('✅ Dashboard stats loaded from Supabase:', { total, disetujui, ditolak, perbaikan, batal });
+        console.log('✅ Dashboard stats loaded:', { 
+            total, disetujui, ditolak, perbaikan, batal,
+            loadTime: 'parallel queries'
+        });
     } catch (error) {
-        console.error('❌ Error fetching dashboard stats from Supabase:', error);
+        console.error('❌ Error fetching dashboard stats:', error);
         loadDummyStats();
     }
 }
