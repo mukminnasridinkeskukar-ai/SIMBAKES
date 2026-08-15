@@ -10883,6 +10883,12 @@ async function submitForm() {
         
     } catch (error) {
         console.error('❌ Error submitting form:', error);
+        console.error('❌ Error details:', {
+            message: error.message,
+            code: error.code,
+            hint: error.hint,
+            details: error.details
+        });
         
         // Handle QuotaExceededError specifically
         if (error.name === 'QuotaExceededError' || error.message?.includes('quota') || error.message?.includes('penyimpanan terbatas')) {
@@ -10902,6 +10908,44 @@ async function submitForm() {
             return;  // Stop here, don't try to save
         }
         
+        // Handle Supabase-specific errors
+        const isSupabaseError = error.code || error.message?.includes('Supabase') || 
+                                error.message?.includes('constraint') || error.message?.includes('column') ||
+                                error.message?.includes('relation') || error.message?.includes('null');
+        
+        if (isSupabaseError) {
+            console.error('[SIMBAKES] 💥 SUPABASE ERROR DETECTED:', error);
+            
+            let errorMessage = `❌ GAGAL MENYIMPAN KE DATABASE!\n\n`;
+            errorMessage += `Error: ${error.message}\n`;
+            
+            if (error.hint) {
+                errorMessage += `\n💡 Hint: ${error.hint}\n`;
+            }
+            
+            if (error.code === '23505') {
+                errorMessage += `\n⚠️ Data duplikat terdeteksi (nomor register sudah ada)`;
+            } else if (error.code === '42703' || error.message?.includes('column')) {
+                errorMessage += `\n⚠️ Struktur tabel tidak sesuai. Kolom mungkin belum dibuat di Supabase.`;
+                errorMessage += `\n\n📋 KOLOM YANG DIBUTUHKAN:\n`;
+                errorMessage += `- foto_drive_link (text)\n`;
+                errorMessage += `- dokumen_drive_link (text)\n`;
+                errorMessage += `- surat_pernyataan_link (text)\n`;
+                errorMessage += `- template_drive_link (text)\n`;
+                errorMessage += `- submission_method (text)\n`;
+                errorMessage += `- timestamp (timestamptz)`;
+            }
+            
+            errorMessage += `\n\nSolusi:\n1. Periksa console browser (F12) untuk detail error\n2. Pastikan kolom tabel submissions sudah lengkap\n3. Hubungi admin database`;
+            
+            alert(errorMessage);
+            
+            // Reset button state
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Ya, Kirim Sekarang';
+            return;
+        }
+        
         // Fallback to local storage on other errors (with try-catch)
         try {
             console.log('🔄 Fallback: Menyimpan ke localStorage...');
@@ -10919,7 +10963,7 @@ async function submitForm() {
             closeModal('confirm-modal');
             
             // Show detailed error to user
-            alert(`❌ GAGAL MENYIMPAN DATA!\n\nError: ${error.message}\n\nSolusi:\n1. Refresh halaman dan coba lagi\n2. Hapus cache browser (Ctrl+Shift+Delete)\n3. Gunakan mode Incognito\n4. Hubungi admin jika masalah berlanjut`);
+            alert(`❌ GAGAL MENYIMPAN DATA!\n\nError: ${error.message}\n\nDetail Error Local:\n${localError.message}\n\nSolusi:\n1. Refresh halaman dan coba lagi\n2. Hapus cache browser (Ctrl+Shift+Delete)\n3. Gunakan mode Incognito\n4. Hubungi admin jika masalah berlanjut`);
         }
         
         console.error('Detail Error:', {
@@ -11220,52 +11264,365 @@ console.log('  - checkStorageUsage()  : Check localStorage usage');
 console.log('  - clearSimbakesStorage() : Clear all SIMBAKES data');
 console.log('  - cleanupOldApplications() : Keep only recent data');
 
-function searchStatus() {
-    const regNumber = document.getElementById('search-register').value.trim();
+/**
+ * Cek Status Pengajuan - Search from Supabase submissions table
+ * Updated: Now queries directly from Supabase instead of local data only
+ */
+async function searchStatus() {
+    const regNumber = document.getElementById('search-register')?.value?.trim();
+    const nik = document.getElementById('search-nik')?.value?.trim();
     
-    if (!regNumber) {
-        alert('Masukkan nomor register!');
+    // Validation
+    if (!regNumber && !nik) {
+        showToast('❌ Masukkan Nomor Register atau NIK!', 'error');
         return;
     }
     
-    // Search in local data
-    let found = submittedApplications.find(app => app.noRegister === regNumber);
+    console.log('[SIMBAKES] 🔍 Mencari status pengajuan...', { regNumber, nik });
     
-    if (!found) {
-        found = pengusulData.find(p => p.noRegister === regNumber);
-    }
-    
+    // Show loading state
     const resultContent = document.getElementById('search-result-content');
-    
-    if (found) {
-        resultContent.innerHTML = `
-            <div style="padding:1.5rem;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-                    <h4 style="font-size:1.125rem;font-weight:600;">${found.namaLengkap || found.nama}</h4>
-                    ${getStatusBadge(found.status)}
-                </div>
-                <div style="background:#f8fafc;border-radius:8px;padding:1rem;font-size:0.875rem;">
-                    <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;"><span style="color:#64748b;">No. Register</span><strong>${found.noRegister || '-'}</strong></div>
-                    <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;"><span style="color:#64748b;">Tanggal Pengajuan</span><strong>${found.tanggalPengajuan || found.tanggalPengajuan || '-'}</strong></div>
-                    <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;"><span style="color:#64748b;">Program Studi</span><strong>${found.jurusanTujuan || found.programStudi || '-'}</strong></div>
-                    <div style="display:flex;justify-content:space-between;padding:0.5rem 0;"><span style="color:#64748b;">Email</span><strong>${found.email || '-'}</strong></div>
-                </div>
-            </div>
-        `;
-    } else {
+    if (resultContent) {
         resultContent.innerHTML = `
             <div style="text-align:center;padding:2rem;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" width="48" height="48" style="margin:0 auto 1rem;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <p style="color:#64748b;">Data tidak ditemukan</p>
-                <p style="font-size:0.875rem;color:#94a3b8;margin-top:0.5rem;">Pastikan nomor register yang dimasukkan benar</p>
+                <div class="spinner" style="margin:0 auto 1rem;"></div>
+                <p style="color:#64748b;">Mencari data dari server...</p>
             </div>
         `;
     }
     
-    document.getElementById('search-result-modal').classList.add('active');
+    document.getElementById('search-result-modal')?.classList.add('active');
+    
+    try {
+        // Check Supabase client availability
+        if (!supabaseClient) {
+            throw new Error('Supabase client tidak tersedia. Silakan refresh halaman atau hubungi admin.');
+        }
+        
+        // Query dari Supabase tabel submissions
+        let query = supabaseClient
+            .from('submissions')
+            .select('*')
+            .limit(1);
+        
+        if (nik) {
+            query = query.eq('nik', nik);
+        } else if (regNumber) {
+            query = query.eq('no_register', regNumber);
+        }
+        
+        const { data: submissionData, error } = await query;
+        
+        if (error) throw error;
+        
+        console.log('[SIMBAKES] ✅ Hasil pencarian pengajuan:', submissionData);
+        
+        if (submissionData && submissionData.length > 0) {
+            const found = submissionData[0];
+            displayStatusResult(found);
+        } else {
+            displayStatusNotFound(regNumber || nik, nik ? 'NIK' : 'Nomor Register');
+        }
+        
+    } catch (error) {
+        console.error('[SIMBAKES] ❌ Error mencari status pengajuan:', error);
+        
+        if (resultContent) {
+            resultContent.innerHTML = `
+                <div style="text-align:center;padding:2rem;background:#fef2f2;border-radius:12px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" width="48" height="48" style="margin:0 auto 1rem;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                    <p style="color:#dc2626;font-weight:600;margin-bottom:0.5rem;">Gagal Mengambil Data!</p>
+                    <p style="font-size:0.875rem;color:#ef4444;margin-bottom:1rem;">${error.message}</p>
+                    <div style="background:white;padding:1rem;border-radius:8px;text-align:left;font-size:0.8rem;">
+                        <p style="color:#64748b;margin:0 0 0.5rem 0;"><strong>Solusi:</strong></p>
+                        <ol style="color:#64748b;margin:0;padding-left:1.25rem;">
+                            <li>Periksa koneksi internet</li>
+                            <li>Refresh halaman (F5)</li>
+                            <li>Coba lagi beberapa saat</li>
+                            <li>Hubungi admin jika masalah berlanjut</li>
+                        </ol>
+                    </div>
+                </div>
+            `;
+        }
+        
+        showToast('❌ Gagal mengambil data: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Display status result for Cek Status Pengajuan
+ * Data source: Supabase table 'submissions'
+ * All field names match snake_case columns in Supabase
+ */
+function displayStatusResult(found) {
+    const resultContent = document.getElementById('search-result-content');
+    
+    if (!resultContent) return;
+    
+    // Format tanggal helper
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '-';
+        try {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        } catch {
+            return dateStr;
+        }
+    };
+    
+    // =====================================================
+    // EXTRACT DATA FROM SUPABASE (snake_case columns)
+    // Table: submissions
+    // =====================================================
+    const data = {
+        // Identitas
+        no_register: getField(found, 'no_register', 'noRegister'),
+        nik: getField(found, 'nik', 'nik'),
+        nama_lengkap: getField(found, 'nama_lengkap', 'namaLengkap'),
+        
+        // Tanggal & Waktu
+        tanggal_pengajuan: getField(found, 'tanggal_pengajuan', 'tanggalPengajuan'),
+        created_at: getField(found, 'created_at', 'createdAt'),
+        updated_at: getField(found, 'updated_at', 'updatedAt'),
+        
+        // Tempat & Tanggal Lahir
+        tempat_lahir: getField(found, 'tempat_lahir', 'tempatLahir'),
+        tanggal_lahir: getField(found, 'tanggal_lahir', 'tanggalLahir'),
+        
+        // Alamat
+        alamat_ktp: getField(found, 'alamat_ktp', 'alamatKTP'),
+        alamat_domisili: getField(found, 'alamat_domisili', 'alamatDomisili'),
+        lama_domisili: getField(found, 'lama_domisili', 'lamaDomisili'),
+        
+        // Pekerjaan
+        pekerjaan: getField(found, 'pekerjaan', 'pekerjaan'),
+        posisi: getField(found, 'posisi', 'posisi'),
+        unit_kerja: getField(found, 'unit_kerja', 'unitKerja'),
+        penjelasan: getField(found, 'penjelasan', 'penjelasan'),
+        
+        // Pendidikan (Tujuan Beasiswa)
+        jurusan_tujuan: getField(found, 'jurusan_tujuan', 'jurusanTujuan'),
+        jenjang_pendidikan: getField(found, 'jenjang_pendidikan', 'jenjangPendidikan'),
+        unit_tujuan: getField(found, 'unit_tujuan', 'unitTujuan'),
+        rencana_tahun: getField(found, 'rencana_tahun', 'rencanaTahun'),
+        
+        // Kontak
+        no_hp: getField(found, 'no_hp', 'noHP'),
+        no_wa: getField(found, 'no_wa', 'noWA'),
+        email: getField(found, 'email', 'email'),
+        
+        // Google Drive Links (Dokumen)
+        foto_drive_link: getField(found, 'foto_drive_link', 'fotoDriveLink', ''),
+        dokumen_drive_link: getField(found, 'dokumen_drive_link', 'dokumenDriveLink', ''),
+        surat_pernyataan_link: getField(found, 'surat_pernyataan_link', 'suratPernyataanLink', ''),
+        template_drive_link: getField(found, 'template_drive_link', 'templateDriveLink', ''),
+        
+        // Status & Metadata
+        status: getField(found, 'status', 'status', 'Proses Verifikasi'),
+        submission_method: getField(found, 'submission_method', 'submissionMethod'),
+        timestamp: getField(found, 'timestamp', 'timestamp')
+    };
+    
+    // Determine status badge based on status value
+    const statusLower = String(data.status).toLowerCase();
+    let statusBadge = '';
+    
+    if (statusLower.includes('disetujui') || statusLower.includes('approve') || statusLower.includes('diterima')) {
+        statusBadge = '<span style="padding:0.35rem 0.75rem;background:#dcfce7;color:#166534;border-radius:20px;font-size:0.75rem;font-weight:600;">✅ Disetujui</span>';
+    } else if (statusLower.includes('ditolak') || statusLower.includes('tolak')) {
+        statusBadge = '<span style="padding:0.35rem 0.75rem;background:#fee2e2;color:#991b1b;border-radius:20px;font-size:0.75rem;font-weight:600;">❌ Ditolak</span>';
+    } else if (statusLower.includes('perbaikan') || statusLower.includes('revisi') || statusLower.includes('revision')) {
+        statusBadge = '<span style="padding:0.35rem 0.75rem;background:#fef3c7;color:#92400e;border-radius:20px;font-size:0.75rem;font-weight:600;">⚠️ Perbaikan</span>';
+    } else if (statusLower.includes('batal') || statusLower.includes('cancel') || statusLower.includes('dicabut')) {
+        statusBadge = '<span style="padding:0.35rem 0.75rem;background:#f8fafc;color:#64748b;border-radius:20px;font-size:0.75rem;font-weight:600;">🚫 Dibatalkan</span>';
+    } else {
+        statusBadge = '<span style="padding:0.35rem 0.75rem;background:#dbeafe;color:#1e40af;border-radius:20px;font-size:0.75rem;font-weight:600;">⏳ Proses Verifikasi</span>';
+    }
+    
+    // Build the result card with proper headers matching Supabase columns
+    resultContent.innerHTML = `
+        <div style="padding:1.5rem;">
+            <!-- Header: Nama & Status -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+                <h4 style="font-size:1.125rem;font-weight:600;margin:0;">${data.nama_lengkap}</h4>
+                ${statusBadge}
+            </div>
+            
+            <!-- Main Data Grid - Headers match Supabase column names -->
+            <div style="background:#f8fafc;border-radius:8px;padding:1rem;font-size:0.875rem;">
+                <!-- IDENTITAS -->
+                <div style="font-size:0.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;padding-bottom:0.25rem;border-bottom:2px solid #e2e8f0;">Identitas</div>
+                
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;">No. Register</span>
+                    <strong>${data.no_register}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;">NIK</span>
+                    <strong style="font-family:monospace;">${data.nik}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;">Tempat, Tanggal Lahir</span>
+                    <strong>${data.tempat_lahir}, ${formatDate(data.tanggal_lahir)}</strong>
+                </div>
+                
+                <!-- ALAMAT -->
+                <div style="font-size:0.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.75rem;margin-bottom:0.5rem;padding-bottom:0.25rem;border-bottom:2px solid #e2e8f0;">Alamat</div>
+                
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;">Alamat KTP</span>
+                    <strong style="max-width:60%;text-align:right;">${data.alamat_ktp}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;">Alamat Domisili</span>
+                    <strong style="max-width:60%;text-align:right;">${data.alamat_domisili}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;">Lama Domisili</span>
+                    <strong>${data.lama_domisili}</strong>
+                </div>
+                
+                <!-- PEKERJAAN -->
+                <div style="font-size:0.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.75rem;margin-bottom:0.5rem;padding-bottom:0.25rem;border-bottom:2px solid #e2e8f0;">Pekerjaan</div>
+                
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;">Pekerjaan</span>
+                    <strong>${data.pekerjaan}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;">Posisi/Jabatan</span>
+                    <strong>${data.posisi}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;">Unit Kerja</span>
+                    <strong>${data.unit_kerja}</strong>
+                </div>
+                
+                <!-- PENDIDIKAN TUJUAN -->
+                <div style="font-size:0.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.75rem;margin-bottom:0.5rem;padding-bottom:0.25rem;border-bottom:2px solid #e2e8f0;">Pendidikan Tujuan</div>
+                
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;">Jurusan / Program Studi</span>
+                    <strong>${data.jurusan_tujuan}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;">Jenjang Pendidikan</span>
+                    <strong>${data.jenjang_pendidikan}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;">Unit / Institusi Tujuan</span>
+                    <strong>${data.unit_tujuan}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;">Rencana Tahun Studi</span>
+                    <strong>${data.rencana_tahun}</strong>
+                </div>
+                
+                <!-- KONTAK -->
+                <div style="font-size:0.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.75rem;margin-bottom:0.5rem;padding-bottom:0.25rem;border-bottom:2px solid #e2e8f0;">Kontak</div>
+                
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;">No. HP</span>
+                    <strong style="font-family:monospace;">${data.no_hp}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
+                    <span style="color:#64748b;">No. WhatsApp</span>
+                    <strong style="font-family:monospace;">${data.no_wa}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;">
+                    <span style="color:#64748b;">Email</span>
+                    <strong>${data.email}</strong>
+                </div>
+            </div>
+            
+            ${data.penjelasan && data.penjelasan !== '-' ? `
+            <!-- PENJELASAN -->
+            <div style="margin-top:1rem;padding:0.75rem;background:#fefce8;border-radius:8px;border:1px solid #fde047;">
+                <p style="font-size:0.8rem;color:#854d0e;margin:0 0 0.35rem 0;font-weight:600;">📝 Penjelasan:</p>
+                <p style="font-size:0.875rem;color:#713f12;margin:0;line-height:1.5;">${data.penjelasan}</p>
+            </div>
+            ` : ''}
+            
+            ${data.foto_drive_link || data.dokumen_drive_link || data.surat_pernyataan_link ? `
+            <!-- DOKUMEN GOOGLE DRIVE -->
+            <div style="margin-top:1rem;padding:0.75rem;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;">
+                <p style="font-size:0.8rem;color:#1e40af;margin:0 0 0.65rem 0;font-weight:600;">📎 Dokumen Terkait (Google Drive):</p>
+                <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+                    ${data.foto_drive_link ? `<a href="${data.foto_drive_link}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.45rem 0.85rem;background:#3b82f6;color:white;border-radius:6px;font-size:0.75rem;text-decoration:none;font-weight:500;">📷 Foto Pasfoto</a>` : ''}
+                    ${data.dokumen_drive_link ? `<a href="${data.dokumen_drive_link}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.45rem 0.85rem;background:#10b981;color:white;border-radius:6px;font-size:0.75rem;text-decoration:none;font-weight:500;">📄 Dokumen PDF</a>` : ''}
+                    ${data.surat_pernyataan_link ? `<a href="${data.surat_pernyataan_link}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.45rem 0.85rem;background:#8b5cf6;color:white;border-radius:6px;font-size:0.75rem;text-decoration:none;font-weight:500;">📋 Surat Pernyataan</a>` : ''}
+                    ${data.template_drive_link ? `<a href="${data.template_drive_link}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.45rem 0.85rem;background:#f59e0b;color:white;border-radius:6px;font-size:0.75rem;text-decoration:none;font-weight:500;">📑 Template</a>` : ''}
+                </div>
+            </div>
+            ` : ''}
+            
+            <!-- METADATA -->
+            <div style="margin-top:1rem;padding:0.65rem;background:#f1f5f9;border-radius:6px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;font-size:0.75rem;color:#64748b;">
+                <span>📅 Tanggal Pengajuan: <strong style="color:#334155;">${formatDate(data.tanggal_pengajuan)}</strong></span>
+                <span>📊 Status: <strong style="color:#334155;">${data.status}</strong></span>
+                ${data.submission_method ? `<span>🔗 Metode: <strong style="color:#334155;">${data.submission_method}</strong></span>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Display not found message for Cek Status Pengajuan
+ */
+function displayStatusNotFound(searchValue, searchType) {
+    const resultContent = document.getElementById('search-result-content');
+    
+    if (!resultContent) return;
+    
+    resultContent.innerHTML = `
+        <div style="text-align:center;padding:2rem;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" width="48" height="48" style="margin:0 auto 1rem;">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <p style="color:#64748b;font-weight:600;font-size:1rem;margin-bottom:0.5rem;">Data Tidak Ditemukan</p>
+            <p style="font-size:0.875rem;color:#94a3b8;margin-bottom:1rem;">${searchType} "<strong>${searchValue}</strong>" tidak ditemukan dalam database</p>
+            <div style="background:#f8fafc;padding:1rem;border-radius:8px;text-align:left;font-size:0.8rem;max-width:300px;margin:0 auto;">
+                <p style="color:#64748b;margin:0 0 0.5rem 0;font-weight:600;">Kemungkinan penyebab:</p>
+                <ul style="color:#64748b;margin:0;padding-left:1.25rem;">
+                    <li>Data belum diajukan</li>
+                    <li>${searchType} salah diketik</li>
+                    <li>Data masih dalam proses verifikasi</li>
+                </ul>
+            </div>
+        </div>
+    `;
 }
 
 // ===== RENDER FUNCTIONS =====
+
+/**
+ * Helper function to get field value from Supabase data
+ * Handles both snake_case and camelCase column names for compatibility
+ * @param {Object} data - The data object from Supabase
+ * @param {string} snakeCaseKey - Column name in snake_case format
+ * @param {string} camelCaseKey - Column name in camelCase format (optional)
+ * @param {*} defaultValue - Default value if not found
+ */
+function getField(data, snakeCaseKey, camelCaseKey, defaultValue = '-') {
+    // Try snake_case first (standard Supabase convention)
+    if (data && data[snakeCaseKey] !== undefined && data[snakeCaseKey] !== null) {
+        return data[snakeCaseKey];
+    }
+    
+    // Try camelCase (for backward compatibility)
+    if (camelCaseKey && data && data[camelCaseKey] !== undefined && data[camelCaseKey] !== null) {
+        return data[camelCaseKey];
+    }
+    
+    // Return default value
+    return defaultValue;
+}
 
 
 
@@ -11480,13 +11837,21 @@ function mapFormDataToDB(formData) {
         no_wa: formData.noWA,
         email: formData.email,
         
-        // File Upload (Base64)
-        foto: formData.foto || null,
-        dokumen_pdf: formData.dokumenPDF || null,
-        nama_file: formData.namaFile || null,
+        // GOOGLE DRIVE LINKS (NEW! - replacing base64 files)
+        foto_drive_link: formData.fotoDriveLink || null,           // Link Google Drive foto pasfoto
+        dokumen_drive_link: formData.dokumenDriveLink || null,     // Link Google Drive dokumen PDF
+        surat_pernyataan_link: formData.suratPernyataanLink || null, // Link Google Drive surat pernyataan
+        template_drive_link: formData.templateDriveLink || null,     // Link template (optional)
         
-        // Status
-        status: formData.status || 'Proses Verifikasi'
+        // File Upload - TIDAK DISIMPAN (set null untuk hemat storage)
+        foto: null,
+        dokumen_pdf: null,
+        nama_file: null,
+        
+        // Metadata
+        status: formData.status || 'Proses Verifikasi',
+        submission_method: formData.submissionMethod || 'google_drive_links',
+        timestamp: new Date().toISOString()
     };
 }
 
@@ -15441,32 +15806,41 @@ function showNotFound(message) {
 // ===== CEK STATUS PENETAPAN FUNCTIONS =====
 
 /**
- * Main function: Search Penetapan by NIK
+ * Main function: Search Penetapan by NIK from Supabase
+ * Fetches data from 'penetapan' table
  */
 async function searchPenetapanData() {
-    const nik = document.getElementById('penetapan-search-nik').value.trim();
+    const nik = document.getElementById('penetapan-search-nik')?.value?.trim();
     
     // Validation
     if (!nik) {
         showToast('❌ Masukkan NIK 16 digit!', 'error');
-        document.getElementById('penetapan-search-nik').focus();
+        document.getElementById('penetapan-search-nik')?.focus();
         return;
     }
     
     if (nik.length < 16) {
         showToast('⚠️ NIK harus 16 digit! Saat ini: ' + nik.length + ' digit', 'error');
-        document.getElementById('penetapan-search-nik').focus();
+        document.getElementById('penetapan-search-nik')?.focus();
         return;
     }
     
-    console.log('🔍 Mencari data penetapan untuk NIK:', nik);
+    console.log('[SIMBAKES] 🔍 Mencari data penetapan untuk NIK:', nik);
     
     // Hide previous results, show loading
     document.getElementById('penetapan-result-container').style.display = 'none';
     document.getElementById('penetapan-loading').style.display = 'block';
+    document.getElementById('penetapan-not-found').style.display = 'none';
     
     try {
-        // Query dari Supabase
+        // Check Supabase client availability
+        if (!supabaseClient) {
+            throw new Error('Supabase client tidak tersedia. Silakan refresh halaman atau hubungi admin.');
+        }
+        
+        console.log('[SIMBAKES] 📡 Mengquery tabel penetapan di Supabase...');
+        
+        // Query dari Supabase tabel penetapan
         const { data: penetapanData, error } = await supabaseClient
             .from('penetapan')
             .select('*')
@@ -15475,7 +15849,7 @@ async function searchPenetapanData() {
         
         if (error) throw error;
         
-        console.log('✅ Hasil pencarian penetapan:', penetapanData);
+        console.log('[SIMBAKES] ✅ Hasil pencarian penetapan:', penetapanData);
         
         // Hide loading
         document.getElementById('penetapan-loading').style.display = 'none';
@@ -15488,18 +15862,46 @@ async function searchPenetapanData() {
         }
         
     } catch (error) {
-        console.error('❌ Error searching penetapan:', error);
+        console.error('[SIMBAKES] ❌ Error searching penetapan:', error);
+        
+        // Detailed error logging
+        console.error('[SIMBAKES] Error details:', {
+            message: error.message,
+            code: error.code,
+            hint: error.hint,
+            details: error.details
+        });
+        
         document.getElementById('penetapan-loading').style.display = 'none';
-        showPenetapanNotFound('Gagal terhubung ke server: ' + error.message);
-        showToast('❌ ' + error.message, 'error');
+        
+        // Show user-friendly error message
+        let errorMessage = 'Gagal terhubung ke server.';
+        
+        if (error.message?.includes('Supabase client')) {
+            errorMessage = error.message;
+        } else if (error.code === 'PGRST116' || error.message?.includes('relation')) {
+            errorMessage = 'Tabel "penetapan" belum dibuat di database. Hubungi admin.';
+        } else if (error.code === '42703' || error.message?.includes('column')) {
+            errorMessage = 'Struktur tabel tidak sesuai. Kolom mungkin belum dibuat.';
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+        
+        showPenetapanNotFound(errorMessage);
+        showToast('❌ ' + errorMessage, 'error');
     }
 }
 
 /**
  * Display Penetapan result in the card (Photo Left, Data Right)
  */
+/**
+ * Display Penetapan result in the card (Photo Left, Data Right)
+ * Data source: Supabase table 'penetapan'
+ * All field names match snake_case columns in Supabase
+ */
 function displayPenetapanResult(data) {
-    console.log('📋 Menampilkan hasil penetapan:', data);
+    console.log('[SIMBAKES] 📋 Menampilkan hasil penetapan:', data);
     
     // Show result container
     document.getElementById('penetapan-result-container').style.display = 'block';
@@ -15508,61 +15910,115 @@ function displayPenetapanResult(data) {
     document.getElementById('penetapan-result-card').style.display = 'block';
     document.getElementById('penetapan-not-found').style.display = 'none';
     
+    // =====================================================
+    // EXTRACT DATA FROM SUPABASE (snake_case columns)
+    // Table: penetapan
+    // =====================================================
+    const penetapanData = {
+        // Identitas Utama
+        id: getField(data, 'id', 'id'),
+        nik: getField(data, 'nik', 'nik'),
+        nama_lengkap: getField(data, 'nama_lengkap', 'namaLengkap'),
+        no_register: getField(data, 'no_register', 'noRegister'),
+        
+        // Data Lahir
+        tempat_lahir: getField(data, 'tempat_lahir', 'tempatLahir'),
+        tanggal_lahir: getField(data, 'tanggal_lahir', 'tanggalLahir'),
+        
+        // Data Penetapan
+        no_sk_penetapan: getField(data, 'no_sk_penetapan', 'noSKPenetapan', 'no_sk', 'noSK'),
+        tanggal_penetapan: getField(data, 'tanggal_penetapan', 'tanggalPenetapan', 'tanggal'),
+        status_penetapan: getField(data, 'status_penetapan', 'statusPenetapan', 'status', 'Pending'),
+        catatan_penetapan: getField(data, 'catatan_penetapan', 'catatanPenetapan', 'catatan'),
+        
+        // Pendidikan
+        jurusan_tujuan: getField(data, 'jurusan_tujuan', 'jurusanTujuan', 'jurusan'),
+        jenjang_pendidikan: getField(data, 'jenjang_pendidikan', 'jenjangPendidikan', 'jenjang'),
+        unit_tujuan: getField(data, 'unit_tujuan', 'unitTujuan', 'unit'),
+        tahun_studi: getField(data, 'tahun_studi', 'tahunStudi', 'rencanaTahun'),
+        
+        // Data Keuangan (jika ada)
+        nilai: getField(data, 'nilai', 'nilaiBeasiswa', '-'),
+        periode: getField(data, 'periode', 'periodePemberian', '-'),
+        nomor_rekening: getField(data, 'nomor_rekening', 'nomorRekening', '-'),
+        nama_bank: getField(data, 'nama_bank', 'namaBank', '-'),
+        atas_nama: getField(data, 'atas_nama', 'atasNamaRekening', '-'),
+        
+        // Dokumen / Foto
+        link_foto: getField(data, 'link_foto', 'linkFoto', 'foto_drive_link', ''),
+        link_dokumen: getField(data, 'link_dokumen', 'linkDokumen', 'dokumen_drive_link', ''),
+        
+        // Metadata
+        created_at: getField(data, 'created_at', 'createdAt'),
+        updated_at: getField(data, 'updated_at', 'updatedAt')
+    };
+    
+    // Format tanggal helper
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '-';
+        try {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        } catch {
+            return dateStr;
+        }
+    };
+    
     // Set Photo (Left side) with improved handler
     const photoEl = document.getElementById('penetapan-photo');
     const placeholderEl = document.getElementById('penetapan-photo-placeholder');
     
-    setPhotoWithFallback(photoEl, placeholderEl, data.linkFoto);
+    setPhotoWithFallback(photoEl, placeholderEl, penetapanData.link_foto);
     
     // Set Register Badge under photo
-    document.getElementById('penetapan-register-badge').textContent = data.noRegister || '-';
+    document.getElementById('penetapan-register-badge').textContent = penetapanData.no_register || '-';
     
-    // Set Header Info (Right side - top)
-    document.getElementById('penetapan-nama-lengkap').textContent = data.namaLengkap || '-';
-    document.getElementById('penetapan-nik-display').textContent = `NIK: ${data.nik || '-'}`;
+    // Set Header Info (Right side - top) - Using Supabase column names
+    document.getElementById('penetapan-nama-lengkap').textContent = penetapanData.nama_lengkap || '-';
+    document.getElementById('penetapan-nik-display').textContent = `NIK: ${penetapanData.nik || '-'}`;
     
-    // Set Data Grid fields
-    document.getElementById('penetapan-no-sk').textContent = data.noSKPenetapan || '-';
-    document.getElementById('penetapan-tanggal').textContent = formatDate(data.tanggalPenetapan);
-    document.getElementById('penetapan-jurusan').textContent = data.jurusanTujuan || '-';
-    document.getElementById('penetapan-jenjang').textContent = data.jenjangPendidikan || '-';
-    document.getElementById('penetapan-unit').textContent = data.unitTujuan || '-';
-    document.getElementById('penetapan-tahun-studi').textContent = data.rencanaTahun || '-';
+    // Set Data Grid fields - Headers match Supabase columns
+    document.getElementById('penetapan-no-sk').textContent = penetapanData.no_sk_penetapan || '-';
+    document.getElementById('penetapan-tanggal').textContent = formatDate(penetapanData.tanggal_penetapan);
+    document.getElementById('penetapan-jurusan').textContent = penetapanData.jurusan_tujuan || '-';
+    document.getElementById('penetapan-jenjang').textContent = penetapanData.jenjang_pendidikan || '-';
+    document.getElementById('penetapan-unit').textContent = penetapanData.unit_tujuan || '-';
+    document.getElementById('penetapan-tahun-studi').textContent = penetapanData.tahun_studi || '-';
     
     // Set Status Badge with styling
-    setPenetapanStatusBadge(data.statusPenetapan);
+    setPenetapanStatusBadge(penetapanData.status_penetapan);
     
     // Set Catatan Penetapan
     const catatanContainer = document.getElementById('penetapan-catatan-container');
     const catatanEl = document.getElementById('penetapan-catatan');
-    if (data.catatanPenetapan && data.catatanPenetapan !== '-') {
+    if (penetapanData.catatan_penetapan && penetapanData.catatan_penetapan !== '-') {
         catatanContainer.style.display = 'block';
-        catatanEl.textContent = data.catatanPenetapan;
+        catatanEl.textContent = penetapanData.catatan_penetapan;
     } else {
         catatanContainer.style.display = 'none';
     }
     
-    // Set Info Keuangan
-    document.getElementById('penetapan-nilai').textContent = data.nilaiBeasiswa || '-';
-    document.getElementById('penetapan-periode').textContent = data.periodePemberian || '-';
-    document.getElementById('penetapan-rekening').textContent = data.nomorRekening || '-';
-    document.getElementById('penetapan-bank').textContent = data.namaBank || '-';
-    document.getElementById('penetapan-atas-nama').textContent = data.atasNamaRekening || '-';
+    // Set Info Keuangan - Using Supabase column names
+    document.getElementById('penetapan-nilai').textContent = penetapanData.nilai || '-';
+    document.getElementById('penetapan-periode').textContent = penetapanData.periode || '-';
+    document.getElementById('penetapan-rekening').textContent = penetapanData.nomor_rekening || '-';
+    document.getElementById('penetapan-bank').textContent = penetapanData.nama_bank || '-';
+    document.getElementById('penetapan-atas-nama').textContent = penetapanData.atas_nama || '-';
     
     // Set Action Buttons for Foto & Dokumen
     const btnFoto = document.getElementById('penetapan-btn-foto');
     const btnDokumen = document.getElementById('penetapan-btn-dokumen');
     
-    if (data.linkFoto && data.linkFoto !== '-' && data.linkFoto.length > 10) {
+    if (penetapanData.link_foto && penetapanData.link_foto !== '-' && penetapanData.link_foto.length > 10) {
         btnFoto.style.display = 'flex';
-        btnFoto.onclick = () => window.open(data.linkFoto, '_blank');
+        btnFoto.onclick = () => window.open(penetapanData.link_foto, '_blank');
     } else {
         btnFoto.style.display = 'none';
     }
     
-    if (data.linkDokumen && data.linkDokumen !== '-' && data.linkDokumen.length > 10) {
+    if (penetapanData.link_dokumen && penetapanData.link_dokumen !== '-' && penetapanData.link_dokumen.length > 10) {
         btnDokumen.style.display = 'flex';
-        btnDokumen.onclick = () => window.open(data.linkDokumen, '_blank');
+        btnDokumen.onclick = () => window.open(penetapanData.link_dokumen, '_blank');
     } else {
         btnDokumen.style.display = 'none';
     }
@@ -15570,6 +16026,9 @@ function displayPenetapanResult(data) {
     // Set timestamp
     const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     document.getElementById('penetapan-result-timestamp').textContent = `Dicari pada: ${now}`;
+    
+    // Log the mapped data for debugging
+    console.log('[SIMBAKES] ✅ Mapped penetapan data:', penetapanData);
 }
 
 /**
@@ -15861,14 +16320,6 @@ async function saveRevisionData() {
         btn.disabled = false;
         btn.innerHTML = originalText;
     }
-}
-
-/**
- * Legacy function - kept for compatibility
- */
-function searchStatus() {
-    // Redirect to new function
-    searchSubmissionData();
 }
 
 // ===== ADMIN PANEL - DATA PENGUSUL FUNCTIONS v3.0 =====
@@ -18227,31 +18678,106 @@ const SUPABASE_CONFIG = {
 
 // Global Supabase Client
 let supabaseClient = null;
+let supabaseInitRetries = 0;
+const MAX_SUPABASE_RETRIES = 3;
 
 function initSupabaseClient() {
     try {
-        if (typeof window.supabase !== 'undefined' && 
-            SUPABASE_CONFIG.url && 
-            SUPABASE_CONFIG.anonKey &&
-            SUPABASE_CONFIG.url !== 'YOUR_SUPABASE_URL') {
-            
-            supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
-            console.log('[SIMBAKES] ✅ Supabase client initialized');
-            return true;
-        } else {
-            console.warn('[SIMBAKES] ⚠️ Supabase belum dikonfigurasi');
-            console.log('[SIMBAKES] Silakan isi SUPABASE_URL dan SUPABASE_ANON_KEY');
+        console.log('[SIMBAKES] 🔄 Initializing Supabase client... (attempt ' + (supabaseInitRetries + 1) + ')');
+        
+        // Check if supabase library is loaded
+        if (typeof window.supabase === 'undefined') {
+            console.warn('[SIMBAKES] ⚠️ Supabase library not loaded yet');
+            if (supabaseInitRetries < MAX_SUPABASE_RETRIES) {
+                supabaseInitRetries++;
+                setTimeout(initSupabaseClient, 1000 * supabaseInitRetries); // Retry with delay
+                return false;
+            }
             return false;
         }
+        
+        // Validate configuration
+        if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.anonKey) {
+            console.error('[SIMBAKES] ❌ Supabase configuration missing');
+            return false;
+        }
+        
+        if (SUPABASE_CONFIG.url === 'YOUR_SUPABASE_URL' || SUPABASE_CONFIG.anonKey === 'YOUR_SUPABASE_ANON_KEY') {
+            console.error('[SIMBAKES] ❌ Supabase not configured - using placeholder values');
+            return false;
+        }
+        
+        // Create client
+        supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+        
+        console.log('[SIMBAKES] ✅ Supabase client initialized successfully!');
+        console.log('[SIMBAKES] 📡 Connected to:', SUPABASE_CONFIG.url);
+        
+        // Test connection (optional - can be commented out for faster loading)
+        testConnectionOnLoad();
+        
+        return true;
+        
     } catch (error) {
         console.error('[SIMBAKES] ❌ Error initializing Supabase:', error);
+        
+        if (supabaseInitRetries < MAX_SUPABASE_RETRIES) {
+            supabaseInitRetries++;
+            console.log('[SIMBAKES] 🔄 Retrying in ' + (1000 * supabaseInitRetries) + 'ms...');
+            setTimeout(initSupabaseClient, 1000 * supabaseInitRetries);
+        }
+        
         return false;
     }
 }
 
-// Initialize on DOM ready
+/**
+ * Test connection on load (silent test)
+ */
+async function testConnectionOnLoad() {
+    try {
+        if (!supabaseClient) return;
+        
+        const startTime = Date.now();
+        const { data, error } = await supabaseClient.from('submissions').select('id').limit(1);
+        const latency = Date.now() - startTime;
+        
+        if (error) {
+            console.warn('[SIMBAKES] ⚠️ Connection test warning:', error.message);
+        } else {
+            console.log('[SIMBAKES] ✅ Connection test successful! Latency: ' + latency + 'ms');
+        }
+    } catch (err) {
+        console.warn('[SIMBAKES] ⚠️ Connection test failed:', err.message);
+    }
+}
+
+/**
+ * Ensure Supabase client is ready (call before any Supabase operation)
+ */
+function ensureSupabaseClient() {
+    if (!supabaseClient) {
+        // Try to initialize again
+        const success = initSupabaseClient();
+        if (!success) {
+            throw new Error('Supabase client tidak tersedia. Pastikan koneksi internet stabil dan refresh halaman.');
+        }
+    }
+    return supabaseClient;
+}
+
+// Initialize on DOM ready with multiple strategies
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('[SIMBAKES] 📄 DOM Content Loaded - Initializing Supabase...');
     initSupabaseClient();
+});
+
+// Also try to initialize when window loads (backup)
+window.addEventListener('load', function() {
+    if (!supabaseClient) {
+        console.log('[SIMBAKES] 📄 Window Loaded - Retrying Supabase init...');
+        initSupabaseClient();
+    }
 });
 </script>
 
