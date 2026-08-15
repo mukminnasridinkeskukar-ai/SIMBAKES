@@ -13038,11 +13038,17 @@ async function fetchDashboardStats() {
  * Load dummy stats untuk development/demo
  */
 function loadDummyStats() {
-    document.getElementById('stat-total').textContent = '0';
-    document.getElementById('stat-disetujui').textContent = '0';
-    document.getElementById('stat-ditolak').textContent = '0';
-    document.getElementById('stat-perbaikan').textContent = '0';
-    document.getElementById('stat-batal').textContent = '0';
+    // Update dengan null safety
+    const safeUpdate = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    };
+    
+    safeUpdate('stat-total', '0');
+    safeUpdate('stat-disetujui', '0');
+    safeUpdate('stat-ditolak', '0');
+    safeUpdate('stat-perbaikan', '0');
+    safeUpdate('stat-batal', '0');
     
     // NEW: Dummy stats for new cards
     document.getElementById('stat-lulus-pt').textContent = '0';
@@ -13350,11 +13356,16 @@ async function fetchVisitorStats() {
         if (result.status === 'success') {
             const data = result.data;
             
-            // Update stat cards
-            document.getElementById('visitor-total').textContent = data.totalKunjungan || 0;
-            document.getElementById('visitor-today').textContent = data.hariIni || 0;
-            document.getElementById('visitor-online').textContent = data.onlineEstimate || 0;
-            document.getElementById('visitor-countries').textContent = Object.keys(data.negara || {}).length;
+            // Update stat cards (dengan null safety)
+            const visitorTotal = document.getElementById('visitor-total');
+            const visitorToday = document.getElementById('visitor-today');
+            const visitorOnline = document.getElementById('visitor-online');
+            const visitorCountries = document.getElementById('visitor-countries');
+            
+            if (visitorTotal) visitorTotal.textContent = data.totalKunjungan || 0;
+            if (visitorToday) visitorToday.textContent = data.hariIni || 0;
+            if (visitorOnline) visitorOnline.textContent = data.onlineEstimate || 0;
+            if (visitorCountries) visitorCountries.textContent = Object.keys(data.negara || {}).length;
             
             // Render chart jika ada data
             if (data.dataPerHari && data.dataPerHari.length > 0) {
@@ -13368,11 +13379,16 @@ async function fetchVisitorStats() {
         }
     } catch (error) {
         console.error('❌ Error fetching visitor stats:', error);
-        // Set default values
-        document.getElementById('visitor-total').textContent = '0';
-        document.getElementById('visitor-today').textContent = '0';
-        document.getElementById('visitor-online').textContent = '0';
-        document.getElementById('visitor-countries').textContent = '0';
+        // Set default values (dengan null safety)
+        const vTotal = document.getElementById('visitor-total');
+        const vToday = document.getElementById('visitor-today');
+        const vOnline = document.getElementById('visitor-online');
+        const vCountries = document.getElementById('visitor-countries');
+        
+        if (vTotal) vTotal.textContent = '0';
+        if (vToday) vToday.textContent = '0';
+        if (vOnline) vOnline.textContent = '0';
+        if (vCountries) vCountries.textContent = '0';
     }
 }
 
@@ -13388,6 +13404,15 @@ async function fetchPenetapanStats() {
         if (!supabaseClient) {
             console.warn('⚠️ Supabase client tidak tersedia untuk fetchPenetapanStats');
             loadDummyPenetapanStats();
+            return;
+        }
+        
+        // Cek apakah elemen kartu penetapan ada di DOM
+        const statLulusPT = document.getElementById('stat-lulus-pt');
+        const statPenerima = document.getElementById('stat-penerima-beasiswa');
+        
+        if (!statLulusPT && !statPenerima) {
+            console.log('[SIMBAKES] ℹ️ Kartu Penetapan tidak ditampilkan, skip fetching');
             return;
         }
 
@@ -13744,7 +13769,12 @@ window.fetchPenetapanStats = fetchPenetapanStats;
  */
 function renderVisitorChart(chartData) {
     const canvas = document.getElementById('visitor-chart');
-    if (!canvas) return;
+    
+    // Safety check - skip jika canvas tidak ada
+    if (!canvas) {
+        console.log('[SIMBAKES] ℹ️ Visitor chart element not found, skipping render');
+        return;
+    }
     
     const ctx = canvas.getContext('2d');
     const width = canvas.width = canvas.offsetWidth * 2; // Retina display
@@ -13829,6 +13859,14 @@ function renderVisitorChart(chartData) {
 // Variable already declared at top to avoid TDZ error
 
 function renderRecentVisitorsTable(visitors) {
+    // Cek apakah element ada di DOM (section Pengunjung Terakhir sudah dihapus)
+    const tbody = document.getElementById('recent-visitors-body');
+    
+    if (!tbody) {
+        console.log('[SIMBAKES] ℹ️ Section Pengunjung Terakhir tidak ditampilkan (disabled)');
+        return;  // Skip rendering jika element tidak ada
+    }
+    
     // Cache data for pagination
     cachedRecentVisitors = visitors || [];
     renderRecentVisitors();
@@ -13843,15 +13881,20 @@ function renderRecentVisitorsTable(visitors) {
  * Uses data from getVisitorStats() which returns proper Supabase format
  */
 function renderRecentVisitors() {
+    // Safety check - pastikan element ada di DOM
     const tbody = document.getElementById('recent-visitors-body');
     const container = document.getElementById('pagination-recent-visitors-container');
     
+    if (!tbody || !container) {
+        return;  // Skip jika element tidak ada (section disabled)
+    }
+    
     if (!cachedRecentVisitors || cachedRecentVisitors.length === 0) {
-        tbody.innerHTML = `
+        tbody.innerHTML = \`
             <tr>
                 <td colspan="5" class="loading-cell">📭 Belum ada data pengunjung</td>
             </tr>
-        `;
+        \`;
         container.innerHTML = '';
         return;
     }
