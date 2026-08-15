@@ -10871,6 +10871,13 @@ async function submitForm() {
                 errorMessage += `\n\n⚠️ SOLUSI - Data Duplikat:`;
                 errorMessage += `\n→ Nomor register atau NIK sudah terdaftar`;
                 errorMessage += `\n→ Gunakan nomor register yang berbeda`;
+            } else if (error.code === '22007' || error.message?.includes('invalid input syntax for type date')) {
+                errorMessage += `\n\n⚠️ SOLUSI - Format Tanggal Tidak Valid (Error 22007):`;
+                errorMessage += `\n→ Format tanggal Indonesia tidak didukung oleh database`;
+                errorMessage += `\n→ Solusi 1: Jalankan script SQL untuk mengubah kolom ke TEXT:`;
+                errorMessage += `\n   /download/simbakes_fix_submissions_table.sql`;
+                errorMessage += `\n   (Lihat bagian "2b. FIX DATE COLUMNS")`;
+                errorMessage += `\n→ Solusi 2: Atau refresh halaman ini (sudah ada fix otomatis di JavaScript)`;
             } else if (error.code === '42703' || error.message?.includes('column') || error.message?.includes('does not exist')) {
                 errorMessage += `\n\n⚠️ SOLUSI - Kolom Tidak Ditemukan:`;
                 errorMessage += `\n→ Jalankan script SQL di Supabase Editor:`;
@@ -11789,19 +11796,74 @@ async function getAllSubmissions(limit = 10000, offset = 0) {
 }
 
 /**
+ * Convert various date formats to ISO format (YYYY-MM-DD) for PostgreSQL
+ * Handles Indonesian date formats and browser date inputs
+ */
+function convertToISODate(dateValue) {
+    if (!dateValue || dateValue === '' || dateValue === null || dateValue === undefined) {
+        return null;
+    }
+    
+    const dateStr = String(dateValue).trim();
+    
+    // Already in ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss)
+    if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+        return dateStr.substring(0, 10); // Return just the date part
+    }
+    
+    // Handle Indonesian format: "16 Agustus 2026 pukul 06.27 WIB"
+    const indoDateRegex = /(\d{1,2})\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})/;
+    const match = dateStr.match(indoDateRegex);
+    if (match) {
+        const [, day, monthName, year] = match;
+        const months = {
+            'Januari': '01', 'Februari': '02', 'Maret': '03', 'April': '04',
+            'Mei': '05', 'Juni': '06', 'Juli': '07', 'Agustus': '08',
+            'September': '09', 'Oktober': '10', 'November': '11', 'Desember': '12'
+        };
+        return `${year}-${months[monthName]}-${day.padStart(2, '0')}`;
+    }
+    
+    // Handle DD/MM/YYYY or MM/DD/YYYY format
+    const slashParts = dateStr.split('/');
+    if (slashParts.length === 3) {
+        const [part1, part2, part3] = slashParts;
+        // Assume DD/MM/YYYY for Indonesian locale
+        if (parseInt(part3) > 1000) { // Year is last
+            return `${part3}-${part2.padStart(2, '0')}-${part1.padStart(2, '0')}`;
+        }
+    }
+    
+    // Try parsing as Date object
+    try {
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+            return date.toISOString().substring(0, 10);
+        }
+    } catch (e) {
+        console.warn('[SIMBAKES] Could not parse date:', dateValue, e);
+    }
+    
+    // If all else fails, return null to avoid database error
+    console.warn('[SIMBAKES] Invalid date format, returning null:', dateValue);
+    return null;
+}
+
+/**
  * Map formData keys (camelCase) to database columns (snake_case)
+ * All dates are converted to ISO format for PostgreSQL compatibility
  */
 function mapFormDataToDB(formData) {
     return {
         // Informasi Registrasi
         no_register: formData.noRegister,
-        tanggal_pengajuan: formData.tanggalPengajuan,
+        tanggal_pengajuan: convertToISODate(formData.tanggalPengajuan),
         
         // Data Pribadi
         nik: formData.nik,
         nama_lengkap: formData.namaLengkap,
         tempat_lahir: formData.tempatLahir,
-        tanggal_lahir: formData.tanggalLahir || null,
+        tanggal_lahir: convertToISODate(formData.tanggalLahir),
         
         // Alamat
         alamat_ktp: formData.alamatKTP,
