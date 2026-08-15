@@ -8329,8 +8329,36 @@ function adminLogin() {
 }
 
 
-// Store submitted applications for search
-let submittedApplications = JSON.parse(localStorage.getItem('simbakes_applications') || '[]');
+// Store submitted applications for search (OPTIMIZED - no base64 files!)
+// Initialize with cleanup if needed
+function initializeSubmittedApplications() {
+    try {
+        const stored = localStorage.getItem('simbakes_applications');
+        if (stored) {
+            // Check if data is too large (>3MB), clean it up
+            if (stored.length > 3 * 1024 * 1024) {
+                console.warn('[SIMBAKES] ⚠️ Data localStorage terlalu besar, melakukan cleanup...');
+                const parsed = JSON.parse(stored);
+                // Keep only last 10 entries without files
+                const cleaned = parsed.slice(-10).map(app => {
+                    // Remove large base64 fields
+                    delete app.foto;
+                    delete app.dokumenPDF;
+                    return app;
+                });
+                localStorage.setItem('simbakes_applications', JSON.stringify(cleaned));
+                return cleaned;
+            }
+            return JSON.parse(stored);
+        }
+        return [];
+    } catch (e) {
+        console.error('[SIMBAKES] Error reading applications:', e);
+        return [];
+    }
+}
+
+let submittedApplications = initializeSubmittedApplications();
 
 // File storage (v2.0 - Base64 for Google Drive upload)
 let uploadedPhoto = null;        // Base64 string for photo
@@ -10019,19 +10047,48 @@ async function submitForm() {
     } catch (error) {
         console.error('❌ Error submitting form:', error);
         
-        // Fallback to local storage on any error
-        console.log('🔄 Fallback: Menyimpan ke localStorage...');
-        saveToLocal(formData);
+        // Handle QuotaExceededError specifically
+        if (error.name === 'QuotaExceededError' || error.message?.includes('quota') || error.message?.includes('penyimpanan terbatas')) {
+            console.error('[SIMBAKES] 💥 QUOTA EXCEEDED ERROR - LocalStorage penuh!');
+            
+            closeModal('confirm-modal');
+            document.getElementById('success-reg-number').textContent = formData.noRegister;
+            document.getElementById('success-modal').classList.add('active');
+            
+            showToast('💾 Penyimpanan browser penuh! Data tidak tersimpan. Silakan hapus cache browser.', 'error');
+            
+            // Show user-friendly solution
+            setTimeout(() => {
+                alert('⚠️ PENYIMPANAN PENUH\n\nBrowser Anda kehabisan ruang penyimpanan.\n\n🔧 SOLUSI:\n\n1. Buka Developer Tools (F12)\n2. Pilih tab "Application"\n3. Di sidebar, pilih "Local Storage"\n4. Klik kanan > Clear\n\nAtau:\n• Gunakan mode Incognito/Private\n• Clear cache browser untuk site ini');
+            }, 500);
+            
+            return;  // Stop here, don't try to save
+        }
         
-        closeModal('confirm-modal');
-        document.getElementById('success-reg-number').textContent = formData.noRegister;
-        document.getElementById('success-modal').classList.add('active');
-        
-        showToast(`⚠️ Gagal ke Supabase: ${error.message}. Data tersimpan locally.`, 'error');
+        // Fallback to local storage on other errors (with try-catch)
+        try {
+            console.log('🔄 Fallback: Menyimpan ke localStorage...');
+            saveToLocal(formData);
+            
+            closeModal('confirm-modal');
+            document.getElementById('success-reg-number').textContent = formData.noRegister;
+            document.getElementById('success-modal').classList.add('active');
+            
+            showToast(`⚠️ Gagal ke Supabase: ${error.message}. Data tersimpan locally.`, 'warning');
+            
+        } catch (localError) {
+            console.error('❌ Gagal menyimpan locally juga:', localError);
+            
+            closeModal('confirm-modal');
+            
+            // Show detailed error to user
+            alert(`❌ GAGAL MENYIMPAN DATA!\n\nError: ${error.message}\n\nSolusi:\n1. Refresh halaman dan coba lagi\n2. Hapus cache browser (Ctrl+Shift+Delete)\n3. Gunakan mode Incognito\n4. Hubungi admin jika masalah berlanjut`);
+        }
         
         console.error('Detail Error:', {
             message: error.message,
-            supabaseConnected: !!supabaseClient
+            supabaseConnected: !!supabaseClient,
+            timestamp: new Date().toISOString()
         });
         
     } finally {
@@ -10049,10 +10106,119 @@ async function getClientIP() {
 }
 
 function saveToLocal(data) {
-    submittedApplications.push(data);
-    localStorage.setItem('simbakes_applications', JSON.stringify(submittedApplications));
+    try {
+        // =====================================================
+        // OPTIMIZED: Don't store base64 files in localStorage!
+        // Only store metadata and text data to avoid QuotaExceededError
+        // =====================================================
+        const optimizedData = {
+            noRegister: data.noRegister,
+            tanggalPengajuan: data.tanggalPengajuan,
+            nik: data.nik,
+            namaLengkap: data.namaLengkap,
+            tempatLahir: data.tempatLahir,
+            tanggalLahir: data.tanggalLahir,
+            alamatKTP: data.alamatKTP,
+            alamatDomisili: data.alamatDomisili,
+            lamaDomisili: data.lamaDomisili,
+            pekerjaan: data.pekerjaan,
+            posisi: data.posisi,
+            unitKerja: data.unitKerja,
+            penjelasan: data.penjelasan ? data.penjelasan.substring(0, 500) + '...' : '',  // Truncate long text
+            jurusanTujuan: data.jurusanTujuan,
+            jenjangPendidikan: data.jenjangPendidikan,
+            unitTujuan: data.unitTujuan,
+            rencanaTahun: data.rencanaTahun,
+            noHP: data.noHP,
+            noWA: data.noWA,
+            email: data.email,
+            
+            // File metadata only (NOT the actual base64 data!)
+            hasFoto: !!data.foto && data.foto.length > 100,
+            hasPDF: !!data.dokumenPDF && data.dokumenPDF.length > 100,
+            namaFile: data.namaFile || null,
+            fotoSize: data.foto ? Math.round(data.foto.length / 1024) + 'KB' : null,
+            pdfSize: data.dokumenPDF ? Math.round(data.dokumenPDF.length / 1024) + 'KB' : null,
+            
+            status: data.status || 'Proses Verifikasi',
+            timestamp: data.timestamp || new Date().toISOString(),
+            
+            // Flag that files need to be re-uploaded when resubmitting
+            needsFileResubmit: true
+        };
+        
+        // Add to array (limit to last 20 entries to prevent quota exceeded)
+        submittedApplications.push(optimizedData);
+        
+        if (submittedApplications.length > 20) {
+            console.log('[SIMBAKES] 🧹 Cleanup: Menghapus', submittedApplications.length - 20, 'data lama...');
+            submittedApplications = submittedApplications.slice(-20);  // Keep only last 20
+        }
+        
+        // Try to save with error handling for QuotaExceededError
+        const jsonString = JSON.stringify(submittedApplications);
+        
+        // Check size before saving (warn if >2MB)
+        if (jsonString.length > 2 * 1024 * 1024) {
+            console.warn('[SIMBAKES] ⚠️ Data mendekati batas localStorage:', 
+                       Math.round(jsonString.length / 1024), 'KB');
+        }
+        
+        localStorage.setItem('simbakes_applications', jsonString);
+        
+        console.log('[SIMBAKES] ✅ Data tersimpan di localStorage (optimized, tanpa file base64)');
+        console.log('[SIMBAKES] 📊 Ukuran data:', Math.round(jsonString.length / 1024), 'KB');
+        console.log('[SIMBAKES] 📝 Total aplikasi tersimpan:', submittedApplications.length);
+        
+    } catch (error) {
+        console.error('[SIMBAKES] ❌ Error menyimpan ke localStorage:', error);
+        
+        if (error.name === 'QuotaExceededError' || error.message?.includes('quota')) {
+            // Emergency cleanup - remove oldest entries until we can save
+            console.error('[SIMBAKES] 💥 LocalStorage penuh! Melakukan emergency cleanup...');
+            
+            try {
+                // Keep only last 5 entries (aggressive cleanup)
+                const recentData = submittedApplications.slice(-5);
+                const minimizedData = recentData.map(app => ({
+                    noRegister: app.noRegister,
+                    namaLengkap: app.namaLengkap,
+                    email: app.email,
+                    status: app.status,
+                    timestamp: app.timestamp
+                    // Minimal data only
+                }));
+                
+                localStorage.setItem('simbakes_applications', JSON.stringify(minimizedData));
+                submittedApplications = minimizedData;
+                
+                console.log('[SIMBAKES] ✅ Emergency cleanup berhasil. Data lama dihapus.');
+                
+                // Try again with current data (minimal version)
+                const minimalCurrent = {
+                    noRegister: data.noRegister,
+                    namaLengkap: data.namaLengkap,
+                    email: data.email,
+                    status: data.status || 'Proses Verifikasi',
+                    timestamp: new Date().toISOString(),
+                    note: 'Files not stored due to storage limits'
+                };
+                
+                submittedApplications.push(minimalCurrent);
+                localStorage.setItem('simbakes_applications', JSON.stringify(submittedApplications));
+                
+                showToast('⚠️ Penyimpanan terbatas. Data dasar tersimpan, namun file perlu diupload ulang nanti.', 'warning');
+                
+            } catch (cleanupError) {
+                console.error('[SIMBAKES] ❌ Gagal emergency cleanup:', cleanupError);
+                throw new Error('LocalStorage penuh dan tidak bisa dibersihkan. Hapus data browser atau gunakan mode Incognito.');
+            }
+        } else {
+            throw error;  // Re-throw other errors
+        }
+    }
     
-    // Also add to pengusulData for admin view
+    // Also add to pengusulData for admin view (without base64)
     pengusulData.unshift({
         id: Date.now().toString(),
         nama: data.namaLengkap,
@@ -10060,7 +10226,7 @@ function saveToLocal(data) {
         programStudi: data.jurusanTujuan,
         email: data.email,
         noTelepon: data.noHP,
-        judulProposal: data.penjelasan.substring(0, 50) + '...',
+        judulProposal: data.penjelasan ? data.penjelasan.substring(0, 50) + '...' : '-',
         status: 'Proses Verifikasi',
         tanggalPengajuan: new Date().toISOString().split('T')[0],
         noRegister: data.noRegister
@@ -10096,6 +10262,127 @@ function resetForm() {
 }
 
 // ===== SEARCH STATUS =====
+
+// ============================================================
+// LOCAL STORAGE UTILITY FUNCTIONS (for QuotaExceededError fix)
+// ============================================================
+
+/**
+ * Check localStorage usage and return stats
+ * Call from console: checkStorageUsage()
+ */
+function checkStorageUsage() {
+    let totalSize = 0;
+    const items = {};
+    
+    for (let key in localStorage) {
+        if (localStorage.hasOwnProperty(key)) {
+            const value = localStorage.getItem(key);
+            const size = value ? new Blob([value]).size : 0;
+            totalSize += size;
+            items[key] = {
+                size: Math.round(size / 1024) + 'KB',
+                preview: value ? value.substring(0, 50) + '...' : null
+            };
+        }
+    }
+    
+    const usagePercent = Math.round((totalSize / (5 * 1024 * 1024)) * 100);  // Assume 5MB limit
+    
+    console.log('📊 === LOCAL STORAGE USAGE ===');
+    console.log(`Total: ${Math.round(totalSize / 1024)} KB / ~5000 KB (${usagePercent}%)`);
+    console.log('Items:', items);
+    
+    if (usagePercent > 80) {
+        console.warn('⚠️ WARNING: Storage nearly full! Consider cleaning up.');
+    }
+    
+    return { totalSize, usagePercent, items };
+}
+
+/**
+ * Clear all SIMBAKES data from localStorage
+ * Call from console: clearSimbakesStorage()
+ */
+function clearSimbakesStorage() {
+    const keysToRemove = [];
+    
+    for (let key in localStorage) {
+        if (key.startsWith('simbakes_') || key.includes('applications') || key.includes('pengusul')) {
+            keysToRemove.push(key);
+        }
+    }
+    
+    keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        console.log(`🗑️ Removed: ${key}`);
+    });
+    
+    // Reset in-memory arrays
+    if (typeof submittedApplications !== 'undefined') {
+        submittedApplications = [];
+    }
+    if (typeof pengusulData !== 'undefined') {
+        pengusulData = [];
+    }
+    
+    console.log(`✅ Cleared ${keysToRemove.length} SIMBAKES storage items`);
+    showToast(`🗑️ ${keysToRemove.length} item data berhasil dihapus`, 'success');
+    
+    return keysToRemove.length;
+}
+
+/**
+ * Clear only old application data (keep last 5)
+ * Call from console: cleanupOldApplications()
+ */
+function cleanupOldApplications() {
+    try {
+        const stored = localStorage.getItem('simbakes_applications');
+        if (!stored) {
+            console.log('No applications to clean');
+            return 0;
+        }
+        
+        const apps = JSON.parse(stored);
+        const originalCount = apps.length;
+        
+        // Keep only last 5, remove base64 data
+        const cleaned = apps.slice(-5).map(app => {
+            delete app.foto;
+            delete app.dokumenPDF;
+            return app;
+        });
+        
+        localStorage.setItem('simbakes_applications', JSON.stringify(cleaned));
+        
+        // Update in-memory array
+        if (typeof submittedApplications !== 'undefined') {
+            submittedApplications = cleaned;
+        }
+        
+        console.log(`✅ Cleaned up: ${originalCount} → ${cleaned.length} applications`);
+        console.log(`   Removed ${originalCount - cleanedCount} old entries`);
+        console.log(`   Removed base64 file data from remaining entries`);
+        
+        return originalCount - cleaned.length;
+        
+    } catch (e) {
+        console.error('Error during cleanup:', e);
+        return -1;
+    }
+}
+
+// Make functions available globally for console access
+window.checkStorageUsage = checkStorageUsage;
+window.clearSimbakesStorage = clearSimbakesStorage;
+window.cleanupOldApplications = cleanupOldApplications;
+
+console.log('[SIMBAKES] 💡 Storage utility functions available:');
+console.log('  - checkStorageUsage()  : Check localStorage usage');
+console.log('  - clearSimbakesStorage() : Clear all SIMBAKES data');
+console.log('  - cleanupOldApplications() : Keep only recent data');
+
 function searchStatus() {
     const regNumber = document.getElementById('search-register').value.trim();
     
