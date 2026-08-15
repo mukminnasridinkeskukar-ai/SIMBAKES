@@ -11373,7 +11373,12 @@ async function searchStatus() {
 /**
  * Display status result for Cek Status Pengajuan
  * Data source: Supabase table 'submissions'
- * All field names match snake_case columns in Supabase
+ * 23 Fields sesuai kolom tabel submissions:
+ * nik, nama_lengkap, tempat_lahir, tanggal_lahir, alamat_ktp,
+ * alamat_domisili, lama_domisili, pekerjaan, posisi, unit_kerja,
+ * penjelasan, jurusan_tujuan, jenjang_pendidikan, unit_tujuan,
+ * rencana_tahun, no_hp, no_wa, email, foto, dokumen_pdf,
+ * nama_file, status, catatan_admin
  */
 function displayStatusResult(found) {
     const resultContent = document.getElementById('search-result-content');
@@ -11393,18 +11398,12 @@ function displayStatusResult(found) {
     
     // =====================================================
     // EXTRACT DATA FROM SUPABASE (snake_case columns)
-    // Table: submissions
+    // Table: submissions - 23 Fields
     // =====================================================
     const data = {
-        // Identitas
-        no_register: getField(found, 'no_register', 'noRegister'),
+        // Identitas Utama
         nik: getField(found, 'nik', 'nik'),
         nama_lengkap: getField(found, 'nama_lengkap', 'namaLengkap'),
-        
-        // Tanggal & Waktu
-        tanggal_pengajuan: getField(found, 'tanggal_pengajuan', 'tanggalPengajuan'),
-        created_at: getField(found, 'created_at', 'createdAt'),
-        updated_at: getField(found, 'updated_at', 'updatedAt'),
         
         // Tempat & Tanggal Lahir
         tempat_lahir: getField(found, 'tempat_lahir', 'tempatLahir'),
@@ -11421,7 +11420,7 @@ function displayStatusResult(found) {
         unit_kerja: getField(found, 'unit_kerja', 'unitKerja'),
         penjelasan: getField(found, 'penjelasan', 'penjelasan'),
         
-        // Pendidikan (Tujuan Beasiswa)
+        // Pendidikan Tujuan
         jurusan_tujuan: getField(found, 'jurusan_tujuan', 'jurusanTujuan'),
         jenjang_pendidikan: getField(found, 'jenjang_pendidikan', 'jenjangPendidikan'),
         unit_tujuan: getField(found, 'unit_tujuan', 'unitTujuan'),
@@ -11432,16 +11431,14 @@ function displayStatusResult(found) {
         no_wa: getField(found, 'no_wa', 'noWA'),
         email: getField(found, 'email', 'email'),
         
-        // Google Drive Links (Dokumen)
-        foto_drive_link: getField(found, 'foto_drive_link', 'fotoDriveLink', ''),
-        dokumen_drive_link: getField(found, 'dokumen_drive_link', 'dokumenDriveLink', ''),
-        surat_pernyataan_link: getField(found, 'surat_pernyataan_link', 'suratPernyataanLink', ''),
-        template_drive_link: getField(found, 'template_drive_link', 'templateDriveLink', ''),
+        // Dokumen/Files (support both old base64 and new drive links)
+        foto: getField(found, 'foto', 'foto_drive_link', 'fotoDriveLink', '-'),
+        dokumen_pdf: getField(found, 'dokumen_pdf', 'dokumen_drive_link', 'dokumenDriveLink', '-'),
+        nama_file: getField(found, 'nama_file', 'namaFile', '-'),
         
-        // Status & Metadata
+        // Status & Catatan
         status: getField(found, 'status', 'status', 'Proses Verifikasi'),
-        submission_method: getField(found, 'submission_method', 'submissionMethod'),
-        timestamp: getField(found, 'timestamp', 'timestamp')
+        catatan_admin: getField(found, 'catatan_admin', 'catatanAdmin', '')
     };
     
     // Determine status badge based on status value
@@ -11453,138 +11450,164 @@ function displayStatusResult(found) {
     } else if (statusLower.includes('ditolak') || statusLower.includes('tolak')) {
         statusBadge = '<span style="padding:0.35rem 0.75rem;background:#fee2e2;color:#991b1b;border-radius:20px;font-size:0.75rem;font-weight:600;">❌ Ditolak</span>';
     } else if (statusLower.includes('perbaikan') || statusLower.includes('revisi') || statusLower.includes('revision')) {
-        statusBadge = '<span style="padding:0.35rem 0.75rem;background:#fef3c7;color:#92400e;border-radius:20px;font-size:0.75rem;font-weight:600;">⚠️ Perbaikan</span>';
+        statusBadge = '<span style="padding:0.35rem 0.75rem;background:#fef3c7;color:#92400e;border-radius:20px;font-size:0.75rem;font-weight:600;">⚠️ Perbaiki</span>';
     } else if (statusLower.includes('batal') || statusLower.includes('cancel') || statusLower.includes('dicabut')) {
         statusBadge = '<span style="padding:0.35rem 0.75rem;background:#f8fafc;color:#64748b;border-radius:20px;font-size:0.75rem;font-weight:600;">🚫 Dibatalkan</span>';
     } else {
         statusBadge = '<span style="padding:0.35rem 0.75rem;background:#dbeafe;color:#1e40af;border-radius:20px;font-size:0.75rem;font-weight:600;">⏳ Proses Verifikasi</span>';
     }
     
-    // Build the result card with proper headers matching Supabase columns
+    // Build the result card - Headers match Supabase column names (snake_case)
     resultContent.innerHTML = `
         <div style="padding:1.5rem;">
-            <!-- Header: Nama & Status -->
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
-                <h4 style="font-size:1.125rem;font-weight:600;margin:0;">${data.nama_lengkap}</h4>
-                ${statusBadge}
-            </div>
-            
-            <!-- Main Data Grid - Headers match Supabase column names -->
-            <div style="background:#f8fafc;border-radius:8px;padding:1rem;font-size:0.875rem;">
-                <!-- IDENTITAS -->
-                <div style="font-size:0.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;padding-bottom:0.25rem;border-bottom:2px solid #e2e8f0;">Identitas</div>
-                
-                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
-                    <span style="color:#64748b;">No. Register</span>
-                    <strong>${data.no_register}</strong>
-                </div>
-                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
-                    <span style="color:#64748b;">NIK</span>
-                    <strong style="font-family:monospace;">${data.nik}</strong>
-                </div>
-                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
-                    <span style="color:#64748b;">Tempat, Tanggal Lahir</span>
-                    <strong>${data.tempat_lahir}, ${formatDate(data.tanggal_lahir)}</strong>
-                </div>
-                
-                <!-- ALAMAT -->
-                <div style="font-size:0.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.75rem;margin-bottom:0.5rem;padding-bottom:0.25rem;border-bottom:2px solid #e2e8f0;">Alamat</div>
-                
-                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
-                    <span style="color:#64748b;">Alamat KTP</span>
-                    <strong style="max-width:60%;text-align:right;">${data.alamat_ktp}</strong>
-                </div>
-                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
-                    <span style="color:#64748b;">Alamat Domisili</span>
-                    <strong style="max-width:60%;text-align:right;">${data.alamat_domisili}</strong>
-                </div>
-                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
-                    <span style="color:#64748b;">Lama Domisili</span>
-                    <strong>${data.lama_domisili}</strong>
-                </div>
-                
-                <!-- PEKERJAAN -->
-                <div style="font-size:0.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.75rem;margin-bottom:0.5rem;padding-bottom:0.25rem;border-bottom:2px solid #e2e8f0;">Pekerjaan</div>
-                
-                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
-                    <span style="color:#64748b;">Pekerjaan</span>
-                    <strong>${data.pekerjaan}</strong>
-                </div>
-                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
-                    <span style="color:#64748b;">Posisi/Jabatan</span>
-                    <strong>${data.posisi}</strong>
-                </div>
-                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
-                    <span style="color:#64748b;">Unit Kerja</span>
-                    <strong>${data.unit_kerja}</strong>
-                </div>
-                
-                <!-- PENDIDIKAN TUJUAN -->
-                <div style="font-size:0.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.75rem;margin-bottom:0.5rem;padding-bottom:0.25rem;border-bottom:2px solid #e2e8f0;">Pendidikan Tujuan</div>
-                
-                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
-                    <span style="color:#64748b;">Jurusan / Program Studi</span>
-                    <strong>${data.jurusan_tujuan}</strong>
-                </div>
-                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
-                    <span style="color:#64748b;">Jenjang Pendidikan</span>
-                    <strong>${data.jenjang_pendidikan}</strong>
-                </div>
-                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
-                    <span style="color:#64748b;">Unit / Institusi Tujuan</span>
-                    <strong>${data.unit_tujuan}</strong>
-                </div>
-                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
-                    <span style="color:#64748b;">Rencana Tahun Studi</span>
-                    <strong>${data.rencana_tahun}</strong>
-                </div>
-                
-                <!-- KONTAK -->
-                <div style="font-size:0.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin-top:0.75rem;margin-bottom:0.5rem;padding-bottom:0.25rem;border-bottom:2px solid #e2e8f0;">Kontak</div>
-                
-                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
-                    <span style="color:#64748b;">No. HP</span>
-                    <strong style="font-family:monospace;">${data.no_hp}</strong>
-                </div>
-                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
-                    <span style="color:#64748b;">No. WhatsApp</span>
-                    <strong style="font-family:monospace;">${data.no_wa}</strong>
-                </div>
-                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;">
-                    <span style="color:#64748b;">Email</span>
-                    <strong>${data.email}</strong>
+            <!-- Header: NIK, Nama & Status -->
+            <div style="background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;padding:1.25rem;margin-bottom:1rem;color:white;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+                    <div>
+                        <h4 style="font-size:1.25rem;font-weight:700;margin:0 0 0.25rem 0;">${data.nama_lengkap}</h4>
+                        <p style="font-family:monospace;font-size:0.85rem;margin:0;opacity:0.9;">nik: ${data.nik}</p>
+                    </div>
+                    ${statusBadge}
                 </div>
             </div>
             
-            ${data.penjelasan && data.penjelasan !== '-' ? `
-            <!-- PENJELASAN -->
-            <div style="margin-top:1rem;padding:0.75rem;background:#fefce8;border-radius:8px;border:1px solid #fde047;">
-                <p style="font-size:0.8rem;color:#854d0e;margin:0 0 0.35rem 0;font-weight:600;">📝 Penjelasan:</p>
-                <p style="font-size:0.875rem;color:#713f12;margin:0;line-height:1.5;">${data.penjelasan}</p>
-            </div>
-            ` : ''}
-            
-            ${data.foto_drive_link || data.dokumen_drive_link || data.surat_pernyataan_link ? `
-            <!-- DOKUMEN GOOGLE DRIVE -->
-            <div style="margin-top:1rem;padding:0.75rem;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe;">
-                <p style="font-size:0.8rem;color:#1e40af;margin:0 0 0.65rem 0;font-weight:600;">📎 Dokumen Terkait (Google Drive):</p>
-                <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
-                    ${data.foto_drive_link ? `<a href="${data.foto_drive_link}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.45rem 0.85rem;background:#3b82f6;color:white;border-radius:6px;font-size:0.75rem;text-decoration:none;font-weight:500;">📷 Foto Pasfoto</a>` : ''}
-                    ${data.dokumen_drive_link ? `<a href="${data.dokumen_drive_link}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.45rem 0.85rem;background:#10b981;color:white;border-radius:6px;font-size:0.75rem;text-decoration:none;font-weight:500;">📄 Dokumen PDF</a>` : ''}
-                    ${data.surat_pernyataan_link ? `<a href="${data.surat_pernyataan_link}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.45rem 0.85rem;background:#8b5cf6;color:white;border-radius:6px;font-size:0.75rem;text-decoration:none;font-weight:500;">📋 Surat Pernyataan</a>` : ''}
-                    ${data.template_drive_link ? `<a href="${data.template_drive_link}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.45rem 0.85rem;background:#f59e0b;color:white;border-radius:6px;font-size:0.75rem;text-decoration:none;font-weight:500;">📑 Template</a>` : ''}
+            <!-- Main Data Grid - 23 Fields from tabel submissions -->
+            <div style="background:#f8fafc;border-radius:12px;padding:1.25rem;font-size:0.875rem;">
+                
+                <!-- SECTION 1: IDENTITAS DIRI -->
+                <div style="font-size:0.7rem;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.65rem;padding-bottom:0.35rem;border-bottom:2px dashed #c7d2fe;">Identitas Diri</div>
+                
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.65rem;margin-bottom:1rem;">
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">tempat_lahir</span>
+                        <strong style="color:#334155;">${data.tempat_lahir || '-'}</strong>
+                    </div>
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">tanggal_lahir</span>
+                        <strong style="color:#334155;">${formatDate(data.tanggal_lahir)}</strong>
+                    </div>
                 </div>
-            </div>
-            ` : ''}
-            
-            <!-- METADATA -->
-            <div style="margin-top:1rem;padding:0.65rem;background:#f1f5f9;border-radius:6px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;font-size:0.75rem;color:#64748b;">
-                <span>📅 Tanggal Pengajuan: <strong style="color:#334155;">${formatDate(data.tanggal_pengajuan)}</strong></span>
-                <span>📊 Status: <strong style="color:#334155;">${data.status}</strong></span>
-                ${data.submission_method ? `<span>🔗 Metode: <strong style="color:#334155;">${data.submission_method}</strong></span>` : ''}
+                
+                <!-- SECTION 2: ALAMAT -->
+                <div style="font-size:0.7rem;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.65rem;padding-bottom:0.35rem;border-bottom:2px dashed #a7f3d0;">Alamat</div>
+                
+                <div style="background:white;padding:0.65rem;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:0.5rem;">
+                    <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">alamat_ktp</span>
+                    <strong style="color:#334155;line-height:1.4;">${data.alamat_ktp || '-'}</strong>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.65rem;margin-bottom:1rem;">
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">alamat_domisili</span>
+                        <strong style="color:#334155;line-height:1.3;">${data.alamat_domisili || '-'}</strong>
+                    </div>
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">lama_domisili</span>
+                        <strong style="color:#334155;">${data.lama_domisili || '-'}</strong>
+                    </div>
+                </div>
+                
+                <!-- SECTION 3: PEKERJAAN -->
+                <div style="font-size:0.7rem;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.65rem;padding-bottom:0.35rem;border-bottom:2px dashed #fecaca;">Pekerjaan</div>
+                
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.65rem;margin-bottom:1rem;">
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">pekerjaan</span>
+                        <strong style="color:#334155;">${data.pekerjaan || '-'}</strong>
+                    </div>
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">posisi</span>
+                        <strong style="color:#334155;">${data.posisi || '-'}</strong>
+                    </div>
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">unit_kerja</span>
+                        <strong style="color:#334155;">${data.unit_kerja || '-'}</strong>
+                    </div>
+                </div>
+                
+                ${data.penjelasan && data.penjelasan !== '-' ? `
+                <div style="background:#fefce8;padding:0.65rem;border-radius:8px;border:1px solid #fde047;margin-bottom:1rem;">
+                    <span style="font-size:0.65rem;color:#a16207;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;font-weight:600;">penjelasan</span>
+                    <p style="font-size:0.85rem;color:#713f12;margin:0;line-height:1.5;">${data.penjelasan}</p>
+                </div>
+                ` : ''}
+                
+                <!-- SECTION 4: PENDIDIKAN TUJUAN -->
+                <div style="font-size:0.7rem;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.65rem;padding-bottom:0.35rem;border-bottom:2px dashed #ddd6fe;">Pendidikan Tujuan</div>
+                
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.65rem;margin-bottom:1rem;">
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">jurusan_tujuan</span>
+                        <strong style="color:#334155;">${data.jurusan_tujuan || '-'}</strong>
+                    </div>
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">jenjang_pendidikan</span>
+                        <strong style="color:#334155;">${data.jenjang_pendidikan || '-'}</strong>
+                    </div>
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">unit_tujuan</span>
+                        <strong style="color:#334155;">${data.unit_tujuan || '-'}</strong>
+                    </div>
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">rencana_tahun</span>
+                        <strong style="color:#334155;">${data.rencana_tahun || '-'}</strong>
+                    </div>
+                </div>
+                
+                <!-- SECTION 5: KONTAK -->
+                <div style="font-size:0.7rem;font-weight:700;color:#0891b2;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.65rem;padding-bottom:0.35rem;border-bottom:2px dashed #a5f3fc;">Kontak</div>
+                
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.65rem;margin-bottom:1rem;">
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">no_hp</span>
+                        <strong style="font-family:monospace;color:#334155;">${data.no_hp || '-'}</strong>
+                    </div>
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">no_wa</span>
+                        <strong style="font-family:monospace;color:#334155;">${data.no_wa || '-'}</strong>
+                    </div>
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">email</span>
+                        <strong style="color:#334155;word-break:break-all;">${data.email || '-'}</strong>
+                    </div>
+                </div>
+                
+                <!-- SECTION 6: DOKUMEN/FILES -->
+                <div style="font-size:0.7rem;font-weight:700;color:#ea580c;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.65rem;padding-bottom:0.35rem;border-bottom:2px dashed #fed7aa;">Dokumen & File</div>
+                
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.65rem;margin-bottom:1rem;">
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">foto</span>
+                        <strong style="color:#334155;font-size:0.8rem;word-break:break-all;">${data.foto && data.foto !== '-' && data.foto.length > 10 ? '<a href="' + data.foto + '" target="_blank" style="color:#3b82f6;">📷 Link Tersedia</a>' : (data.foto || '-')}</strong>
+                    </div>
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">dokumen_pdf</span>
+                        <strong style="color:#334155;font-size:0.8rem;word-break:break-all;">${data.dokumen_pdf && data.dokumen_pdf !== '-' && data.dokumen_pdf.length > 10 ? '<a href="' + data.dokumen_pdf + '" target="_blank" style="color:#10b981;">📄 Link Tersedia</a>' : (data.dokumen_pdf || '-')}</strong>
+                    </div>
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">nama_file</span>
+                        <strong style="color:#334155;font-size:0.8rem;">${data.nama_file || '-'}</strong>
+                    </div>
+                </div>
+                
+                <!-- SECTION 7: STATUS & CATATAN -->
+                <div style="font-size:0.7rem;font-weight:700;color:#be185d;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.65rem;padding-bottom:0.35rem;border-bottom:2px dashed #fbcfe8;">Status & Catatan Admin</div>
+                
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.65rem;">
+                    <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">status</span>
+                        <strong style="color:#334155;">${data.status}</strong>
+                    </div>
+                    <div style="background:${data.catatan_admin && data.catatan_admin !== '' && data.catatan_admin !== '-' ? '#fdf2f8' : 'white'};padding:0.6rem;border-radius:8px;border:1px solid ${data.catatan_admin && data.catatan_admin !== '' && data.catatan_admin !== '-' ? '#fbcfe8' : '#e2e8f0'};grid-column:span 2;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;font-weight:600;">catatan_admin</span>
+                        <p style="font-size:0.85rem;color:#9d174d;margin:0;line-height:1.5;">${data.catatan_admin && data.catatan_admin !== '' && data.catatan_admin !== '-' ? data.catatan_admin : '<span style="color:#94a3b8;">Tidak ada catatan</span>'}</p>
+                    </div>
+                </div>
+                
             </div>
         </div>
     `;
+    
+    console.log('[SIMBAKES] ✅ Displayed submission data (23 fields):', data);
 }
 
 /**
