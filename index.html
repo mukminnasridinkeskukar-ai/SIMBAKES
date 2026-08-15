@@ -6287,7 +6287,7 @@
             <!-- Result Container (Hidden until search) -->
             <div id="result-container" class="result-container">
                 
-                <!-- Result Card - Found Data -->
+                <!-- Result Card - Dynamic Content from JavaScript (23 Fields) -->
                 <div id="status-result-card" class="status-result-card">
                     <div class="status-card-header">
                         <span class="status-card-title">
@@ -6296,68 +6296,11 @@
                         <span id="result-timestamp" style="font-size:0.8rem;color:#64748b;"></span>
                     </div>
                     
-                    <div class="status-card-body">
-                        <!-- Photo Section (Left) -->
-                        <div class="status-photo-section">
-                            <div class="status-photo-wrapper" id="status-photo-wrapper">
-                                <img id="status-photo" src="" alt="Foto Pasfoto" class="status-photo" onerror="this.style.display='none';document.getElementById('photo-placeholder').style.display='flex';">
-                                <div id="photo-placeholder" class="status-photo-placeholder">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                    <span style="font-size:0.75rem;">Foto Tidak Tersedia</span>
-                                </div>
-                            </div>
-                            <span class="register-badge" id="result-register">-</span>
-                        </div>
-                        
-                        <!-- Data Section (Right) -->
-                        <div class="status-data-section">
-                            <div class="data-grid-2col">
-                                <div class="data-item">
-                                    <span class="data-label">Nama Lengkap</span>
-                                    <span class="data-value highlight" id="result-nama">-</span>
-                                </div>
-                                <div class="data-item">
-                                    <span class="data-label">NIK</span>
-                                    <span class="data-value" id="result-nik">-</span>
-                                </div>
-                                <div class="data-item">
-                                    <span class="data-label">Jurusan Tujuan</span>
-                                    <span class="data-value" id="result-jurusan">-</span>
-                                </div>
-                                <div class="data-item">
-                                    <span class="data-label">Jenjang Pendidikan</span>
-                                    <span class="data-value" id="result-jenjang">-</span>
-                                </div>
-                                <div class="data-item">
-                                    <span class="data-label">Unit Tujuan Pemanfaatan</span>
-                                    <span class="data-value" id="result-unit">-</span>
-                                </div>
-                                <div class="data-item">
-                                    <span class="data-label">Rencana Tahun Studi</span>
-                                    <span class="data-value" id="result-tahun">-</span>
-                                </div>
-                                <div class="data-item">
-                                    <span class="data-label">Tanggal Pengajuan</span>
-                                    <span class="data-value" id="result-tanggal">-</span>
-                                </div>
-                                <div class="data-item">
-                                    <span class="data-label">Email</span>
-                                    <span class="data-value" id="result-email">-</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Status Badge -->
-                            <div style="margin-top:1rem;">
-                                <span class="data-label" style="margin-bottom:0.35rem;display:block;">Status Pengajuan (Kolom W)</span>
-                                <div id="result-status" class="status-large-badge verify">
-                                    ⏳ Memuat...
-                                </div>
-                            </div>
-                            
-                            <!-- Action Buttons -->
-                            <div class="status-actions" id="status-actions">
-                                <!-- Buttons will be dynamically inserted based on status -->
-                            </div>
+                    <!-- Dynamic Content Container - Will be filled by displayStatusResult() -->
+                    <div id="search-result-content" class="status-card-body">
+                        <!-- Content will be injected here by JavaScript -->
+                        <div style="text-align:center;padding:2rem;color:#94a3b8;">
+                            <p>Menunggu pencarian...</p>
                         </div>
                     </div>
                 </div>
