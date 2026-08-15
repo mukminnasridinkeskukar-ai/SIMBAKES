@@ -10185,8 +10185,9 @@ function handlePhotoUpload(input) {
             preview.style.objectFit = 'cover';
             preview.style.objectPosition = 'center';
             
-            // Hide placeholder
-            document.getElementById('photo-placeholder').style.display = 'none';
+            // Hide placeholder (with null check)
+            const photoPlaceholder = document.getElementById('photo-placeholder');
+            if (photoPlaceholder) photoPlaceholder.style.display = 'none';
             
             // Update upload area style
             document.getElementById('photo-upload').classList.add('has-image');
@@ -11081,11 +11082,16 @@ function resetForm() {
     uploadedPDFBase64 = null;
     uploadedFileInfo = null;
     
-    // Reset photo upload area
-    document.getElementById('photo-preview').style.display = 'none';
-    document.getElementById('photo-preview').src = '';
-    document.getElementById('photo-placeholder').style.display = 'flex';
-    document.getElementById('photo-upload').classList.remove('has-image');
+    // Reset photo upload area (with null checks)
+    const photoPreview = document.getElementById('photo-preview');
+    if (photoPreview) {
+        photoPreview.style.display = 'none';
+        photoPreview.src = '';
+    }
+    const photoPlaceholderReset = document.getElementById('photo-placeholder');
+    if (photoPlaceholderReset) photoPlaceholderReset.style.display = 'flex';
+    const photoUpload = document.getElementById('photo-upload');
+    if (photoUpload) photoUpload.classList.remove('has-image');
     
     // Remove photo success indicator if exists
     const photoSuccess = document.getElementById('photo-success');
@@ -15653,7 +15659,12 @@ async function searchSubmissionData() {
         // Check if data found
         if (submissionData && submissionData.length > 0) {
             currentSearchResult = submissionData[0];
-            displaySearchResult(submissionData[0]);
+            
+            // Gunakan displayStatusResult() untuk tampilan 23 field lengkap
+            displayStatusResult(submissionData[0]);
+            
+            // Show result container
+            document.getElementById('result-container').classList.add('active');
         } else {
             showNotFound(`Data dengan ${nik ? 'NIK' : 'Nomor Register'} "${nik || register}" tidak ditemukan`);
         }
@@ -15666,38 +15677,20 @@ async function searchSubmissionData() {
 }
 
 /**
- * Display search result in the status card
+ * Display search result in the status card (DEPRECATED)
+ * Now redirects to displayStatusResult() for 23-field layout
+ * Kept for backward compatibility - do not use for new code
  */
 function displaySearchResult(data) {
-    // Show result container
-    document.getElementById('result-container').classList.add('active');
+    console.warn('[SIMBAKES] ⚠️ displaySearchResult() is deprecated, using displayStatusResult() instead');
     
-    // Set photo with improved handler
-    const photoEl = document.getElementById('status-photo');
-    const placeholderEl = document.getElementById('photo-placeholder');
-    
-    setPhotoWithFallback(photoEl, placeholderEl, data.linkFoto);
-    
-    // Set basic info
-    document.getElementById('result-register').textContent = data.noRegister || '-';
-    document.getElementById('result-nama').textContent = data.namaLengkap || '-';
-    document.getElementById('result-nik').textContent = data.nik || '-';
-    document.getElementById('result-jurusan').textContent = data.jurusanTujuan || '-';
-    document.getElementById('result-jenjang').textContent = data.jenjangPendidikan || '-';
-    document.getElementById('result-unit').textContent = data.unitTujuan || '-';
-    document.getElementById('result-tahun').textContent = data.rencanaTahun || '-';
-    document.getElementById('result-tanggal').textContent = formatDate(data.tanggalPengajuan);
-    document.getElementById('result-email').textContent = data.email || '-';
-    
-    // Set timestamp
-    const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    document.getElementById('result-timestamp').textContent = `Dicari pada: ${now}`;
-    
-    // Set status badge
-    setStatusBadge(data.status);
-    
-    // Set action buttons based on status
-    setActionButtons(data.status);
+    // Redirect to new function with 23 fields
+    if (typeof displayStatusResult === 'function') {
+        displayStatusResult(data);
+        document.getElementById('result-container').classList.add('active');
+    } else {
+        console.error('[SIMBAKES] ❌ displayStatusResult() not available!');
+    }
 }
 
 /**
