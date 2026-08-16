@@ -6740,10 +6740,12 @@
                 <!-- Reset Filters Button -->
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;padding-top:1rem;border-top:1px dashed #e2e8f0;">
                     <span id="roadmap-result-count" style="font-size:0.85rem;color:#64748b;font-weight:500;">Menampilkan 0 data</span>
-                    <button onclick="resetRoadmapFilters()" style="padding:0.5rem 1rem;background:linear-gradient(135deg,#f1f5f9,#e2e8f0);color:#475569;border:none;border-radius:8px;font-size:0.85rem;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:0.5rem;transition:all 0.2s;" onmouseover="this.style.background='linear-gradient(135deg,#e2e8f0,#cbd5e1)'" onmouseout="this.style.background='linear-gradient(135deg,#f1f5f9,#e2e8f0)'">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                        Reset Filter
-                    </button>
+                    <div style="display:flex;gap:0.5rem;">
+                        <button onclick="resetRoadmapFilters()" style="padding:0.5rem 1rem;background:linear-gradient(135deg,#f1f5f9,#e2e8f0);color:#475569;border:none;border-radius:8px;font-size:0.85rem;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:0.5rem;transition:all 0.2s;" onmouseover="this.style.background='linear-gradient(135deg,#e2e8f0,#cbd5e1)'" onmouseout="this.style.background='linear-gradient(135deg,#f1f5f9,#e2e8f0)'">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            Reset Filter
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -14467,6 +14469,7 @@ function renderRoadmap() {
 /**
  * Main function: Load Roadmap Data from Supabase
  * Public Roadmap Page - Menggunakan Supabase client
+ * ENHANCED: Multiple fallback strategies + detailed debugging
  */
 async function loadRoadmapData() {
     const loadingEl = document.getElementById('roadmap-loading');
@@ -14534,17 +14537,92 @@ async function loadRoadmapData() {
                    .order('jurusan', { ascending: true });
         
         console.log('[DEBUG] Executing query...');
+        console.time('roadmap-query');
         
-        // Execute query
-        const { data, error, count } = await query;
+        // Execute query with MULTIPLE FALLBACK STRATEGIES
+        let data = null;
+        let error = null;
+        let count = null;
+        
+        // STRATEGY 1: Original query with count
+        try {
+            const result = await query;
+            data = result.data;
+            error = result.error;
+            count = result.count;
+            console.log('[DEBUG] Strategy 1 (with count) completed');
+        } catch(e) {
+            console.warn('[DEBUG] Strategy 1 failed:', e.message);
+        }
+        
+        // STRATEGY 2: If error, try without count option
+        if(error && !data) {
+            console.log('[DEBUG] Trying Strategy 2 (without count)...');
+            try {
+                const result2 = await supabaseClient
+                    .from('roadmap')
+                    .select('*')
+                    .order('tahun_studi', { ascending: true })
+                    .order('jurusan', { ascending: true });
+                
+                if(!result2.error && result2.data) {
+                    data = result2.data;
+                    error = null;
+                    count = result2.data.length;
+                    console.log('[DEBUG] Strategy 2 SUCCESS!');
+                } else {
+                    error = result2.error;
+                }
+            } catch(e2) {
+                console.warn('[DEBUG] Strategy 2 also failed:', e2.message);
+            }
+        }
+        
+        // STRATEGY 3: If still error, try simplest possible query
+        if(error && !data) {
+            console.log('[DEBUG] Trying Strategy 3 (simplest query)...');
+            try {
+                const result3 = await supabaseClient
+                    .from('roadmap')
+                    .select('*')
+                    .limit(100); // Get up to 100 records
+                
+                if(!result3.error && result3.data) {
+                    data = result3.data;
+                    error = null;
+                    count = result3.data.length;
+                    console.log('[DEBUG] Strategy 3 SUCCESS!');
+                } else {
+                    error = result3.error;
+                }
+            } catch(e3) {
+                console.warn('[DEBUG] Strategy 3 also failed:', e3.message);
+            }
+        }
+        
+        console.timeEnd('roadmap-query');
+        
+        // Log the FINAL result
+        console.log('[DEBUG] === FINAL QUERY RESULT ===');
+        console.log('[DEBUG] Data:', data);
+        console.log('[DEBUG] Error:', error);
+        console.log('[DEBUG] Count:', count);
         
         if (error) {
             console.error('[DEBUG] Query error details:', {
                 code: error.code,
                 message: error.message,
                 hint: error.hint,
-                details: error.details
+                details: error.details,
+                status: error.status
             });
+            
+            // SPECIAL HANDLING for RLS errors
+            if(error.status === 401 || error.code === 'PGRST301' || error.message?.includes('permission')) {
+                console.error('🔴 RLS ERROR DETECTED! Anon role cannot access roadmap table.');
+                alert('⚠️ ERROR RLS (Row Level Security)\n\nTabel roadmap tidak bisa diakses oleh anon role.\n\nSolusi: Jalankan SQL berikut di Supabase SQL Editor:\n\nCREATE POLICY "Enable public read access" ON public.roadmap FOR SELECT USING (true);');
+            }
+            
             throw error;
         }
         
@@ -14555,6 +14633,7 @@ async function loadRoadmapData() {
             console.log('[DEBUG] Available fields:', Object.keys(data[0]));
         } else {
             console.warn('[DEBUG] Data kosong - cek apakah tabel memiliki data di Supabase dashboard');
+            console.warn('[DEBUG] Ini aneh karena user bilang data sudah ada di Supabase!');
         }
         
         // Hide loading
