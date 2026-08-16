@@ -5929,46 +5929,34 @@
                             <label>Pekerjaan <span class="required">*</span></label>
                             <select class="form-select" id="pekerjaan">
                                 <option value="">-- Pilih Pekerjaan --</option>
-                                <option value="Dokter">Dokter</option>
-                                <option value="Perawat">Perawat</option>
-                                <option value="Bidan">Bidan</option>
-                                <option value="Farmasis">Farmasis</option>
-                                <option value="Ahli Gizi">Ahli Gizi</option>
-                                <option value="Sanitarian">Sanitarian</option>
-                                <option value="Ahli Teknologi Laboratorium Medik">Ahli TLM</option>
-                                <option value="Epidemiolog">Epidemiolog</option>
-                                <option value="Tenaga Kesehatan Masyarakat">Tenaga Kesehatan Masyarakat</option>
-                                <option value="Dosen Kesehatan">Dosen Kesehatan</option>
-                                <option value="Peneliti Kesehatan">Peneliti Kesehatan</option>
-                                <option value="Lainnya">Lainnya</option>
+                                <option value="PNS">PNS</option>
+                                <option value="PPPK">PPPK</option>
+                                <option value="Honorer">Honorer</option>
+                                <option value="Karyawan BLUD">Karyawan BLUD</option>
+                                <option value="BKKD">BKKD</option>
+                                <option value="Mahasiswa">Mahasiswa</option>
+                                <option value="Belum Bekerja">Belum Bekerja</option>                                
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Posisi/Jabatan <span class="required">*</span></label>
+                            <label>Posisi<span class="required">*</span></label>
                             <select class="form-select" id="posisi">
                                 <option value="">-- Pilih Posisi --</option>
-                                <option value="Staf/Staf Pelaksana">Staf / Staf Pelaksana</option>
-                                <option value="Pelaksana Lanjutan">Pelaksana Lanjutan</option>
-                                <option value="Supervisor/Koordinator">Supervisor / Koordinator</option>
-                                <option value="Manajer/KA Bagian">Manajer / KA Bagian</option>
-                                <option value="Kepala Bidang">Kepala Bidang</option>
-                                <option value="Kepala Dinas/Direktur">Kepala Dinas / Direktur</option>
-                                <option value="Dosen/Dosen Besar">Dosen / Dosen Besar</option>
-                                <option value="Peneliti Utama">Peneliti Utama</option>
-                                <option value="Mahasiswa S2/S3">Mahasiswa S2/S3</option>
-                                <option value="Lainnya">Lainnya</option>
+                                <option value="Sedang Tes Masuk PT">Sedang Tes Masuk PT</option>
+                                <option value="On Going">On Going</option>
+                                <option value="Lulus Tes Masuk PT">Lulus Tes Masuk PT</option>                             
                             </select>
                         </div>
                     </div>
                     
                     <div class="form-group">
                         <label>Unit Kerja / Institusi Asal <span class="required">*</span></label>
-                        <input type="text" class="form-input" id="unit-kerja" placeholder="Nama rumah sakit, puskesmas, universitas, atau institusi lainnya">
+                        <input type="text" class="form-input" id="unit-kerja" placeholder="Nama rumah sakit, nama puskesmas, nama universitas, institusi lainnya atau belum bekerja">
                     </div>
                     
                     <div class="form-group">
                         <label>Penjelasan/Narasi Singkat <span class="required">*</span></label>
-                        <textarea class="form-textarea" id="penjelasan" rows="4" placeholder="Jelaskan secara singkat alasan mengajukan rekomendasi beasiswa, tujuan studi, dan dampak yang diharapkan bagi pengembangan SDM kesehatan..."></textarea>
+                        <textarea class="form-textarea" id="penjelasan" rows="4" placeholder="Jelaskan secara singkat alasan mengajukan rekomendasi beasiswa, tujuan studi, dan dampak yang diharapkan bagi pengembangan SDM kesehatan di Kutai Kartanegara"></textarea>
                     </div>
                 </div>
 
@@ -5987,20 +5975,59 @@
                             <select class="form-select" id="jurusan-tujuan">
                                 <option value="">-- Pilih Jurusan --</option>
                                 <optgroup label="Kedokteran & Spesialisasi">
-                                    <option value="Ilmu Kedokteran Umum">Ilmu Kedokteran Umum</option>
-                                    <option value="Ilmu Bedah">Ilmu Bedah</option>
-                                    <option value="Ilmu Penyakit Dalam">Ilmu Penyakit Dalam</option>
-                                    <option value="Ilmu Anak">Ilmu Anak</option>
-                                    <option value="Obstetri & Ginekologi">Obstetri & Ginekologi</option>
-                                    <option value="Neurologi">Neurologi</option>
-                                    <option value="Psikiatri">Psikiatri</option>
-                                    <option value="Dermatologi & Venerologi">Dermatologi & Venerologi</option>
-                                    <option value="THT-KL">THT-KL</option>
-                                    <option value="Radiologi">Radiologi</option>
-                                    <option value="Patologi Anatomi">Patologi Anatomi</option>
-                                    <option value="Patologi Klinik">Patologi Klinik</option>
-                                    <option value="Anestesiologi">Anestesiologi</option>
-                                    <option value="Onkologi Medik">Onkologi Medik</option>
+                                    <option value="Dokter Spesialis Akupunktur">Dokter Spesialis Akupunktur</option>
+<option value="Dokter Spesialis Anak">Dokter Spesialis Anak</option>
+<option value="Dokter Spesialis Anak Konsultan Emergensi dan Rawat Intensif Anak">Dokter Spesialis Anak Konsultan Emergensi dan Rawat Intensif Anak</option>
+<option value="Dokter Spesialis Anak Konsultan Hematologi Onkologi Medik">Dokter Spesialis Anak Konsultan Hematologi Onkologi Medik</option>
+<option value="Dokter Spesialis Anak Konsultan Tumbuh Kembang Anak">Dokter Spesialis Anak Konsultan Tumbuh Kembang Anak</option>
+<option value="Dokter Spesialis Anestesiologi dan Terapi Intensif">Dokter Spesialis Anestesiologi dan Terapi Intensif</option>
+<option value="Dokter Spesialis Anethesi Konsultan Intensif">Dokter Spesialis Anethesi Konsultan Intensif</option>
+<option value="Dokter Spesialis Bedah">Dokter Spesialis Bedah</option>
+<option value="Dokter Spesialis Bedah Anak">Dokter Spesialis Bedah Anak</option>
+<option value="Dokter Spesialis Bedah Konsultan Bedah Digestif">Dokter Spesialis Bedah Konsultan Bedah Digestif</option>
+<option value="Dokter Spesialis Bedah Konsultan Bedah Onkologi">Dokter Spesialis Bedah Konsultan Bedah Onkologi</option>
+<option value="Dokter Spesialis Bedah Saraf">Dokter Spesialis Bedah Saraf</option>
+<option value="Dokter Spesialis Bedah Thoraks dan Kardiovaskular">Dokter Spesialis Bedah Thoraks dan Kardiovaskular</option>
+<option value="Dokter Spesialis Bedah Toraks Kardiovaskular">Dokter Spesialis Bedah Toraks Kardiovaskular</option>
+<option value="Dokter Spesialis Emergency Medic (Kedaruratan Medik)">Dokter Spesialis Emergency Medic (Kedaruratan Medik)</option>
+<option value="Dokter Spesialis Emergensi Medicine">Dokter Spesialis Emergensi Medicine</option>
+<option value="Dokter Spesialis Gizi Klinis">Dokter Spesialis Gizi Klinis</option>
+<option value="Dokter Spesialis Jantung - Intensivist">Dokter Spesialis Jantung - Intensivist</option>
+<option value="Dokter Spesialis Jantung - Intervensi">Dokter Spesialis Jantung - Intervensi</option>
+<option value="Dokter Spesialis Jantung dan Pembuluh Darah">Dokter Spesialis Jantung dan Pembuluh Darah</option>
+<option value="Dokter Spesialis Kedokteran Fisik dan Rehabilitasi">Dokter Spesialis Kedokteran Fisik dan Rehabilitasi</option>
+<option value="Dokter Spesialis Kedokteran Fisik dan Rehabilitasi Medik">Dokter Spesialis Kedokteran Fisik dan Rehabilitasi Medik</option>
+<option value="Dokter Spesialis Kedokteran Fisik dan Rehabilitasi Medik Konsultan Kardiologi">Dokter Spesialis Kedokteran Fisik dan Rehabilitasi Medik Konsultan Kardiologi</option>
+<option value="Dokter Spesialis Kedokteran Jiwa">Dokter Spesialis Kedokteran Jiwa</option>
+<option value="Dokter Spesialis Kedokteran Nuklir">Dokter Spesialis Kedokteran Nuklir</option>
+<option value="Dokter Spesialis Mata">Dokter Spesialis Mata</option>
+<option value="Dokter Spesialis Mikrobiologi Klinik">Dokter Spesialis Mikrobiologi Klinik</option>
+<option value="Dokter Spesialis Neurologi">Dokter Spesialis Neurologi</option>
+<option value="Dokter Spesialis Obstetri dan Ginekologi">Dokter Spesialis Obstetri dan Ginekologi</option>
+<option value="Dokter Spesialis Obstetri Ginekologi Konsultan Fetomaternal">Dokter Spesialis Obstetri Ginekologi Konsultan Fetomaternal</option>
+<option value="Dokter Spesialis Obstetri Ginekologi Konsultan Onkologi">Dokter Spesialis Obstetri Ginekologi Konsultan Onkologi</option>
+<option value="Dokter Spesialis Okupasi">Dokter Spesialis Okupasi</option>
+<option value="Dokter Spesialis Onkologi Radiasi">Dokter Spesialis Onkologi Radiasi</option>
+<option value="Dokter Spesialis Orthopaedi dan Traumatologi">Dokter Spesialis Orthopaedi dan Traumatologi</option>
+<option value="Dokter Spesialis Orthopedi dan Traumatologi">Dokter Spesialis Orthopedi dan Traumatologi</option>
+<option value="Dokter Spesialis Orthopedi dan Traumatologi Subspesialis Tulang Belakang">Dokter Spesialis Orthopedi dan Traumatologi Subspesialis Tulang Belakang</option>
+<option value="Dokter Spesialis Patologi Anatomi">Dokter Spesialis Patologi Anatomi</option>
+<option value="Dokter Spesialis Patologi Klinik">Dokter Spesialis Patologi Klinik</option>
+<option value="Dokter Spesialis Patologi Klinik Konsultan Onkologi">Dokter Spesialis Patologi Klinik Konsultan Onkologi</option>
+<option value="Dokter Spesialis Penyakit Dalam">Dokter Spesialis Penyakit Dalam</option>
+<option value="Dokter Spesialis Penyakit Dalam Konsultan Alergi Imunologi">Dokter Spesialis Penyakit Dalam Konsultan Alergi Imunologi</option>
+<option value="Dokter Spesialis Penyakit Dalam Konsultan Endokrin Metabolik">Dokter Spesialis Penyakit Dalam Konsultan Endokrin Metabolik</option>
+<option value="Dokter Spesialis Penyakit Dalam Konsultan Gastro-Entero-Hepatologi">Dokter Spesialis Penyakit Dalam Konsultan Gastro-Entero-Hepatologi</option>
+<option value="Dokter Spesialis Penyakit Dalam Konsultan Ginjal Hipertensi">Dokter Spesialis Penyakit Dalam Konsultan Ginjal Hipertensi</option>
+<option value="Dokter Spesialis Penyakit Dalam Konsultan Hematologi Onkologi Medik">Dokter Spesialis Penyakit Dalam Konsultan Hematologi Onkologi Medik</option>
+<option value="Dokter Spesialis Penyakit Dalam Konsultan Rheumatologi">Dokter Spesialis Penyakit Dalam Konsultan Rheumatologi</option>
+<option value="Dokter Spesialis Pulmonologi dan Kedokteran Respirasi (Paru)">Dokter Spesialis Pulmonologi dan Kedokteran Respirasi (Paru)</option>
+<option value="Dokter Spesialis Radiologi">Dokter Spesialis Radiologi</option>
+<option value="Dokter Spesialis Radiologi - Intervensi">Dokter Spesialis Radiologi - Intervensi</option>
+<option value="Dokter Spesialis Saraf - Neurointervensi">Dokter Spesialis Saraf - Neurointervensi</option>
+<option value="Dokter Spesialis Telinga, Hidung dan Tenggorokan- Kepala Leher">Dokter Spesialis Telinga, Hidung dan Tenggorokan- Kepala Leher</option>
+<option value="Dokter Spesialis Urologi">Dokter Spesialis Urologi</option>
+<option value="Dokter Spesialis Urologi - Onkologi">Dokter Spesialis Urologi - Onkologi</option>
                                 </optgroup>
                                 <optgroup label="Keperawatan & Kebidanan">
                                     <option value="Ilmu Keperawatan">Ilmu Keperawatan</option>
