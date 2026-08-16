@@ -48,9 +48,8 @@
             --error-100: #fee2e2;
             --error-500: #ef4444;
             --error-600: #dc2626;
-            --error-700: #b91c1c;
             
-            /* Neutral */
+            /* Neutral Colors */
             --gray-50: #f9fafb;
             --gray-100: #f3f4f6;
             --gray-200: #e5e7eb;
@@ -63,17 +62,18 @@
             --gray-900: #111827;
             
             /* Shadows */
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            --shadow-2xl: 0 25px 50px -12px rgba(0,0,0,0.25);
             
             /* Border Radius */
             --radius-sm: 6px;
-            --radius-md: 8px;
-            --radius-lg: 12px;
-            --radius-xl: 16px;
-            --radius-2xl: 24px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
             --radius-full: 9999px;
         }
         
@@ -85,65 +85,43 @@
         
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 50%, var(--success-50) 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
-            position: relative;
-            overflow-x: hidden;
-        }
-        
-        /* Background Pattern */
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image: 
-                radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(34, 197, 94, 0.08) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
-        }
-        
-        .container {
-            width: 100%;
-            max-width: 520px;
-            position: relative;
-            z-index: 1;
+            line-height: 1.6;
         }
         
         /* ============================================================
-           LOGIN CARD
+           LOGIN CONTAINER
            ============================================================ */
+        .login-container {
+            width: 100%;
+            max-width: 480px;
+            position: relative;
+        }
+        
         .login-card {
             background: white;
-            border-radius: var(--radius-2xl);
-            box-shadow: var(--shadow-xl);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-2xl);
             overflow: hidden;
             animation: slideUp 0.5s ease-out;
         }
         
         @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
-        /* Header Section */
+        /* Header */
         .login-header {
             background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
             padding: 32px 24px;
             text-align: center;
+            color: white;
             position: relative;
             overflow: hidden;
         }
@@ -153,67 +131,70 @@
             position: absolute;
             top: -50%;
             right: -50%;
-            width: 200%;
-            height: 200%;
+            width: 100%;
+            height: 100%;
             background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            pointer-events: none;
+            animation: pulse 4s ease-in-out infinite;
         }
         
-        .header-icon {
-            width: 72px;
-            height: 72px;
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        
+        .login-avatar {
+            width: 80px;
+            height: 80px;
             background: rgba(255,255,255,0.2);
-            border-radius: var(--radius-full);
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 16px;
+            font-size: 36px;
             backdrop-filter: blur(10px);
-            border: 2px solid rgba(255,255,255,0.3);
+            border: 3px solid rgba(255,255,255,0.3);
+            position: relative;
+            z-index: 1;
         }
         
-        .header-icon svg {
-            width: 36px;
-            height: 36px;
-            color: white;
-        }
-        
-        .login-header h1 {
-            color: white;
+        .login-title {
             font-size: 1.5rem;
             font-weight: 700;
-            margin-bottom: 8px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 4px;
+            position: relative;
+            z-index: 1;
         }
         
-        .login-header p {
-            color: rgba(255,255,255,0.9);
-            font-size: 0.9rem;
-            font-weight: 400;
+        .login-subtitle {
+            font-size: 0.875rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
         }
         
-        /* Form Section */
+        /* Form */
         .login-body {
-            padding: 32px 24px;
+            padding: 28px 24px;
         }
         
         .form-group {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
         
         .form-label {
             display: block;
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             font-weight: 600;
             color: var(--gray-700);
             margin-bottom: 8px;
         }
         
-        .input-wrapper {
+        .form-input-wrapper {
             position: relative;
         }
         
-        .input-icon {
+        .form-input-icon {
             position: absolute;
             left: 14px;
             top: 50%;
@@ -221,34 +202,29 @@
             color: var(--gray-400);
             pointer-events: none;
             transition: color 0.2s;
-            z-index: 1;
-        }
-        
-        .input-icon svg {
-            width: 20px;
-            height: 20px;
         }
         
         .form-input {
             width: 100%;
-            padding: 14px 14px 14px 46px;
+            height: 48px;
+            padding: 0 16px 0 44px;
             border: 2px solid var(--gray-200);
-            border-radius: var(--radius-lg);
-            font-size: 1rem;
+            border-radius: var(--radius-md);
+            font-size: 0.9375rem;
             font-family: inherit;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
             background: var(--gray-50);
         }
         
         .form-input:focus {
             outline: none;
             border-color: var(--primary-500);
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
             background: white;
+            box-shadow: 0 0 0 4px var(--primary-100);
         }
         
-        .form-input:focus + .input-icon,
-        .input-wrapper:focus-within .input-icon {
+        .form-input:focus + .form-input-icon,
+        .form-input-wrapper:hover .form-input-icon {
             color: var(--primary-500);
         }
         
@@ -257,72 +233,47 @@
             background: var(--error-50);
         }
         
-        .form-input.error:focus {
-            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
-        }
-        
-        .password-toggle {
-            position: absolute;
-            right: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--gray-400);
-            padding: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: color 0.2s;
-            z-index: 1;
-        }
-        
-        .password-toggle:hover {
-            color: var(--gray-600);
-        }
-        
-        .password-toggle svg {
-            width: 20px;
-            height: 20px;
-        }
-        
         .error-message {
-            display: none;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--error-600);
             margin-top: 6px;
-            padding-left: 4px;
-            align-items: center;
-            gap: 4px;
+            display: none;
         }
         
         .error-message.show {
-            display: flex;
+            display: block;
+            animation: shake 0.4s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
         }
         
         /* Submit Button */
-        .submit-btn {
+        .btn-submit {
             width: 100%;
-            padding: 16px 24px;
+            height: 52px;
             background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
             color: white;
             border: none;
-            border-radius: var(--radius-lg);
+            border-radius: var(--radius-md);
             font-size: 1rem;
             font-weight: 600;
             font-family: inherit;
             cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            transition: all 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
+            margin-top: 24px;
+            position: relative;
+            overflow: hidden;
         }
         
-        .submit-btn::before {
+        .btn-submit::before {
             content: '';
             position: absolute;
             top: 0;
@@ -333,26 +284,23 @@
             transition: left 0.5s;
         }
         
-        .submit-btn:hover:not(:disabled)::before {
+        .btn-submit:hover::before {
             left: 100%;
         }
         
-        .submit-btn:hover:not(:disabled) {
+        .btn-submit:hover {
             transform: translateY(-2px);
             box-shadow: var(--shadow-lg);
         }
         
-        .submit-btn:active:not(:disabled) {
+        .btn-submit:active {
             transform: translateY(0);
         }
         
-        .submit-btn:disabled {
+        .btn-submit:disabled {
             opacity: 0.7;
             cursor: not-allowed;
-        }
-        
-        .submit-btn.loading {
-            pointer-events: none;
+            transform: none !important;
         }
         
         .spinner {
@@ -368,145 +316,45 @@
             to { transform: rotate(360deg); }
         }
         
-        /* Loading Overlay */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255,255,255,0.9);
-            backdrop-filter: blur(4px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            flex-direction: column;
-            gap: 16px;
+        /* Footer */
+        .login-footer {
+            padding: 20px 24px;
+            background: var(--gray-50);
+            border-top: 1px solid var(--gray-200);
+            text-align: center;
         }
         
-        .loading-overlay.active {
-            display: flex;
+        .footer-text {
+            font-size: 0.8125rem;
+            color: var(--gray-500);
+            margin-bottom: 12px;
         }
         
-        .loading-spinner-large {
-            width: 48px;
-            height: 48px;
-            border: 4px solid var(--gray-200);
-            border-top-color: var(--primary-600);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        /* Toast Notifications */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            max-width: 380px;
-        }
-        
-        .toast {
-            background: white;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-xl);
-            padding: 16px 20px;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            animation: toastSlideIn 0.3s ease-out;
-            border-left: 4px solid var(--gray-400);
-        }
-        
-        .toast.success { border-left-color: var(--success-500); }
-        .toast.error { border-left-color: var(--error-500); }
-        .toast.warning { border-left-color: var(--warning-500); }
-        .toast.info { border-left-color: var(--primary-500); }
-        
-        @keyframes toastSlideIn {
-            from {
-                opacity: 0;
-                transform: translateX(100%);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        .toast.hiding {
-            animation: toastSlideOut 0.3s ease-in forwards;
-        }
-        
-        @keyframes toastSlideOut {
-            to {
-                opacity: 0;
-                transform: translateX(100%);
-            }
-        }
-        
-        .toast-icon {
-            flex-shrink: 0;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .toast.success .toast-icon { background: var(--success-100); color: var(--success-600); }
-        .toast.error .toast-icon { background: var(--error-100); color: var(--error-600); }
-        .toast.warning .toast-icon { background: var(--warning-100); color: var(--warning-600); }
-        .toast.info .toast-icon { background: var(--primary-100); color: var(--primary-600); }
-        
-        .toast-content {
-            flex: 1;
-            min-width: 0;
-        }
-        
-        .toast-title {
+        .btn-link {
+            color: var(--primary-600);
+            text-decoration: none;
             font-weight: 600;
-            font-size: 0.9rem;
-            color: var(--gray-800);
-            margin-bottom: 2px;
-        }
-        
-        .toast-message {
-            font-size: 0.85rem;
-            color: var(--gray-600);
-            line-height: 1.4;
-        }
-        
-        .toast-close {
-            flex-shrink: 0;
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--gray-400);
-            padding: 4px;
-            display: flex;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             transition: color 0.2s;
         }
         
-        .toast-close:hover {
-            color: var(--gray-600);
+        .btn-link:hover {
+            color: var(--primary-700);
         }
         
-        /* Profile Section (After Login Success) */
+        /* ============================================================
+           PROFILE SECTION (After Login)
+           ============================================================ */
         .profile-section {
             display: none;
-            padding: 32px 24px;
-            text-align: center;
+            animation: fadeIn 0.4s ease-out;
         }
         
         .profile-section.active {
             display: block;
-            animation: fadeIn 0.4s ease-out;
         }
         
         @keyframes fadeIn {
@@ -514,42 +362,103 @@
             to { opacity: 1; }
         }
         
+        .profile-header {
+            background: linear-gradient(135deg, var(--success-600) 0%, var(--success-700) 100%);
+            padding: 28px 24px;
+            text-align: center;
+            color: white;
+            position: relative;
+        }
+        
         .profile-avatar {
-            width: 96px;
-            height: 96px;
-            background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
-            border-radius: var(--radius-full);
+            width: 90px;
+            height: 90px;
+            background: rgba(255,255,255,0.25);
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 2.5rem;
-            color: white;
+            margin: 0 auto 16px;
+            font-size: 2rem;
             font-weight: 700;
-            box-shadow: var(--shadow-lg);
+            border: 4px solid rgba(255,255,255,0.4);
+            backdrop-filter: blur(10px);
         }
         
         .profile-name {
-            font-size: 1.5rem;
+            font-size: 1.375rem;
             font-weight: 700;
-            color: var(--gray-800);
             margin-bottom: 4px;
         }
         
         .profile-role {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            background: var(--success-100);
-            color: var(--success-700);
+            font-size: 0.875rem;
+            opacity: 0.9;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
             border-radius: var(--radius-full);
-            font-size: 0.85rem;
-            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .profile-body {
+            padding: 24px;
+        }
+        
+        .profile-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
             margin-bottom: 24px;
         }
         
-        /* Submissions Data Section - NEW! */
+        .info-item {
+            background: var(--gray-50);
+            padding: 14px;
+            border-radius: var(--radius-md);
+        }
+        
+        .info-label {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        
+        .info-value {
+            font-size: 0.9375rem;
+            color: var(--gray-800);
+            font-weight: 500;
+        }
+        
+        .btn-logout {
+            width: 100%;
+            height: 48px;
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            font-size: 0.9375rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-logout:hover {
+            background: var(--error-50);
+            border-color: var(--error-300);
+            color: var(--error-600);
+        }
+        
+        /* ============================================================
+           SUBMISSIONS DATA SECTION - LIGHTBOX CARD DESIGN
+           ============================================================ */
         .submissions-section {
             margin-top: 24px;
             background: var(--gray-50);
@@ -560,25 +469,32 @@
         
         .submissions-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
             margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid var(--primary-100);
         }
         
-        .submissions-header h3 {
+        .submissions-title {
             font-size: 1rem;
             font-weight: 700;
-            color: var(--primary-700);
-            flex: 1;
+            color: var(--gray-800);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .submissions-badge {
-            padding: 4px 12px;
-            border-radius: var(--radius-full);
             font-size: 0.75rem;
             font-weight: 600;
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .submissions-badge.loading {
+            background: var(--primary-100);
+            color: var(--primary-700);
         }
         
         .submissions-badge.found {
@@ -587,313 +503,319 @@
         }
         
         .submissions-badge.notfound {
-            background: var(--warning-100);
-            color: var(--warning-600);
+            background: var(--gray-200);
+            color: var(--gray-600);
         }
         
-        .submissions-badge.loading {
-            background: var(--primary-100);
-            color: var(--primary-700);
-        }
-        
-        .submissions-grid {
-            display: grid;
-            gap: 12px;
-        }
-        
-        .submission-card {
-            background: white;
-            border-radius: var(--radius-md);
-            padding: 16px;
-            border: 1px solid var(--gray-200);
-            transition: all 0.2s ease;
-        }
-        
-        .submission-card:hover {
-            border-color: var(--primary-300);
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .submission-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 12px;
-        }
-        
-        .submission-no-register {
-            font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--primary-600);
-            background: var(--primary-50);
-            padding: 4px 10px;
-            border-radius: var(--radius-sm);
-        }
-        
-        .submission-status {
-            padding: 4px 10px;
-            border-radius: var(--radius-full);
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        
-        .submission-status.disetujui {
-            background: var(--success-100);
-            color: var(--success-700);
-        }
-        
-        .submission-status.ditolak {
+        .submissions-badge.error {
             background: var(--error-100);
             color: var(--error-700);
         }
         
-        .submission-status.proses {
+        .submissions-grid {
+            display: grid;
+            gap: 20px;
+        }
+        
+        /* ============================================================
+           LIGHTBOX SUBMISSION CARD - DESIGN UTAMA
+           Foto besar di KANAN | Data lengkap di KIRI
+           ============================================================ */
+        .submission-card-lightbox {
+            background: white;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: cardSlideIn 0.5s ease-out both;
+            border: 1px solid var(--gray-200);
+            position: relative;
+        }
+        
+        .submission-card-lightbox:nth-child(1) { animation-delay: 0s; }
+        .submission-card-lightbox:nth-child(2) { animation-delay: 0.1s; }
+        .submission-card-lightbox:nth-child(3) { animation-delay: 0.2s; }
+        
+        @keyframes cardSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .submission-card-lightbox:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--primary-300);
+        }
+        
+        /* Card Inner Layout - Flex Row untuk Photo Right, Data Left */
+        .lightbox-inner {
+            display: flex;
+            flex-direction: row;
+            min-height: 280px;
+        }
+        
+        /* Mobile: Stack vertically */
+        @media (max-width: 640px) {
+            .lightbox-inner {
+                flex-direction: column-reverse;
+            }
+        }
+        
+        /* LEFT SIDE - Data Lengkap */
+        .lightbox-data {
+            flex: 1;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Card Header dengan No Register & Status */
+        .lightbox-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--gray-100);
+        }
+        
+        .lightbox-no-register {
+            font-size: 1.125rem;
+            font-weight: 800;
+            color: var(--primary-700);
+            letter-spacing: 0.5px;
+        }
+        
+        .lightbox-status {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: var(--radius-full);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .lightbox-status.disetujui {
+            background: var(--success-100);
+            color: var(--success-700);
+        }
+        
+        .lightbox-status.ditolak {
+            background: var(--error-100);
+            color: var(--error-700);
+        }
+        
+        .lightbox-status.proses,
+        .lightbox-status.pending {
             background: var(--warning-100);
             color: var(--warning-600);
         }
         
-        .submission-status.pending {
-            background: var(--gray-100);
-            color: var(--gray-600);
-        }
-        
-        .submission-fields {
+        /* Data Fields Grid */
+        .lightbox-fields {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        
-        .submission-field {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        
-        .submission-field-label {
-            font-size: 0.7rem;
-            color: var(--gray-500);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 600;
-        }
-        
-        .submission-field-value {
-            font-size: 0.85rem;
-            color: var(--gray-800);
-            font-weight: 500;
-        }
-        
-        .submission-field.full-width {
-            grid-column: 1 / -1;
-        }
-        
-        .no-submissions {
-            text-align: center;
-            padding: 24px;
-            color: var(--gray-500);
-        }
-        
-        .no-submissions-icon {
-            font-size: 2.5rem;
-            margin-bottom: 8px;
-        }
-        
-        .no-submissions-text {
-            font-size: 0.9rem;
-            margin-bottom: 4px;
-        }
-        
-        .no-submissions-hint {
-            font-size: 0.8rem;
-            color: var(--gray-400);
-        }
-        
-        .profile-info {
-            background: var(--gray-50);
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            text-align: left;
-            margin-bottom: 24px;
-        }
-        
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--gray-200);
-        }
-        
-        .info-row:last-child {
-            border-bottom: none;
-        }
-        
-        .info-label {
-            font-size: 0.85rem;
-            color: var(--gray-500);
-            font-weight: 500;
-        }
-        
-        .info-value {
-            font-size: 0.9rem;
-            color: var(--gray-800);
-            font-weight: 600;
-        }
-        
-        .btn-group {
-            display: flex;
             gap: 12px;
-        }
-        
-        .btn {
             flex: 1;
-            padding: 14px 20px;
-            border-radius: var(--radius-lg);
-            font-size: 0.95rem;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            border: 2px solid transparent;
         }
         
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-        
-        .btn-secondary {
-            background: white;
-            color: var(--gray-700);
-            border-color: var(--gray-200);
-        }
-        
-        .btn-secondary:hover {
-            background: var(--gray-50);
-            border-color: var(--gray-300);
-        }
-        
-        .btn-danger {
-            background: white;
-            color: var(--error-600);
-            border-color: var(--error-200);
-        }
-        
-        .btn-danger:hover {
-            background: var(--error-50);
-            border-color: var(--error-300);
-        }
-        
-        /* Footer */
-        .login-footer {
-            padding: 20px 24px;
-            background: var(--gray-50);
-            border-top: 1px solid var(--gray-200);
-            text-align: center;
-        }
-        
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--primary-600);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: all 0.2s;
-            padding: 8px 16px;
-            border-radius: var(--radius-md);
-        }
-        
-        .back-link:hover {
-            background: var(--primary-50);
-            color: var(--primary-700);
-        }
-        
-        .back-link svg {
-            width: 18px;
-            height: 18px;
-        }
-        
-        /* Security Badge */
-        .security-badge {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            margin-top: 16px;
-            font-size: 0.8rem;
-            color: var(--gray-500);
-        }
-        
-        .security-badge svg {
-            width: 14px;
-            height: 14px;
-            color: var(--success-500);
-        }
-        
-        /* Hidden class */
-        .hidden {
-            display: none !important;
-        }
-        
-        /* Responsive */
-        @media (max-width: 520px) {
-            .container {
-                max-width: 100%;
-            }
-            
-            .login-header {
-                padding: 24px 20px;
-            }
-            
-            .login-header h1 {
-                font-size: 1.25rem;
-            }
-            
-            .login-body {
-                padding: 24px 20px;
-            }
-            
-            .btn-group {
-                flex-direction: column;
-            }
-            
-            .submission-fields {
+        @media (max-width: 480px) {
+            .lightbox-fields {
                 grid-template-columns: 1fr;
             }
         }
         
+        .lightbox-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .lightbox-field.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .lightbox-field-label {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .lightbox-field-value {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            padding: 8px 12px;
+            background: var(--gray-50);
+            border-radius: var(--radius-sm);
+            border-left: 3px solid var(--primary-500);
+        }
+        
+        /* RIGHT SIDE - Foto Besar */
+        .lightbox-photo {
+            width: 220px;
+            min-height: 280px;
+            background: linear-gradient(135deg, var(--primary-100) 0%, var(--primary-200) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        @media (max-width: 640px) {
+            .lightbox-photo {
+                width: 100%;
+                min-height: 200px;
+            }
+        }
+        
+        .lightbox-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .lightbox-photo-placeholder {
+            text-align: center;
+            padding: 20px;
+            color: var(--primary-600);
+        }
+        
+        .lightbox-photo-icon {
+            font-size: 4rem;
+            margin-bottom: 12px;
+            opacity: 0.7;
+        }
+        
+        .lightbox-photo-text {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            opacity: 0.8;
+        }
+        
+        .lightbox-photo-initial {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--primary-600);
+            box-shadow: var(--shadow-lg);
+            border: 5px solid rgba(255,255,255,0.8);
+        }
+        
+        /* Timestamp Footer */
+        .lightbox-footer {
+            padding: 12px 24px;
+            background: var(--gray-50);
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--gray-500);
+        }
+        
+        .lightbox-timestamp {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        /* No Submissions State */
+        .no-submissions {
+            text-align: center;
+            padding: 40px 24px;
+            color: var(--gray-500);
+        }
+        
+        .no-submissions-icon {
+            font-size: 3.5rem;
+            margin-bottom: 16px;
+            opacity: 0.7;
+        }
+        
+        .no-submissions-text {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--gray-700);
+        }
+        
+        .no-submissions-hint {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            line-height: 1.5;
+        }
+        
+        /* ============================================================
+           TOAST NOTIFICATIONS
+           ============================================================ */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .toast {
+            background: white;
+            padding: 16px 20px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-xl);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            max-width: 420px;
+            animation: toastIn 0.3s ease-out;
+            border-left: 4px solid;
+        }
+        
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .toast.success { border-left-color: var(--success-500); }
+        .toast.error { border-left-color: var(--error-500); }
+        .toast.warning { border-left-color: var(--warning-500); }
+        .toast.info { border-left-color: var(--primary-500); }
+        
+        .toast-icon { font-size: 1.25rem; }
+        .toast-content { flex: 1; }
+        .toast-title { font-weight: 700; font-size: 0.875rem; margin-bottom: 2px; }
+        .toast-message { font-size: 0.8125rem; color: var(--gray-600); }
+        .toast-close { cursor: pointer; color: var(--gray-400); font-size: 1.25rem; }
+        
         /* Config Error Banner */
         .config-error-banner {
-            display: none;
-            background: linear-gradient(135deg, var(--error-600) 0%, var(--error-700) 100%);
+            background: linear-gradient(135deg, var(--error-600), var(--error-700));
             color: white;
-            padding: 20px 24px;
+            padding: 20px;
             margin-bottom: 20px;
-            border-radius: var(--radius-xl);
-            animation: shake 0.5s ease-in-out;
+            border-radius: var(--radius-lg);
+            display: none;
         }
         
-        .config-error-banner.active {
-            display: block;
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
+        .config-error-banner.show { display: block; }
         
         .config-error-banner h3 {
             font-size: 1rem;
@@ -903,42 +825,37 @@
             gap: 8px;
         }
         
-        .config-error-banner p {
-            font-size: 0.9rem;
-            opacity: 0.95;
-            line-height: 1.5;
-        }
-        
         .config-error-banner ol {
-            margin: 12px 0 0 20px;
-            font-size: 0.85rem;
-        }
-        
-        .config-error-banner li {
-            margin-bottom: 6px;
+            margin-left: 20px;
+            font-size: 0.875rem;
+            line-height: 1.8;
         }
         
         .config-error-banner code {
-            background: rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.2);
             padding: 2px 6px;
             border-radius: 4px;
-            font-size: 0.85em;
+            font-size: 0.8125rem;
+        }
+        
+        .config-error-banner button {
+            margin-top: 12px;
+            padding: 8px 20px;
+            background: var(--error-500);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
         }
     </style>
 </head>
 <body>
-
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
     
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner-large"></div>
-        <p style="color: var(--gray-600); font-weight: 500;">Memproses autentikasi...</p>
-    </div>
-    
-    <div class="container">
-        <!-- Config Error Banner -->
+    <div class="login-container">
+        <!-- Configuration Error Banner -->
         <div class="config-error-banner" id="configErrorBanner">
             <h3>
                 <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -953,177 +870,131 @@
                 <li>Ganti juga <code>SUPABASE_ANON_KEY</code> dengan key Anda</li>
                 <li>Refresh halaman ini</li>
             </ol>
-            <button onclick="dismissConfigError()" style="margin-top:12px; padding:8px 20px; background:#dc2626;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.9rem;">
-                Tutup Pesan
-            </button>
+            <button onclick="dismissConfigError()">Tutup Pesan</button>
         </div>
 
         <!-- Main Login Card -->
         <div class="login-card" id="loginCard">
             <!-- Header -->
             <div class="login-header">
-                <div class="header-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                    </svg>
-                </div>
-                <h1>Login Peserta</h1>
-                <p>SIMBAKES Dinas Kesehatan</p>
+                <div class="login-avatar">👤</div>
+                <h1 class="login-title">Login Peserta</h1>
+                <p class="login-subtitle">SIMBAKES Dinas Kesehatan</p>
             </div>
             
-            <!-- Login Form -->
-            <div class="login-body" id="loginFormSection">
-                <form id="loginForm" autocomplete="off">
-                    <!-- Username Field -->
+            <!-- Form Body -->
+            <div class="login-body" id="loginBody">
+                <form id="loginForm" novalidate>
                     <div class="form-group">
-                        <label class="form-label" for="usernameInput">Username</label>
-                        <div class="input-wrapper">
+                        <label class="form-label" for="username">Username / Email</label>
+                        <div class="form-input-wrapper">
                             <input 
                                 type="text" 
-                                id="usernameInput" 
+                                id="username" 
                                 class="form-input" 
-                                placeholder="Masukkan username Anda"
-                                required
+                                placeholder="Masukkan username atau email"
                                 autocomplete="username"
-                                autofocus
+                                required
                             >
-                            <span class="input-icon">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                </svg>
-                            </span>
-                        </div>
-                        <div class="error-message" id="usernameError">
-                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            <svg class="form-input-icon" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                             </svg>
-                            <span>Username harus diisi</span>
                         </div>
+                        <div class="error-message" id="usernameError">Username wajib diisi</div>
                     </div>
                     
-                    <!-- Password Field -->
                     <div class="form-group">
-                        <label class="form-label" for="passwordInput">Password</label>
-                        <div class="input-wrapper">
+                        <label class="form-label" for="password">Password</label>
+                        <div class="form-input-wrapper">
                             <input 
                                 type="password" 
-                                id="passwordInput" 
+                                id="password" 
                                 class="form-input" 
-                                placeholder="Masukkan password Anda"
-                                required
+                                placeholder="Masukkan password"
                                 autocomplete="current-password"
+                                required
                             >
-                            <span class="input-icon">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                </svg>
-                            </span>
-                            <button type="button" class="password-toggle" id="togglePassword" aria-label="Toggle password visibility">
-                                <svg id="eyeIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="error-message" id="passwordError">
-                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            <svg class="form-input-icon" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                             </svg>
-                            <span>Password harus diisi</span>
                         </div>
+                        <div class="error-message" id="passwordError">Password wajib diisi</div>
                     </div>
                     
-                    <!-- Submit Button -->
-                    <button type="submit" class="submit-btn" id="submitBtn">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
                         </svg>
-                        <span>Masuk</span>
+                        <span id="btnText">Masuk</span>
                     </button>
                 </form>
                 
-                <!-- Security Info -->
-                <div class="security-badge">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                    </svg>
-                    <span>Terenkripsi • Aman • Terpercaya</span>
+                <div style="margin-top: 20px; text-align: center;">
+                    <p class="footer-text">Belum punya akun?</p>
+                    <a href="#" class="btn-link" onclick="openRegister()">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                        </svg>
+                        Daftar Akun Baru
+                    </a>
                 </div>
             </div>
             
             <!-- Profile Section (Hidden by default) -->
             <div class="profile-section" id="profileSection">
-                <div class="profile-avatar" id="profileAvatar">?</div>
-                <h2 class="profile-name" id="profileName">Loading...</h2>
-                <div class="profile-role" id="profileRole">
-                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                    </svg>
-                    <span>Peserta Aktif</span>
+                <div class="profile-header">
+                    <div class="profile-avatar" id="profileAvatar">A</div>
+                    <h2 class="profile-name" id="profileName">Nama User</h2>
+                    <span class="profile-role" id="profileRole">Peserta</span>
                 </div>
                 
-                <div class="profile-info">
-                    <div class="info-row">
-                        <span class="info-label">📧 Email</span>
-                        <span class="info-value" id="profileEmail">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">🆔 NIK</span>
-                        <span class="info-value" id="profileNIK">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">👤 Username</span>
-                        <span class="info-value" id="profileUsername">-</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">⏰ Login Terakhir</span>
-                        <span class="info-value" id="profileLastLogin">Baru saja</span>
-                    </div>
-                </div>
-                
-                <!-- SUBMISSIONS DATA SECTION - NEW! -->
-                <div class="submissions-section" id="submissionsSection">
-                    <div class="submissions-header">
-                        <h3>📋 Data Pengajuan Beasiswa</h3>
-                        <span class="submissions-badge loading" id="submissionsBadge">Memuat...</span>
-                    </div>
-                    <div class="submissions-grid" id="submissionsGrid">
-                        <div class="no-submissions" id="noSubmissionsMsg" style="display:none;">
-                            <div class="no-submissions-icon">📭</div>
-                            <div class="no-submissions-text">Memuat data pengajuan...</div>
+                <div class="profile-body">
+                    <div class="profile-info-grid">
+                        <div class="info-item">
+                            <div class="info-label">NIK</div>
+                            <div class="info-value" id="profileNIK">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Email</div>
+                            <div class="info-value" id="profileEmail">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Status Akun</div>
+                            <div class="info-value" id="profileStatus">Aktif</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Terakhir Login</div>
+                            <div class="info-value" id="profileLastLogin">Baru saja</div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="btn-group">
-                    <button type="button" class="btn btn-primary" id="continueBtn" onclick="goToDashboard()">
+                    
+                    <!-- SUBMISSIONS DATA SECTION -->
+                    <div class="submissions-section" id="submissionsSection">
+                        <div class="submissions-header">
+                            <h3 class="submissions-title">📋 Data Pengajuan Beasiswa</h3>
+                            <span class="submissions-badge loading" id="submissionsBadge">Memuat...</span>
+                        </div>
+                        <div class="submissions-grid" id="submissionsGrid">
+                            <div class="no-submissions">
+                                <div class="no-submissions-icon">⏳</div>
+                                <div class="no-submissions-text">Memuat data pengajuan...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-logout" onclick="handleLogout()">
                         <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
                         </svg>
-                        Lanjut ke Dashboard
-                    </button>
-                    <button type="button" class="btn btn-danger" id="logoutBtn" onclick="handleLogout()">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                        </svg>
-                        Logout
+                        Keluar dari Akun
                     </button>
                 </div>
             </div>
             
             <!-- Footer -->
-            <div class="login-footer">
-                <p style="font-size: 0.85rem; color: var(--gray-600); margin-bottom: 12px;">
-                    Belum punya akun?
-                </p>
-                <a href="./daftar-peserta.html" class="back-link" style="background: var(--success-50); color: var(--success-700); margin-bottom: 12px;">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
-                    </svg>
-                    Daftar Akun Baru
-                </a>
-                <a href="#" class="back-link" onclick="goToSimbakesHome(); return false;">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="login-footer" id="loginFooter">
+                <a href="#" class="btn-link" onclick="goBack()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                     </svg>
                     Kembali ke Beranda SIMBAKES
@@ -1137,11 +1008,11 @@
          ============================================================ -->
     <script>
         // ============================================================
-        // SUPABASE CONFIGURATION (PRODUCTION)
+        // SUPABASE CONFIGURATION (FIXED - TANPA /rest/v1/)
         // ============================================================
         const SUPABASE_URL = 'https://boeknpvlfamjmddsdopd.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZWtucHZsZmFtam1kZHNkb3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjcwOTYxMTMsImV4cCI6MjA0MjY3MjEzfQ.kHj7xEY7Wa4zSJwH0rjhiB3Qf0IHriyPlWoh4rdlv3U';
-        const DEMO_MODE = true;  // Set false untuk production
+        const DEMO_MODE = false;
         
         // ============================================================
         // SECURITY CONSTANTS
@@ -1151,38 +1022,60 @@
         const MAX_LOGIN_ATTEMPTS = 5;
         
         // ============================================================
-        // SUPABASE CLIENT INITIALIZATION
+        // DOM ELEMENTS
+        // ============================================================
+        const elements = {
+            loginForm: document.getElementById('loginForm'),
+            usernameInput: document.getElementById('username'),
+            passwordInput: document.getElementById('password'),
+            usernameError: document.getElementById('usernameError'),
+            passwordError: document.getElementById('passwordError'),
+            submitBtn: document.getElementById('submitBtn'),
+            btnText: document.getElementById('btnText'),
+            loginCard: document.getElementById('loginCard'),
+            loginBody: document.getElementById('loginBody'),
+            loginFooter: document.getElementById('loginFooter'),
+            profileSection: document.getElementById('profileSection'),
+            profileAvatar: document.getElementById('profileAvatar'),
+            profileName: document.getElementById('profileName'),
+            profileRole: document.getElementById('profileRole'),
+            profileNIK: document.getElementById('profileNIK'),
+            profileEmail: document.getElementById('profileEmail'),
+            profileStatus: document.getElementById('profileStatus'),
+            profileLastLogin: document.getElementById('profileLastLogin'),
+            submissionsSection: document.getElementById('submissionsSection'),
+            submissionsGrid: document.getElementById('submissionsGrid'),
+            submissionsBadge: document.getElementById('submissionsBadge'),
+            configErrorBanner: document.getElementById('configErrorBanner'),
+            toastContainer: document.getElementById('toastContainer')
+        };
+        
+        // ============================================================
+        // STATE MANAGEMENT
         // ============================================================
         let supabaseClient = null;
-        let supabaseStatus = {
-            initialized: false,
-            demoMode: DEMO_MODE,
-            error: null
-        };
+        let loginAttempts = 0;
+        let lockedUntil = null;
         
         // Initialize Supabase client
         function initSupabase() {
             try {
+                console.log('[LOGIN-PESERTA] 🔗 Initializing Supabase...');
+                console.log('[LOGIN-PESERTA] 📍 URL:', SUPABASE_URL);
+                console.log('[LOGIN-PESERTA] 🔑 Key:', SUPABASE_ANON_KEY ? '✅ Present' : '❌ Missing');
+                
                 if (!SUPABASE_URL || SUPABASE_URL.includes('MASUKKAN') || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('MASUKKAN')) {
                     if (DEMO_MODE) {
-                        supabaseStatus.demoMode = true;
-                        console.log('⚠️ Running in DEMO MODE');
+                        console.warn('[LOGIN-PESERTA] ⚠️ Running in DEMO MODE');
                         return true;
                     } else {
                         throw new Error('SUPABASE_URL atau SUPABASE_ANON_KEY belum dikonfigurasi');
                     }
                 }
                 
-                // Clean URL - remove trailing slashes and /rest/v1
-                let cleanUrl = SUPABASE_URL.replace(/\/+$/, '');  // Remove trailing slashes
-                cleanUrl = cleanUrl.replace('/rest/v1', '');     // Remove /rest/v1 for JS client
-                cleanUrl = cleanUrl.replace('/rest', '');        // Remove /rest also
-                
-                console.log('[LOGIN-PESERTA] 🔗 Initializing Supabase with URL:', cleanUrl.substring(0, 40) + '...');
-                
                 // Create Supabase client dengan options yang proper
                 supabaseClient = window.supabase.createClient(
-                    cleanUrl,
+                    SUPABASE_URL,
                     SUPABASE_ANON_KEY,
                     {
                         auth: {
@@ -1197,177 +1090,68 @@
                     }
                 );
                 
-                // Test connection
-                supabaseClient.from('multiusers').select('id').limit(1)
-                    .then(({ error }) => {
-                        if (error) {
-                            console.warn('[LOGIN-PESERTA] ⚠️ Supabase connection test warning:', error.message);
-                        } else {
-                            console.log('[LOGIN-PESERTA] ✅ Supabase connection test successful');
-                        }
-                    });
-                
-                supabaseStatus.initialized = true;
                 console.log('[LOGIN-PESERTA] ✅ Supabase client initialized successfully');
+                console.log('[LOGIN-PESERTA] 🔗 Client URL:', supabaseClient.supabaseUrl);
+                
                 return true;
                 
             } catch (error) {
-                console.error('[LOGIN-PESERTA] ❌ Failed to initialize Supabase:', error);
-                supabaseStatus.error = error.message;
-                showConfigError(error.message);
+                console.error('[LOGIN-PESERTA] ❌ Supabase initialization error:', error);
+                elements.configErrorBanner.classList.add('show');
                 return false;
             }
         }
         
-        function showConfigError(message) {
-            const banner = document.getElementById('configErrorBanner');
-            if (banner) {
-                banner.classList.add('active');
-            }
-        }
+        // ============================================================
+        // AUTHENTICATION FUNCTIONS
+        // ============================================================
         
-        function dismissConfigError() {
-            const banner = document.getElementById('configErrorBanner');
-            if (banner) {
-                banner.style.display = 'none';
-            }
-        }
-        
-        // ============================================================
-        // DOM ELEMENTS
-        // ============================================================
-        const elements = {
-            loginForm: document.getElementById('loginForm'),
-            usernameInput: document.getElementById('usernameInput'),
-            passwordInput: document.getElementById('passwordInput'),
-            togglePassword: document.getElementById('togglePassword'),
-            eyeIcon: document.getElementById('eyeIcon'),
-            usernameError: document.getElementById('usernameError'),
-            passwordError: document.getElementById('passwordError'),
-            submitBtn: document.getElementById('submitBtn'),
-            loadingOverlay: document.getElementById('loadingOverlay'),
-            loginCard: document.getElementById('loginCard'),
-            loginFormSection: document.getElementById('loginFormSection'),
-            profileSection: document.getElementById('profileSection'),
-            profileAvatar: document.getElementById('profileAvatar'),
-            profileName: document.getElementById('profileName'),
-            profileRole: document.getElementById('profileRole'),
-            profileEmail: document.getElementById('profileEmail'),
-            profileNIK: document.getElementById('profileNIK'),
-            profileUsername: document.getElementById('profileUsername'),
-            profileLastLogin: document.getElementById('profileLastLogin'),
-            // Submissions elements
-            submissionsSection: document.getElementById('submissionsSection'),
-            submissionsBadge: document.getElementById('submissionsBadge'),
-            submissionsGrid: document.getElementById('submissionsGrid'),
-            noSubmissionsMsg: document.getElementById('noSubmissionsMsg')
-        };
-        
-        // ============================================================
-        // PASSWORD TOGGLE
-        // ============================================================
-        elements.togglePassword.addEventListener('click', function() {
-            const type = elements.passwordInput.type === 'password' ? 'text' : 'password';
-            elements.passwordInput.type = type;
-            
-            if (type === 'text') {
-                elements.eyeIcon.innerHTML = `
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
-                `;
-            } else {
-                elements.eyeIcon.innerHTML = `
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                `;
-            }
-        });
-        
-        // ============================================================
-        // FORM VALIDATION
-        // ============================================================
-        function validateForm() {
-            const username = elements.usernameInput.value.trim();
-            const password = elements.passwordInput.value;
-            let isValid = true;
-            
-            // Reset errors
-            elements.usernameInput.classList.remove('error');
-            elements.passwordInput.classList.remove('error');
-            elements.usernameError.classList.remove('show');
-            elements.passwordError.classList.remove('show');
-            
-            // Validate username
-            if (!username) {
-                elements.usernameInput.classList.add('error');
-                elements.usernameError.querySelector('span').textContent = 'Username harus diisi';
-                elements.usernameError.classList.add('show');
-                isValid = false;
-            } else if (username.length < 3) {
-                elements.usernameInput.classList.add('error');
-                elements.usernameError.querySelector('span').textContent = 'Username minimal 3 karakter';
-                elements.usernameError.classList.add('show');
-                isValid = false;
-            }
-            
-            // Validate password
-            if (!password) {
-                elements.passwordInput.classList.add('error');
-                elements.passwordError.querySelector('span').textContent = 'Password harus diisi';
-                elements.passwordError.classList.add('show');
-                isValid = false;
-            } else if (password.length < 6) {
-                elements.passwordInput.classList.add('error');
-                elements.passwordError.querySelector('span').textContent = 'Password minimal 6 karakter';
-                elements.passwordError.classList.add('show');
-                isValid = false;
-            }
-            
-            return isValid ? { username, password } : null;
-        }
-        
-        // ============================================================
-        // SECURE AUTHENTICATION FUNCTION (via Supabase RPC)
-        // ============================================================
         async function authenticateUser(username, password) {
-            if (!supabaseClient || !supabaseStatus.initialized) {
-                throw new Error('Supabase client belum siap. Silakan refresh halaman.');
-            }
+            console.log('[LOGIN-PESERTA] 🔐 Authenticating user:', username);
             
-            console.log('[LOGIN-PESERTA] 🔐 Calling RPC fn_authenticate_peserta for user:', username);
-            
-            const { data, error } = await supabaseClient.rpc('fn_authenticate_peserta', {
-                p_username: username,
-                p_password: password
-            });
-            
-            if (error) {
-                console.error('[LOGIN-PESERTA] ❌ RPC Error details:', {
-                    message: error.message,
-                    code: error.code,
-                    hint: error.hint,
-                    details: error.details
+            try {
+                // Call RPC function for secure authentication
+                const { data, error } = await supabaseClient.rpc('fn_authenticate_peserta', {
+                    p_username: username,
+                    p_password: password
                 });
                 
-                if (error.code === '42501' || error.message.includes('permission')) {
-                    throw new Error('Izin ditolak. Pastikan SQL function sudah dibuat dengan SECURITY DEFINER.');
-                } else if (error.code === '42883' || error.message.includes('does not exist')) {
-                    throw new Error('Function fn_authenticate_peserta tidak ditemukan.');
+                if (error) {
+                    console.error('[LOGIN-PESERTA] ❌ RPC Error details:', {
+                        message: error.message,
+                        code: error.code,
+                        hint: error.hint,
+                        status: error.status
+                    });
+                    
+                    // Handle specific error codes
+                    if (error.code === '42501' || error.message.includes('permission')) {
+                        throw new Error('Izin ditolak. Pastikan SQL function sudah dibuat dengan SECURITY DEFINER.');
+                    } else if (error.code === '42883' || error.message.includes('does not exist')) {
+                        throw new Error('Function fn_authenticate_peserta tidak ditemukan.');
+                    } else if (error.status === 401 || error.message.includes('Invalid API key')) {
+                        throw new Error('API key tidak valid. Periksa konfigurasi Supabase.');
+                    }
+                    
+                    throw new Error(error.message || 'Gagal mengautentikasi');
                 }
                 
-                throw new Error(error.message || 'Gagal mengautentikasi');
+                console.log('[LOGIN-PESERTA] ✅ RPC Response received:', data ? 'success' : 'null');
+                return data;
+                
+            } catch (error) {
+                console.error('[LOGIN-PESERTA] ❌ Authentication exception:', error);
+                throw error;
             }
-            
-            console.log('[LOGIN-PESERTA] ✅ RPC Response received:', data ? 'success' : 'null');
-            return data;
         }
         
         // ============================================================
-        // FETCH SUBMISSIONS DATA - NEW FUNCTION!
-        // Query tabel submissions berdasarkan identitas user
+        // FETCH SUBMISSIONS DATA - QUERY KE TABEL SUBMISSIONS
+        // Berdasarkan NIK (paling akurat)
         // ============================================================
         async function fetchSubmissionsData(userData) {
             console.log('[LOGIN-PESERTA] 📊 Starting fetchSubmissionsData...');
-            console.log('[LOGIN-PESERTA] 📊 User data received:', {
+            console.log('[LOGIN-PESERTA] 👤 User data received:', {
                 nik: userData?.nik,
                 email: userData?.email,
                 username: userData?.username,
@@ -1377,97 +1161,118 @@
             // Update badge status
             updateSubmissionsBadge('loading', 'Mencari data...');
             
-            if (!supabaseClient || !supabaseStatus.initialized) {
-                console.error('[LOGIN-PESERTA] ❌ Supabase client not ready for submissions query');
+            if (!supabaseClient) {
+                console.error('[LOGIN-PESERTA] ❌ Supabase client not ready');
                 renderNoSubmissions('error', 'Koneksi database belum siap');
                 return null;
             }
             
             try {
-                // STRATEGI QUERY: Coba beberapa field sebagai identifier
-                // Prioritas: NIK > Email > Username > ID
-                
                 let submissionsData = null;
                 let queryError = null;
                 
-                // Strategy 1: Query by NIK (paling akurat)
+                // ===========================================
+                // STRATEGI 1: Query by NIK (PALING AKURAT)
+                // ===========================================
                 if (userData?.nik) {
                     console.log('[LOGIN-PESERTA] 📊 Strategy 1: Query by NIK:', userData.nik);
-                    const result = await supabaseClient
-                        .from('submissions')
-                        .select('*')
-                        .eq('nik', userData.nik)
-                        .order('created_at', { ascending: false })
-                        .limit(10);
                     
-                    if (!result.error && result.data && result.data.length > 0) {
-                        submissionsData = result.data;
-                        console.log(`[LOGIN-PESERTA] ✅ Found ${submissionsData.length} submission(s) by NIK`);
-                    } else {
-                        console.log('[LOGIN-PESERTA] ℹ️ No submissions found by NIK, trying next strategy...');
-                        queryError = result.error;
+                    try {
+                        const { data, error } = await supabaseClient
+                            .from('submissions')
+                            .select('*')
+                            .eq('nik', userData.nik)
+                            .order('created_at', { ascending: false })
+                            .limit(10);
+                        
+                        if (error) {
+                            console.error('[LOGIN-PESERTA] ⚠️ NIK query error:', error);
+                            queryError = error;
+                        } else if (data && data.length > 0) {
+                            console.log('[LOGIN-PESERTA] ✅ Found by NIK:', data.length, 'records');
+                            submissionsData = data;
+                        }
+                    } catch (e) {
+                        console.error('[LOGIN-PESERTA] ⚠️ NIK query exception:', e);
                     }
                 }
                 
-                // Strategy 2: Query by Email (jika NIK tidak ada hasil)
+                // ===========================================
+                // STRATEGI 2: Query by Email (fallback)
+                // ===========================================
                 if ((!submissionsData || submissionsData.length === 0) && userData?.email) {
-                    console.log('[LOGIN-PESERTA] 📊 Strategy 2: Query by email:', userData.email);
-                    const result = await supabaseClient
-                        .from('submissions')
-                        .select('*')
-                        .eq('email', userData.email)
-                        .order('created_at', { ascending: false })
-                        .limit(10);
+                    console.log('[LOGIN-PESERTA] 📊 Strategy 2: Query by Email:', userData.email);
                     
-                    if (!result.error && result.data && result.data.length > 0) {
-                        submissionsData = result.data;
-                        console.log(`[LOGIN-PESERTA] ✅ Found ${submissionsData.length} submission(s) by email`);
-                    } else {
-                        console.log('[LOGIN-PESERTA] ℹ️ No submissions found by email');
-                        queryError = result.error;
+                    try {
+                        const { data, error } = await supabaseClient
+                            .from('submissions')
+                            .select('*')
+                            .eq('email', userData.email)
+                            .order('created_at', { ascending: false })
+                            .limit(10);
+                        
+                        if (error) {
+                            console.error('[LOGIN-PESERTA] ⚠️ Email query error:', error);
+                            if (!queryError) queryError = error;
+                        } else if (data && data.length > 0) {
+                            console.log('[LOGIN-PESERTA] ✅ Found by Email:', data.length, 'records');
+                            submissionsData = data;
+                        }
+                    } catch (e) {
+                        console.error('[LOGIN-PESERTA] ⚠️ Email query exception:', e);
                     }
                 }
                 
-                // Strategy 3: Query by nama_lengkap (fallback)
+                // ===========================================
+                // STRATEGI 3: Query by nama_lengkap (last resort)
+                // ===========================================
                 if ((!submissionsData || submissionsData.length === 0) && userData?.nama_lengkap) {
-                    console.log('[LOGIN-PESERTA] 📊 Strategy 3: Query by nama_lengkap:', userData.nama_lengkap);
-                    const result = await supabaseClient
-                        .from('submissions')
-                        .select('*')
-                        .ilike('nama_lengkap', `%${userData.nama_lengkap}%`)
-                        .order('created_at', { ascending: false })
-                        .limit(10);
+                    console.log('[LOGIN-PESERTA] 📊 Strategy 3: Query by Name:', userData.nama_lengkap);
                     
-                    if (!result.error && result.data && result.data.length > 0) {
-                        submissionsData = result.data;
-                        console.log(`[LOGIN-PESERTA] ✅ Found ${submissionsData.length} submission(s) by nama_lengkap`);
-                    } else {
-                        queryError = result.error;
+                    try {
+                        const { data, error } = await supabaseClient
+                            .from('submissions')
+                            .select('*')
+                            .ilike('nama_lengkap', `%${userData.nama_lengkap}%`)
+                            .order('created_at', { ascending: false })
+                            .limit(10);
+                        
+                        if (error) {
+                            console.error('[LOGIN-PESERTA] ⚠️ Name query error:', error);
+                            if (!queryError) queryError = error;
+                        } else if (data && data.length > 0) {
+                            console.log('[LOGIN-PESERTA] ✅ Found by Name:', data.length, 'records');
+                            submissionsData = data;
+                        }
+                    } catch (e) {
+                        console.error('[LOGIN-PESERTA] ⚠️ Name query exception:', e);
                     }
                 }
                 
-                // Handle results
+                // ===========================================
+                // HASIL QUERY
+                // ===========================================
                 if (submissionsData && submissionsData.length > 0) {
                     console.log('[LOGIN-PESERTA] ✅ Submissions data found:', submissionsData.length, 'records');
-                    console.log('[LOGIN-PESERTA] 📋 Sample submission data:', submissionsData[0]);
+                    console.log('[LOGIN-PESERTA] 📋 Sample data:', submissionsData[0]);
                     
                     updateSubmissionsBadge('found', `${submissionsData.length} Ditemukan`);
-                    renderSubmissionsCards(submissionsData);
+                    renderSubmissionsLightboxCards(submissionsData);
                     
                     return submissionsData;
                 } else {
-                    console.log('[LOGIN-PESERTA] ⚠️ No submissions found for this user');
+                    console.log('[LOGIN-PESERTA] ℹ️ No submissions found for this user');
                     
                     if (queryError) {
-                        console.error('[LOGIN-PESERTA] ❌ Submissions query error:', queryError);
+                        console.error('[LOGIN-PESERTA] ❌ Query error:', queryError);
                         
-                        // Check for RLS errors
-                        if (queryError.code === 'PGRST116' || queryError.message?.includes('does not exist')) {
+                        // Handle RLS/Permission errors
+                        if (queryError.status === 401 || queryError.status === 403) {
+                            renderNoSubmissions('rls', 'Akses ditolak oleh kebijakan keamanan (RLS)');
+                        } else if (queryError.code === 'PGRST116') {
                             renderNoSubmissions('error', 'Tabel submissions tidak ditemukan');
-                        } else if (queryError.status === 401 || queryError.status === 403) {
-                            renderNoSubmissions('rls', 'Akses ditolak oleh RLS policy');
                         } else {
-                            renderNoSubmissions('error', queryError.message);
+                            renderNoSubmissions('error', queryError.message || 'Gagal mengambil data');
                         }
                     } else {
                         renderNoSubmissions('empty', 'Belum ada pengajuan beasiswa');
@@ -1484,10 +1289,10 @@
         }
         
         // ============================================================
-        // RENDER SUBMISSIONS CARDS - NEW FUNCTION!
-        // Menampilkan data submissions dalam bentuk card
+        // RENDER LIGHTBOX CARDS - DESAIN KARTU DENGAN FOTO BESAR
+        // Layout: [DATA KIRI] | [FOTO KANAN]
         // ============================================================
-        function renderSubmissionsCards(submissions) {
+        function renderSubmissionsLightboxCards(submissions) {
             if (!elements.submissionsGrid) return;
             
             let html = '';
@@ -1500,60 +1305,100 @@
                 const createdDate = sub.created_at ? formatDate(sub.created_at) : '-';
                 const updatedDate = sub.updated_at ? formatDate(sub.updated_at) : '-';
                 
+                // Ambil initial untuk avatar foto
+                const initial = (sub.nama_lengkap || '?').charAt(0).toUpperCase();
+                
+                // Cek ada foto URL tidak
+                const hasPhoto = sub.foto || sub.photo_url || sub.avatar_url;
+                const photoSrc = sub.foto || sub.photo_url || sub.avatar_url || '';
+                
                 html += `
-                    <div class="submission-card" style="animation: fadeIn 0.3s ease-out ${index * 0.1}s both;">
-                        <div class="submission-card-header">
-                            <span class="submission-no-register">${escapeHtml(sub.no_register || 'N/A')}</span>
-                            <span class="submission-status ${statusClass}">${statusText}</span>
+                    <div class="submission-card-lightbox" style="animation-delay: ${index * 0.15}s;">
+                        <div class="lightbox-inner">
+                            
+                            <!-- LEFT SIDE: Data Lengkap -->
+                            <div class="lightbox-data">
+                                
+                                <!-- Header: No Register & Status -->
+                                <div class="lightbox-header">
+                                    <span class="lightbox-no-register">#${escapeHtml(sub.no_register || 'N/A')}</span>
+                                    <span class="lightbox-status ${statusClass}">${statusText}</span>
+                                </div>
+                                
+                                <!-- Data Fields Grid -->
+                                <div class="lightbox-fields">
+                                    <div class="lightbox-field">
+                                        <span class="lightbox-field-label">Nama Lengkap</span>
+                                        <span class="lightbox-field-value">${escapeHtml(sub.nama_lengkap || '-')}</span>
+                                    </div>
+                                    <div class="lightbox-field">
+                                        <span class="lightbox-field-label">NIK</span>
+                                        <span class="lightbox-field-value">${escapeHtml(sub.nik || '-')}</span>
+                                    </div>
+                                    <div class="lightbox-field">
+                                        <span class="lightbox-field-label">Email</span>
+                                        <span class="lightbox-field-value">${escapeHtml(sub.email || '-')}</span>
+                                    </div>
+                                    <div class="lightbox-field">
+                                        <span class="lightbox-field-label">No. HP</span>
+                                        <span class="lightbox-field-value">${escapeHtml(sub.no_hp || sub.telepon || '-')}</span>
+                                    </div>
+                                    <div class="lightbox-field full-width">
+                                        <span class="lightbox-field-label">Jurusan / Program Studi</span>
+                                        <span class="lightbox-field-value">${escapeHtml(sub.jurusan || sub.program_studi || '-')}</span>
+                                    </div>
+                                    <div class="lightbox-field full-width">
+                                        <span class="lightbox-field-label">Perguruan Tinggi</span>
+                                        <span class="lightbox-field-value">${escapeHtml(sub.perguruan_tinggi || sub.institusi || '-')}</span>
+                                    </div>
+                                    ${sub.alamat ? `
+                                    <div class="lightbox-field full-width">
+                                        <span class="lightbox-field-label">Alamat</span>
+                                        <span class="lightbox-field-value">${escapeHtml(sub.alamat)}</span>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            
+                            <!-- RIGHT SIDE: Foto Besar -->
+                            <div class="lightbox-photo">
+                                ${hasPhoto ? `
+                                    <img src="${escapeHtml(photoSrc)}" alt="Foto ${escapeHtml(sub.nama_lengkap)}" onerror="this.parentElement.innerHTML='<div class=\\'lightbox-photo-placeholder\\'><div class=\\'lightbox-photo-initial\\'>${initial}</div><div class=\\'lightbox-photo-text\\'>Foto tidak tersedia</div></div>'">
+                                ` : `
+                                    <div class="lightbox-photo-placeholder">
+                                        <div class="lightbox-photo-initial">${initial}</div>
+                                        <div class="lightbox-photo-text">${sub.nama_lengkap || 'Foto Peserta'}</div>
+                                    </div>
+                                `}
+                            </div>
+                            
                         </div>
-                        <div class="submission-fields">
-                            <div class="submission-field">
-                                <span class="submission-field-label">Nama Lengkap</span>
-                                <span class="submission-field-value">${escapeHtml(sub.nama_lengkap || '-')}</span>
-                            </div>
-                            <div class="submission-field">
-                                <span class="submission-field-label">NIK</span>
-                                <span class="submission-field-value">${escapeHtml(sub.nik || '-')}</span>
-                            </div>
-                            <div class="submission-field">
-                                <span class="submission-field-label">Email</span>
-                                <span class="submission-field-value">${escapeHtml(sub.email || '-')}</span>
-                            </div>
-                            <div class="submission-field">
-                                <span class="submission-field-label">Jurusan/Program</span>
-                                <span class="submission-field-value">${escapeHtml(sub.jurusan || sub.program_studi || '-')}</span>
-                            </div>
-                            <div class="submission-field">
-                                <span class="submission-field-label">Perguruan Tinggi</span>
-                                <span class="submission-field-value">${escapeHtml(sub.perguruan_tinggi || sub.institusi || '-')}</span>
-                            </div>
-                            <div class="submission-field">
-                                <span class="submission-field-label">Tanggal Daftar</span>
-                                <span class="submission-field-value">${createdDate}</span>
-                            </div>
-                            ${sub.alamat ? `
-                            <div class="submission-field full-width">
-                                <span class="submission-field-label">Alamat</span>
-                                <span class="submission-field-value">${escapeHtml(sub.alamat)}</span>
-                            </div>
-                            ` : ''}
-                            ${sub.no_hp || sub.telepon ? `
-                            <div class="submission-field">
-                                <span class="submission-field-label">No. HP</span>
-                                <span class="submission-field-value">${escapeHtml(sub.no_hp || sub.telepon)}</span>
-                            </div>
+                        
+                        <!-- Footer: Timestamp -->
+                        <div class="lightbox-footer">
+                            <span class="lightbox-timestamp">
+                                📅 Tanggal Daftar: ${createdDate}
+                            </span>
+                            ${updatedDate !== '-' ? `
+                            <span class="lightbox-timestamp">
+                                🔄 Terakhir Update: ${updatedDate}
+                            </span>
                             ` : ''}
                         </div>
+                        
                     </div>
                 `;
             });
             
             elements.submissionsGrid.innerHTML = html;
+            
+            console.log(`[LOGIN-PESERTA] 🎨 Rendered ${submissions.length} lightbox cards`);
         }
         
         // ============================================================
-        // HELPER: Get Status CSS Class
+        // HELPER FUNCTIONS
         // ============================================================
+        
         function getStatusClass(status) {
             if (!status) return 'pending';
             const s = status.toLowerCase();
@@ -1563,9 +1408,26 @@
             return 'pending';
         }
         
-        // ============================================================
-        // HELPER: Render "No Submissions" Message
-        // ============================================================
+        function formatDate(dateString) {
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            } catch {
+                return '-';
+            }
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
         function renderNoSubmissions(type, message) {
             if (!elements.submissionsGrid) return;
             
@@ -1601,43 +1463,96 @@
             `;
         }
         
-        // ============================================================
-        // HELPER: Update Submissions Badge
-        // ============================================================
         function updateSubmissionsBadge(type, text) {
             if (!elements.submissionsBadge) return;
-            
             elements.submissionsBadge.className = 'submissions-badge ' + type;
             elements.submissionsBadge.textContent = text;
         }
         
         // ============================================================
-        // SECURE LOGOUT FUNCTION (via Supabase RPC)
+        // TOAST NOTIFICATION SYSTEM
         // ============================================================
-        async function logoutFromServer(sessionToken) {
-            try {
-                const { data, error } = await supabaseClient.rpc('fn_logout_peserta', {
-                    p_session_token: sessionToken
-                });
-                
-                if (error) {
-                    console.warn('[LOGIN-PESERTA] Logout RPC warning:', error);
-                }
-                
-                return data;
-            } catch (e) {
-                console.warn('[LOGIN-PESERTA] Server logout failed:', e);
-                return null;
-            }
+        function showToast(type, title, message) {
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type]}</span>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <span class="toast-close" onclick="this.parentElement.remove()">×</span>
+            `;
+            
+            elements.toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'toastIn 0.3s ease-out reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
         }
         
         // ============================================================
-        // LOGIN HANDLER
+        // FORM VALIDATION & HANDLING
         // ============================================================
+        
+        function validateForm() {
+            let isValid = true;
+            const username = elements.usernameInput.value.trim();
+            const password = elements.passwordInput.value;
+            
+            // Reset errors
+            elements.usernameInput.classList.remove('error');
+            elements.passwordInput.classList.remove('error');
+            elements.usernameError.classList.remove('show');
+            elements.passwordError.classList.remove('show');
+            
+            // Validate username
+            if (!username) {
+                elements.usernameInput.classList.add('error');
+                elements.usernameError.classList.add('show');
+                isValid = false;
+            }
+            
+            // Validate password
+            if (!password) {
+                elements.passwordInput.classList.add('error');
+                elements.passwordError.classList.add('show');
+                isValid = false;
+            }
+            
+            // Check lockout
+            if (lockedUntil && Date.now() < lockedUntil) {
+                const remaining = Math.ceil((lockedUntil - Date.now()) / 1000);
+                showToast('error', '🔒 Akun Terkunci', `Coba lagi dalam ${remaining} detik`);
+                isValid = false;
+            }
+            
+            // Check max attempts
+            if (loginAttempts >= MAX_LOGIN_ATTEMPTS && !lockedUntil) {
+                lockedUntil = Date.now() + (5 * 60 * 1000); // Lock for 5 minutes
+                showToast('error', '🔒 Akun Terkunci', 'Terlalu banyak percobaan gagal. Coba lagi dalam 5 menit.');
+                isValid = false;
+            }
+            
+            return isValid ? { username, password } : null;
+        }
+        
+        function showLoading(isLoading) {
+            elements.submitBtn.disabled = isLoading;
+            elements.btnText.innerHTML = isLoading ? '<div class="spinner"></div> Memproses...' : 'Masuk';
+        }
+        
         async function handleLogin(event) {
             event.preventDefault();
             
-            // Validate form
             const credentials = validateForm();
             if (!credentials) return;
             
@@ -1646,41 +1561,35 @@
             try {
                 console.log('[LOGIN-PESERTA] 🔐 Authenticating user...');
                 
-                // Call secure authentication function
                 const result = await authenticateUser(credentials.username, credentials.password);
                 
                 console.log('[LOGIN-PESERTA] 📥 Auth response:', result);
                 
-                if (result.success) {
-                    // ✅ LOGIN BERHASIL
+                if (result && result.success) {
                     handleSuccessfulLogin(result);
+                    loginAttempts = 0; // Reset attempts on success
                 } else {
-                    // ❌ LOGIN GAGAL
-                    handleFailedLogin(result);
+                    handleFailedLogin(result || { error: 'INVALID_CREDENTIALS', message: 'Username atau password salah.' });
+                    loginAttempts++;
                 }
                 
             } catch (error) {
                 console.error('[LOGIN-PESERTA] ❌ Authentication error:', error);
-                showToast('error', '❌ Kesalahan Sistem', getErrorMessage(error));
-                
+                handleFailedLogin({ error: 'SYSTEM_ERROR', message: error.message });
+                loginAttempts++;
             } finally {
                 showLoading(false);
             }
         }
         
-        // ============================================================
-        // SUCCESSFUL LOGIN HANDLER - UPDATED!
-        // Now includes fetching submissions data
-        // ============================================================
         async function handleSuccessfulLogin(result) {
             const user = result.user;
             const session = result.session;
             
             console.log('[LOGIN-PESERTA] ✅ Processing successful login for user:', user.username);
             console.log('[LOGIN-PESERTA] 👤 User object keys:', Object.keys(user));
-            console.log('[LOGIN-PESERTA] 📊 User data sample:', JSON.stringify(user).substring(0, 200));
             
-            // Create secure session object (NO sensitive data)
+            // Create session object
             const sessionData = {
                 success: true,
                 isLoggedIn: true,
@@ -1693,57 +1602,44 @@
                 status: user.status,
                 sessionToken: session.token,
                 sessionExpiresAt: session.expires_at,
-                loginTime: new Date().toISOString(),
-                integrityHash: simpleHash(user.id + session.token)
+                loginTime: new Date().toISOString()
             };
             
-            // Save session to localStorage
+            // Save session
             localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
             
-            // Update UI with basic profile info
+            // Update UI
             renderProfile(user);
             showProfile();
             
-            // Show success message
             showToast('success', '✅ Login Berhasil', `Selamat datang, ${user.nama_lengkap}!`);
             
-            // ===========================================
-            // 🆕 FETCH SUBMISSIONS DATA AFTER LOGIN
-            // ===========================================
+            // Fetch submissions data
             console.log('[LOGIN-PESERTA] 🔄 Now fetching submissions data...');
             
             try {
                 const submissions = await fetchSubmissionsData(user);
                 
-                // Store submissions data in session for later use
                 if (submissions && submissions.length > 0) {
                     sessionData.submissions = submissions;
                     sessionData.hasSubmissions = true;
                     localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
-                    
-                    console.log('[LOGIN-PESERTA] ✅ Submissions data saved to session');
                     showToast('info', '📋 Data Ditemukan', `Menemukan ${submissions.length} pengajuan beasiswa`);
                 } else {
                     sessionData.hasSubmissions = false;
                     localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
-                    
-                    console.log('[LOGIN-PESERTA] ℹ️ No submissions data found for this user');
                 }
             } catch (submissionsError) {
-                console.error('[LOGIN-PESERTA] ⚠️ Error fetching submissions (non-fatal):', submissionsError);
-                // Don't fail the login - just note the error
+                console.error('[LOGIN-PESERTA] ⚠️ Error fetching submissions:', submissionsError);
                 showToast('warning', '⚠️ Peringatan Data', 'Login berhasil, tapi data pengajuan gagal dimuat');
             }
             
-            // Send callback to opener window (if any)
+            // Send callback to opener (if opened as popup/modal)
             sendCallbackToOpener(sessionData);
             
-            console.log('[LOGIN-PESERTA] ✅ User logged in successfully:', user.username);
+            console.log('[LOGIN-PESERTA] ✅ User logged in successfully');
         }
         
-        // ============================================================
-        // FAILED LOGIN HANDLER
-        // ============================================================
         function handleFailedLogin(result) {
             let title = '❌ Login Gagal';
             let message = result.message || 'Username atau password salah.';
@@ -1752,89 +1648,71 @@
                 case 'INVALID_CREDENTIALS':
                     title = '⚠️ Kredensial Salah';
                     message = 'Username atau password salah.';
-                    if (result.attempts_remaining !== undefined && result.attempts_remaining > 0) {
-                        message += ` Percobaan tersisa: ${result.attempts_remaining}`;
-                    }
                     break;
-                    
                 case 'ACCOUNT_SUSPENDED':
                     title = '🚫 Akun Diblokir';
-                    message = result.message || 'Akun Anda telah diblokir. Hubungi administrator.';
+                    message = 'Akun Anda telah diblokir. Hubungi administrator.';
                     break;
-                    
                 case 'ACCOUNT_LOCKED':
                     title = '🔒 Akun Terkunci';
-                    message = result.message || 'Akun terkunci karena terlalu banyak percobaan gagal.';
+                    message = 'Akun terkunci karena terlalu banyak percobaan gagal.';
                     break;
-                    
                 case 'FORBIDDEN_ROLE':
                     title = '🚫 Akses Ditolak';
-                    message = result.message || 'Akun ini tidak memiliki hak akses sebagai Peserta.';
+                    message = 'Akun ini tidak memiliki hak akses sebagai Peserta.';
                     break;
-                    
-                case 'INVALID_INPUT':
-                    title = '⚠️ Input Tidak Valid';
-                    message = result.message || 'Periksa kembali input Anda.';
-                    break;
-                    
                 default:
                     title = '❌ Login Gagal';
-                    message = 'Username atau password salah.';
             }
             
             showToast('error', title, message);
-            
-            // Clear password field for security
             elements.passwordInput.value = '';
             elements.passwordInput.focus();
         }
         
         // ============================================================
-        // PROFILE RENDERING
+        // PROFILE & UI FUNCTIONS
         // ============================================================
+        
         function renderProfile(user) {
-            // Avatar with first letter of name
             const initial = (user.nama_lengkap || '?').charAt(0).toUpperCase();
             elements.profileAvatar.textContent = initial;
-            
-            // Name and info
-            elements.profileName.textContent = user.nama_lengkap || 'Peserta';
-            elements.profileEmail.textContent = user.email || '-';
+            elements.profileName.textContent = user.nama_lengkap || 'User';
+            elements.profileRole.textContent = user.role || 'Peserta';
             elements.profileNIK.textContent = user.nik || '-';
-            elements.profileUsername.textContent = user.username || '-';
-            elements.profileLastLogin.textContent = formatDateTime(new Date());
+            elements.profileEmail.textContent = user.email || '-';
+            elements.profileStatus.textContent = user.status === 'active' || user.status === 'aktif' ? 'Aktif' : (user.status || '-');
+            elements.profileLastLogin.textContent = 'Baru saja';
         }
         
-        // ============================================================
-        // UI STATE MANAGEMENT
-        // ============================================================
         function showProfile() {
-            elements.loginFormSection.classList.add('hidden');
+            elements.loginBody.style.display = 'none';
+            elements.loginFooter.style.display = 'none';
             elements.profileSection.classList.add('active');
         }
         
         function showLoginForm() {
-            elements.loginFormSection.classList.remove('hidden');
+            elements.loginBody.style.display = 'block';
+            elements.loginFooter.style.display = 'block';
             elements.profileSection.classList.remove('active');
         }
         
-        function showLoading(show) {
-            if (show) {
-                elements.loadingOverlay.classList.add('active');
-                elements.submitBtn.classList.add('loading');
-                elements.submitBtn.disabled = true;
-                elements.submitBtn.innerHTML = '<div class="spinner"></div><span>Memproses...</span>';
-            } else {
-                elements.loadingOverlay.classList.remove('active');
-                elements.submitBtn.classList.remove('loading');
-                elements.submitBtn.disabled = false;
-                elements.submitBtn.innerHTML = `
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-                    </svg>
-                    <span>Masuk</span>
-                `;
-            }
+        function handleLogout() {
+            localStorage.removeItem(SESSION_KEY);
+            showLoginForm();
+            elements.usernameInput.value = '';
+            elements.passwordInput.value = '';
+            
+            // Reset submissions section
+            elements.submissionsGrid.innerHTML = `
+                <div class="no-submissions">
+                    <div class="no-submissions-icon">📭</div>
+                    <div class="no-submissions-text">Memuat data pengajuan...</div>
+                </div>
+            `;
+            updateSubmissionsBadge('loading', 'Memuat...');
+            
+            showToast('info', '👋 Logout Berhasil', 'Anda telah keluar dari akun');
         }
         
         // ============================================================
@@ -1848,325 +1726,122 @@
                 
                 const session = JSON.parse(sessionStr);
                 
-                if (!session.isLoggedIn || !session.sessionExpiresAt) {
-                    clearSession();
-                    return null;
-                }
-                
                 // Check expiry
-                const expiresAt = new Date(session.sessionExpiresAt);
-                if (expiresAt <= new Date()) {
-                    clearSession();
-                    showToast('warning', '⏰ Session Expired', 'Session Anda telah expired. Silakan login kembali.');
+                if (session.sessionExpiresAt && new Date(session.sessionExpiresAt) < new Date()) {
+                    localStorage.removeItem(SESSION_KEY);
                     return null;
                 }
                 
-                // Verify integrity
-                if (session.integrityHash !== simpleHash(session.userId + session.sessionToken)) {
-                    clearSession();
-                    console.warn('[LOGIN-PESERTA] Session integrity check failed - possible tampering');
+                // Check age (24 hour rolling session)
+                const loginTime = new Date(session.loginTime).getTime();
+                if (Date.now() - loginTime > SESSION_DURATION) {
+                    localStorage.removeItem(SESSION_KEY);
                     return null;
                 }
                 
                 return session;
-                
-            } catch (error) {
-                console.error('[LOGIN-PESERTA] Error checking session:', error);
-                clearSession();
+            } catch (e) {
+                console.warn('[LOGIN-PESERTA] Session parse error:', e);
+                localStorage.removeItem(SESSION_KEY);
                 return null;
             }
         }
         
-        function clearSession() {
-            localStorage.removeItem(SESSION_KEY);
-            console.log('[LOGIN-PESERTA] 🗑️ Session cleared');
-        }
-        
-        function simpleHash(str) {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                const char = str.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash;
-            }
-            return hash.toString(16);
-        }
-        
-        // ============================================================
-        // LOGOUT FUNCTION
-        // ============================================================
-        async function handleLogout() {
-            try {
-                const session = checkExistingSession();
-                
-                if (session && session.sessionToken) {
-                    await logoutFromServer(session.sessionToken);
-                }
-                
-                // Always clear local session
-                clearSession();
-                
-                // Reset form
-                elements.loginForm.reset();
-                elements.usernameInput.classList.remove('error');
-                elements.passwordInput.classList.remove('error');
-                
-                // Show login form
-                showLoginForm();
-                
-                // Focus on username field
-                setTimeout(() => elements.usernameInput.focus(), 100);
-                
-                showToast('success', '✅ Logout Berhasil', 'Anda telah berhasil logout.');
-                
-                // Notify opener window
-                if (window.opener) {
-                    window.opener.postMessage({ type: 'PESERTA_LOGOUT' }, '*');
-                }
-                
-            } catch (error) {
-                console.error('[LOGIN-PESERTA] Logout error:', error);
-                clearSession();
-                showLoginForm();
-                showToast('success', '✅ Logout Berhasil', 'Anda telah berhasil logout.');
-            }
-        }
-        
-        // ============================================================
-        // NAVIGATION FUNCTIONS
-        // ============================================================
-        
-        function goToDashboard() {
-            const session = checkExistingSession();
-            if (!session) {
-                showToast('error', '❌ Session Invalid', 'Silakan login kembali.');
-                showLoginForm();
-                return;
-            }
-            
-            showToast('info', '🔄 Mengalihkan...', 'Anda akan dialihkan ke Dashboard SIMBAKES');
-            
-            setTimeout(() => {
-                const homeUrl = getSimbakesHomeUrl();
-                
-                if (window.opener) {
-                    window.opener.postMessage({
-                        type: 'PESERTA_LOGIN_SUCCESS',
-                        session: session
-                    }, '*');
-                    window.close();
-                } else {
-                    window.location.href = homeUrl;
-                }
-            }, 800);
-        }
-        
-        function goToSimbakesHome() {
-            console.log('[LOGIN-PESERTA] 🏠 Navigating to SIMBAKES Home...');
-            
-            const homeUrl = getSimbakesHomeUrl();
-            showToast('info', '🔄 Mengalihkan...', 'Anda akan dialihkan ke Beranda SIMBAKES');
-            
-            setTimeout(() => {
-                window.location.href = homeUrl;
-            }, 800);
-        }
-        
-        function getSimbakesHomeUrl() {
-            const savedUrl = localStorage.getItem('simbakes_return_url');
-            if (savedUrl && !savedUrl.includes('login-peserta')) {
-                return savedUrl;
-            }
-            
-            if (document.referrer && !document.referrer.includes('login-peserta')) {
-                return document.referrer;
-            }
-            
-            const possiblePaths = [
-                '../upload/SIMBAKES_Supabase%20(25).html',
-                '../upload/SIMBAKES_MultiUser_Integrated.html',
-                './SIMBAKES_Supabase%20(25).html',
-                './SIMBAKES_MultiUser_Integrated.html',
-                '../',
-                './'
-            ];
-            
-            return possiblePaths[0];
-        }
-        
-        // ============================================================
-        // CROSS-WINDOW COMMUNICATION
-        // ============================================================
         function sendCallbackToOpener(sessionData) {
-            if (window.opener) {
-                window.opener.postMessage({
-                    type: 'PESERTA_LOGIN_SUCCESS',
-                    session: sessionData
-                }, '*');
-            }
-        }
-        
-        window.addEventListener('message', (event) => {
-            if (event.data?.type === 'CHECK_SESSION') {
-                const session = checkExistingSession();
-                event.source.postMessage({
-                    type: 'SESSION_STATUS',
-                    hasActiveSession: !!session,
-                    session: session
-                }, event.origin);
-            }
-            
-            if (event.data?.type === 'FORCE_LOGOUT') {
-                handleLogout();
-            }
-        });
-        
-        // ============================================================
-        // TOAST NOTIFICATIONS
-        // ============================================================
-        function showToast(type, title, message, duration = 5000) {
-            const container = document.getElementById('toastContainer');
-            
-            const icons = {
-                success: `<svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>`,
-                error: `<svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>`,
-                warning: `<svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>`,
-                info: `<svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>`
-            };
-            
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `
-                <div class="toast-icon">${icons[type] || icons.info}</div>
-                <div class="toast-content">
-                    <div class="toast-title">${escapeHtml(title)}</div>
-                    <div class="toast-message">${escapeHtml(message)}</div>
-                </div>
-                <button class="toast-close" onclick="this.parentElement.classList.add('hiding'); setTimeout(() => this.parentElement.remove(), 300)">
-                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.207a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                    </svg>
-                </button>
-            `;
-            
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                if (toast.parentElement) {
-                    toast.classList.add('hiding');
-                    setTimeout(() => toast.remove(), 300);
+            try {
+                if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage({
+                        type: 'SIMBAKES_LOGIN_SUCCESS',
+                        data: sessionData
+                    }, '*');
                 }
-            }, duration);
-        }
-        
-        // ============================================================
-        // UTILITY FUNCTIONS
-        // ============================================================
-        
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-        
-        function formatDateTime(date) {
-            return new Intl.DateTimeFormat('id-ID', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            }).format(date);
-        }
-        
-        function formatDate(dateStr) {
-            if (!dateStr) return '-';
-            const date = new Date(dateStr);
-            return new Intl.DateTimeFormat('id-ID', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric'
-            }).format(date);
-        }
-        
-        function getErrorMessage(error) {
-            if (error.message) {
-                if (error.message.includes('404') || error.message.includes('401') || error.message.includes('403')) {
-                    return 'Gagal terhubung ke server. Periksa koneksi internet dan konfigurasi.';
-                }
-                if (error.message.includes('network') || error.message.includes('fetch')) {
-                    return 'Tidak dapat terhubung ke server. Periksa koneksi internet.';
-                }
-                return error.message;
+            } catch (e) {
+                console.debug('[LOGIN-PESERTA] Could not send callback to opener');
             }
-            return 'Terjadi kesalahan yang tidak diketahui. Silakan coba lagi.';
+        }
+        
+        // ============================================================
+        // NAVIGATION HELPERS
+        // ============================================================
+        
+        function dismissConfigError() {
+            elements.configErrorBanner.classList.remove('show');
+        }
+        
+        function goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.close();
+            }
+        }
+        
+        function openRegister() {
+            showToast('info', '📝 Pendaftaran', 'Halaman pendaftaran akan segera tersedia');
         }
         
         // ============================================================
         // INITIALIZATION
         // ============================================================
+        
         document.addEventListener('DOMContentLoaded', function() {
             console.log('[LOGIN-PESERTA] 🚀 Initializing Login Peserta page...');
             
             // Initialize Supabase
-            initSupabase();
+            const supabaseReady = initSupabase();
             
-            // Attach form handler
-            elements.loginForm.addEventListener('submit', handleLogin);
-            
-            // Check for existing session
-            const existingSession = checkExistingSession();
-            if (existingSession) {
-                console.log('[LOGIN-PESERTA] ♻️ Found existing session for:', existingSession.nama);
+            if (supabaseReady) {
+                // Attach form handler
+                elements.loginForm.addEventListener('submit', handleLogin);
                 
-                // Render profile from session
-                renderProfile(existingSession);
-                showProfile();
+                // Input focus effects
+                elements.usernameInput.addEventListener('focus', function() {
+                    this.classList.remove('error');
+                    elements.usernameError.classList.remove('show');
+                });
                 
-                showToast('info', '♻️ Session Ditemukan', `Selamat datang kembali, ${existingSession.nama}!`);
+                elements.passwordInput.addEventListener('focus', function() {
+                    this.classList.remove('error');
+                    elements.passwordError.classList.remove('show');
+                });
                 
-                // 🆕 Auto-fetch submissions data on page reload with existing session
-                if (existingSession.nik || existingSession.email || existingSession.nama) {
-                    console.log('[LOGIN-PESERTA] 🔄 Auto-fetching submissions for existing session...');
-                    fetchSubmissionsData({
+                // Check for existing session
+                const existingSession = checkExistingSession();
+                if (existingSession) {
+                    console.log('[LOGIN-PESERTA] ♻️ Found existing session for:', existingSession.nama);
+                    
+                    renderProfile({
+                        nama_lengkap: existingSession.nama,
                         nik: existingSession.nik,
                         email: existingSession.email,
-                        nama_lengkap: existingSession.nama,
-                        username: existingSession.username,
-                        id: existingSession.userId
-                    }).then(submissions => {
-                        if (submissions && submissions.length > 0) {
-                            existingSession.submissions = submissions;
-                            existingSession.hasSubmissions = true;
-                            localStorage.setItem(SESSION_KEY, JSON.stringify(existingSession));
-                        }
-                    }).catch(err => {
-                        console.warn('[LOGIN-PESERTA] ⚠️ Auto-fetch submissions failed:', err);
+                        role: existingSession.role,
+                        status: existingSession.status
                     });
+                    showProfile();
+                    
+                    showToast('info', '♻️ Session Ditemukan', `Selamat datang kembali, ${existingSession.nama}!`);
+                    
+                    // Auto-fetch submissions for existing session
+                    if (existingSession.nik || existingSession.email || existingSession.nama) {
+                        fetchSubmissionsData({
+                            nik: existingSession.nik,
+                            email: existingSession.email,
+                            nama_lengkap: existingSession.nama,
+                            username: existingSession.username,
+                            id: existingSession.userId
+                        }).then(submissions => {
+                            if (submissions && submissions.length > 0) {
+                                existingSession.submissions = submissions;
+                                existingSession.hasSubmissions = true;
+                                localStorage.setItem(SESSION_KEY, JSON.stringify(existingSession));
+                            }
+                        }).catch(err => {
+                            console.warn('[LOGIN-PESERTA] ⚠️ Auto-fetch failed:', err);
+                        });
+                    }
                 }
-            }
-            
-            // Input focus effects
-            elements.usernameInput.addEventListener('focus', function() {
-                this.classList.remove('error');
-                elements.usernameError.classList.remove('show');
-            });
-            
-            elements.passwordInput.addEventListener('focus', function() {
-                this.classList.remove('error');
-                elements.passwordError.classList.remove('show');
-            });
-            
-            console.log('[LOGIN-PESERTA] ✅ Login Peserta page initialized successfully');
-        });
-        
-        // ============================================================
-        // SECURITY: Clear sensitive data on page unload
-        // ============================================================
-        window.addEventListener('beforeunload', function() {
-            if (elements.passwordInput) {
-                elements.passwordInput.value = '';
+                
+                console.log('[LOGIN-PESERTA] ✅ Initialization complete');
             }
         });
     </script>
