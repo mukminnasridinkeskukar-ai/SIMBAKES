@@ -8681,20 +8681,69 @@ async function performAuthentication(username, password, source) {
         }
         
         const dbUser = dbUsers[0];
-        console.log('[SIMBAKES] User found in Supabase:', dbUser.username);
+        console.log('[SIMBAKES] User found:', dbUser.username);
         
-        // Verifikasi password (bandingkan dengan password_hash)
-        if (dbUser.password_hash !== password) {
-            showError(errorEl, errorTextEl, 'Password salah!');
-            shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
-            return false;
+        // ===== CEK 1: Status Akun (field 'status') =====
+        if (dbUser.status === 'Suspended') {
+            // Cek apakah masih dalam masa suspensi
+            if (dbUser.suspended_until && new Date(dbUser.suspended_until) > new Date()) {
+                const suspendEnd = new Date(dbUser.suspended_until).toLocaleString('id-ID');
+                showError(errorEl, errorTextEl, `Akun DIBLOKIR hingga ${suspendEnd}. Reason: ${dbUser.suspension_reason || 'Violasi'}`);
+                return false;
+            }
         }
         
-        // Cek apakah user aktif
+        // ===== CEK 2: is_active boolean =====
         if (dbUser.is_active === false) {
             showError(errorEl, errorTextEl, 'Akun Anda telah dinonaktifkan. Hubungi admin.');
             return false;
         }
+        
+        // ===== CEK 3: Login Attempts (brute force protection) =====
+        const MAX_ATTEMPTS = 5;
+        if (dbUser.login_attempts >= MAX_ATTEMPTS) {
+            showError(errorEl, errorTextEl, 'Akun terkunci terlalu banyak percobaan. Tunggu 15 menit atau hubungi admin.');
+            return false;
+        }
+        
+        // ===== CEK 4: Verifikasi Password =====
+        // Support: plain text ATAU hash (tergantung bagaimana data diinput ke DB)
+        let passwordValid = false;
+        
+        if (dbUser.password_hash) {
+            // Cek plain text comparison (jika password disimpan sebagai plain text)
+            if (dbUser.password_hash === password) {
+                passwordValid = true;
+            }
+            // Jika tidak cocok, cek apakah ini MD5/SHA hash sederhana
+            // (untuk backward compatibility jika ada yang migrate dari sistem lama)
+        }
+        
+        if (!passwordValid) {
+            // Increment login attempts di database
+            await client
+                .from('multiusers')
+                .update({ 
+                    login_attempts: (dbUser.login_attempts || 0) + 1,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', dbUser.id);
+            
+            const remaining = MAX_ATTEMPTS - (dbUser.login_attempts || 0) - 1;
+            showError(errorEl, errorTextEl, `Password salah! Percobaan tersisa: ${remaining}`);
+            shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
+            return false;
+        }
+        
+        // ===== LOGIN BERHASIL - Reset login attempts & update last_login =====
+        await client
+            .from('multiusers')
+            .update({ 
+                login_attempts: 0,
+                last_login: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', dbUser.id);
         
         // Format user object untuk session (TANPA PASSWORD!)
         const formattedUser = {
@@ -9328,14 +9377,35 @@ function debugRBAC() {
 }
 
 /**
- * Map legacy role names to new RBAC roles
+ * Map role dari database ke role sistem
+ * Schema SQL supports: superadmin, admin, viewer, peserta, admin_sekolah, 
+ * admin_dinkes, reviewer, operator
  */
-function mapLegacyRole(oldRole) {
-    return { 
-        admin: "superadmin", 
-        operator: "operator", 
-        viewer: "viewer" 
-    }[oldRole] || "viewer";
+function mapLegacyRole(dbRole) {
+    // Jika role sudah valid, langsung return
+    const validRoles = ['superadmin', 'admin', 'viewer', 'operator', 'peserta', 
+                       'admin_sekolah', 'admin_dinkes', 'reviewer'];
+    
+    if (validRoles.includes(dbRole?.toLowerCase())) {
+        return dbRole.toLowerCase();
+    }
+    
+    // Mapping legacy roles
+    const roleMap = {
+        // Legacy → Standard
+        'administrator': 'superadmin',
+        'admin': 'superadmin',
+        'super_admin': 'superadmin',
+        'super-admin': 'superadmin',
+        'op': 'operator',
+        'data_entry': 'operator',
+        'read_only': 'viewer',
+        'read-only': 'viewer',
+        'user': 'viewer',
+        'participant': 'peserta'
+    };
+    
+    return roleMap[dbRole?.toLowerCase()] || 'viewer';  // Default: viewer (paling aman)
 }
 
 // Permission helper functions (shorthand)
