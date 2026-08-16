@@ -5086,7 +5086,7 @@
     
     <h1 class="landing-title">SIMBAKES</h1>
     <p class="landing-subtitle">Beasiswa Tematik Bidang Kesehatan</p>
-    <p class="landing-desc">Sistem Informasi Manajemen Beasiswa Kesehatan untuk Mendukung Pengembangan SDM Kesehatan Indonesia</p>
+    <p class="landing-desc">Sistem Informasi Manajemen Beasiswa Tematik Kesehatan untuk Mendukung Pengembangan SDM Kesehatan Indonesia</p>
     
     <div class="progress-bar-container">
         <div class="progress-bar" id="progress-bar"></div>
@@ -5108,7 +5108,7 @@
                 </div>
                 <div class="sidebar-brand">
                     <h1>SIMBAKES</h1>
-                    <p>Beasiswa Kesehatan</p>
+                    <p>Beasiswa Tematik Bidang Kesehatan Pemkab KuKar</p>
                 </div>
             </div>
         </div>
@@ -5290,7 +5290,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="26" height="26"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
                 Daftar Akun User
             </h2>
-            <p>Buat akun baru untuk mengajukan beasiswa kesehatan</p>
+            <p>Buat akun baru untuk mengajukan beasiswa tematik kesehatan</p>
             <button class="register-close-btn" onclick="closeRegisterModal()" title="Tutup">×</button>
         </div>
         
@@ -5929,46 +5929,34 @@
                             <label>Pekerjaan <span class="required">*</span></label>
                             <select class="form-select" id="pekerjaan">
                                 <option value="">-- Pilih Pekerjaan --</option>
-                                <option value="Dokter">Dokter</option>
-                                <option value="Perawat">Perawat</option>
-                                <option value="Bidan">Bidan</option>
-                                <option value="Farmasis">Farmasis</option>
-                                <option value="Ahli Gizi">Ahli Gizi</option>
-                                <option value="Sanitarian">Sanitarian</option>
-                                <option value="Ahli Teknologi Laboratorium Medik">Ahli TLM</option>
-                                <option value="Epidemiolog">Epidemiolog</option>
-                                <option value="Tenaga Kesehatan Masyarakat">Tenaga Kesehatan Masyarakat</option>
-                                <option value="Dosen Kesehatan">Dosen Kesehatan</option>
-                                <option value="Peneliti Kesehatan">Peneliti Kesehatan</option>
-                                <option value="Lainnya">Lainnya</option>
+                                <option value="PNS">PNS</option>
+                                <option value="PPPK">PPPK</option>
+                                <option value="Honorer">Honorer</option>
+                                <option value="Karyawan BLUD">Karyawan BLUD</option>
+                                <option value="BKKD">BKKD</option>
+                                <option value="Mahasiswa">Mahasiswa</option>
+                                <option value="Belum Bekerja">Belum Bekerja</option>                                
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Posisi/Jabatan <span class="required">*</span></label>
+                            <label>Posisi<span class="required">*</span></label>
                             <select class="form-select" id="posisi">
                                 <option value="">-- Pilih Posisi --</option>
-                                <option value="Staf/Staf Pelaksana">Staf / Staf Pelaksana</option>
-                                <option value="Pelaksana Lanjutan">Pelaksana Lanjutan</option>
-                                <option value="Supervisor/Koordinator">Supervisor / Koordinator</option>
-                                <option value="Manajer/KA Bagian">Manajer / KA Bagian</option>
-                                <option value="Kepala Bidang">Kepala Bidang</option>
-                                <option value="Kepala Dinas/Direktur">Kepala Dinas / Direktur</option>
-                                <option value="Dosen/Dosen Besar">Dosen / Dosen Besar</option>
-                                <option value="Peneliti Utama">Peneliti Utama</option>
-                                <option value="Mahasiswa S2/S3">Mahasiswa S2/S3</option>
-                                <option value="Lainnya">Lainnya</option>
+                                <option value="Sedang Tes Masuk PT">Sedang Tes Masuk PT</option>
+                                <option value="On Going">On Going</option>
+                                <option value="Lulus Tes Masuk PT">Lulus Tes Masuk PT</option>                             
                             </select>
                         </div>
                     </div>
                     
                     <div class="form-group">
                         <label>Unit Kerja / Institusi Asal <span class="required">*</span></label>
-                        <input type="text" class="form-input" id="unit-kerja" placeholder="Nama rumah sakit, puskesmas, universitas, atau institusi lainnya">
+                        <input type="text" class="form-input" id="unit-kerja" placeholder="Nama rumah sakit, nama puskesmas, nama universitas, institusi lainnya atau belum bekerja">
                     </div>
                     
                     <div class="form-group">
                         <label>Penjelasan/Narasi Singkat <span class="required">*</span></label>
-                        <textarea class="form-textarea" id="penjelasan" rows="4" placeholder="Jelaskan secara singkat alasan mengajukan rekomendasi beasiswa, tujuan studi, dan dampak yang diharapkan bagi pengembangan SDM kesehatan..."></textarea>
+                        <textarea class="form-textarea" id="penjelasan" rows="4" placeholder="Jelaskan secara singkat alasan mengajukan rekomendasi beasiswa, tujuan studi, dan dampak yang diharapkan bagi pengembangan SDM kesehatan di Kutai Kartanegara"></textarea>
                     </div>
                 </div>
 
@@ -5987,46 +5975,83 @@
                             <select class="form-select" id="jurusan-tujuan">
                                 <option value="">-- Pilih Jurusan --</option>
                                 <optgroup label="Kedokteran & Spesialisasi">
-                                    <option value="Ilmu Kedokteran Umum">Ilmu Kedokteran Umum</option>
-                                    <option value="Ilmu Bedah">Ilmu Bedah</option>
-                                    <option value="Ilmu Penyakit Dalam">Ilmu Penyakit Dalam</option>
-                                    <option value="Ilmu Anak">Ilmu Anak</option>
-                                    <option value="Obstetri & Ginekologi">Obstetri & Ginekologi</option>
-                                    <option value="Neurologi">Neurologi</option>
-                                    <option value="Psikiatri">Psikiatri</option>
-                                    <option value="Dermatologi & Venerologi">Dermatologi & Venerologi</option>
-                                    <option value="THT-KL">THT-KL</option>
-                                    <option value="Radiologi">Radiologi</option>
-                                    <option value="Patologi Anatomi">Patologi Anatomi</option>
-                                    <option value="Patologi Klinik">Patologi Klinik</option>
-                                    <option value="Anestesiologi">Anestesiologi</option>
-                                    <option value="Onkologi Medik">Onkologi Medik</option>
+                                    <option value="Dokter Spesialis Akupunktur">Dokter Spesialis Akupunktur</option>
+<option value="Dokter Spesialis Anak">Dokter Spesialis Anak</option>
+<option value="Dokter Spesialis Anak Konsultan Emergensi dan Rawat Intensif Anak">Dokter Spesialis Anak Konsultan Emergensi dan Rawat Intensif Anak</option>
+<option value="Dokter Spesialis Anak Konsultan Hematologi Onkologi Medik">Dokter Spesialis Anak Konsultan Hematologi Onkologi Medik</option>
+<option value="Dokter Spesialis Anak Konsultan Tumbuh Kembang Anak">Dokter Spesialis Anak Konsultan Tumbuh Kembang Anak</option>
+<option value="Dokter Spesialis Anestesiologi dan Terapi Intensif">Dokter Spesialis Anestesiologi dan Terapi Intensif</option>
+<option value="Dokter Spesialis Anethesi Konsultan Intensif">Dokter Spesialis Anethesi Konsultan Intensif</option>
+<option value="Dokter Spesialis Bedah">Dokter Spesialis Bedah</option>
+<option value="Dokter Spesialis Bedah Anak">Dokter Spesialis Bedah Anak</option>
+<option value="Dokter Spesialis Bedah Konsultan Bedah Digestif">Dokter Spesialis Bedah Konsultan Bedah Digestif</option>
+<option value="Dokter Spesialis Bedah Konsultan Bedah Onkologi">Dokter Spesialis Bedah Konsultan Bedah Onkologi</option>
+<option value="Dokter Spesialis Bedah Saraf">Dokter Spesialis Bedah Saraf</option>
+<option value="Dokter Spesialis Bedah Thoraks dan Kardiovaskular">Dokter Spesialis Bedah Thoraks dan Kardiovaskular</option>
+<option value="Dokter Spesialis Bedah Toraks Kardiovaskular">Dokter Spesialis Bedah Toraks Kardiovaskular</option>
+<option value="Dokter Spesialis Emergency Medic (Kedaruratan Medik)">Dokter Spesialis Emergency Medic (Kedaruratan Medik)</option>
+<option value="Dokter Spesialis Emergensi Medicine">Dokter Spesialis Emergensi Medicine</option>
+<option value="Dokter Spesialis Gizi Klinis">Dokter Spesialis Gizi Klinis</option>
+<option value="Dokter Spesialis Jantung - Intensivist">Dokter Spesialis Jantung - Intensivist</option>
+<option value="Dokter Spesialis Jantung - Intervensi">Dokter Spesialis Jantung - Intervensi</option>
+<option value="Dokter Spesialis Jantung dan Pembuluh Darah">Dokter Spesialis Jantung dan Pembuluh Darah</option>
+<option value="Dokter Spesialis Kedokteran Fisik dan Rehabilitasi">Dokter Spesialis Kedokteran Fisik dan Rehabilitasi</option>
+<option value="Dokter Spesialis Kedokteran Fisik dan Rehabilitasi Medik">Dokter Spesialis Kedokteran Fisik dan Rehabilitasi Medik</option>
+<option value="Dokter Spesialis Kedokteran Fisik dan Rehabilitasi Medik Konsultan Kardiologi">Dokter Spesialis Kedokteran Fisik dan Rehabilitasi Medik Konsultan Kardiologi</option>
+<option value="Dokter Spesialis Kedokteran Jiwa">Dokter Spesialis Kedokteran Jiwa</option>
+<option value="Dokter Spesialis Kedokteran Nuklir">Dokter Spesialis Kedokteran Nuklir</option>
+<option value="Dokter Spesialis Mata">Dokter Spesialis Mata</option>
+<option value="Dokter Spesialis Mikrobiologi Klinik">Dokter Spesialis Mikrobiologi Klinik</option>
+<option value="Dokter Spesialis Neurologi">Dokter Spesialis Neurologi</option>
+<option value="Dokter Spesialis Obstetri dan Ginekologi">Dokter Spesialis Obstetri dan Ginekologi</option>
+<option value="Dokter Spesialis Obstetri Ginekologi Konsultan Fetomaternal">Dokter Spesialis Obstetri Ginekologi Konsultan Fetomaternal</option>
+<option value="Dokter Spesialis Obstetri Ginekologi Konsultan Onkologi">Dokter Spesialis Obstetri Ginekologi Konsultan Onkologi</option>
+<option value="Dokter Spesialis Okupasi">Dokter Spesialis Okupasi</option>
+<option value="Dokter Spesialis Onkologi Radiasi">Dokter Spesialis Onkologi Radiasi</option>
+<option value="Dokter Spesialis Orthopaedi dan Traumatologi">Dokter Spesialis Orthopaedi dan Traumatologi</option>
+<option value="Dokter Spesialis Orthopedi dan Traumatologi">Dokter Spesialis Orthopedi dan Traumatologi</option>
+<option value="Dokter Spesialis Orthopedi dan Traumatologi Subspesialis Tulang Belakang">Dokter Spesialis Orthopedi dan Traumatologi Subspesialis Tulang Belakang</option>
+<option value="Dokter Spesialis Patologi Anatomi">Dokter Spesialis Patologi Anatomi</option>
+<option value="Dokter Spesialis Patologi Klinik">Dokter Spesialis Patologi Klinik</option>
+<option value="Dokter Spesialis Patologi Klinik Konsultan Onkologi">Dokter Spesialis Patologi Klinik Konsultan Onkologi</option>
+<option value="Dokter Spesialis Penyakit Dalam">Dokter Spesialis Penyakit Dalam</option>
+<option value="Dokter Spesialis Penyakit Dalam Konsultan Alergi Imunologi">Dokter Spesialis Penyakit Dalam Konsultan Alergi Imunologi</option>
+<option value="Dokter Spesialis Penyakit Dalam Konsultan Endokrin Metabolik">Dokter Spesialis Penyakit Dalam Konsultan Endokrin Metabolik</option>
+<option value="Dokter Spesialis Penyakit Dalam Konsultan Gastro-Entero-Hepatologi">Dokter Spesialis Penyakit Dalam Konsultan Gastro-Entero-Hepatologi</option>
+<option value="Dokter Spesialis Penyakit Dalam Konsultan Ginjal Hipertensi">Dokter Spesialis Penyakit Dalam Konsultan Ginjal Hipertensi</option>
+<option value="Dokter Spesialis Penyakit Dalam Konsultan Hematologi Onkologi Medik">Dokter Spesialis Penyakit Dalam Konsultan Hematologi Onkologi Medik</option>
+<option value="Dokter Spesialis Penyakit Dalam Konsultan Rheumatologi">Dokter Spesialis Penyakit Dalam Konsultan Rheumatologi</option>
+<option value="Dokter Spesialis Pulmonologi dan Kedokteran Respirasi (Paru)">Dokter Spesialis Pulmonologi dan Kedokteran Respirasi (Paru)</option>
+<option value="Dokter Spesialis Radiologi">Dokter Spesialis Radiologi</option>
+<option value="Dokter Spesialis Radiologi - Intervensi">Dokter Spesialis Radiologi - Intervensi</option>
+<option value="Dokter Spesialis Saraf - Neurointervensi">Dokter Spesialis Saraf - Neurointervensi</option>
+<option value="Dokter Spesialis Telinga, Hidung dan Tenggorokan- Kepala Leher">Dokter Spesialis Telinga, Hidung dan Tenggorokan- Kepala Leher</option>
+<option value="Dokter Spesialis Urologi">Dokter Spesialis Urologi</option>
+<option value="Dokter Spesialis Urologi - Onkologi">Dokter Spesialis Urologi - Onkologi</option>
                                 </optgroup>
                                 <optgroup label="Keperawatan & Kebidanan">
-                                    <option value="Ilmu Keperawatan">Ilmu Keperawatan</option>
-                                    <option value="Kebidanan">Kebidanan</option>
-                                    <option value="Keperawatan Anestesi">Keperawatan Anestesi</option>
+                                    <option value="Magister Manajemen dan Kepemimpinan dalam Kebidanan">Magister Manajemen dan Kepemimpinan dalam Kebidanan</option>
+<option value="Magister Manajemen dan Kepemimpinan dalam Keperawatan">Magister Manajemen dan Kepemimpinan dalam Keperawatan</option>
+<option value="Ners">Ners</option>
+<option value="Ners Perawat Spesialis Keperawatan Gawat Darurat">Ners Perawat Spesialis Keperawatan Gawat Darurat</option>
+<option value="Ners Perawat Spesialis Keperawatan Jiwa">Ners Perawat Spesialis Keperawatan Jiwa</option>
+<option value="Ners Perawat Spesialis Keperawatan Maternitas">Ners Perawat Spesialis Keperawatan Maternitas</option>
+<option value="Ners Perawat Spesialis Keperawatan Medikal Bedah">Ners Perawat Spesialis Keperawatan Medikal Bedah</option>
+<option value="Ners Perawat Spesialis Keperawatan Onkologi">Ners Perawat Spesialis Keperawatan Onkologi</option>
+<option value="Ners Spesialis Keperawatan Anak">Ners Spesialis Keperawatan Anak</option>
+<option value="Profesi Bidan">Profesi Bidan</option>
                                 </optgroup>
-                                <optgroup label="Kesehatan Masyarakat">
-                                    <option value="Kesehatan Masyarakat">Kesehatan Masyarakat</option>
-                                    <option value="Epidemiologi">Epidemiologi</option>
-                                    <option value="Biostatistika">Biostatistika</option>
-                                    <option value="Promosi Kesehatan">Promosi Kesehatan</option>
-                                </optgroup>
-                                <optgroup label="Farmasi">
-                                    <option value="Ilmu Farmasi">Ilmu Farmasi</option>
-                                    <option value="Farmasi Klinik">Farmasi Klinik</option>
-                                    <option value="Farmakologi">Farmakologi</option>
-                                </optgroup>
-                                <optgroup label="Gizi">
-                                    <option value="Ilmu Gizi">Ilmu Gizi</option>
-                                    <option value="Gizi Klinik">Gizi Klinik</option>
-                                    <option value="Gizi Masyarakat">Gizi Masyarakat</option>
-                                </optgroup>
-                                <optgroup label="Teknologi Kesehatan">
-                                    <option value="Teknologi Laboratorium Medik">Teknologi Laboratorium Medik</option>
-                                    <option value="Fisioterapi">Fisioterapi</option>
-                                    <option value="Terapi Okupasi">Terapi Okupasi</option>
+                                <optgroup label="Tenaga Kesehatan Lainnya">
+                                    <option value="Apoteker">Apoteker</option>
+<option value="Dietesien">Dietesien</option>
+<option value="Fisikawan Medis">Fisikawan Medis</option>
+<option value="Magister Administrasi Rumah Sakit">Magister Administrasi Rumah Sakit</option>
+<option value="Magister Farmasi Klinik">Magister Farmasi Klinik</option>
+<option value="Nutrisionis">Nutrisionis</option>
+<option value="Radiografer">Radiografer</option>
+<option value="Tenaga Kesehatan Lingkungan">Tenaga Kesehatan Lingkungan</option>
+<option value="Terapis Gigi dan Mulut">Terapis Gigi dan Mulut</option>
+<option value="Terapis Okupasional">Terapis Okupasional</option>
                                 </optgroup>
                             </select>
                         </div>
@@ -6034,13 +6059,16 @@
                             <label>Jenjang Pendidikan <span class="required">*</span></label>
                             <select class="form-select" id="jenjang-pendidikan">
                                 <option value="">-- Pilih Jenjang --</option>
-                                <option value="Spesialis (Sp-1)">Spesialis (Sp-1)</option>
-                                <option value="Spesialis (Sp-2)">Spesialis (Sp-2)</option>
+                                <option value="Diploma 3">Diploma 3</option>
+<option value="Diploma 4">Diploma 4</option>
+<option value="Diploma 4 + Pendidikan Profesi">Diploma 4 + Pendidikan Profesi</option>
+<option value="S-1 + Pendidikan Profesi">S-1 + Pendidikan Profesi</option>
+                                <option value="Dokter Spesialis (Sp-1)">Dokter Spesialis (Sp-1)</option>
+                                <option value="Dokter Spesialis (Sp-2)">Dokter Spesialis (Sp-2)</option>
                                 <option value="Magister (S2)">Magister (S2)</option>
                                 <option value="Doktor (S3)">Doktor (S3)</option>
-                                <option value="Subspesialis">Subspesialis</option>
-                                <option value="Profesi">Profesi</option>
-                                <option value="Non Gelar (Sertifikasi)">Non Gelar (Sertifikasi)</option>
+                                <option value="Dokter Subspesialis">Dokter Subspesialis</option>
+                               
                             </select>
                         </div>
                     </div>
@@ -6050,31 +6078,26 @@
                             <label>Unit Tujuan Pemanfaatan <span class="required">*</span></label>
                             <select class="form-select" id="unit-tujuan">
                                 <option value="">-- Pilih Unit --</option>
-                                <option value="Rumah Sakit Pendidikan">Rumah Sakit Pendidikan</option>
-                                <option value="Pusat Kesehatan Masyarakat">Pusat Kesehatan Masyarakat</option>
-                                <option value="Dinas Kesehatan Provinsi">Dinas Kesehatan Provinsi</option>
-                                <option value="Dinas Kesehatan Kabupaten/Kota">Dinas Kesehatan Kabupaten/Kota</option>
-                                <option value="Kementerian Kesehatan RI">Kementerian Kesehatan RI</option>
-                                <option value="Badan Litbangkes">Badan Litbangkes</option>
-                                <option value="Universitas Kesehatan">Universitas Kesehatan</option>
-                                <option value="Lembaga Riset Kesehatan">Lembaga Riset Kesehatan</option>
-                                <option value="WHO/UNICEF/NGO Kesehatan">WHO / UNICEF / NGO Kesehatan</option>
-                                <option value="Lainnya">Lainnya</option>
+                                <option value="Dinas Kesehatan (Puskesmas)">Dinas Kesehatan (Puskesmas)</option>
+<option value="Puskesmas Kembang Janggut">Puskesmas Kembang Janggut</option>
+<option value="Puskesmas Kahala">Puskesmas Kahala</option>
+<option value="Puskesmas Ritan">Puskesmas Ritan</option>
+<option value="Puskesmas Tabang">Puskesmas Tabang</option>
+<option value="RSUD Aji Batara Agung Dewa Sakti">RSUD Aji Batara Agung Dewa Sakti</option>
+<option value="RSUD Aji Muhammad Idris">RSUD Aji Muhammad Idris</option>
+<option value="RSUD Aji Muhammad Parikesit">RSUD Aji Muhammad Parikesit</option>
+<option value="RSUD Dayaku Raja">RSUD Dayaku Raja</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Rencana Tahun Studi <span class="required">*</span></label>
                             <select class="form-select" id="rencana-tahun">
-                                <option value="">-- Pilih Durasi --</option>
-                                <option value="6 bulan">6 bulan</option>
-                                <option value="1 tahun">1 tahun</option>
-                                <option value="1.5 tahun">1.5 tahun</option>
-                                <option value="2 tahun">2 tahun</option>
-                                <option value="2.5 tahun">2.5 tahun</option>
-                                <option value="3 tahun">3 tahun</option>
-                                <option value="3.5 tahun">3.5 tahun</option>
-                                <option value="4 tahun">4 tahun</option>
-                                <option value="Lebih dari 4 tahun">Lebih dari 4 tahun</option>
+                                <option value="">-- Pilih Mulai Tahun Studi --</option>
+                                <option value="2026">2026</option>
+<option value="2027">2027</option>
+<option value="2028">2028</option>
+<option value="2029">2029</option>
+<option value="2030">2030</option>
                             </select>
                         </div>
                     </div>
@@ -6499,25 +6522,28 @@
                                                 <option value="Anestesiologi">Anestesiologi</option>
                                             </optgroup>
                                             <optgroup label="Keperawatan & Kebidanan">
-                                                <option value="Ilmu Keperawatan">Ilmu Keperawatan</option>
-                                                <option value="Kebidanan">Kebidanan</option>
+                                                <option value="Magister Manajemen dan Kepemimpinan dalam Kebidanan">Magister Manajemen dan Kepemimpinan dalam Kebidanan</option>
+<option value="Magister Manajemen dan Kepemimpinan dalam Keperawatan">Magister Manajemen dan Kepemimpinan dalam Keperawatan</option>
+<option value="Ners">Ners</option>
+<option value="Ners Perawat Spesialis Keperawatan Gawat Darurat">Ners Perawat Spesialis Keperawatan Gawat Darurat</option>
+<option value="Ners Perawat Spesialis Keperawatan Jiwa">Ners Perawat Spesialis Keperawatan Jiwa</option>
+<option value="Ners Perawat Spesialis Keperawatan Maternitas">Ners Perawat Spesialis Keperawatan Maternitas</option>
+<option value="Ners Perawat Spesialis Keperawatan Medikal Bedah">Ners Perawat Spesialis Keperawatan Medikal Bedah</option>
+<option value="Ners Perawat Spesialis Keperawatan Onkologi">Ners Perawat Spesialis Keperawatan Onkologi</option>
+<option value="Ners Spesialis Keperawatan Anak">Ners Spesialis Keperawatan Anak</option>
+<option value="Profesi Bidan">Profesi Bidan</option>
                                             </optgroup>
-                                            <optgroup label="Kesehatan Masyarakat">
-                                                <option value="Kesehatan Masyarakat">Kesehatan Masyarakat</option>
-                                                <option value="Epidemiologi">Epidemiologi</option>
-                                                <option value="Promosi Kesehatan">Promosi Kesehatan</option>
-                                            </optgroup>
-                                            <optgroup label="Farmasi">
-                                                <option value="Ilmu Farmasi">Ilmu Farmasi</option>
-                                                <option value="Farmasi Klinik">Farmasi Klinik</option>
-                                            </optgroup>
-                                            <optgroup label="Gizi">
-                                                <option value="Ilmu Gizi">Ilmu Gizi</option>
-                                                <option value="Gizi Klinik">Gizi Klinik</option>
-                                            </optgroup>
-                                            <optgroup label="Teknologi Kesehatan">
-                                                <option value="Teknologi Laboratorium Medik">Teknologi Laboratorium Medik</option>
-                                                <option value="Fisioterapi">Fisioterapi</option>
+                                            <optgroup label="Tenaga Kesehatan Lainnya">
+                                                <option value="Apoteker">Apoteker</option>
+<option value="Dietesien">Dietesien</option>
+<option value="Fisikawan Medis">Fisikawan Medis</option>
+<option value="Magister Administrasi Rumah Sakit">Magister Administrasi Rumah Sakit</option>
+<option value="Magister Farmasi Klinik">Magister Farmasi Klinik</option>
+<option value="Nutrisionis">Nutrisionis</option>
+<option value="Radiografer">Radiografer</option>
+<option value="Tenaga Kesehatan Lingkungan">Tenaga Kesehatan Lingkungan</option>
+<option value="Terapis Gigi dan Mulut">Terapis Gigi dan Mulut</option>
+<option value="Terapis Okupasional">Terapis Okupasional</option>
                                             </optgroup>
                                         </select>
                                     </div>
@@ -6525,13 +6551,15 @@
                                         <label>Jenjang Pendidikan</label>
                                         <select class="form-select" id="rev-jenjang-pendidikan">
                                             <option value="">-- Pilih Jenjang --</option>
-                                            <option value="Spesialis (Sp-1)">Spesialis (Sp-1)</option>
-                                            <option value="Spesialis (Sp-2)">Spesialis (Sp-2)</option>
+                                            <option value="Diploma 3">Diploma 3</option>
+<option value="Diploma 4">Diploma 4</option>
+<option value="Diploma 4 + Pendidikan Profesi">Diploma 4 + Pendidikan Profesi</option>
+<option value="S-1 + Pendidikan Profesi">S-1 + Pendidikan Profesi</option>
+                                            <option value="Dokter Spesialis (Sp-1)">Dokter Spesialis (Sp-1)</option>
+                                            <option value="Dokter Spesialis (Sp-2)">Dokter Spesialis (Sp-2)</option>
                                             <option value="Magister (S2)">Magister (S2)</option>
                                             <option value="Doktor (S3)">Doktor (S3)</option>
-                                            <option value="Subspesialis">Subspesialis</option>
-                                            <option value="Profesi">Profesi</option>
-                                            <option value="Non Gelar (Sertifikasi)">Non Gelar (Sertifikasi)</option>
+                                            <option value="Dokter Subspesialis">Dokter Subspesialis</option>                                            
                                         </select>
                                     </div>
                                 </div>
@@ -6541,31 +6569,26 @@
                                         <label>Unit Tujuan Pemanfaatan</label>
                                         <select class="form-select" id="rev-unit-tujuan">
                                             <option value="">-- Pilih Unit --</option>
-                                            <option value="Rumah Sakit Pendidikan">Rumah Sakit Pendidikan</option>
-                                            <option value="Pusat Kesehatan Masyarakat">Pusat Kesehatan Masyarakat</option>
-                                            <option value="Dinas Kesehatan Provinsi">Dinas Kesehatan Provinsi</option>
-                                            <option value="Dinas Kesehatan Kabupaten/Kota">Dinas Kesehatan Kabupaten/Kota</option>
-                                            <option value="Kementerian Kesehatan RI">Kementerian Kesehatan RI</option>
-                                            <option value="Badan Litbangkes">Badan Litbangkes</option>
-                                            <option value="Universitas Kesehatan">Universitas Kesehatan</option>
-                                            <option value="Lembaga Riset Kesehatan">Lembaga Riset Kesehatan</option>
-                                            <option value="WHO/UNICEF/NGO Kesehatan">WHO / UNICEF / NGO Kesehatan</option>
-                                            <option value="Lainnya">Lainnya</option>
+                                            <option value="Dinas Kesehatan (Puskesmas)">Dinas Kesehatan (Puskesmas)</option>
+<option value="Puskesmas Kembang Janggut">Puskesmas Kembang Janggut</option>
+<option value="Puskesmas Kahala">Puskesmas Kahala</option>
+<option value="Puskesmas Ritan">Puskesmas Ritan</option>
+<option value="Puskesmas Tabang">Puskesmas Tabang</option>
+<option value="RSUD Aji Batara Agung Dewa Sakti">RSUD Aji Batara Agung Dewa Sakti</option>
+<option value="RSUD Aji Muhammad Idris">RSUD Aji Muhammad Idris</option>
+<option value="RSUD Aji Muhammad Parikesit">RSUD Aji Muhammad Parikesit</option>
+<option value="RSUD Dayaku Raja">RSUD Dayaku Raja</option>
                                         </select>
                                     </div>
                                     <div class="form-group">
                                         <label>Rencana Tahun Studi</label>
                                         <select class="form-select" id="rev-rencana-tahun">
-                                            <option value="">-- Pilih Durasi --</option>
-                                            <option value="6 bulan">6 bulan</option>
-                                            <option value="1 tahun">1 tahun</option>
-                                            <option value="1.5 tahun">1.5 tahun</option>
-                                            <option value="2 tahun">2 tahun</option>
-                                            <option value="2.5 tahun">2.5 tahun</option>
-                                            <option value="3 tahun">3 tahun</option>
-                                            <option value="3.5 tahun">3.5 tahun</option>
-                                            <option value="4 tahun">4 tahun</option>
-                                            <option value="Lebih dari 4 tahun">Lebih dari 4 tahun</option>
+                                            <option value="">-- Pilih Tahun Mulai Studi --</option>
+                                            <option value="2026">2026</option>                        
+                                            <option value="2027">2027</option>
+                                            <option value="2028">2028</option>
+                                            <option value="2029">2029</option>
+                                            <option value="2030">2030</option>
                                         </select>
                                     </div>
                                 </div>
@@ -6657,7 +6680,7 @@
                     </div>
                     <div>
                         <h2 style="margin:0;font-size:1.5rem;font-weight:700;">🗺️ Roadmap Kebutuhan Beasiswa</h2>
-                        <p style="margin:0.25rem 0 0 0;font-size:0.9rem;opacity:0.9;">Peta kebutuhan beasiswa kesehatan nasional dengan filter dinamis</p>
+                        <p style="margin:0.25rem 0 0 0;font-size:0.9rem;opacity:0.9;">Peta kebutuhan beasiswa tematik kesehatan kabupaten Kutai Kartanegara dengan filter dinamis</p>
                     </div>
                 </div>
             </div>
@@ -6733,18 +6756,22 @@
             <!-- Data Table Container with Scroll -->
             <div class="admin-table-wrapper" id="roadmap-table-wrapper" style="display:none;">
                 <div class="admin-table-scroll" id="roadmap-table-scroll" style="max-height:550px;">
-                    <table class="admin-table" id="roadmap-data-table" style="min-width:1200px;">
+                    <table class="admin-table" id="roadmap-data-table" style="min-width:1600px;">
                         <thead>
                             <tr style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);">
-                                <th style="min-width:90px;border-radius:10px 0 0 0;">Kode</th>
-                                <th style="min-width:200px;">🎓 Jurusan</th>
-                                <th style="min-width:160px;">📚 Kualifikasi Awal</th>
-                                <th style="min-width:140px;">📖 Jenis Pendidikan</th>
+                                <th style="min-width:180px;border-radius:10px 0 0 0;">🎓 Jurusan</th>
+                                <th style="min-width:140px;">📚 Kualifikasi Awal</th>
+                                <th style="min-width:120px;">📖 Jenis Pendidikan</th>
                                 <th style="min-width:220px;">🏛️ Perguruan Tinggi</th>
                                 <th style="min-width:150px;">💼 Pekerjaan</th>
-                                <th style="min-width:110px;">📅 Tahun Mulai</th>
-                                <th style="min-width:220px;">🏥 Unit Pendayaguna</th>
-                                <th style="min-width:110px;border-radius:0 10px 0 0;">Status</th>
+                                <th style="min-width:100px;">📅 Tahun Studi</th>
+                                <th style="min-width:100px;">🔢 Jumlah Kuota</th>
+                                <th style="min-width:110px;">🏥 Unit Pendayaguna</th>
+                                <th style="min-width:100px;">📊 Status</th>
+                                <th style="min-width:100px;">✅ Kuota Terisi</th>
+                                <th style="min-width:100px;">📋 Sisa Kuota</th>
+                                <th style="min-width:200px;">👤 Nama Penerima</th>
+                                <th style="min-width:110px;border-radius:0 10px 0 0;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="roadmap-table-body">
@@ -6874,7 +6901,7 @@
         <div class="page" id="page-cek-penetapan">
             <div class="page-header">
                 <h2>🎓 Cek Status Penetapan</h2>
-                <p>Lacak status penetapan penerima beasiswa kesehatan menggunakan NIK</p>
+                <p>Lacak status penetapan penerima beasiswa tematik kesehatan menggunakan NIK</p>
             </div>
 
             <!-- Search Section -->
@@ -7046,7 +7073,7 @@
             <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
                 <div>
                     <h2>📋 Data Pengusul</h2>
-                    <p>Kelola seluruh data pengajuan beasiswa kesehatan</p>
+                    <p>Kelola seluruh data pengajuan beasiswa tematik kesehatan</p>
                 </div>
                 <div style="display:flex;gap:0.5rem;">
                     <button class="btn btn-primary btn-sm" onclick="exportDataPengusul()">
@@ -7292,23 +7319,25 @@
                     <table class="admin-table" id="roadmap-admin-table">
                         <thead>
                             <tr>
-                                <th style="min-width:130px;">Aksi (CRUD)</th>
                                 <th style="min-width:80px;">No</th>
-                                <th style="min-width:120px;">Kode</th>
-                                <th style="min-width:200px;">Jurusan</th>
-                                <th style="min-width:180px;">Kualifikasi Awal</th>
-                                <th style="min-width:140px;">Jenis Pendidikan</th>
+                                <th style="min-width:180px;">Jurusan</th>
+                                <th style="min-width:140px;">Kualifikasi Awal</th>
+                                <th style="min-width:120px;">Jenis Pendidikan</th>
                                 <th style="min-width:220px;">Perguruan Tinggi</th>
                                 <th style="min-width:150px;">Pekerjaan</th>
                                 <th style="min-width:100px;">Tahun Studi</th>
-                                <th style="min-width:200px;">Unit Pendayaguna</th>
-                                <th style="min-width:120px;">Status</th>
-                                <th style="min-width:50px;">Row#</th>
+                                <th style="min-width:100px;">Jumlah Kuota</th>
+                                <th style="min-width:180px;">Unit Pendayaguna</th>
+                                <th style="min-width:100px;">Status</th>
+                                <th style="min-width:100px;">Kuota Terisi</th>
+                                <th style="min-width:100px;">Sisa Kuota</th>
+                                <th style="min-width:200px;">Nama Penerima</th>
+                                <th style="min-width:140px;border-radius:0 10px 0 0;">Aksi (CRUD)</th>
                             </tr>
                         </thead>
                         <tbody id="roadmap-table-body">
                             <tr>
-                                <td colspan="12" style="text-align:center;padding:3rem;color:#64748b;">
+                                <td colspan="14" style="text-align:center;padding:3rem;color:#64748b;">
                                     <div class="spinner"></div>
                                     <p style="margin-top:1rem;">Memuat data roadmap...</p>
                                 </td>
@@ -12023,7 +12052,7 @@ async function fetchRoadmapData() {
         console.log('[SIMBAKES] Fetching roadmap data from Supabase...');
         
         const { data, error } = await supabaseClient
-            .from('roadmap')
+            .from('roadmap_kebutuhan')
             .select('*')
             .order('created_at', { ascending: false });
             
@@ -14417,7 +14446,7 @@ async function loadRoadmapData() {
         
         // Build query - start with base query to roadmap table
         let query = supabaseClient
-            .from('roadmap')
+            .from('roadmap_kebutuhan')
             .select('*', { count: 'exact' });
         
         // Apply filters if values exist (Supabase filters)
@@ -14594,6 +14623,7 @@ function updateRoadmapResultCount(count) {
 
 /**
  * Render Public Roadmap Table with colorful rows [WITH PAGINATION]
+ * Updated: Display all 12 data fields (no Kode column) matching new schema
  */
 function renderRoadmapTablePublic(data) {
     const tbody = document.getElementById('roadmap-table-body');
@@ -14602,7 +14632,7 @@ function renderRoadmapTablePublic(data) {
     if (!data || data.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="9" style="text-align:center;padding:2rem;color:#64748b;">
+                <td colspan="13" style="text-align:center;padding:2rem;color:#64748b;">
                     📭 Tidak ada data roadmap
                 </td>
             </tr>
@@ -14628,27 +14658,10 @@ function renderRoadmapTablePublic(data) {
         // Status badge styling
         const statusBadge = getRoadmapStatusBadge(row.status);
         
-        // Kode badge styling (colorful)
-        const kodeColors = [
-            {bg: '#667eea', color: 'white'},
-            {bg: '#f093fb', color: 'white'},
-            {bg: '#4facfe', color: 'white'},
-            {bg: '#43e97b', color: 'white'},
-            {bg: '#fa709a', color: 'white'}
-        ];
-        const kodeColor = kodeColors[index % kodeColors.length];
-        
         html += `
             <tr style="${bgStyle} border:none; transition:all 0.2s;" 
                 onmouseover="this.style.transform='scale(1.01)';this.style.boxShadow='0 4px 15px rgba(102,126,234,0.2)';"
                 onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none';">
-                <!-- Kode -->
-                <td style="text-align:center;vertical-align:middle;">
-                    <span style="display:inline-block;padding:0.35rem 0.75rem;background:${kodeColor.bg};color:${kodeColor.color};border-radius:8px;font-size:0.8rem;font-weight:700;font-family:monospace;letter-spacing:0.5px;">
-                        ${row.kode || '-'}
-                    </span>
-                </td>
-                
                 <!-- Jurusan -->
                 <td style="vertical-align:middle;">
                     <div style="font-weight:600;color:#5b21b6;">${row.jurusan || '-'}</div>
@@ -14678,10 +14691,17 @@ function renderRoadmapTablePublic(data) {
                     </span>
                 </td>
                 
-                <!-- Tahun Mulai Studi -->
+                <!-- Tahun Studi -->
                 <td style="text-align:center;vertical-align:middle;">
                     <span style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.35rem 0.75rem;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;border-radius:8px;font-size:0.9rem;font-weight:700;">
                         📅 ${row.tahun_studi || '-'}
+                    </span>
+                </td>
+                
+                <!-- Jumlah Kuota -->
+                <td style="text-align:center;vertical-align:middle;">
+                    <span style="display:inline-block;padding:0.35rem 0.75rem;background:#dbeafe;color:#1e40af;border-radius:8px;font-size:0.85rem;font-weight:700;">
+                        🔢 ${row.jumlah_kuota || 0}
                     </span>
                 </td>
                 
@@ -14693,6 +14713,32 @@ function renderRoadmapTablePublic(data) {
                 <!-- Status -->
                 <td style="text-align:center;vertical-align:middle;">
                     ${statusBadge}
+                </td>
+                
+                <!-- Kuota Terisi -->
+                <td style="text-align:center;vertical-align:middle;">
+                    <span style="display:inline-block;padding:0.35rem 0.75rem;background:#dcfce7;color:#166534;border-radius:8px;font-size:0.85rem;font-weight:700;">
+                        ✅ ${row.kuota_terisi || 0}
+                    </span>
+                </td>
+                
+                <!-- Sisa Kuota -->
+                <td style="text-align:center;vertical-align:middle;">
+                    <span style="display:inline-block;padding:0.35rem 0.75rem;background:${(row.sisa_kuota || 0) > 0 ? '#fef3c7' : '#fee2e2'};color:${(row.sisa_kuota || 0) > 0 ? '#92400e' : '#991b1b'};border-radius:8px;font-size:0.85rem;font-weight:700;">
+                        📋 ${row.sisa_kuota || 0}
+                    </span>
+                </td>
+                
+                <!-- Nama Penerima -->
+                <td style="vertical-align:middle;">
+                    <span style="font-size:0.85rem;color:#374151;">${row.nama_penerima || '-'}</span>
+                </td>
+                
+                <!-- Aksi Column -->
+                <td style="text-align:center;vertical-align:middle;">
+                    <button onclick="viewRoadmapDetailPublic('${row.id}')" style="padding:0.4rem 0.8rem;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        👁️ Detail
+                    </button>
                 </td>
             </tr>
         `;
@@ -14824,7 +14870,6 @@ async function loadRoadmapAdminTable() {
         if (search) {
             const searchLower = search.toLowerCase();
             filteredData = filteredData.filter(row => 
-                String(row.kode || '').toLowerCase().includes(searchLower) ||
                 String(row.jurusan || '').toLowerCase().includes(searchLower) ||
                 String(row.kualifikasi_awal || '').toLowerCase().includes(searchLower) ||
                 String(row.jenis_pendidikan || '').toLowerCase().includes(searchLower) ||
@@ -14832,6 +14877,7 @@ async function loadRoadmapAdminTable() {
                 String(row.pekerjaan || '').toLowerCase().includes(searchLower) ||
                 String(row.tahun_studi || '').toLowerCase().includes(searchLower) ||
                 String(row.unit_pendayaguna || '').toLowerCase().includes(searchLower) ||
+                String(row.nama_penerima || '').toLowerCase().includes(searchLower) ||
                 String(row.status || '').toLowerCase().includes(searchLower)
             );
         }
@@ -14871,12 +14917,12 @@ async function loadRoadmapAdminTable() {
         } else if (error.status === 401) {
             errorMsg = 'Error autentikasi (401). RLS Policy mungkin memblokir akses.';
         } else if (error.status === 404) {
-            errorMsg = 'Tabel roadmap tidak ditemukan. Pastikan SQL schema sudah dijalankan.';
+            errorMsg = 'Tabel roadmap_kebutuhan tidak ditemukan. Pastikan SQL schema sudah dijalankan.';
         }
         
         tbody.innerHTML = `
             <tr>
-                <td colspan="12" style="text-align:center;padding:3rem;color:#dc2626;">
+                <td colspan="14" style="text-align:center;padding:3rem;color:#dc2626;">
                     <div style="font-size:2.5rem;margin-bottom:1rem;">${isNetworkError ? '🌐' : '⚠️'}</div>
                     <p style="font-weight:600;margin-bottom:0.5rem;">Gagal Memuat Data Roadmap</p>
                     <p style="font-size:0.875rem;color:#64748b;margin-bottom:1rem;max-width:500px;margin-left:auto;margin-right:auto;">
@@ -14900,7 +14946,8 @@ async function loadRoadmapAdminTable() {
 }
 
 /**
- * Render Roadmap Admin Table with CRUD buttons in front
+ * Render Roadmap Admin Table with CRUD buttons in LAST column
+ * Updated: Show all 12 data fields + row number, CRUD at end
  * Menggunakan OBJECT PROPERTY NAMES (sesuai Supabase response)
  */
 function renderRoadmapTable(data, startIndex) {
@@ -14909,7 +14956,7 @@ function renderRoadmapTable(data, startIndex) {
     if (!data || data.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="12" style="text-align:center;padding:3rem;color:#64748b;">
+                <td colspan="14" style="text-align:center;padding:3rem;color:#64748b;">
                     <div style="font-size:3rem;margin-bottom:1rem;">📭</div>
                     <p>Tidak ada data roadmap ditemukan</p>
                     <p style="font-size:0.875rem;margin-top:0.5rem;">Coba ubah filter atau tambah data baru</p>
@@ -14925,8 +14972,7 @@ function renderRoadmapTable(data, startIndex) {
         const actualIndex = startIndex + index;
         const rowNum = startIndex + index + 1;
         
-        // Gunakan PROPERTY NAMES sesuai SQL schema, bukan array index!
-        const kode = row.kode || '';
+        // Gunakan PROPERTY NAMES sesuai SQL schema
         const jurusan = row.jurusan || '-';
         const kualifikasi = row.kualifikasi_awal || '-';
         const jenisPendidikan = row.jenis_pendidikan || '-';
@@ -14937,30 +14983,12 @@ function renderRoadmapTable(data, startIndex) {
         const status = row.status || 'Kosong';
         
         html += `
-            <tr data-row-index="${actualIndex}" data-kode="${kode}">
-                <!-- CRUD Actions Column (FRONT) -->
-                <td>
-                    <div class="crud-actions">
-                        <button class="btn-crud btn-view" onclick="viewDetailRoadmap(${actualIndex})" title="Lihat Detail">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                        </button>
-                        <button class="btn-crud btn-edit" onclick="openRoadmapEditModal(${actualIndex})" title="Edit Data">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        </button>
-                        <button class="btn-crud btn-delete" onclick="confirmDeleteRoadmap(${actualIndex}, '${kode}')" title="Hapus Data">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                        </button>
-                    </div>
-                </td>
-                
+            <tr data-row-index="${actualIndex}" data-jurusan="${jurusan}">
                 <!-- Row Number -->
                 <td style="text-align:center;font-weight:600;color:#64748b;">${rowNum}</td>
                 
-                <!-- Kode -->
-                <td><strong style="color:#667eea;">${kode}</strong></td>
-                
                 <!-- Jurusan -->
-                <td>${jurusan}</td>
+                <td><strong style="color:#667eea;">${jurusan}</strong></td>
                 
                 <!-- Kualifikasi Awal -->
                 <td>${kualifikasi}</td>
@@ -14977,14 +15005,32 @@ function renderRoadmapTable(data, startIndex) {
                 <!-- Tahun Studi -->
                 <td style="text-align:center;">${tahunStudi}</td>
                 
+                <!-- Jumlah Kuota -->
+                <td style="text-align:center;"><span class="badge" style="background:#dbeafe;color:#1e40af;padding:4px 8px;border-radius:6px;font-weight:600;">${row.jumlah_kuota || 0}</span></td>
+                
                 <!-- Unit Pendayaguna -->
                 <td>${unitPendayaguna}</td>
                 
                 <!-- Status -->
                 <td>${getRoadmapStatusBadge(status)}</td>
                 
-                <!-- Row Index (hidden reference) -->
-                <td style="text-align:center;font-family:monospace;font-size:0.7rem;color:#94a3b8;">${actualIndex + 1}</td>
+                <!-- Kuota Terisi -->
+                <td style="text-align:center;"><span class="badge" style="background:#dcfce7;color:#166534;padding:4px 8px;border-radius:6px;font-weight:600;">${row.kuota_terisi || 0}</span></td>
+                
+                <!-- Sisa Kuota -->
+                <td style="text-align:center;"><span class="badge" style="background:${(row.sisa_kuota || 0) > 0 ? '#fef3c7' : '#fee2e2'};color:${(row.sisa_kuota || 0) > 0 ? '#92400e' : '#991b1b'};padding:4px 8px;border-radius:6px;font-weight:600;">${row.sisa_kuota || 0}</span></td>
+                
+                <!-- Nama Penerima -->
+                <td><span style="font-size:0.85rem;color:#374151;">${row.nama_penerima || '-'}</span></td>
+                
+                <!-- CRUD Actions Column (LAST) -->
+                <td>
+                    <div class="crud-actions">
+                        <button class="btn-crud btn-view" onclick="viewDetailRoadmap(${actualIndex})" title="Lihat Detail">👁️</button>
+                        <button class="btn-crud btn-edit" onclick="openRoadmapEditModal(${actualIndex})" title="Edit Data">✏️</button>
+                        <button class="btn-crud btn-delete" onclick="confirmDeleteRoadmap(${actualIndex}, '${jurusan}')" title="Hapus Data">🗑️</button>
+                    </div>
+                </td>
             </tr>
         `;
     });
@@ -15115,13 +15161,14 @@ function updateRoadmapPagination() {
 
 /**
  * Update Roadmap statistics bar
+ * Fixed: Use property names instead of array index for status filtering
  */
 function updateRoadmapStats() {
     document.getElementById('stat-total-roadmap').textContent = roadmapTotalRecords;
-    document.getElementById('stat-aktif-roadmap').textContent = roadmapAdminData.filter(r => r[8] === 'Aktif').length;
-    document.getElementById('stat-pending-roadmap').textContent = roadmapAdminData.filter(r => r[8] === 'Pending').length;
-    document.getElementById('stat-nonaktif-roadmap').textContent = roadmapAdminData.filter(r => r[8] === 'Non-Aktif').length;
-    document.getElementById('stat-selesai-roadmap').textContent = roadmapAdminData.filter(r => r[8] === 'Selesai').length;
+    document.getElementById('stat-aktif-roadmap').textContent = roadmapAdminData.filter(r => r.status === 'Aktif').length;
+    document.getElementById('stat-pending-roadmap').textContent = roadmapAdminData.filter(r => r.status === 'Pending' || r.status === 'Perencanaan').length;
+    document.getElementById('stat-nonaktif-roadmap').textContent = roadmapAdminData.filter(r => r.status === 'Non-Aktif' || r.status === 'Draft').length;
+    document.getElementById('stat-selesai-roadmap').textContent = roadmapAdminData.filter(r => r.status === 'Selesai').length;
 }
 
 // (moved to top of script)
@@ -15462,13 +15509,13 @@ async function submitRoadmapForm(event) {
     try {
         if (action === 'add') {
             const { data, error } = await supabaseClient
-                .from('roadmap')
+                .from('roadmap_kebutuhan')
                 .insert([dbData])
                 .select();
             if (error) throw error;
         } else {
             const { data, error } = await supabaseClient
-                .from('roadmap')
+                .from('roadmap_kebutuhan')
                 .update(dbData)
                 .eq('id', dbData.id)
                 .select();
@@ -15561,7 +15608,7 @@ async function deleteRoadmap(index) {
         
         // Delete from Supabase
         const { error } = await supabaseClient
-            .from('roadmap')
+            .from('roadmap_kebutuhan')
             .delete()
             .eq('id', rowData.id);
         
