@@ -5332,9 +5332,7 @@
                     <select class="register-form-select" id="reg-role" required>
                         <option value="">Pilih peran akun</option>
                         <option value="viewer">🎓 Peserta Beasiswa (Tenaga Kesehatan)</option>
-                        <option value="admin">🏫 Admin Institusi Pendidikan</option>
-                        <option value="admin">🏥 Admin Dinas Kesehatan</option>
-                        <option value="viewer">📋 Reviewer/Penilai Proposal</option>
+                        
                     </select>
                 </div>
                 
@@ -8402,7 +8400,7 @@ const ROLE_CONFIG = {
     superadmin: {
         id: 'superadmin',
         name: 'Super Administrator',
-        label: 'SUPERADMIN',
+        label: 'superadmin',
         description: 'Full Access - Kontrol Penuh Sistem',
         avatar: '👑',
         color: '#7c3aed',           // Purple
@@ -8441,7 +8439,7 @@ const ROLE_CONFIG = {
     operator: {
         id: 'operator',
         name: 'Operator Data',
-        label: 'OPERATOR',
+        label: 'operator',
         description: 'Terbatas - Hanya Data Pengusul',
         avatar: '⚙️',
         color: '#2563eb',           // Blue
@@ -8480,7 +8478,7 @@ const ROLE_CONFIG = {
     viewer: {
         id: 'viewer',
         name: 'Viewer',
-        label: 'VIEWER',
+        label: 'viewer',
         description: 'Read-Only - Melihat Saja',
         avatar: '👁️',
         color: '#059669',           // Green/Teal
