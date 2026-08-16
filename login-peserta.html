@@ -791,17 +791,41 @@
         const CONFIG = {
             supabaseUrl: 'https://boeknpvlfamjmddsdopd.supabase.co',
             supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZWtucHZsZmFtam1kZHNkb3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjcwOTYxMTMsImV4cCI6MjA0MjY3MjEzfQ.kHj7xEY7Wa4zSJwH0rjhiB3Qf0IHriyPlWoh4rdlv3U',
-            tableAkun: 'akun_peserta',
-            tableSubmissions: 'submissions',
+            tableAkun: 'akun_peserta',  // Tabel untuk autentikasi login peserta
+            tableSubmissions: 'submissions',  // Tabel data pengajuan beasiswa
             sessionKey: 'simbakes_login_v3'
         };
         
-        // DEMO USERS (Fallback jika Supabase gagal)
+        // DEMO USERS (Fallback jika Supabase gagal - HANYA untuk testing!)
+        // Catatan: Gunakan data dari tabel akun_peserta Supabase untuk production
         const DEMO_USERS = [
             { username: 'nirwan', password: 'nirwan123', nama_lengkap: 'Nirwan', nik: '1234567890123456', email: 'nirwan@email.com' },
             { username: 'test', password: 'test123', nama_lengkap: 'Test User', nik: '9876543210987654', email: 'test@email.com' },
             { username: 'admin', password: 'admin123', nama_lengkap: 'Admin Test', nik: '1111111111111111', email: 'admin@test.com' }
         ];
+        
+        /*
+        ============================================================
+        STRUKTUR TABEL AKUN_PESERTA (Supabase)
+        ============================================================
+        
+        Kolom yang dibutuhkan untuk autentikasi:
+        - id (UUID, primary key)
+        - username (text, unique) - untuk login
+        - password (text) - password (plain text atau hash)
+        - email (text, unique) - alternatif login
+        - nama_lengkap (text) - nama lengkap peserta
+        - nik (text, unique) - nomor induk kependudukan
+        
+        Kolom opsional:
+        - is_active (boolean) - status aktif
+        - password_hash (text) - jika password di-hash
+        
+        Contoh query test di Supabase Editor:
+        SELECT * FROM akun_peserta WHERE username ILIKE 'nirwan';
+        
+        ============================================================
+        */
         
         // ============================================================
         // DEBUG LOGGER
@@ -910,7 +934,7 @@
             return authViaDemoUsers(username, password);
         }
         
-        // Strategy 1: Supabase JS Client
+        // Strategy 1: Supabase JS Client - Query ke tabel akun_peserta
         async function authViaSupabaseClient(username, password) {
             if (!window.supabase) {
                 throw new Error('Supabase client not loaded');
@@ -918,10 +942,11 @@
             
             const client = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
             
+            // Query ke tabel akun_peserta - cari berdasarkan username atau email
             const { data, error } = await client
-                .from(CONFIG.tableAkun)
+                .from(CONFIG.tableAkun)  // akun_peserta
                 .select('*')
-                .or(`username.eq.${username.toLowerCase()},email.eq.${username.toLowerCase()}`)
+                .or(`username.ilike.${username.toLowerCase()},email.ilike.${username.toLowerCase()}`)
                 .limit(1);
             
             if (error) throw new Error(error.message);
@@ -929,25 +954,26 @@
             
             const user = data[0];
             
-            // Check password (plain or hash comparison)
-            const validPassword = user.password_hash === password || 
-                                  user.password === password ||
-                                  user.password_hash === simpleHash(password);
+            // Check password (plain text atau hash comparison untuk akun_peserta)
+            const validPassword = user.password === password || 
+                                  user.password_hash === password ||
+                                  (user.password_hash && user.password_hash === simpleHash(password));
             
             if (!validPassword) return null;
             
-            log(`✅ Auth via Supabase Client successful`, 'success');
+            log(`✅ Auth via Supabase Client (akun_peserta) successful`, 'success');
             return formatUser(user);
         }
         
-        // Strategy 2: Direct REST API (fetch)
+        // Strategy 2: Direct REST API (fetch) - Query ke tabel akun_peserta
         async function authViaRestAPI(username, password) {
-            const url = `${CONFIG.supabaseUrl}/rest/v1/${CONFIG.tableAkun}?or=(username.eq.${encodeURIComponent(username)},email.eq.${encodeURIComponent(username)})&limit=1`;
+            const url = `${CONFIG.supabaseUrl}/rest/v1/${CONFIG.tableAkun}?or=(username.ilike.${encodeURIComponent(username.toLowerCase())},email.ilike.${encodeURIComponent(username.toLowerCase())})&limit=1`;
             
             const response = await fetch(url, {
                 headers: {
                     'apikey': CONFIG.supabaseKey,
-                    'Authorization': `Bearer ${CONFIG.supabaseKey}`
+                    'Authorization': `Bearer ${CONFIG.supabaseKey}`,
+                    'Content-Type': 'application/json'
                 }
             });
             
@@ -957,9 +983,11 @@
             if (!data || data.length === 0) return null;
             
             const user = data[0];
-            const validPassword = user.password_hash === password || 
-                                  user.password === password ||
-                                  user.password_hash === simpleHash(password);
+            
+            // Check password (plain text atau hash comparison untuk akun_peserta)
+            const validPassword = user.password === password || 
+                                  user.password_hash === password ||
+                                  (user.password_hash && user.password_hash === simpleHash(password));
             
             if (!validPassword) return null;
             
@@ -989,14 +1017,15 @@
         }
         
         function formatUser(dbUser) {
+            // Format data user dari tabel akun_peserta
             return {
                 id: dbUser.id,
-                nama_lengkap: dbUser.nama_lengkap,
-                email: dbUser.email,
+                nama_lengkap: dbUser.nama_lengkap || dbUser.name || dbUser.username,
+                email: dbUser.email || '-',
                 username: dbUser.username,
-                nik: dbUser.nik,
-                role: dbUser.role || 'peserta',
-                status: dbUser.is_active ? 'active' : 'inactive',
+                nik: dbUser.nik || '-',
+                role: 'peserta',  // Default role untuk peserta
+                status: dbUser.is_active !== false ? 'active' : 'inactive',
                 isDemo: false
             };
         }
