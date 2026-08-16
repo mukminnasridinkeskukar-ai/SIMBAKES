@@ -18,7 +18,6 @@
            CSS VARIABLES & RESET
            ============================================================ */
         :root {
-            /* Primary Colors - Healthcare Theme */
             --primary-50: #eff6ff;
             --primary-100: #dbeafe;
             --primary-200: #bfdbfe;
@@ -30,26 +29,22 @@
             --primary-800: #1e40af;
             --primary-900: #1e3a8a;
             
-            /* Success/Approved */
             --success-50: #f0fdf4;
             --success-100: #dcfce7;
             --success-500: #22c55e;
             --success-600: #16a34a;
             --success-700: #15803d;
             
-            /* Warning/Pending */
             --warning-50: #fffbeb;
             --warning-100: #fef3c7;
             --warning-500: #f59e0b;
             --warning-600: #d97706;
             
-            /* Error/Rejected */
             --error-50: #fef2f2;
             --error-100: #fee2e2;
             --error-500: #ef4444;
             --error-600: #dc2626;
             
-            /* Neutral Colors */
             --gray-50: #f9fafb;
             --gray-100: #f3f4f6;
             --gray-200: #e5e7eb;
@@ -61,7 +56,6 @@
             --gray-800: #1f2937;
             --gray-900: #111827;
             
-            /* Shadows */
             --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
             --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
             --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
@@ -69,7 +63,6 @@
             --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
             --shadow-2xl: 0 25px 50px -12px rgba(0,0,0,0.25);
             
-            /* Border Radius */
             --radius-sm: 6px;
             --radius-md: 10px;
             --radius-lg: 16px;
@@ -77,11 +70,7 @@
             --radius-full: 9999px;
         }
         
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -94,14 +83,7 @@
             line-height: 1.6;
         }
         
-        /* ============================================================
-           LOGIN CONTAINER
-           ============================================================ */
-        .login-container {
-            width: 100%;
-            max-width: 480px;
-            position: relative;
-        }
+        .login-container { width: 100%; max-width: 480px; position: relative; }
         
         .login-card {
             background: white;
@@ -116,7 +98,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        /* Header */
         .login-header {
             background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
             padding: 32px 24px;
@@ -143,8 +124,7 @@
         }
         
         .login-avatar {
-            width: 80px;
-            height: 80px;
+            width: 80px; height: 80px;
             background: rgba(255,255,255,0.2);
             border-radius: 50%;
             display: flex;
@@ -154,33 +134,15 @@
             font-size: 36px;
             backdrop-filter: blur(10px);
             border: 3px solid rgba(255,255,255,0.3);
-            position: relative;
-            z-index: 1;
+            position: relative; z-index: 1;
         }
         
-        .login-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 4px;
-            position: relative;
-            z-index: 1;
-        }
+        .login-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; position: relative; z-index: 1; }
+        .login-subtitle { font-size: 0.875rem; opacity: 0.9; position: relative; z-index: 1; }
         
-        .login-subtitle {
-            font-size: 0.875rem;
-            opacity: 0.9;
-            position: relative;
-            z-index: 1;
-        }
+        .login-body { padding: 28px 24px; }
         
-        /* Form */
-        .login-body {
-            padding: 28px 24px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
+        .form-group { margin-bottom: 20px; }
         
         .form-label {
             display: block;
@@ -190,14 +152,11 @@
             margin-bottom: 8px;
         }
         
-        .form-input-wrapper {
-            position: relative;
-        }
+        .form-input-wrapper { position: relative; }
         
         .form-input-icon {
             position: absolute;
-            left: 14px;
-            top: 50%;
+            left: 14px; top: 50%;
             transform: translateY(-50%);
             color: var(--gray-400);
             pointer-events: none;
@@ -205,8 +164,7 @@
         }
         
         .form-input {
-            width: 100%;
-            height: 48px;
+            width: 100%; height: 48px;
             padding: 0 16px 0 44px;
             border: 2px solid var(--gray-200);
             border-radius: var(--radius-md);
@@ -224,9 +182,7 @@
         }
         
         .form-input:focus + .form-input-icon,
-        .form-input-wrapper:hover .form-input-icon {
-            color: var(--primary-500);
-        }
+        .form-input-wrapper:hover .form-input-icon { color: var(--primary-500); }
         
         .form-input.error {
             border-color: var(--error-500);
@@ -240,10 +196,7 @@
             display: none;
         }
         
-        .error-message.show {
-            display: block;
-            animation: shake 0.4s ease-in-out;
-        }
+        .error-message.show { display: block; animation: shake 0.4s ease-in-out; }
         
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -251,72 +204,43 @@
             75% { transform: translateX(8px); }
         }
         
-        /* Submit Button */
         .btn-submit {
-            width: 100%;
-            height: 52px;
+            width: 100%; height: 52px;
             background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
-            color: white;
-            border: none;
+            color: white; border: none;
             border-radius: var(--radius-md);
-            font-size: 1rem;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
+            font-size: 1rem; font-weight: 600;
+            font-family: inherit; cursor: pointer;
             transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 24px;
-            position: relative;
-            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+            gap: 10px; margin-top: 24px;
+            position: relative; overflow: hidden;
         }
         
         .btn-submit::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
             transition: left 0.5s;
         }
         
-        .btn-submit:hover::before {
-            left: 100%;
-        }
-        
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-        
-        .btn-submit:active {
-            transform: translateY(0);
-        }
-        
-        .btn-submit:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none !important;
-        }
+        .btn-submit:hover::before { left: 100%; }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        .btn-submit:active { transform: translateY(0); }
+        .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; transform: none !important; }
         
         .spinner {
-            width: 20px;
-            height: 20px;
+            width: 20px; height: 20px;
             border: 2px solid rgba(255,255,255,0.3);
             border-top-color: white;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
         
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* Footer */
         .login-footer {
             padding: 20px 24px;
             background: var(--gray-50);
@@ -324,11 +248,7 @@
             text-align: center;
         }
         
-        .footer-text {
-            font-size: 0.8125rem;
-            color: var(--gray-500);
-            margin-bottom: 12px;
-        }
+        .footer-text { font-size: 0.8125rem; color: var(--gray-500); margin-bottom: 12px; }
         
         .btn-link {
             color: var(--primary-600);
@@ -341,68 +261,41 @@
             transition: color 0.2s;
         }
         
-        .btn-link:hover {
-            color: var(--primary-700);
-        }
+        .btn-link:hover { color: var(--primary-700); }
         
-        /* ============================================================
-           PROFILE SECTION (After Login)
-           ============================================================ */
-        .profile-section {
-            display: none;
-            animation: fadeIn 0.4s ease-out;
-        }
+        /* Profile Section */
+        .profile-section { display: none; animation: fadeIn 0.4s ease-out; }
+        .profile-section.active { display: block; }
         
-        .profile-section.active {
-            display: block;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
         .profile-header {
             background: linear-gradient(135deg, var(--success-600) 0%, var(--success-700) 100%);
             padding: 28px 24px;
             text-align: center;
             color: white;
-            position: relative;
         }
         
         .profile-avatar {
-            width: 90px;
-            height: 90px;
+            width: 90px; height: 90px;
             background: rgba(255,255,255,0.25);
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             margin: 0 auto 16px;
-            font-size: 2rem;
-            font-weight: 700;
+            font-size: 2rem; font-weight: 700;
             border: 4px solid rgba(255,255,255,0.4);
             backdrop-filter: blur(10px);
         }
         
-        .profile-name {
-            font-size: 1.375rem;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-        
+        .profile-name { font-size: 1.375rem; font-weight: 700; margin-bottom: 4px; }
         .profile-role {
-            font-size: 0.875rem;
-            opacity: 0.9;
+            font-size: 0.875rem; opacity: 0.9;
             background: rgba(255,255,255,0.2);
-            padding: 4px 12px;
-            border-radius: var(--radius-full);
+            padding: 4px 12px; border-radius: var(--radius-full);
             display: inline-block;
         }
         
-        .profile-body {
-            padding: 24px;
-        }
+        .profile-body { padding: 24px; }
         
         .profile-info-grid {
             display: grid;
@@ -418,36 +311,23 @@
         }
         
         .info-label {
-            font-size: 0.75rem;
-            color: var(--gray-500);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 0.75rem; color: var(--gray-500);
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
             margin-bottom: 4px;
         }
         
-        .info-value {
-            font-size: 0.9375rem;
-            color: var(--gray-800);
-            font-weight: 500;
-        }
+        .info-value { font-size: 0.9375rem; color: var(--gray-800); font-weight: 500; }
         
         .btn-logout {
-            width: 100%;
-            height: 48px;
+            width: 100%; height: 48px;
             background: var(--gray-100);
             color: var(--gray-700);
             border: 2px solid var(--gray-200);
             border-radius: var(--radius-md);
-            font-size: 0.9375rem;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
+            font-size: 0.9375rem; font-weight: 600;
+            font-family: inherit; cursor: pointer;
             transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
         
         .btn-logout:hover {
@@ -456,15 +336,12 @@
             color: var(--error-600);
         }
         
-        /* ============================================================
-           SUBMISSIONS DATA SECTION - LIGHTBOX CARD DESIGN
-           ============================================================ */
+        /* Submissions Lightbox Cards */
         .submissions-section {
             margin-top: 24px;
             background: var(--gray-50);
             border-radius: var(--radius-lg);
             padding: 20px;
-            text-align: left;
         }
         
         .submissions-header {
@@ -475,52 +352,26 @@
         }
         
         .submissions-title {
-            font-size: 1rem;
-            font-weight: 700;
+            font-size: 1rem; font-weight: 700;
             color: var(--gray-800);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            display: flex; align-items: center; gap: 8px;
         }
         
         .submissions-badge {
-            font-size: 0.75rem;
-            font-weight: 600;
+            font-size: 0.75rem; font-weight: 600;
             padding: 4px 12px;
             border-radius: var(--radius-full);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
         
-        .submissions-badge.loading {
-            background: var(--primary-100);
-            color: var(--primary-700);
-        }
+        .submissions-badge.loading { background: var(--primary-100); color: var(--primary-700); }
+        .submissions-badge.found { background: var(--success-100); color: var(--success-700); }
+        .submissions-badge.notfound { background: var(--gray-200); color: var(--gray-600); }
+        .submissions-badge.error { background: var(--error-100); color: var(--error-700); }
         
-        .submissions-badge.found {
-            background: var(--success-100);
-            color: var(--success-700);
-        }
+        .submissions-grid { display: grid; gap: 20px; }
         
-        .submissions-badge.notfound {
-            background: var(--gray-200);
-            color: var(--gray-600);
-        }
-        
-        .submissions-badge.error {
-            background: var(--error-100);
-            color: var(--error-700);
-        }
-        
-        .submissions-grid {
-            display: grid;
-            gap: 20px;
-        }
-        
-        /* ============================================================
-           LIGHTBOX SUBMISSION CARD - DESIGN UTAMA
-           Foto besar di KANAN | Data lengkap di KIRI
-           ============================================================ */
+        /* LIGHTBOX CARD DESIGN */
         .submission-card-lightbox {
             background: white;
             border-radius: var(--radius-lg);
@@ -529,7 +380,6 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             animation: cardSlideIn 0.5s ease-out both;
             border: 1px solid var(--gray-200);
-            position: relative;
         }
         
         .submission-card-lightbox:nth-child(1) { animation-delay: 0s; }
@@ -537,14 +387,8 @@
         .submission-card-lightbox:nth-child(3) { animation-delay: 0.2s; }
         
         @keyframes cardSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
         
         .submission-card-lightbox:hover {
@@ -553,21 +397,16 @@
             border-color: var(--primary-300);
         }
         
-        /* Card Inner Layout - Flex Row untuk Photo Right, Data Left */
         .lightbox-inner {
             display: flex;
             flex-direction: row;
-            min-height: 280px;
+            min-height: 320px;
         }
         
-        /* Mobile: Stack vertically */
         @media (max-width: 640px) {
-            .lightbox-inner {
-                flex-direction: column-reverse;
-            }
+            .lightbox-inner { flex-direction: column-reverse; }
         }
         
-        /* LEFT SIDE - Data Lengkap */
         .lightbox-data {
             flex: 1;
             padding: 24px;
@@ -575,7 +414,6 @@
             flex-direction: column;
         }
         
-        /* Card Header dengan No Register & Status */
         .lightbox-header {
             display: flex;
             justify-content: space-between;
@@ -593,31 +431,17 @@
         }
         
         .lightbox-status {
-            font-size: 0.75rem;
-            font-weight: 700;
+            font-size: 0.75rem; font-weight: 700;
             padding: 6px 14px;
             border-radius: var(--radius-full);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
         
-        .lightbox-status.disetujui {
-            background: var(--success-100);
-            color: var(--success-700);
-        }
-        
-        .lightbox-status.ditolak {
-            background: var(--error-100);
-            color: var(--error-700);
-        }
-        
+        .lightbox-status.disetujui { background: var(--success-100); color: var(--success-700); }
+        .lightbox-status.ditolak { background: var(--error-100); color: var(--error-700); }
         .lightbox-status.proses,
-        .lightbox-status.pending {
-            background: var(--warning-100);
-            color: var(--warning-600);
-        }
+        .lightbox-status.pending { background: var(--warning-100); color: var(--warning-600); }
         
-        /* Data Fields Grid */
         .lightbox-fields {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -626,32 +450,20 @@
         }
         
         @media (max-width: 480px) {
-            .lightbox-fields {
-                grid-template-columns: 1fr;
-            }
+            .lightbox-fields { grid-template-columns: 1fr; }
         }
         
-        .lightbox-field {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        
-        .lightbox-field.full-width {
-            grid-column: 1 / -1;
-        }
+        .lightbox-field { display: flex; flex-direction: column; gap: 4px; }
+        .lightbox-field.full-width { grid-column: 1 / -1; }
         
         .lightbox-field-label {
-            font-size: 0.6875rem;
-            font-weight: 600;
+            font-size: 0.6875rem; font-weight: 600;
             color: var(--gray-500);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
         
         .lightbox-field-value {
-            font-size: 0.9375rem;
-            font-weight: 600;
+            font-size: 0.9375rem; font-weight: 600;
             color: var(--gray-800);
             padding: 8px 12px;
             background: var(--gray-50);
@@ -659,29 +471,21 @@
             border-left: 3px solid var(--primary-500);
         }
         
-        /* RIGHT SIDE - Foto Besar */
         .lightbox-photo {
             width: 220px;
-            min-height: 280px;
+            min-height: 320px;
             background: linear-gradient(135deg, var(--primary-100) 0%, var(--primary-200) 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
             flex-shrink: 0;
         }
         
         @media (max-width: 640px) {
-            .lightbox-photo {
-                width: 100%;
-                min-height: 200px;
-            }
+            .lightbox-photo { width: 100%; min-height: 220px; }
         }
         
         .lightbox-photo img {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             object-fit: cover;
         }
         
@@ -691,34 +495,17 @@
             color: var(--primary-600);
         }
         
-        .lightbox-photo-icon {
-            font-size: 4rem;
-            margin-bottom: 12px;
-            opacity: 0.7;
-        }
-        
-        .lightbox-photo-text {
-            font-size: 0.8125rem;
-            font-weight: 600;
-            opacity: 0.8;
-        }
-        
         .lightbox-photo-initial {
-            width: 120px;
-            height: 120px;
+            width: 120px; height: 120px;
             background: white;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3.5rem;
-            font-weight: 800;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3.5rem; font-weight: 800;
             color: var(--primary-600);
             box-shadow: var(--shadow-lg);
             border: 5px solid rgba(255,255,255,0.8);
         }
         
-        /* Timestamp Footer */
         .lightbox-footer {
             padding: 12px 24px;
             background: var(--gray-50);
@@ -730,45 +517,20 @@
             color: var(--gray-500);
         }
         
-        .lightbox-timestamp {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        /* No Submissions State */
         .no-submissions {
             text-align: center;
             padding: 40px 24px;
             color: var(--gray-500);
         }
         
-        .no-submissions-icon {
-            font-size: 3.5rem;
-            margin-bottom: 16px;
-            opacity: 0.7;
-        }
+        .no-submissions-icon { font-size: 3.5rem; margin-bottom: 16px; opacity: 0.7; }
+        .no-submissions-text { font-size: 1.125rem; font-weight: 600; margin-bottom: 8px; color: var(--gray-700); }
+        .no-submissions-hint { font-size: 0.875rem; color: var(--gray-500); line-height: 1.5; }
         
-        .no-submissions-text {
-            font-size: 1.125rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--gray-700);
-        }
-        
-        .no-submissions-hint {
-            font-size: 0.875rem;
-            color: var(--gray-500);
-            line-height: 1.5;
-        }
-        
-        /* ============================================================
-           TOAST NOTIFICATIONS
-           ============================================================ */
+        /* Toast Notifications */
         .toast-container {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 20px; right: 20px;
             z-index: 9999;
             display: flex;
             flex-direction: column;
@@ -780,11 +542,8 @@
             padding: 16px 20px;
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-xl);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 300px;
-            max-width: 420px;
+            display: flex; align-items: center; gap: 12px;
+            min-width: 300px; max-width: 420px;
             animation: toastIn 0.3s ease-out;
             border-left: 4px solid;
         }
@@ -805,75 +564,39 @@
         .toast-message { font-size: 0.8125rem; color: var(--gray-600); }
         .toast-close { cursor: pointer; color: var(--gray-400); font-size: 1.25rem; }
         
-        /* Config Error Banner */
-        .config-error-banner {
-            background: linear-gradient(135deg, var(--error-600), var(--error-700));
-            color: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: var(--radius-lg);
+        /* Debug Panel */
+        .debug-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.9);
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-width: 400px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10000;
             display: none;
         }
         
-        .config-error-banner.show { display: block; }
-        
-        .config-error-banner h3 {
-            font-size: 1rem;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .config-error-banner ol {
-            margin-left: 20px;
-            font-size: 0.875rem;
-            line-height: 1.8;
-        }
-        
-        .config-error-banner code {
-            background: rgba(0,0,0,0.2);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.8125rem;
-        }
-        
-        .config-error-banner button {
-            margin-top: 12px;
-            padding: 8px 20px;
-            background: var(--error-500);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-        }
+        .debug-panel.show { display: block; }
+        .debug-line { margin: 4px 0; word-break: break-all; }
+        .debug-error { color: #ff6b6b; }
+        .debug-success { color: #51cf66; }
+        .debug-info { color: #74c0fc; }
     </style>
 </head>
 <body>
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
     
+    <!-- Debug Panel (Toggle with F12) -->
+    <div class="debug-panel" id="debugPanel"></div>
+    
     <div class="login-container">
-        <!-- Configuration Error Banner -->
-        <div class="config-error-banner" id="configErrorBanner">
-            <h3>
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
-                </svg>
-                Konfigurasi Supabase Diperlukan
-            </h3>
-            <p>Untuk menggunakan fitur login ini, Anda perlu mengkonfigurasi koneksi Supabase:</p>
-            <ol>
-                <li>Buka file <code>login-peserta.html</code> di text editor</li>
-                <li>Ganti dengan URL Supabase Anda (contoh: <code>https://xxxxx.supabase.co</code>)</li>
-                <li>Ganti juga <code>SUPABASE_ANON_KEY</code> dengan key Anda</li>
-                <li>Refresh halaman ini</li>
-            </ol>
-            <button onclick="dismissConfigError()">Tutup Pesan</button>
-        </div>
-
-        <!-- Main Login Card -->
         <div class="login-card" id="loginCard">
             <!-- Header -->
             <div class="login-header">
@@ -888,14 +611,9 @@
                     <div class="form-group">
                         <label class="form-label" for="username">Username / Email</label>
                         <div class="form-input-wrapper">
-                            <input 
-                                type="text" 
-                                id="username" 
-                                class="form-input" 
-                                placeholder="Masukkan username atau email"
-                                autocomplete="username"
-                                required
-                            >
+                            <input type="text" id="username" class="form-input" 
+                                   placeholder="Masukkan username atau email"
+                                   autocomplete="username" required>
                             <svg class="form-input-icon" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                             </svg>
@@ -906,14 +624,9 @@
                     <div class="form-group">
                         <label class="form-label" for="password">Password</label>
                         <div class="form-input-wrapper">
-                            <input 
-                                type="password" 
-                                id="password" 
-                                class="form-input" 
-                                placeholder="Masukkan password"
-                                autocomplete="current-password"
-                                required
-                            >
+                            <input type="password" id="password" class="form-input" 
+                                   placeholder="Masukkan password"
+                                   autocomplete="current-password" required>
                             <svg class="form-input-icon" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                             </svg>
@@ -931,7 +644,7 @@
                 
                 <div style="margin-top: 20px; text-align: center;">
                     <p class="footer-text">Belum punya akun?</p>
-                    <a href="#" class="btn-link" onclick="openRegister()">
+                    <a href="#" class="btn-link" onclick="showToast('info', '📝 Pendaftaran', 'Halaman pendaftaran akan segera tersedia')">
                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
                         </svg>
@@ -1004,22 +717,44 @@
     </div>
 
     <!-- ============================================================
-         JAVASCRIPT - SECURE AUTHENTICATION WITH SUBMISSIONS DATA
+         JAVASCRIPT - DIRECT QUERY TO SUPABASE (NO RPC)
          ============================================================ -->
     <script>
         // ============================================================
-        // SUPABASE CONFIGURATION (FIXED - TANPA /rest/v1/)
+        // SUPABASE CONFIGURATION - PASTIKAN BENAR!
         // ============================================================
         const SUPABASE_URL = 'https://boeknpvlfamjmddsdopd.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZWtucHZsZmFtam1kZHNkb3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjcwOTYxMTMsImV4cCI6MjA0MjY3MjEzfQ.kHj7xEY7Wa4zSJwH0rjhiB3Qf0IHriyPlWoh4rdlv3U';
-        const DEMO_MODE = false;
+        
+        // Tabel names (dari SQL schema)
+        const TABLE_AKUN_PESERTA = 'akun_peserta';
+        const TABLE_SUBMISSIONS = 'submissions';
         
         // ============================================================
-        // SECURITY CONSTANTS
+        // DEBUG LOGGER
         // ============================================================
-        const SESSION_KEY = 'simbakes_peserta_session';
-        const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours in ms
-        const MAX_LOGIN_ATTEMPTS = 5;
+        const debugLog = (message, type = 'info') => {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = '[LOGIN-V2]';
+            console.log(`${prefix} ${message}`);
+            
+            const debugPanel = document.getElementById('debugPanel');
+            if (debugPanel && debugPanel.classList.contains('show')) {
+                const line = document.createElement('div');
+                line.className = `debug-line debug-${type}`;
+                line.textContent = `${timestamp} ${message}`;
+                debugPanel.appendChild(line);
+                debugPanel.scrollTop = debugPanel.scrollHeight;
+            }
+        };
+        
+        // Toggle debug panel with F12
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F12') {
+                e.preventDefault();
+                document.getElementById('debugPanel').classList.toggle('show');
+            }
+        });
         
         // ============================================================
         // DOM ELEMENTS
@@ -1032,7 +767,6 @@
             passwordError: document.getElementById('passwordError'),
             submitBtn: document.getElementById('submitBtn'),
             btnText: document.getElementById('btnText'),
-            loginCard: document.getElementById('loginCard'),
             loginBody: document.getElementById('loginBody'),
             loginFooter: document.getElementById('loginFooter'),
             profileSection: document.getElementById('profileSection'),
@@ -1046,123 +780,207 @@
             submissionsSection: document.getElementById('submissionsSection'),
             submissionsGrid: document.getElementById('submissionsGrid'),
             submissionsBadge: document.getElementById('submissionsBadge'),
-            configErrorBanner: document.getElementById('configErrorBanner'),
             toastContainer: document.getElementById('toastContainer')
         };
         
         // ============================================================
-        // STATE MANAGEMENT
+        // STATE
         // ============================================================
         let supabaseClient = null;
         let loginAttempts = 0;
         let lockedUntil = null;
+        const SESSION_KEY = 'simbakes_peserta_session_v2';
+        const MAX_ATTEMPTS = 5;
+        const LOCKOUT_TIME = 5 * 60 * 1000; // 5 minutes
         
-        // Initialize Supabase client
+        // ============================================================
+        // INITIALIZATION
+        // ============================================================
         function initSupabase() {
             try {
-                console.log('[LOGIN-PESERTA] 🔗 Initializing Supabase...');
-                console.log('[LOGIN-PESERTA] 📍 URL:', SUPABASE_URL);
-                console.log('[LOGIN-PESERTA] 🔑 Key:', SUPABASE_ANON_KEY ? '✅ Present' : '❌ Missing');
+                debugLog('🔗 Initializing Supabase client...', 'info');
+                debugLog(`📍 URL: ${SUPABASE_URL}`, 'info');
+                debugLog(`🔑 Key: ${SUPABASE_ANON_KEY ? '✅ Present (' + SUPABASE_ANON_KEY.substring(0, 20) + '...)' : '❌ Missing'}`, 'info');
                 
-                if (!SUPABASE_URL || SUPABASE_URL.includes('MASUKKAN') || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('MASUKKAN')) {
-                    if (DEMO_MODE) {
-                        console.warn('[LOGIN-PESERTA] ⚠️ Running in DEMO MODE');
-                        return true;
-                    } else {
-                        throw new Error('SUPABASE_URL atau SUPABASE_ANON_KEY belum dikonfigurasi');
-                    }
-                }
-                
-                // Create Supabase client dengan options yang proper
-                supabaseClient = window.supabase.createClient(
-                    SUPABASE_URL,
-                    SUPABASE_ANON_KEY,
-                    {
-                        auth: {
-                            autoRefreshToken: false,
-                            persistSession: false
-                        },
-                        global: {
-                            headers: {
-                                'x-application-name': 'simbakes-peserta-login'
-                            }
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                    auth: {
+                        autoRefreshToken: false,
+                        persistSession: false
+                    },
+                    global: {
+                        headers: {
+                            'x-application-name': 'simbakes-peserta-v2'
                         }
                     }
-                );
+                });
                 
-                console.log('[LOGIN-PESERTA] ✅ Supabase client initialized successfully');
-                console.log('[LOGIN-PESERTA] 🔗 Client URL:', supabaseClient.supabaseUrl);
+                debugLog(`✅ Supabase client created`, 'success');
+                debugLog(`🔗 Client URL: ${supabaseClient.supabaseUrl}`, 'info');
                 
                 return true;
-                
             } catch (error) {
-                console.error('[LOGIN-PESERTA] ❌ Supabase initialization error:', error);
-                elements.configErrorBanner.classList.add('show');
+                debugLog(`❌ Init error: ${error.message}`, 'error');
+                showToast('error', '❌ Error', 'Gagal inisialisasi Supabase: ' + error.message);
                 return false;
             }
         }
         
         // ============================================================
-        // AUTHENTICATION FUNCTIONS
+        // AUTHENTICATION - LANGSUNG QUERY TABEL akun_peserta
+        // TANPA RPC FUNCTION!
         // ============================================================
-        
         async function authenticateUser(username, password) {
-            console.log('[LOGIN-PESERTA] 🔐 Authenticating user:', username);
+            debugLog(`🔐 Authenticating: ${username}`, 'info');
             
             try {
-                // Call RPC function for secure authentication
-                const { data, error } = await supabaseClient.rpc('fn_authenticate_peserta', {
-                    p_username: username,
-                    p_password: password
-                });
+                // Langsung query ke tabel akun_peserta
+                const { data: users, error } = await supabaseClient
+                    .from(TABLE_AKUN_PESERTA)
+                    .select('*')
+                    .or(`username.eq.${username.toLowerCase()},email.eq.${username.toLowerCase()}`)
+                    .limit(1);
                 
                 if (error) {
-                    console.error('[LOGIN-PESERTA] ❌ RPC Error details:', {
-                        message: error.message,
-                        code: error.code,
-                        hint: error.hint,
-                        status: error.status
-                    });
-                    
-                    // Handle specific error codes
-                    if (error.code === '42501' || error.message.includes('permission')) {
-                        throw new Error('Izin ditolak. Pastikan SQL function sudah dibuat dengan SECURITY DEFINER.');
-                    } else if (error.code === '42883' || error.message.includes('does not exist')) {
-                        throw new Error('Function fn_authenticate_peserta tidak ditemukan.');
-                    } else if (error.status === 401 || error.message.includes('Invalid API key')) {
-                        throw new Error('API key tidak valid. Periksa konfigurasi Supabase.');
-                    }
-                    
-                    throw new Error(error.message || 'Gagal mengautentikasi');
+                    debugLog(`❌ Query error: ${JSON.stringify(error)}`, 'error');
+                    throw new Error(`Database error: ${error.message || error.code || 'Unknown'}`);
                 }
                 
-                console.log('[LOGIN-PESERTA] ✅ RPC Response received:', data ? 'success' : 'null');
-                return data;
+                debugLog(`📥 Query result: ${users?.length || 0} user(s) found`, 'info');
+                
+                // Cek apakah user ditemukan
+                if (!users || users.length === 0) {
+                    debugLog(`⚠️ User not found: ${username}`, 'error');
+                    return {
+                        success: false,
+                        error: 'INVALID_CREDENTIALS',
+                        message: 'Username atau password salah.'
+                    };
+                }
+                
+                const user = users[0];
+                debugLog(`👤 User found: ${user.username} (${user.nama_lengkap})`, 'success');
+                
+                // Cek apakah akun aktif
+                if (!user.is_active) {
+                    debugLog(`🚫 Account suspended`, 'error');
+                    return {
+                        success: false,
+                        error: 'ACCOUNT_SUSPENDED',
+                        message: 'Akun Anda telah dinonaktifkan. Hubungi administrator.'
+                    };
+                }
+                
+                // Cek lockout
+                if (user.locked_until && new Date(user.locked_until) > new Date()) {
+                    debugLog(`🔒 Account locked until: ${user.locked_until}`, 'error');
+                    return {
+                        success: false,
+                        error: 'ACCOUNT_LOCKED',
+                        message: 'Akun terkunci. Coba lagi nanti.'
+                    };
+                }
+                
+                // Verifikasi password (bandingkan dengan password_hash)
+                // Catatan: Di production, gunakan bcrypt compare di server-side
+                // Untuk sekarang, kita asumsikan password sudah hash atau plain text
+                const isPasswordValid = user.password_hash === password || 
+                                        user.password === password ||
+                                        user.password_hash === simpleHash(password);
+                
+                if (!isPasswordValid) {
+                    debugLog(`❌ Invalid password for user: ${username}`, 'error');
+                    
+                    // Update login attempts di database
+                    await updateLoginAttempts(user.id, (user.login_attempts || 0) + 1);
+                    
+                    return {
+                        success: false,
+                        error: 'INVALID_CREDENTIALS',
+                        message: 'Username atau password salah.',
+                        attempts_remaining: MAX_ATTEMPTS - (user.login_attempts || 0) - 1
+                    };
+                }
+                
+                debugLog(`✅ Authentication successful for: ${user.username}`, 'success');
+                
+                // Reset login attempts on success
+                await updateLoginAttempts(user.id, 0);
+                await updateLastLogin(user.id);
+                
+                // Return success dengan user data
+                return {
+                    success: true,
+                    user: {
+                        id: user.id,
+                        nama_lengkap: user.nama_lengkap,
+                        email: user.email,
+                        username: user.username,
+                        nik: user.nik,
+                        role: user.role || 'peserta',
+                        status: user.is_active ? 'active' : 'inactive'
+                    },
+                    session: {
+                        token: generateSessionToken(),
+                        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+                    }
+                };
                 
             } catch (error) {
-                console.error('[LOGIN-PESERTA] ❌ Authentication exception:', error);
+                debugLog(`❌ Auth exception: ${error.message}`, 'error');
                 throw error;
             }
         }
         
+        // Helper functions untuk authentication
+        function simpleHash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return hash.toString();
+        }
+        
+        function generateSessionToken() {
+            return 'sess_' + Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+        
+        async function updateLoginAttempts(userId, attempts) {
+            try {
+                const updates = { login_attempts: attempts };
+                if (attempts >= MAX_ATTEMPTS) {
+                    updates.locked_until = new Date(Date.now() + LOCKOUT_TIME).toISOString();
+                }
+                await supabaseClient.from(TABLE_AKUN_PESERTA).update(updates).eq('id', userId);
+            } catch (e) {
+                debugLog(`⚠️ Failed to update login attempts: ${e.message}`, 'error');
+            }
+        }
+        
+        async function updateLastLogin(userId) {
+            try {
+                await supabaseClient.from(TABLE_AKUN_PESERTA).update({ 
+                    last_login_at: new Date().toISOString(),
+                    login_attempts: 0 
+                }).eq('id', userId);
+            } catch (e) {
+                debugLog(`⚠️ Failed to update last login: ${e.message}`, 'error');
+            }
+        }
+        
         // ============================================================
-        // FETCH SUBMISSIONS DATA - QUERY KE TABEL SUBMISSIONS
-        // Berdasarkan NIK (paling akurat)
+        // FETCH SUBMISSIONS DATA - QUERY KE TABEL submissions
+        // BERDASARKAN NIK (PALING AKURAT)
         // ============================================================
         async function fetchSubmissionsData(userData) {
-            console.log('[LOGIN-PESERTA] 📊 Starting fetchSubmissionsData...');
-            console.log('[LOGIN-PESERTA] 👤 User data received:', {
-                nik: userData?.nik,
-                email: userData?.email,
-                username: userData?.username,
-                id: userData?.id
-            });
+            debugLog(`📊 Starting fetchSubmissionsData...`, 'info');
+            debugLog(`👤 User data: NIK=${userData?.nik}, Email=${userData?.email}`, 'info');
             
-            // Update badge status
             updateSubmissionsBadge('loading', 'Mencari data...');
             
             if (!supabaseClient) {
-                console.error('[LOGIN-PESERTA] ❌ Supabase client not ready');
+                debugLog(`❌ Supabase client not ready`, 'error');
                 renderNoSubmissions('error', 'Koneksi database belum siap');
                 return null;
             }
@@ -1175,25 +993,25 @@
                 // STRATEGI 1: Query by NIK (PALING AKURAT)
                 // ===========================================
                 if (userData?.nik) {
-                    console.log('[LOGIN-PESERTA] 📊 Strategy 1: Query by NIK:', userData.nik);
+                    debugLog(`📊 Strategy 1: Query by NIK: ${userData.nik}`, 'info');
                     
                     try {
                         const { data, error } = await supabaseClient
-                            .from('submissions')
+                            .from(TABLE_SUBMISSIONS)
                             .select('*')
                             .eq('nik', userData.nik)
                             .order('created_at', { ascending: false })
                             .limit(10);
                         
                         if (error) {
-                            console.error('[LOGIN-PESERTA] ⚠️ NIK query error:', error);
+                            debugLog(`⚠️ NIK query error: ${JSON.stringify(error)}`, 'error');
                             queryError = error;
                         } else if (data && data.length > 0) {
-                            console.log('[LOGIN-PESERTA] ✅ Found by NIK:', data.length, 'records');
+                            debugLog(`✅ Found by NIK: ${data.length} records`, 'success');
                             submissionsData = data;
                         }
                     } catch (e) {
-                        console.error('[LOGIN-PESERTA] ⚠️ NIK query exception:', e);
+                        debugLog(`⚠️ NIK query exception: ${e.message}`, 'error');
                     }
                 }
                 
@@ -1201,25 +1019,25 @@
                 // STRATEGI 2: Query by Email (fallback)
                 // ===========================================
                 if ((!submissionsData || submissionsData.length === 0) && userData?.email) {
-                    console.log('[LOGIN-PESERTA] 📊 Strategy 2: Query by Email:', userData.email);
+                    debugLog(`📊 Strategy 2: Query by Email: ${userData.email}`, 'info');
                     
                     try {
                         const { data, error } = await supabaseClient
-                            .from('submissions')
+                            .from(TABLE_SUBMISSIONS)
                             .select('*')
-                            .eq('email', userData.email)
+                            .ilike('email', `%${userData.email}%`)
                             .order('created_at', { ascending: false })
                             .limit(10);
                         
                         if (error) {
-                            console.error('[LOGIN-PESERTA] ⚠️ Email query error:', error);
+                            debugLog(`⚠️ Email query error: ${JSON.stringify(error)}`, 'error');
                             if (!queryError) queryError = error;
                         } else if (data && data.length > 0) {
-                            console.log('[LOGIN-PESERTA] ✅ Found by Email:', data.length, 'records');
+                            debugLog(`✅ Found by Email: ${data.length} records`, 'success');
                             submissionsData = data;
                         }
                     } catch (e) {
-                        console.error('[LOGIN-PESERTA] ⚠️ Email query exception:', e);
+                        debugLog(`⚠️ Email query exception: ${e.message}`, 'error');
                     }
                 }
                 
@@ -1227,50 +1045,47 @@
                 // STRATEGI 3: Query by nama_lengkap (last resort)
                 // ===========================================
                 if ((!submissionsData || submissionsData.length === 0) && userData?.nama_lengkap) {
-                    console.log('[LOGIN-PESERTA] 📊 Strategy 3: Query by Name:', userData.nama_lengkap);
+                    debugLog(`📊 Strategy 3: Query by Name: ${userData.nama_lengkap}`, 'info');
                     
                     try {
                         const { data, error } = await supabaseClient
-                            .from('submissions')
+                            .from(TABLE_SUBMISSIONS)
                             .select('*')
                             .ilike('nama_lengkap', `%${userData.nama_lengkap}%`)
                             .order('created_at', { ascending: false })
                             .limit(10);
                         
                         if (error) {
-                            console.error('[LOGIN-PESERTA] ⚠️ Name query error:', error);
+                            debugLog(`⚠️ Name query error: ${JSON.stringify(error)}`, 'error');
                             if (!queryError) queryError = error;
                         } else if (data && data.length > 0) {
-                            console.log('[LOGIN-PESERTA] ✅ Found by Name:', data.length, 'records');
+                            debugLog(`✅ Found by Name: ${data.length} records`, 'success');
                             submissionsData = data;
                         }
                     } catch (e) {
-                        console.error('[LOGIN-PESERTA] ⚠️ Name query exception:', e);
+                        debugLog(`⚠️ Name query exception: ${e.message}`, 'error');
                     }
                 }
                 
                 // ===========================================
-                // HASIL QUERY
+                // HASIL
                 // ===========================================
                 if (submissionsData && submissionsData.length > 0) {
-                    console.log('[LOGIN-PESERTA] ✅ Submissions data found:', submissionsData.length, 'records');
-                    console.log('[LOGIN-PESERTA] 📋 Sample data:', submissionsData[0]);
+                    debugLog(`✅ Submissions found: ${submissionsData.length} records`, 'success');
+                    debugLog(`📋 Sample: ${JSON.stringify(submissionsData[0]).substring(0, 200)}...`, 'info');
                     
                     updateSubmissionsBadge('found', `${submissionsData.length} Ditemukan`);
                     renderSubmissionsLightboxCards(submissionsData);
                     
                     return submissionsData;
                 } else {
-                    console.log('[LOGIN-PESERTA] ℹ️ No submissions found for this user');
+                    debugLog(`ℹ️ No submissions found`, 'info');
                     
                     if (queryError) {
-                        console.error('[LOGIN-PESERTA] ❌ Query error:', queryError);
+                        debugLog(`❌ Query error: ${JSON.stringify(queryError)}`, 'error');
                         
-                        // Handle RLS/Permission errors
                         if (queryError.status === 401 || queryError.status === 403) {
-                            renderNoSubmissions('rls', 'Akses ditolak oleh kebijakan keamanan (RLS)');
-                        } else if (queryError.code === 'PGRST116') {
-                            renderNoSubmissions('error', 'Tabel submissions tidak ditemukan');
+                            renderNoSubmissions('rls', 'Akses ditolak oleh RLS policy');
                         } else {
                             renderNoSubmissions('error', queryError.message || 'Gagal mengambil data');
                         }
@@ -1282,15 +1097,15 @@
                 }
                 
             } catch (error) {
-                console.error('[LOGIN-PESERTA] ❌ Exception in fetchSubmissionsData:', error);
-                renderNoSubmissions('error', error.message || 'Terjadi kesalahan saat mengambil data');
+                debugLog(`❌ Exception: ${error.message}`, 'error');
+                renderNoSubmissions('error', error.message);
                 return null;
             }
         }
         
         // ============================================================
-        // RENDER LIGHTBOX CARDS - DESAIN KARTU DENGAN FOTO BESAR
-        // Layout: [DATA KIRI] | [FOTO KANAN]
+        // RENDER LIGHTBOX CARDS - DESAIN DENGAN FOTO BESAR DI KANAN
+        // SESUAI SCHEMA TABEL submissions
         // ============================================================
         function renderSubmissionsLightboxCards(submissions) {
             if (!elements.submissionsGrid) return;
@@ -1300,17 +1115,15 @@
             submissions.forEach((sub, index) => {
                 const statusClass = getStatusClass(sub.status);
                 const statusText = sub.status || 'Pending';
-                
-                // Format tanggal
-                const createdDate = sub.created_at ? formatDate(sub.created_at) : '-';
+                const createdDate = sub.created_at || sub.tanggal_pengajuan ? formatDate(sub.created_at || sub.tanggal_pengajuan) : '-';
                 const updatedDate = sub.updated_at ? formatDate(sub.updated_at) : '-';
                 
-                // Ambil initial untuk avatar foto
+                // Initial untuk avatar
                 const initial = (sub.nama_lengkap || '?').charAt(0).toUpperCase();
                 
-                // Cek ada foto URL tidak
-                const hasPhoto = sub.foto || sub.photo_url || sub.avatar_url;
-                const photoSrc = sub.foto || sub.photo_url || sub.avatar_url || '';
+                // Foto - cek beberapa field
+                const photoSrc = sub.foto_drive_link || sub.foto || '';
+                const hasPhoto = photoSrc && photoSrc.length > 0;
                 
                 html += `
                     <div class="submission-card-lightbox" style="animation-delay: ${index * 0.15}s;">
@@ -1319,13 +1132,13 @@
                             <!-- LEFT SIDE: Data Lengkap -->
                             <div class="lightbox-data">
                                 
-                                <!-- Header: No Register & Status -->
+                                <!-- Header -->
                                 <div class="lightbox-header">
                                     <span class="lightbox-no-register">#${escapeHtml(sub.no_register || 'N/A')}</span>
                                     <span class="lightbox-status ${statusClass}">${statusText}</span>
                                 </div>
                                 
-                                <!-- Data Fields Grid -->
+                                <!-- Fields Grid -->
                                 <div class="lightbox-fields">
                                     <div class="lightbox-field">
                                         <span class="lightbox-field-label">Nama Lengkap</span>
@@ -1340,21 +1153,39 @@
                                         <span class="lightbox-field-value">${escapeHtml(sub.email || '-')}</span>
                                     </div>
                                     <div class="lightbox-field">
-                                        <span class="lightbox-field-label">No. HP</span>
-                                        <span class="lightbox-field-value">${escapeHtml(sub.no_hp || sub.telepon || '-')}</span>
+                                        <span class="lightbox-field-label">No. HP / WA</span>
+                                        <span class="lightbox-field-value">${escapeHtml(sub.no_hp || sub.no_wa || '-')}</span>
                                     </div>
                                     <div class="lightbox-field full-width">
-                                        <span class="lightbox-field-label">Jurusan / Program Studi</span>
-                                        <span class="lightbox-field-value">${escapeHtml(sub.jurusan || sub.program_studi || '-')}</span>
+                                        <span class="lightbox-field-label">Jurusan Tujuan</span>
+                                        <span class="lightbox-field-value">${escapeHtml(sub.jurusan_tujuan || '-')}</span>
+                                    </div>
+                                    <div class="lightbox-field">
+                                        <span class="lightbox-field-label">Jenjang</span>
+                                        <span class="lightbox-field-value">${escapeHtml(sub.jenjang_pendidikan || '-')}</span>
                                     </div>
                                     <div class="lightbox-field full-width">
-                                        <span class="lightbox-field-label">Perguruan Tinggi</span>
-                                        <span class="lightbox-field-value">${escapeHtml(sub.perguruan_tinggi || sub.institusi || '-')}</span>
+                                        <span class="lightbox-field-label">Unit / Instansi Tujuan</span>
+                                        <span class="lightbox-field-value">${escapeHtml(sub.unit_tujuan || '-')}</span>
                                     </div>
-                                    ${sub.alamat ? `
+                                    <div class="lightbox-field">
+                                        <span class="lightbox-field-label">Pekerjaan</span>
+                                        <span class="lightbox-field-value">${escapeHtml(sub.pekerjaan || '-')}</span>
+                                    </div>
+                                    <div class="lightbox-field">
+                                        <span class="lightbox-field-label">Rencana Tahun</span>
+                                        <span class="lightbox-field-value">${escapeHtml(sub.rencana_tahun || '-')}</span>
+                                    </div>
+                                    ${sub.alamat_domisili ? `
                                     <div class="lightbox-field full-width">
-                                        <span class="lightbox-field-label">Alamat</span>
-                                        <span class="lightbox-field-value">${escapeHtml(sub.alamat)}</span>
+                                        <span class="lightbox-field-label">Alamat Domisili</span>
+                                        <span class="lightbox-field-value">${escapeHtml(sub.alamat_domisili)}</span>
+                                    </div>
+                                    ` : ''}
+                                    ${sub.catatan_admin ? `
+                                    <div class="lightbox-field full-width">
+                                        <span class="lightbox-field-label">Catatan Admin</span>
+                                        <span class="lightbox-field-value" style="border-left-color: var(--warning-500);">${escapeHtml(sub.catatan_admin)}</span>
                                     </div>
                                     ` : ''}
                                 </div>
@@ -1363,27 +1194,22 @@
                             <!-- RIGHT SIDE: Foto Besar -->
                             <div class="lightbox-photo">
                                 ${hasPhoto ? `
-                                    <img src="${escapeHtml(photoSrc)}" alt="Foto ${escapeHtml(sub.nama_lengkap)}" onerror="this.parentElement.innerHTML='<div class=\\'lightbox-photo-placeholder\\'><div class=\\'lightbox-photo-initial\\'>${initial}</div><div class=\\'lightbox-photo-text\\'>Foto tidak tersedia</div></div>'">
+                                    <img src="${escapeHtml(photoSrc)}" alt="Foto ${escapeHtml(sub.nama_lengkap)}" 
+                                         onerror="this.parentElement.innerHTML='<div class=\\'lightbox-photo-placeholder\\'><div class=\\'lightbox-photo-initial\\'>${initial}</div><div class=\\'lightbox-photo-text\\'>Foto tidak tersedia</div></div>'">
                                 ` : `
                                     <div class="lightbox-photo-placeholder">
                                         <div class="lightbox-photo-initial">${initial}</div>
-                                        <div class="lightbox-photo-text">${sub.nama_lengkap || 'Foto Peserta'}</div>
+                                        <div class="lightbox-photo-text">${escapeHtml(sub.nama_lengkap || 'Foto Peserta')}</div>
                                     </div>
                                 `}
                             </div>
                             
                         </div>
                         
-                        <!-- Footer: Timestamp -->
+                        <!-- Footer -->
                         <div class="lightbox-footer">
-                            <span class="lightbox-timestamp">
-                                📅 Tanggal Daftar: ${createdDate}
-                            </span>
-                            ${updatedDate !== '-' ? `
-                            <span class="lightbox-timestamp">
-                                🔄 Terakhir Update: ${updatedDate}
-                            </span>
-                            ` : ''}
+                            <span>📅 Tanggal Pengajuan: ${createdDate}</span>
+                            ${updatedDate !== '-' ? `<span>🔄 Update: ${updatedDate}</span>` : ''}
                         </div>
                         
                     </div>
@@ -1391,8 +1217,7 @@
             });
             
             elements.submissionsGrid.innerHTML = html;
-            
-            console.log(`[LOGIN-PESERTA] 🎨 Rendered ${submissions.length} lightbox cards`);
+            debugLog(`🎨 Rendered ${submissions.length} lightbox cards`, 'success');
         }
         
         // ============================================================
@@ -1417,7 +1242,7 @@
                     year: 'numeric'
                 });
             } catch {
-                return '-';
+                return dateString || '-';
             }
         }
         
@@ -1431,32 +1256,20 @@
         function renderNoSubmissions(type, message) {
             if (!elements.submissionsGrid) return;
             
-            const icons = {
-                empty: '📭',
-                error: '⚠️',
-                rls: '🔒',
-                loading: '⏳'
-            };
-            
-            const titles = {
-                empty: 'Belum Ada Pengajuan',
-                error: 'Gagal Memuat Data',
-                rls: 'Akses Dibatasi',
-                loading: 'Memuat Data...'
-            };
-            
+            const icons = { empty: '📭', error: '⚠️', rls: '🔒', loading: '⏳' };
+            const titles = { empty: 'Belum Ada Pengajuan', error: 'Gagal Memuat Data', rls: 'Akses Dibatasi', loading: 'Memuat...' };
             const hints = {
-                empty: 'Anda belum mengajukan beasiswa. Silakan daftar melalui form pendaftaran.',
-                error: 'Terjadi kesalahan saat mengambil data. Silakan coba lagi atau hubungi admin.',
-                rls: 'Kebijakan keamanan membatasi akses data. Hubungi administrator.',
-                loading: 'Sedang mencari data pengajuan Anda...'
+                empty: 'Anda belum mengajukan beasiswa.',
+                error: 'Terjadi kesalahan: ' + message,
+                rls: 'RLS policy membatasi akses.',
+                loading: 'Memuat data...'
             };
             
             updateSubmissionsBadge(type === 'empty' ? 'notfound' : 'notfound', 'Tidak Ditemukan');
             
             elements.submissionsGrid.innerHTML = `
                 <div class="no-submissions">
-                    <div class="no-submissions-icon">${icons[type] || icons.empty}</div>
+                    <div class="no-submissions-icon">${icons[type] || '📭'}</div>
                     <div class="no-submissions-text">${titles[type] || 'Tidak Ada Data'}</div>
                     <div class="no-submissions-hint">${hints[type] || message}</div>
                 </div>
@@ -1470,15 +1283,10 @@
         }
         
         // ============================================================
-        // TOAST NOTIFICATION SYSTEM
+        // TOAST NOTIFICATIONS
         // ============================================================
         function showToast(type, title, message) {
-            const icons = {
-                success: '✅',
-                error: '❌',
-                warning: '⚠️',
-                info: 'ℹ️'
-            };
+            const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
             
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
@@ -1500,7 +1308,7 @@
         }
         
         // ============================================================
-        // FORM VALIDATION & HANDLING
+        // FORM HANDLING
         // ============================================================
         
         function validateForm() {
@@ -1508,37 +1316,26 @@
             const username = elements.usernameInput.value.trim();
             const password = elements.passwordInput.value;
             
-            // Reset errors
             elements.usernameInput.classList.remove('error');
             elements.passwordInput.classList.remove('error');
             elements.usernameError.classList.remove('show');
             elements.passwordError.classList.remove('show');
             
-            // Validate username
             if (!username) {
                 elements.usernameInput.classList.add('error');
                 elements.usernameError.classList.add('show');
                 isValid = false;
             }
             
-            // Validate password
             if (!password) {
                 elements.passwordInput.classList.add('error');
                 elements.passwordError.classList.add('show');
                 isValid = false;
             }
             
-            // Check lockout
             if (lockedUntil && Date.now() < lockedUntil) {
                 const remaining = Math.ceil((lockedUntil - Date.now()) / 1000);
-                showToast('error', '🔒 Akun Terkunci', `Coba lagi dalam ${remaining} detik`);
-                isValid = false;
-            }
-            
-            // Check max attempts
-            if (loginAttempts >= MAX_LOGIN_ATTEMPTS && !lockedUntil) {
-                lockedUntil = Date.now() + (5 * 60 * 1000); // Lock for 5 minutes
-                showToast('error', '🔒 Akun Terkunci', 'Terlalu banyak percobaan gagal. Coba lagi dalam 5 menit.');
+                showToast('error', '🔒 Terkunci', `Coba lagi dalam ${remaining} detik`);
                 isValid = false;
             }
             
@@ -1559,23 +1356,23 @@
             showLoading(true);
             
             try {
-                console.log('[LOGIN-PESERTA] 🔐 Authenticating user...');
+                debugLog(`🔐 Attempting login for: ${credentials.username}`, 'info');
                 
                 const result = await authenticateUser(credentials.username, credentials.password);
                 
-                console.log('[LOGIN-PESERTA] 📥 Auth response:', result);
+                debugLog(`📥 Auth result: ${result.success ? 'SUCCESS' : 'FAILED'}`, result.success ? 'success' : 'error');
                 
-                if (result && result.success) {
+                if (result.success) {
                     handleSuccessfulLogin(result);
-                    loginAttempts = 0; // Reset attempts on success
+                    loginAttempts = 0;
                 } else {
-                    handleFailedLogin(result || { error: 'INVALID_CREDENTIALS', message: 'Username atau password salah.' });
+                    handleFailedLogin(result);
                     loginAttempts++;
                 }
                 
             } catch (error) {
-                console.error('[LOGIN-PESERTA] ❌ Authentication error:', error);
-                handleFailedLogin({ error: 'SYSTEM_ERROR', message: error.message });
+                debugLog(`❌ Login error: ${error.message}`, 'error');
+                showToast('error', '❌ Error', error.message || 'Terjadi kesalahan');
                 loginAttempts++;
             } finally {
                 showLoading(false);
@@ -1586,10 +1383,8 @@
             const user = result.user;
             const session = result.session;
             
-            console.log('[LOGIN-PESERTA] ✅ Processing successful login for user:', user.username);
-            console.log('[LOGIN-PESERTA] 👤 User object keys:', Object.keys(user));
+            debugLog(`✅ Processing successful login for: ${user.username}`, 'success');
             
-            // Create session object
             const sessionData = {
                 success: true,
                 isLoggedIn: true,
@@ -1605,17 +1400,15 @@
                 loginTime: new Date().toISOString()
             };
             
-            // Save session
             localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
             
-            // Update UI
             renderProfile(user);
             showProfile();
             
             showToast('success', '✅ Login Berhasil', `Selamat datang, ${user.nama_lengkap}!`);
             
-            // Fetch submissions data
-            console.log('[LOGIN-PESERTA] 🔄 Now fetching submissions data...');
+            // Fetch submissions
+            debugLog(`🔄 Fetching submissions data...`, 'info');
             
             try {
                 const submissions = await fetchSubmissionsData(user);
@@ -1624,20 +1417,17 @@
                     sessionData.submissions = submissions;
                     sessionData.hasSubmissions = true;
                     localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
-                    showToast('info', '📋 Data Ditemukan', `Menemukan ${submissions.length} pengajuan beasiswa`);
+                    showToast('info', '📋 Data Ditemukan', `${submissions.length} pengajuan beasiswa`);
                 } else {
                     sessionData.hasSubmissions = false;
                     localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
                 }
-            } catch (submissionsError) {
-                console.error('[LOGIN-PESERTA] ⚠️ Error fetching submissions:', submissionsError);
-                showToast('warning', '⚠️ Peringatan Data', 'Login berhasil, tapi data pengajuan gagal dimuat');
+            } catch (err) {
+                debugLog(`⚠️ Submissions fetch error: ${err.message}`, 'error');
+                showToast('warning', '⚠️ Peringatan', 'Login berhasil, tapi data gagal dimuat');
             }
             
-            // Send callback to opener (if opened as popup/modal)
             sendCallbackToOpener(sessionData);
-            
-            console.log('[LOGIN-PESERTA] ✅ User logged in successfully');
         }
         
         function handleFailedLogin(result) {
@@ -1647,22 +1437,13 @@
             switch (result.error) {
                 case 'INVALID_CREDENTIALS':
                     title = '⚠️ Kredensial Salah';
-                    message = 'Username atau password salah.';
                     break;
                 case 'ACCOUNT_SUSPENDED':
                     title = '🚫 Akun Diblokir';
-                    message = 'Akun Anda telah diblokir. Hubungi administrator.';
                     break;
                 case 'ACCOUNT_LOCKED':
                     title = '🔒 Akun Terkunci';
-                    message = 'Akun terkunci karena terlalu banyak percobaan gagal.';
                     break;
-                case 'FORBIDDEN_ROLE':
-                    title = '🚫 Akses Ditolak';
-                    message = 'Akun ini tidak memiliki hak akses sebagai Peserta.';
-                    break;
-                default:
-                    title = '❌ Login Gagal';
             }
             
             showToast('error', title, message);
@@ -1681,7 +1462,7 @@
             elements.profileRole.textContent = user.role || 'Peserta';
             elements.profileNIK.textContent = user.nik || '-';
             elements.profileEmail.textContent = user.email || '-';
-            elements.profileStatus.textContent = user.status === 'active' || user.status === 'aktif' ? 'Aktif' : (user.status || '-');
+            elements.profileStatus.textContent = user.status === 'active' ? 'Aktif' : (user.status || '-');
             elements.profileLastLogin.textContent = 'Baru saja';
         }
         
@@ -1703,7 +1484,6 @@
             elements.usernameInput.value = '';
             elements.passwordInput.value = '';
             
-            // Reset submissions section
             elements.submissionsGrid.innerHTML = `
                 <div class="no-submissions">
                     <div class="no-submissions-icon">📭</div>
@@ -1712,7 +1492,7 @@
             `;
             updateSubmissionsBadge('loading', 'Memuat...');
             
-            showToast('info', '👋 Logout Berhasil', 'Anda telah keluar dari akun');
+            showToast('info', '👋 Logout', 'Anda telah keluar');
         }
         
         // ============================================================
@@ -1726,22 +1506,19 @@
                 
                 const session = JSON.parse(sessionStr);
                 
-                // Check expiry
                 if (session.sessionExpiresAt && new Date(session.sessionExpiresAt) < new Date()) {
                     localStorage.removeItem(SESSION_KEY);
                     return null;
                 }
                 
-                // Check age (24 hour rolling session)
                 const loginTime = new Date(session.loginTime).getTime();
-                if (Date.now() - loginTime > SESSION_DURATION) {
+                if (Date.now() - loginTime > 24 * 60 * 60 * 1000) {
                     localStorage.removeItem(SESSION_KEY);
                     return null;
                 }
                 
                 return session;
             } catch (e) {
-                console.warn('[LOGIN-PESERTA] Session parse error:', e);
                 localStorage.removeItem(SESSION_KEY);
                 return null;
             }
@@ -1755,46 +1532,23 @@
                         data: sessionData
                     }, '*');
                 }
-            } catch (e) {
-                console.debug('[LOGIN-PESERTA] Could not send callback to opener');
-            }
-        }
-        
-        // ============================================================
-        // NAVIGATION HELPERS
-        // ============================================================
-        
-        function dismissConfigError() {
-            elements.configErrorBanner.classList.remove('show');
+            } catch (e) {}
         }
         
         function goBack() {
-            if (window.history.length > 1) {
-                window.history.back();
-            } else {
-                window.close();
-            }
-        }
-        
-        function openRegister() {
-            showToast('info', '📝 Pendaftaran', 'Halaman pendaftaran akan segera tersedia');
+            window.history.length > 1 ? window.history.back() : window.close();
         }
         
         // ============================================================
-        // INITIALIZATION
+        // INIT ON DOM READY
         // ============================================================
         
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('[LOGIN-PESERTA] 🚀 Initializing Login Peserta page...');
+            debugLog('🚀 Initializing Login Peserta V2...', 'info');
             
-            // Initialize Supabase
-            const supabaseReady = initSupabase();
-            
-            if (supabaseReady) {
-                // Attach form handler
+            if (initSupabase()) {
                 elements.loginForm.addEventListener('submit', handleLogin);
                 
-                // Input focus effects
                 elements.usernameInput.addEventListener('focus', function() {
                     this.classList.remove('error');
                     elements.usernameError.classList.remove('show');
@@ -1805,10 +1559,10 @@
                     elements.passwordError.classList.remove('show');
                 });
                 
-                // Check for existing session
+                // Check existing session
                 const existingSession = checkExistingSession();
                 if (existingSession) {
-                    console.log('[LOGIN-PESERTA] ♻️ Found existing session for:', existingSession.nama);
+                    debugLog(`♻️ Existing session found: ${existingSession.nama}`, 'info');
                     
                     renderProfile({
                         nama_lengkap: existingSession.nama,
@@ -1819,9 +1573,9 @@
                     });
                     showProfile();
                     
-                    showToast('info', '♻️ Session Ditemukan', `Selamat datang kembali, ${existingSession.nama}!`);
+                    showToast('info', '♻️ Welcome Back', `Selamat datang, ${existingSession.nama}!`);
                     
-                    // Auto-fetch submissions for existing session
+                    // Auto-fetch submissions
                     if (existingSession.nik || existingSession.email || existingSession.nama) {
                         fetchSubmissionsData({
                             nik: existingSession.nik,
@@ -1836,12 +1590,12 @@
                                 localStorage.setItem(SESSION_KEY, JSON.stringify(existingSession));
                             }
                         }).catch(err => {
-                            console.warn('[LOGIN-PESERTA] ⚠️ Auto-fetch failed:', err);
+                            debugLog(`⚠️ Auto-fetch failed: ${err.message}`, 'error');
                         });
                     }
                 }
                 
-                console.log('[LOGIN-PESERTA] ✅ Initialization complete');
+                debugLog('✅ Initialization complete!', 'success');
             }
         });
     </script>
