@@ -1298,13 +1298,7 @@
             font-weight: 700;
         }
 
-        .admin-avatar.admin-full {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
-        }
-
-        .admin-avatar.operator {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-        }
+        /* ===== ADMIN AVATAR STYLES (RBAC) ===== */\n        .admin-avatar.admin-full,\n        .admin-avatar.admin-superadmin {\n            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);  /* Purple - Superadmin */\n            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);\n        }\n\n        .admin-avatar.operator,\n        .admin-avatar.admin-operator {\n            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);  /* Blue - Operator */\n            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);\n        }\n        \n        .admin-avatar.admin-viewer {\n            background: linear-gradient(135deg, #059669 0%, #047857 100%);  /* Green/Teal - Viewer */\n            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);\n        }
 
         .admin-details {
             flex: 1;
@@ -1325,15 +1319,7 @@
             margin-left: 0.5rem;
         }
 
-        .role-admin-badge {
-            background: #059669;
-            color: white;
-        }
-
-        .role-operator-badge {
-            background: #3b82f6;
-            color: white;
-        }
+        .role-admin-badge,\n        .role-superadmin-badge {\n            background: #7c3aed;  /* Purple */\n            color: white;\n            text-transform: uppercase;\n            letter-spacing: 0.5px;\n        }\n\n        .role-operator-badge {\n            background: #3b82f6;  /* Blue */\n            color: white;\n            text-transform: uppercase;\n            letter-spacing: 0.5px;\n        }\n        \n        .role-viewer-badge {\n            background: #059669;  /* Green/Teal */\n            color: white;\n            text-transform: uppercase;\n            letter-spacing: 0.5px;\n        }
 
         .admin-session-time {
             font-size: 0.75rem;
@@ -8377,33 +8363,196 @@ function closeRoadmapCardModal() {
 
 
 
-// ===== ENHANCED ADMIN AUTHENTICATION SYSTEM WITH ROLES =====
+// ===== ENHANCED ADMIN AUTHENTICATION SYSTEM WITH RBAC =====
+
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * ROLE-BASED ACCESS CONTROL (RBAC) CONFIGURATION
+ * ═══════════════════════════════════════════════════════════════
+ * 
+ * 3 LEVEL AKSES:
+ * ┌───────────┬────────────────────────────────────────────────────┐
+ * │ ROLE       │ DESKRIPSI & HAK AKSES                             │
+ * ├───────────┼────────────────────────────────────────────────────┤
+ * │ superadmin │ FULL ACCESS - Semua menu + CRUD + User Mgmt      │
+ * │            │ • Dashboard, Data Pengusul, Roadmap Kebutuhan    │
+ * │            │ • Penetapan, Laporan, Settings                   │
+ * │            │ • Bisa tambah/edit/hapus data                    │
+ * │            │ • Bisa kelola user admin lainnya                  │
+ * ├───────────┼────────────────────────────────────────────────────┤
+ * │ operator   │ TERBATAS - Hanya Menu Data Pengusul              │
+ * │            │ • Hanya bisa akses menu "Data Pengusul"          │
+ * │            │ • Bisa CRUD (tambah/edit/hapus) di Data Pengusul │
+ * │            │ Menu lain: Tersembunyi                            │
+ * ├───────────┼────────────────────────────────────────────────────┤
+ * │ viewer     │ READ-ONLY - Lihat semua tapi tidak bisa edit      │
+ * │            │ • Bisa lihat SEMUA menu panel admin               │
+ * │            │ • TIDAK BISA: tambah, edit, hapus, export         │
+ * │            │ • TIDAK BISA: akses settings/user management      │
+ * └───────────┴────────────────────────────────────────────────────┘
+ */
+
+// ============================================================
+// ROLE PERMISSION MATRIX
+// ============================================================
+const ROLE_CONFIG = {
+    superadmin: {
+        id: 'superadmin',
+        name: 'Super Administrator',
+        label: 'SUPERADMIN',
+        description: 'Full Access - Kontrol Penuh Sistem',
+        avatar: '👑',
+        color: '#7c3aed',           // Purple
+        gradient: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+        badgeClass: 'role-superadmin-badge',
+        avatarClass: 'admin-superadmin',
+        
+        // Menu Access
+        menus: {
+            dashboard: true,
+            dataPengusul: true,
+            roadmapKebutuhan: true,
+            penetapan: true,
+            laporan: true,
+            pesertaPortal: true,
+            userManagement: true,
+            settings: true
+        },
+        
+        // Action Permissions (CRUD)
+        canCreate: true,
+        canRead: true,
+        canUpdate: true,
+        canDelete: true,
+        canExport: true,
+        canImport: true,
+        canApprove: true,
+        canManageUsers: true,
+        canChangeSettings: true,
+        
+        // Special Permissions
+        fullAccess: true,
+        viewOnly: false
+    },
+    
+    operator: {
+        id: 'operator',
+        name: 'Operator Data',
+        label: 'OPERATOR',
+        description: 'Terbatas - Hanya Data Pengusul',
+        avatar: '⚙️',
+        color: '#2563eb',           // Blue
+        gradient: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+        badgeClass: 'role-operator-badge',
+        avatarClass: 'admin-operator',
+        
+        // Menu Access - HANYA Data Pengusul!
+        menus: {
+            dashboard: false,        // Hidden
+            dataPengusul: true,       // VISIBLE & ACCESSIBLE
+            roadmapKebutuhan: false,   // Hidden
+            penetapan: false,         // Hidden
+            laporan: false,           // Hidden
+            pesertaPortal: false,      // Hidden
+            userManagement: false,     // Hidden
+            settings: false            // Hidden
+        },
+        
+        // Action Permissions - CRUD hanya di Data Pengusul
+        canCreate: true,             // Bisa tambah data pengusul
+        canRead: true,
+        canUpdate: true,             // Bisa edit data pengusul
+        canDelete: true,             // Bisa hapus data pengusul
+        canExport: true,             // Bisa export data pengusul
+        canImport: false,
+        canApprove: false,
+        canManageUsers: false,
+        canChangeSettings: false,
+        
+        // Special Permissions
+        fullAccess: false,
+        viewOnly: false
+    },
+    
+    viewer: {
+        id: 'viewer',
+        name: 'Viewer',
+        label: 'VIEWER',
+        description: 'Read-Only - Melihat Saja',
+        avatar: '👁️',
+        color: '#059669',           // Green/Teal
+        gradient: 'linear-gradient(135deg, #059669, #047857)',
+        badgeClass: 'role-viewer-badge',
+        avatarClass: 'admin-viewer',
+        
+        // Menu Access - Bisa lihat SEMUA (kecuali Settings/User Mgmt)
+        menus: {
+            dashboard: true,         // Visible (read-only)
+            dataPengusul: true,      // Visible (read-only)
+            roadmapKebutuhan: true,   // Visible (read-only)
+            penetapan: true,         // Visible (read-only)
+            laporan: true,           // Visible (read-only)
+            pesertaPortal: true,      // Visible (read-only)
+            userManagement: false,    // Hidden
+            settings: false           // Hidden
+        },
+        
+        // Action Permissions - READ ONLY!
+        canCreate: false,            // TIDAK BISA tambah
+        canRead: true,              // Bisa lihat
+        canUpdate: false,           // TIDAK BISA edit
+        canDelete: false,           // TIDAK BISA hapus
+        canExport: false,           // TIDAK BISA export
+        canImport: false,
+        canApprove: false,
+        canManageUsers: false,
+        canChangeSettings: false,
+        
+        // Special Permissions
+        fullAccess: false,
+        viewOnly: true
+    }
+};
 
 /**
  * Admin Users Configuration
- * - role: 'admin' (full access) | 'operator' (Data Pengusul only)
- * - password: plain text (in production, use hashed passwords)
+ * - Setiap user memiliki role: 'superadmin' | 'operator' | 'viewer'
+ * - Password plain text (production: gunakan hashed passwords)
  */
 const ADMIN_USERS = [
+    // ===== SUPERADMIN - Full Access =====
     {
         username: 'admin',
         password: '@aida2007##',
         name: 'Super Administrator',
-        role: 'admin',      // Full access to all menus
+        role: 'superadmin',
         avatar: '👑'
     },
+    
+    // ===== OPERATOR - Hanya Data Pengusul =====
     {
         username: 'operator',
         password: 'puput2025##',
-        name: 'Operator Data',
-        role: 'operator',   // Access to Data Pengusul only
-        avatar: '👤'
+        name: 'Operator Data Pengusul',
+        role: 'operator',
+        avatar: '⚙️'
     },
+    
+    // ===== VIEWER - Read-Only (Bisa lihat semua) =====
+    {
+        username: 'viewer',
+        password: 'viewer2024',
+        name: 'Viewer Read-Only',
+        role: 'viewer',
+        avatar: '👁️'
+    },
+    
+    // ===== ADMIN LAIN (Legacy - dianggap superadmin) =====
     {
         username: 'simbakes',
         password: 'simbakes2024',
         name: 'Admin SIMBAKES',
-        role: 'admin',
+        role: 'superadmin',
         avatar: '🎓'
     }
 ];
@@ -8569,8 +8718,8 @@ async function performAuthentication(username, password, source) {
             username: dbUser.username,
             password: dbUser.password_hash,
             name: dbUser.nama_lengkap,
-            role: dbUser.role,
-            avatar: dbUser.role === 'admin' ? '👑' : '👤',
+            role: mapLegacyRole(dbUser.role),
+            avatar: getAvatarForRole(mapLegacyRole(dbUser.role)),
             email: dbUser.email,
             institusi: dbUser.institusi || '',
             id: dbUser.id,
@@ -8625,9 +8774,14 @@ function handleLoginSuccess(user, source, authSource) {
 }
 
 /**
- * Show UI elements for logged-in state
+ * ═══════════════════════════════════════════════════════════════
+ * SHOW UI ELEMENTS FOR LOGGED-IN STATE (Enhanced RBAC)
+ * ═══════════════════════════════════════════════════════════════
  */
 function showLoggedInUI(user) {
+    // Get role configuration
+    const roleConfig = ROLE_CONFIG[user.role] || ROLE_CONFIG.superadmin;
+    
     // Hide login forms (sidebar)
     document.getElementById('admin-login-form').style.display = 'none';
     
@@ -8635,56 +8789,389 @@ function showLoggedInUI(user) {
     document.getElementById('admin-menu').style.display = 'block';
     document.getElementById('admin-info-bar').classList.add('visible');
     
-    // Update admin info bar content (sidebar)
-    document.getElementById('admin-avatar-icon').textContent = user.avatar;
-    document.getElementById('admin-avatar-icon').className = `admin-avatar ${user.role === 'admin' ? 'admin-full' : 'operator'}`;
-    document.getElementById('admin-display-name').innerHTML = `${user.name}<span class="admin-role-badge ${user.role === 'admin' ? 'role-admin-badge' : 'role-operator-badge'}">${user.role.toUpperCase()}</span>`;
+    // Update admin info bar content (sidebar) with role-based styling
+    const avatarEl = document.getElementById('admin-avatar-icon');
+    const displayNameEl = document.getElementById('admin-display-name');
     
-    // Apply role-based menu visibility
+    if (avatarEl) {
+        avatarEl.textContent = user.avatar || roleConfig.avatar;
+        avatarEl.className = `admin-avatar ${roleConfig.avatarClass}`;
+        avatarEl.style.background = roleConfig.gradient;
+    }
+    
+    if (displayNameEl) {
+        displayNameEl.innerHTML = `
+            ${user.name}
+            <span class="admin-role-badge ${roleConfig.badgeClass}" style="background:${roleConfig.color};">
+                ${roleConfig.label}
+            </span>
+        `;
+    }
+    
+    // Apply role-based menu visibility (MAIN FUNCTION)
     applyRoleBasedAccess(user.role);
     
-    // Update status badge in nav
-    document.getElementById('admin-status-badge').textContent = user.role === 'admin' ? 'Admin' : 'Operator';
-    document.getElementById('admin-status-badge').className = 'badge-online';
+    // Update status badge in nav with role-specific text
+    const statusBadge = document.getElementById('admin-status-badge');
+    if (statusBadge) {
+        const roleLabels = {
+            superadmin: '👑 Superadmin',
+            operator: '⚙️ Operator',
+            viewer: '👁️ Viewer'
+        };
+        statusBadge.textContent = roleLabels[user.role] || user.role.toUpperCase();
+        statusBadge.className = 'badge-online';
+        statusBadge.style.background = roleConfig.gradient;
+    }
     
     // UPDATE TOPBAR (PojoK Kanan Atas)!
     if (typeof updateTopbarAfterLogin === 'function') {
-        updateTopbarAfterLogin(user);
+        updateTopbarAfterLogin({
+            ...user,
+            roleConfig: roleConfig
+        });
+    }
+    
+    // Show welcome message with role info
+    console.log(`[RBAC] ✅ UI updated for: ${user.name} (${roleConfig.label})`);
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * APPLY ROLE-BASED ACCESS CONTROL (RBAC)
+ * ═══════════════════════════════════════════════════════════════
+ * 
+ * Fungsi ini mengatur:
+ * 1. Visibility menu berdasarkan role
+ * 2. Action buttons (CRUD) berdasarkan permissions
+ * 3. Redirect jika user mencoba akses terlarang
+ * 
+ * @param {string} role - 'superadmin' | 'operator' | 'viewer'
+ */
+function applyRoleBasedAccess(role) {
+    console.log(`[RBAC] 🔄 Applying role-based access for: ${role}`);
+    
+    // Get role configuration
+    const roleConfig = ROLE_CONFIG[role];
+    if (!roleConfig) {
+        console.warn(`[RBAC] ⚠️ Unknown role: ${role}. Defaulting to restricted access.`);
+        return;
+    }
+    
+    // ===========================================
+    // 1. MENU VISIBILITY CONTROL
+    // ===========================================
+    const menuMapping = {
+        // Navigation IDs → Config Key
+        'nav-dashboard': 'dashboard',
+        'nav-data-pengusul': 'dataPengusul',
+        'nav-data-roadmap': 'roadmapKebutuhan',
+        'nav-penetapan': 'penetapan',
+        'nav-laporan': 'laporan',
+        'nav-peserta-portal': 'pesertaPortal',
+        'nav-user-management': 'userManagement',
+        'nav-settings': 'settings'
+    };
+    
+    const pageMapping = {
+        // Page IDs → Config Key
+        'page-dashboard': 'dashboard',
+        'page-data-pengusul': 'dataPengusul',
+        'page-data-roadmap': 'roadmapKebutuhan',
+        'page-penetapan': 'penetapan',
+        'page-laporan': 'laporan'
+    };
+    
+    // Apply visibility to NAVIGATION items
+    Object.entries(menuMapping).forEach(([navId, configKey]) => {
+        const navElement = document.getElementById(navId);
+        if (navElement) {
+            const hasAccess = roleConfig.menus[configKey];
+            
+            if (hasAccess) {
+                // Show menu
+                navElement.style.display = '';
+                navElement.removeAttribute('data-hidden-for');
+                navElement.removeAttribute('disabled');
+            } else {
+                // Hide menu
+                navElement.style.display = 'none';
+                navElement.setAttribute('data-hidden-for', role);
+                navElement.setAttribute('disabled', 'true');
+            }
+        }
+    });
+    
+    // Check if current page is accessible, if not redirect
+    let needsRedirect = false;
+    let redirectTarget = null;
+    
+    // Find first accessible page for redirect
+    Object.entries(pageMapping).forEach(([pageId, configKey]) => {
+        const pageElement = document.getElementById(pageId);
+        if (pageElement && pageElement.classList.contains('active')) {
+            if (!roleConfig.menus[configKey]) {
+                needsRedirect = true;
+                console.log(`[RBAC] ⚠️ Current page '${pageId}' not accessible for role: ${role}`);
+            }
+        }
+        // Find first accessible page as redirect target
+        if (!redirectTarget && roleConfig.menus[configKey]) {
+            redirectTarget = configKey === 'dashboard' ? 'dashboard' : 
+                           configKey === 'dataPengusul' ? 'data-pengusul' :
+                           configKey === 'roadmapKebutuhan' ? 'data-roadmap' :
+                           configKey === 'penetapan' ? 'penetapan' :
+                           configKey === 'laporan' ? 'laporan' : 'dashboard';
+        }
+    });
+    
+    // Perform redirect if needed
+    if (needsRedirect && redirectTarget) {
+        showToast(`⚠️ Role '${role.toUpperCase()}' tidak dapat mengakses halaman ini.`, 'warning');
+        setTimeout(() => {
+            if (typeof showPage === 'function') {
+                showPage(redirectTarget);
+            }
+        }, 1000);
+    }
+    
+    // ===========================================
+    // 2. ACTION BUTTONS RESTRICTION (CRUD)
+    // ===========================================
+    restrictActionsByRole(role, roleConfig);
+    
+    // ===========================================
+    // 3. LOGGING
+    // ===========================================
+    const accessibleMenus = Object.entries(roleConfig.menus)
+        .filter(([key, value]) => value)
+        .map(([key]) => key);
+    
+    console.log(`[RBAC] ✅ Role '${role}' applied:`);
+    console.log(`[RBAC]    📂 Accessible Menus: [${accessibleMenus.join(', ')}]`);
+    console.log(`[RBAC]    🔧 Can Create: ${roleConfig.canCreate}`);
+    console.log(`[RBAC]    ✏️  Can Update: ${roleConfig.canUpdate}`);
+    console.log(`[RBAC]    🗑️  Can Delete: ${roleConfig.canDelete}`);
+    console.log(`[RBAC]    👁️  View Only: ${roleConfig.viewOnly}`);
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════
+ * RESTRICT ACTIONS BY ROLE (CRUD Control)
+ * ═══════════════════════════════════════════════════════════════
+ * 
+ * Membatasi tombol-tombol aksi berdasarkan role:
+ * - Tombol Tambah/Create
+ * - Tombol Edit/Update  
+ * - Tombol Delete/Hapus
+ * - Tombol Export
+ * - Form inputs (disable untuk viewer)
+ */
+function restrictActionsByRole(role, roleConfig) {
+    if (!roleConfig) return;
+    
+    // ===========================================
+    // BUTTON SELECTORS BY ACTION TYPE
+    // ===========================================
+    const actionSelectors = {
+        create: [
+            '[data-action="create"]',
+            '[data-permission="create"]',
+            '.btn-add',
+            '.btn-create',
+            '.btn-tambah',
+            'button[id*="add"]',
+            'button[id*="tambah"]',
+            'button[id*="create"]',
+            'a[href*="tambah"]',
+            'a[href*="add"]',
+            'a[href*="create"]'
+        ],
+        update: [
+            '[data-action="edit"]',
+            '[data-action="update"]',
+            '[data-permission="edit"]',
+            '[data-permission="update"]',
+            '.btn-edit',
+            '.btn-update',
+            '.btn-edit-data',
+            'button[id*="edit"]',
+            'button[id*="ubah"]',
+            'button[id*="update"]',
+            'a[href*="edit"]',
+            'a[href*="ubah"]'
+        ],
+        delete: [
+            '[data-action="delete"]',
+            '[data-permission="delete"]',
+            '.btn-delete',
+            '.btn-hapus',
+            '.btn-remove',
+            'button[id*="delete"]',
+            'button[id*="hapus"]',
+            'button[id*="remove"]',
+            'a[href*="delete"]',
+            'a[href*="hapus"]'
+        ],
+        export: [
+            '[data-action="export"]',
+            '[data-permission="export"]',
+            '.btn-export',
+            'button[id*="export"]',
+            'button[id*="unduh"]',
+            'a[href*="export"]',
+            'a[href*="download"]',
+            'a[href*="unduh"]'
+        ],
+        approve: [
+            '[data-action="approve"]',
+            '[data-permission="approve"]',
+            '.btn-approve',
+            '.btn-setujui',
+            'button[id*="approve"]',
+            'button[id*="setujui"]'
+        ]
+    };
+    
+    // ===========================================
+    // APPLY RESTRICTIONS BASED ON ROLE
+    // ===========================================
+    
+    // VIEWER MODE: Disable ALL action buttons (Read-Only)
+    if (roleConfig.viewOnly) {
+        console.log('[RBAC] 👁️ Applying VIEW-ONLY restrictions...');
+        
+        // Combine all action selectors for viewer
+        const allActionSelectors = [
+            ...actionSelectors.create,
+            ...actionSelectors.update,
+            ...actionSelectors.delete,
+            ...actionSelectors.export,
+            ...actionSelectors.approve
+        ];
+        
+        allActionSelectors.forEach(selector => {
+            try {
+                document.querySelectorAll(selector).forEach(el => {
+                    el.style.display = 'none';           // Hide button
+                    el.setAttribute('disabled', 'true');   // Disable
+                    el.setAttribute('data-reason', 'view-only-access');
+                    el.title = '❌ Dilarang: Akun Viewer hanya bisa melihat';
+                });
+            } catch (e) {
+                // Selector might be invalid, ignore
+            }
+        });
+        
+        // Also disable form inputs
+        disableFormInputs();
+        
+        return; // Exit early for viewer
+    }
+    
+    // OPERATOR MODE: Only allow actions in Data Pengusul section
+    if (role === 'operator') {
+        console.log('[RBAC] ⚙️ Applying OPERATOR restrictions (Data Pengusul only)...');
+        
+        // For operator, we allow CRUD but only in specific areas
+        // The menu visibility already limits them to Data Pengusul
+        // So we don't need to hide buttons here - they're already in the right section
+        
+        // But we should still restrict certain global actions
+        const restrictedForOperator = [
+            ...actionSelectors.approve,  // Operator cannot approve
+            ...actionSelectors.export.filter(s => !s.includes('pengusul')) // Only export in their area
+        ];
+        
+        restrictedForOperator.forEach(selector => {
+            try {
+                document.querySelectorAll(selector).forEach(el => {
+                    // Only hide if NOT in data pengusul section
+                    const isInPengusulSection = el.closest('#page-data-pengusul') || 
+                                              el.closest('[data-section="pengusul"]') ||
+                                              el.closest('.pengusul-section');
+                    
+                    if (!isInPengusulSection) {
+                        el.style.display = 'none';
+                        el.setAttribute('disabled', 'true');
+                        el.setAttribute('data-reason', 'operator-restricted');
+                        el.title = '❌ Operator hanya dapat mengelola Data Pengusul';
+                    }
+                });
+            } catch (e) {
+                // Ignore invalid selectors
+            }
+        });
+        
+        return;
+    }
+    
+    // SUPERADMIN MODE: No restrictions!
+    if (role === 'superadmin') {
+        console.log('[RBAC] 👑 SUPERADMIN mode: All actions enabled');
+        
+        // Re-enable any previously hidden elements
+        document.querySelectorAll('[data-reason]').forEach(el => {
+            el.style.display = '';
+            el.removeAttribute('disabled');
+            el.removeAttribute('data-reason');
+            el.title = '';
+        });
+        
+        // Re-enable form inputs
+        enableFormInputs();
     }
 }
 
 /**
- * Apply role-based access control to menus
- * @param {string} role - 'admin' or 'operator'
+ * Disable form inputs (for VIEWER role)
  */
-function applyRoleBasedAccess(role) {
-    const roadmapNav = document.getElementById('nav-data-roadmap');
-    const roadmapPage = document.getElementById('page-data-roadmap');
+function disableFormInputs() {
+    const inputSelectors = [
+        'input[type="text"]',
+        'input[type="number"]',
+        'input[type="email"]',
+        'input[type="date"]',
+        'input[type="file"]',
+        'textarea',
+        'select:not([disabled])',
+        '[contenteditable="true"]'
+    ];
     
-    if (role === 'operator') {
-        // Operator can ONLY access Data Pengusul
-        // Hide Roadmap from navigation
-        if (roadmapNav) {
-            roadmapNav.style.display = 'none';
-            roadmapNav.setAttribute('data-hidden-for', 'operator');
+    inputSelectors.forEach(selector => {
+        try {
+            // Only disable forms that are NOT in login/auth sections
+            document.querySelectorAll(selector).forEach(el => {
+                const isAuthForm = el.closest('.login-form') || 
+                                  el.closest('.admin-login-form') ||
+                                  el.closest('#login-page') ||
+                                  el.closest('.auth-section');
+                
+                if (!isAuthForm) {
+                    el.setAttribute('disabled', 'true');
+                    el.setAttribute('readonly', 'true');
+                    el.style.backgroundColor = '#f3f4f6';
+                    el.style.cursor = 'not-allowed';
+                    el.setAttribute('data-viewer-disabled', 'true');
+                }
+            });
+        } catch (e) {
+            // Ignore
         }
-        
-        // If currently on Roadmap page, redirect to Pengusul
-        if (roadmapPage && roadmapPage.classList.contains('active')) {
-            showPage('data-pengusul');
-            showToast('ℹ️ Operator hanya dapat mengakses menu Data Pengusul', 'info');
-        }
-        
-        console.log('🔒 Operator mode: Roadmap menu hidden');
-    } else {
-        // Admin has full access - show all menus
-        if (roadmapNav) {
-            roadmapNav.style.display = '';
-            roadmapNav.removeAttribute('data-hidden-for');
-        }
-        
-        console.log('🔓 Admin mode: All menus visible');
-    }
+    });
+}
+
+/**
+ * Re-enable form inputs (when switching from viewer to other roles)
+ */
+function enableFormInputs() {
+    document.querySelectorAll('[data-viewer-disabled]').forEach(el => {
+        el.removeAttribute('disabled');
+        el.removeAttribute('readonly');
+        el.style.backgroundColor = '';
+        el.style.cursor = '';
+        el.removeAttribute('data-viewer-disabled');
+    });
 }
 
 /**
@@ -8752,18 +9239,55 @@ function adminLogout() {
 }
 
 /**
- * Check if user has specific permission
- * @param {string} permission - 'roadmap' | 'full'
+ * ═══════════════════════════════════════════════════════════════
+ * CHECK USER PERMISSIONS (Enhanced RBAC)
+ * ═══════════════════════════════════════════════════════════════
+ * 
+ * @param {string} permission - Permission to check:
+ *   - 'create', 'read', 'update', 'delete'
+ *   - 'export', 'import', 'approve'
+ *   - 'manageUsers', 'changeSettings'
+ *   - 'fullAccess', 'viewOnly'
+ *   - Legacy: 'roadmap', 'full'
+ * @returns {boolean} Has permission or not
  */
 function hasPermission(permission) {
-    if (!currentAdminUser) return false;
+    if (!currentAdminUser) {
+        console.warn('[RBAC] ⚠️ No user logged in - permission denied');
+        return false;
+    }
     
-    if (currentAdminUser.role === 'admin') return true;
+    const role = currentAdminUser.role;
+    const roleConfig = ROLE_CONFIG[role];
     
-    // Operator permissions
-    if (permission === 'roadmap') return false;
+    if (!roleConfig) {
+        console.warn(`[RBAC] ⚠️ Unknown role: ${role} - permission denied`);
+        return false;
+    }
     
-    return true; // Default allow for other things
+    // Map legacy permissions to new system
+    const permissionMap = {
+        'roadmap': 'canRead',          // Old 'roadmap' means can see roadmap
+        'full': 'fullAccess',          // Old 'full' means full access
+        'dashboard': 'canRead',
+        'dataPengusul': 'canRead',
+        'pengusul': 'canUpdate',       // Can manage pengusul data
+        'settings': 'canChangeSettings',
+        'users': 'canManageUsers'
+    };
+    
+    // Normalize permission name
+    const normalizedPerm = permissionMap[permission] || permission;
+    
+    // Check permission
+    const hasPerm = roleConfig[normalizedPerm] === true || 
+                     roleConfig.menus[permission] === true;
+    
+    if (!hasPerm) {
+        console.log(`[RBAC] 🔒 Permission '${permission}' DENIED for role: ${role}`);
+    }
+    
+    return hasPerm;
 }
 
 /**
@@ -8779,6 +9303,8 @@ function getCurrentUserRole() {
 function isAdminAuthenticated() {
     return currentAdminUser !== null;
 }
+\n\n// Get avatar icon based on RBAC role\nfunction getAvatarForRole(role) {\n    const avatars = {\n        superadmin: "👑",\n        operator: "⚙️",\n        viewer: "👁️"\n    };\n    return avatars[role] || "👤";  // Default\n}
+\n\n// ===== RBAC HELPER FUNCTIONS =====\nfunction getCurrentRoleConfig() {\n    if (!currentAdminUser) return null;\n    return ROLE_CONFIG[currentAdminUser.role] || null;\n}\n\nfunction debugRBAC() {\n    console.log("[RBAC] Debug Info:");\n    console.log("  User:", currentAdminUser?.name);\n    console.log("  Role:", currentAdminUser?.role);\n}\n\nfunction mapLegacyRole(oldRole) {\n    return { admin: "superadmin", operator: "operator", viewer: "viewer" }[oldRole] || "viewer";\n}\n\nconst canCreate = () => hasPermission("create");\nconst canUpdate = () => hasPermission("update");\nconst canDelete = () => hasPermission("delete");\nisSuperAdmin = () => getCurrentUserRole() === "superadmin";\nisOperator = () => getCurrentUserRole() === "operator";\nisViewer = () => getCurrentUserRole() === "viewer";\n
 
 /**
  * Start auto-logout timer
