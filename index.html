@@ -7335,7 +7335,7 @@
                                 <th style="min-width:140px;border-radius:0 10px 0 0;">Aksi (CRUD)</th>
                             </tr>
                         </thead>
-                        <tbody id="roadmap-table-body">
+                        <tbody id="roadmap-admin-table-body">
                             <tr>
                                 <td colspan="14" style="text-align:center;padding:3rem;color:#64748b;">
                                     <div class="spinner"></div>
@@ -7924,7 +7924,7 @@ function debounceSearchRoadmap() {
     clearTimeout(roadmapSearchTimeout);
     roadmapSearchTimeout = setTimeout(() => {
         if (typeof roadmapCurrentPage !== 'undefined') roadmapCurrentPage = 1;
-        if (typeof fetchRoadmapData === 'function') fetchRoadmapData();
+        loadRoadmapAdminTable(); // FIXED: Call full admin table reload for search
     }, 500);
 }
 
@@ -14918,10 +14918,11 @@ let roadmapEditingId = null;
 
 /**
  * Initialize and load Roadmap data when page is shown
+ * FIXED: Now calls loadRoadmapAdminTable() to properly fetch AND render
  */
 function loadDataRoadmap() {
     roadmapCurrentPage = 1;
-    fetchRoadmapData();
+    loadRoadmapAdminTable(); // This function both fetches AND renders to admin table
 }
 
 /**
@@ -14929,12 +14930,12 @@ function loadDataRoadmap() {
  * Menggunakan Supabase client dan error handling yang lebih baik
  */
 async function loadRoadmapAdminTable() {
-    const tbody = document.getElementById('roadmap-table-body');
+    const tbody = document.getElementById('roadmap-admin-table-body');
     
     // Show loading state
     tbody.innerHTML = `
         <tr>
-            <td colspan="12" style="text-align:center;padding:3rem;color:#64748b;">
+            <td colspan="14" style="text-align:center;padding:3rem;color:#64748b;">
                 <div class="spinner"></div>
                 <p style="margin-top:1rem;">Memuat data roadmap...</p>
                 <p style="font-size:0.8rem;color:#94a3b8;margin-top:0.5rem;">Menghubungkan ke server Supabase...</p>
@@ -15046,7 +15047,7 @@ async function loadRoadmapAdminTable() {
  * Menggunakan OBJECT PROPERTY NAMES (sesuai Supabase response)
  */
 function renderRoadmapTable(data, startIndex) {
-    const tbody = document.getElementById('roadmap-table-body');
+    const tbody = document.getElementById('roadmap-admin-table-body');
     
     if (!data || data.length === 0) {
         tbody.innerHTML = `
@@ -15293,10 +15294,11 @@ function updateRoadmapStats() {
 
 /**
  * Filter Roadmap data when select changes
+ * FIXED: Now calls loadRoadmapAdminTable for proper rendering
  */
 function filterDataRoadmap() {
     roadmapCurrentPage = 1;
-    fetchRoadmapData();
+    loadRoadmapAdminTable();
 }
 
 /**
@@ -15305,7 +15307,7 @@ function filterDataRoadmap() {
 function goToRoadmapPage(page) {
     if (page >= 1 && page <= roadmapTotalPages) {
         roadmapCurrentPage = page;
-        fetchRoadmapData();
+        loadRoadmapAdminTable(); // FIXED: Call full reload for proper rendering
         document.getElementById('roadmap-table-scroll').scrollTop = 0;
     }
 }
@@ -15325,7 +15327,7 @@ function goToRoadmapLastPage() {
 function changeRoadmapPageSize() {
     roadmapPageSize = parseInt(document.getElementById('roadmap-page-size-select').value);
     roadmapCurrentPage = 1;
-    fetchRoadmapData();
+    loadRoadmapAdminTable(); // FIXED: Call full admin table reload instead of just fetch
 }
 
 /**
@@ -15653,7 +15655,7 @@ async function submitRoadmapForm(event) {
         
         showToast(`✅ ${isEdit ? 'Data berhasil diperbarui' : 'Data berhasil ditambahkan'}`, 'success');
         closeModal('roadmap-form-modal');
-        fetchRoadmapData(); // Refresh table
+        loadRoadmapAdminTable(); // FIXED: Refresh admin table properly
         
         // Also refresh the public roadmap page if exists
         if (typeof loadRoadmapData === 'function') {
@@ -15744,7 +15746,7 @@ async function deleteRoadmap(index) {
         if (!error) {
             showToast(`✅ ${result.message}`, 'success');
             closeModal('roadmap-delete-modal');
-            fetchRoadmapData(); // Refresh table
+            loadRoadmapAdminTable(); // FIXED: Refresh admin table properly
             
             // Also refresh public roadmap page
             if (typeof loadRoadmapData === 'function') {
