@@ -6202,7 +6202,7 @@
                                 <input type="url" 
                                        class="form-input" 
                                        id="template-drive-link" 
-                                       placeholder="Jika admin memberikan link khusus, paste di sini...">
+                                       placeholder="Paste link Google Drive di sini (auto-convert ke download)...">
                             </div>
                         </div>
                         
@@ -8661,11 +8661,20 @@ async function performAuthentication(username, password, source) {
         }
         
         // Query ke Supabase
+        console.log('[SIMBAKES] Querying multiusers table for:', username.toLowerCase());
+        
         const { data: dbUsers, error } = await client
             .from('multiusers')
             .select('*')
             .or(`username.eq.${username.toLowerCase()},email.eq.${username.toLowerCase()}`)
             .limit(1);
+        
+        // DEBUG: Log hasil query
+        console.log('[SIMBAKES] Query result:', { 
+            dataCount: dbUsers?.length || 0, 
+            error: error?.message || null,
+            rawData: dbUsers 
+        });
         
         if (error) {
             console.error('[SIMBAKES] Supabase login error:', error);
@@ -8675,7 +8684,11 @@ async function performAuthentication(username, password, source) {
         
         if (!dbUsers || dbUsers.length === 0) {
             console.log('[SIMBAKES] User not found in Supabase');
-            showError(errorEl, errorTextEl, 'Username tidak ditemukan! Silakan daftar terlebih dahulu.');
+            console.warn('[SIMBAKES] DEBUG INFO:');
+            console.warn('  - Cek apakah tabel "multiusers" sudah ada data?');
+            console.warn('  - Cek apakah RLS (Row Level Security) enabled tanpa policy?');
+            console.warn('  - Jalankan script SQL di /home/z/my-project/download/setup-multiusers-rls.sql');
+            showError(errorEl, errorTextEl, 'Username tidak ditemukan! Pastikan data user sudah diinsert ke tabel multiusers.');
             shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
             return false;
         }
@@ -10378,6 +10391,15 @@ function createPenetapanRow(item, rowNum) {
         </td>
     `;
     
+    // Tambahkan click handler untuk lightbox
+    row.classList.add('clickable-row');
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', (e) => {
+        if (!e.target.closest('.btn-action')) {
+            viewPenetapanDetail(id);
+        }
+    });
+    
     return row;
 }
 
@@ -10750,6 +10772,159 @@ function closeEditPenetapanModal() {
         }, 300);
     }
 }
+
+/**
+ * ===== ADD NEW PENETAPAN =====
+ * Open modal untuk tambah data Penetapan baru
+ */
+function openPenetapanAddModal() {
+    // SECURITY: Check permission before adding penetapan
+    if (!checkPenetapanPermission()) {
+        return; // Access denied
+    }
+    
+    const modalId = 'penetapan-add-modal';
+    
+    // Remove existing modal
+    let modal = document.getElementById(modalId);
+    if (modal) modal.remove();
+    
+    // Create new modal
+    modal = document.createElement('div');
+    modal.id = modalId;
+    modal.className = 'modal-overlay';
+    modal.onclick = (e) => { if (e.target === modal) closeModal(modalId); };
+    
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width:700px;">
+            <div class="modal-header" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);color:white;padding:1.25rem;">
+                <h3 class="modal-title">➕ Tambah Data Penetapan Baru</h3>
+                <button class="modal-close" onclick="closeModal('${modalId}')">×</button>
+            </div>
+            <div class="modal-body" style="padding:1.5rem;max-height:70vh;overflow-y:auto;">
+                <form id="penetapan-add-form" onsubmit="return false;">
+                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;">
+                        <div class="form-group">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Nama Lengkap *</label>
+                            <input type="text" id="add-penetapan-nama" required placeholder="Nama lengkap penerima" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">NIK *</label>
+                            <input type="text" id="add-penetapan-nik" required placeholder="16 digit NIK" maxlength="16" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;font-family:monospace;">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Jurusan Tujuan *</label>
+                            <select id="add-penetapan-jurusan" required style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                                <option value="">Pilih Jurusan</option>
+                                <option value="Keperawatan">Keperawatan</option>
+                                <option value="Kebidanan">Kebidanan</option>
+                                <option value="Kesehatan Masyarakat">Kesehatan Masyarakat</option>
+                                <option value="Gizi">Gizi</option>
+                                <option value="Kesehatan Lingkungan">Kesehatan Lingkungan</option>
+                                <option value="Epidemiologi">Epidemiologi</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Jenjang Pendidikan</label>
+                            <select id="add-penetapan-jenjang" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                                <option value="">Pilih Jenjang</option>
+                                <option value="D3">Diploma (D3)</option>
+                                <option value="D4">Diploma (D4)</option>
+                                <option value="S1">Sarjana (S1)</option>
+                                <option value="S2">Magister (S2)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Perguruan Tinggi</label>
+                            <input type="text" id="add-penetapan-pt" placeholder="Nama PT" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Unit Kerja / Tujuan</label>
+                            <input type="text" id="add-penetapan-unit" placeholder="Unit penempatan" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Link Foto (Google Drive URL)</label>
+                            <input type="url" id="add-penetapan-foto" placeholder="https://drive.google.com/..." style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Status Penetapan</label>
+                            <select id="add-penetapan-status" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                                <option value="Pending">⏳ Pending</option>
+                                <option value="Proses">🔄 Sedang Diproses</option>
+                                <option value="Lulus">✅ Lulus/Disetujui</option>
+                                <option value="Ditolak">❌ Ditolak</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1.5rem;padding-top:1rem;border-top:1px solid #e5e7eb;">
+                        <button type="button" class="btn" style="background:#f1f5f9;color:#475569;" onclick="closeModal('${modalId}')">Batal</button>
+                        <button type="button" class="btn" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);color:white;" onclick="saveNewPenetapan('${modalId}')">💾 Simpan Data</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+}
+
+/**
+ * Save new Penetapan data to Supabase
+ */
+async function saveNewPenetapan(modalId) {
+    try {
+        // Collect form data
+        const newData = {
+            nama_lengkap: document.getElementById('add-penetapan-nama').value.trim(),
+            nik: document.getElementById('add-penetapan-nik').value.trim(),
+            jurusan_tujuan: document.getElementById('add-penetapan-jurusan').value,
+            jenjang_pendidikan: document.getElementById('add-penetapan-jenjang').value,
+            perguruan_tinggi: document.getElementById('add-penetapan-pt').value.trim(),
+            unit_kerja: document.getElementById('add-penetapan-unit').value.trim(),
+            link_foto: document.getElementById('add-penetapan-foto').value.trim(),
+            status_penetapan: document.getElementById('add-penetapan-status').value,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        };
+        
+        // Validation
+        if (!newData.nama_lengkap || !newData.nik || !newData.jurusan_tujuan) {
+            showToast('❌ Nama, NIK, dan Jurusan wajib diisi!', 'error');
+            return;
+        }
+        
+        console.log('[PENETAPAN] Saving new data:', newData);
+        
+        // Insert ke Supabase
+        const { data, error } = await supabaseClient
+            .from('penetapan')
+            .insert([newData])
+            .select();
+        
+        if (error) throw error;
+        
+        console.log('[PENETAPAN] ✅ Data saved:', data);
+        
+        showToast(`✅ Data ${newData.nama_lengkap} berhasil ditambahkan!`, 'success');
+        closeModal(modalId);
+        
+        // Refresh table
+        if (typeof loadPenetapanData === 'function') {
+            loadPenetapanData();
+        }
+        
+    } catch (error) {
+        console.error('[PENETAPAN] Error saving:', error);
+        showToast('❌ Gagal menyimpan: ' + error.message, 'error', 5000);
+    }
+}
+
+// Expose functions to global scope
+window.openPenetapanAddModal = openPenetapanAddModal;
+window.saveNewPenetapan = saveNewPenetapan;
 
 /**
  * ===== DELETE FUNCTIONALITY =====
@@ -11263,7 +11438,7 @@ function clearDriveLink(inputId, previewContainerId) {
 
 /**
  * Download Template Surat Pernyataan
- * Opens template from Google Drive or generates a simple template
+ * Downloads template dari Google Drive (format langsung bisa didownload)
  */
 function downloadTemplateSuratPernyataan() {
     console.log('[TEMPLATE] Downloading Surat Pernyataan template...');
@@ -11272,28 +11447,59 @@ function downloadTemplateSuratPernyataan() {
     const customTemplateLink = document.getElementById('template-drive-link')?.value?.trim();
     
     if (customTemplateLink) {
-        // Open custom template from admin
-        window.open(customTemplateLink, '_blank');
-        showToast('📥 Membuka template dari admin...', 'success');
+        // Convert to direct download link if needed
+        const downloadLink = convertToDirectDownloadLink(customTemplateLink);
+        window.open(downloadLink, '_blank');
+        showToast('📥 Membuka template...', 'success');
         return;
     }
     
-    // Default: Generate and download a simple template
-    const templateContent = generateSuratPernyataanTemplate();
+    // ===== DEFAULT TEMPLATE (Google Drive - SIMBAKES) =====
+    // Link Google Drive template Surat Pernyataan
+    const defaultTemplateUrl = 'https://drive.google.com/uc?export=download&id=1VJOlZKGs_2N0fYZDCXReHosvthMSqmOx';
     
-    // Create blob and download
-    const blob = new Blob([templateContent], { type: 'application/msword' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'Template_Surat_Pernyataan_SIMBAKES.doc';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    console.log('[TEMPLATE] Opening default template from Google Drive...');
+    window.open(defaultTemplateUrl, '_blank');
+    showToast('📥 Mendownload Template Surat Pernyataan...', 'success');
+}
+
+/**
+ * Convert Google Drive sharing URL to direct download URL
+ * Supports multiple Google Drive URL formats
+ */
+function convertToDirectDownloadLink(url) {
+    // Jika sudah format download langsung, return as-is
+    if (url.includes('/uc?export=') || url.includes('open?id=')) {
+        return url;
+    }
     
-    showToast('📥 Template Surat Pernyataan berhasil didownload!', 'success');
-    console.log('[TEMPLATE] Template downloaded successfully');
+    // Extract file ID dari berbagai format URL Google Drive
+    let fileId = null;
+    
+    // Format 1: /d/FILE_ID/edit atau /d/FILE_ID/view
+    const match1 = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match1) fileId = match1[1];
+    
+    // Format 2: id=FILE_ID
+    if (!fileId) {
+        const match2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (match2) fileId = match2[1];
+    }
+    
+    // Format 3: open?id=FILE_ID
+    if (!fileId) {
+        const match3 = url.match(/open\?id=([a-zA-Z0-9_-]+)/);
+        if (match3) fileId = match3[1];
+    }
+    
+    // Jika file ID ditemukan, convert ke download link
+    if (fileId) {
+        return `https://drive.google.com/uc?export=download&id=${fileId}`;
+    }
+    
+    // Jika tidak bisa parse, return original URL
+    console.warn('[TEMPLATE] Could not extract file ID from URL, using original');
+    return url;
 }
 
 /**
@@ -11358,6 +11564,7 @@ window.openDrivePreview = openDrivePreview;
 window.clearDriveLink = clearDriveLink;
 window.handlePreviewError = handlePreviewError;
 window.downloadTemplateSuratPernyataan = downloadTemplateSuratPernyataan;
+window.convertToDirectDownloadLink = convertToDirectDownloadLink;
 
 console.log('[DRIVE LINK] ✅ Google Drive link handler functions initialized');
 
@@ -16010,9 +16217,9 @@ function renderRoadmapTable(data, startIndex) {
                 <!-- 13. CRUD Actions Column (LAST) -->
                 <td>
                     <div class="crud-actions">
-                        <button class="btn-crud btn-view" onclick="viewDetailRoadmap(${actualIndex})" title="Lihat Detail">👁️</button>
-                        <button class="btn-crud btn-edit" onclick="openRoadmapEditModal(${actualIndex})" title="Edit Data">✏️</button>
-                        <button class="btn-crud btn-delete" onclick="confirmDeleteRoadmap(${actualIndex})" title="Hapus Data">🗑️</button>
+                        <button class="btn-crud btn-view" onclick="event.stopPropagation(); viewDetailRoadmap(${actualIndex})" title="Lihat Detail">👁️</button>
+                        <button class="btn-crud btn-edit" onclick="event.stopPropagation(); openRoadmapEditModal(${actualIndex})" title="Edit Data">✏️</button>
+                        <button class="btn-crud btn-delete" onclick="event.stopPropagation(); confirmDeleteRoadmap(${actualIndex})" title="Hapus Data">🗑️</button>
                     </div>
                 </td>
             </tr>
@@ -16020,6 +16227,9 @@ function renderRoadmapTable(data, startIndex) {
     });
     
     tbody.innerHTML = html;
+    
+    // Tambahkan row click handler untuk lightbox
+    addRowClickHandlers('roadmap-admin-table-body', (index) => viewDetailRoadmap(index));
 }
 
 /**
@@ -17849,13 +18059,16 @@ function renderAdminTable(data) {
                 <!-- AKSI Column (LAST) -->
                 <td>
                     <div class="crud-actions">
-                        <button class="btn-crud btn-view" onclick="viewDetailPengusul('${id}')" title="Lihat Detail">
+                        <button class="btn-crud btn-view" onclick="event.stopPropagation(); viewDetailPengusul('${id}')" title="Lihat Detail">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         </button>
-                        <button class="btn-crud btn-status" onclick="openStatusModal('${id}', '${escapeHtml(row.status || '')}')" title="Ubah Status">
+                        <button class="btn-crud btn-edit" onclick="event.stopPropagation(); openPengusulEditModal('${id}')" title="Edit Data">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
-                        <button class="btn-crud btn-delete" onclick="confirmDeletePengusul('${id}', '${escapeHtml(row.nama_lengkap || '')}')" title="Hapus Data">
+                        <button class="btn-crud btn-status" onclick="event.stopPropagation(); openStatusModal('${id}', '${escapeHtml(row.status || '')}')" title="Ubah Status">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+                        </button>
+                        <button class="btn-crud btn-delete" onclick="event.stopPropagation(); confirmDeletePengusul('${id}', '${escapeHtml(row.nama_lengkap || '')}')" title="Hapus Data">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         </button>
                     </div>
@@ -17865,6 +18078,9 @@ function renderAdminTable(data) {
     });
     
     tbody.innerHTML = html;
+    
+    // Tambahkan row click handler untuk lightbox
+    addRowClickHandlers('pengusul-table-body', viewDetailPengusul);
     
     console.log(`[SIMBAKES] ✅ Rendered ${data.length} rows in admin table`);
 }
@@ -18525,6 +18741,247 @@ function confirmDeletePengusul(id, namaLengkap) {
 }
 
 /**
+ * Open Edit Modal for existing Submission (Data Pengusulan)
+ * Fetches data from Supabase and populates form
+ */
+async function openPengusulEditModal(id) {
+    try {
+        console.log('[SIMBAKES] Opening edit modal for ID:', id);
+        
+        if (!id || id === 'undefined') {
+            showToast('❌ ID tidak valid', 'error');
+            return;
+        }
+        
+        // Fetch data dari Supabase
+        if (!supabaseClient) {
+            throw new Error('Supabase client tidak tersedia');
+        }
+        
+        const { data, error } = await supabaseClient
+            .from('submissions')
+            .select('*')
+            .eq('id', id)
+            .single();
+        
+        if (error) throw error;
+        if (!data) {
+            showToast('❌ Data tidak ditemukan', 'error');
+            return;
+        }
+        
+        const modalId = 'pengusul-edit-modal';
+        
+        // Create modal if not exists
+        let modal = document.getElementById(modalId);
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = modalId;
+            modal.className = 'modal-overlay';
+            modal.onclick = (e) => { if (e.target === modal) closeModal(modalId); };
+            document.body.appendChild(modal);
+        }
+        
+        // Populate form dengan data yang ada
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width:900px;">
+                <div class="modal-header" style="background:linear-gradient(135deg,#2563eb,#3b82f6);color:white;padding:1.25rem;">
+                    <h3 class="modal-title">✏️ Edit Data Pengusulan</h3>
+                    <span style="font-size:0.875rem;background:rgba(255,255,255,0.2);padding:0.25rem 0.75rem;border-radius:20px;margin-left:auto;">${data.no_register || id.substring(0, 8)}</span>
+                    <button class="modal-close" onclick="closeModal('${modalId}')">×</button>
+                </div>
+                <div class="modal-body" style="padding:1.5rem;max-height:70vh;overflow-y:auto;">
+                    <form id="pengusul-edit-form" onsubmit="return false;">
+                        <input type="hidden" id="edit-id" value="${data.id}">
+                        
+                        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;">
+                            <!-- Data Pribadi -->
+                            <div class="form-group">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Nama Lengkap *</label>
+                                <input type="text" id="edit-nama_lengkap" required value="${escapeHtml(data.nama_lengkap || '')}" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">NIK *</label>
+                                <input type="text" id="edit-nik" required value="${escapeHtml(data.nik || '')}" maxlength="16" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;font-family:monospace;">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Tempat Lahir</label>
+                                <input type="text" id="edit-tempat_lahir" value="${escapeHtml(data.tempat_lahir || '')}" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Tanggal Lahir</label>
+                                <input type="date" id="edit-tanggal_lahir" value="${data.tanggal_lahir ? data.tanggal_lahir.split('T')[0] : ''}" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                            </div>
+                            
+                            <!-- Kontak -->
+                            <div class="form-group">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">No HP</label>
+                                <input type="tel" id="edit-no_hp" value="${escapeHtml(data.no_hp || '')}" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">WhatsApp</label>
+                                <input type="tel" id="edit-no_wa" value="${escapeHtml(data.no_wa || '')}" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                            </div>
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Email</label>
+                                <input type="email" id="edit-email" value="${escapeHtml(data.email || '')}" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                            </div>
+                            
+                            <!-- Alamat -->
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Alamat KTP</label>
+                                <textarea id="edit-alamat_ktp" rows="2" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;resize:vertical;">${escapeHtml(data.alamat_ktp || '')}</textarea>
+                            </div>
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Alamat Domisili</label>
+                                <textarea id="edit-alamat_domisili" rows="2" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;resize:vertical;">${escapeHtml(data.alamat_domisili || '')}</textarea>
+                            </div>
+                            
+                            <!-- Pekerjaan -->
+                            <div class="form-group">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Pekerjaan</label>
+                                <input type="text" id="edit-pekerjaan" value="${escapeHtml(data.pekerjaan || '')}" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Posisi/Jabatan</label>
+                                <input type="text" id="edit-posisi" value="${escapeHtml(data.posisi || '')}" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                            </div>
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Unit Kerja / Institusi</label>
+                                <input type="text" id="edit-unit_kerja" value="${escapeHtml(data.unit_kerja || '')}" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                            </div>
+                            
+                            <!-- Pendidikan -->
+                            <div class="form-group">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Jurusan Tujuan *</label>
+                                <select id="edit-jurusan_tujuan" required style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                                    <option value="">Pilih Jurusan</option>
+                                    <option value="Keperawatan" ${data.jurusan_tujuan === 'Keperawatan' ? 'selected' : ''}>Keperawatan</option>
+                                    <option value="Kebidanan" ${data.jurusan_tujuan === 'Kebidanan' ? 'selected' : ''}>Kebidanan</option>
+                                    <option value="Kesehatan Masyarakat" ${data.jurusan_tujuan === 'Kesehatan Masyarakat' ? 'selected' : ''}>Kesehatan Masyarakat</option>
+                                    <option value="Gizi" ${data.jurusan_tujuan === 'Gizi' ? 'selected' : ''}>Gizi</option>
+                                    <option value="Kesehatan Lingkungan" ${data.jurusan_tujuan === 'Kesehatan Lingkungan' ? 'selected' : ''}>Kesehatan Lingkungan</option>
+                                    <option value="Epidemiologi" ${data.jurusan_tujuan === 'Epidemiologi' ? 'selected' : ''}>Epidemiologi</option>
+                                    <option value="Lainnya" ${data.jurusan_tujuan === 'Lainnya' ? 'selected' : ''}>Lainnya</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Jenjang Pendidikan</label>
+                                <select id="edit-jenjang_pendidikan" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                                    <option value="">Pilih Jenjang</option>
+                                    <option value="D3" ${data.jenjang_pendidikan === 'D3' ? 'selected' : ''}>Diploma (D3)</option>
+                                    <option value="D4" ${data.jenjang_pendidikan === 'D4' ? 'selected' : ''}>Diploma (D4)</option>
+                                    <option value="S1" ${data.jenjang_pendidikan === 'S1' ? 'selected' : ''}>Sarjana (S1)</option>
+                                    <option value="S2" ${data.jenjang_pendidikan === 'S2' ? 'selected' : ''}>Magister (S2)</option>
+                                    <option value="S3" ${data.jenjang_pendidikan === 'S3' ? 'selected' : ''}>Doktor (S3)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Unit Tujuan</label>
+                                <input type="text" id="edit-unit_tujuan" value="${escapeHtml(data.unit_tujuan || '')}" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Rencana Tahun Studi</label>
+                                <input type="number" id="edit-rencana_tahun" value="${data.rencana_tahun || ''}" min="2024" max="2030" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                            </div>
+                            
+                            <!-- Status -->
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Status</label>
+                                <select id="edit-status" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                                    <option value="Proses Verifikasi" ${(data.status || '').includes('Verifikasi') ? 'selected' : ''}>Proses Verifikasi</option>
+                                    <option value="Disetujui" ${(data.status || '').includes('Setujui') ? 'selected' : ''}>Disetujui</option>
+                                    <option value="Ditolak" ${(data.status || '').includes('Tolak') ? 'selected' : ''}>Ditolak</option>
+                                    <option value="Perlu Perbaikan" ${(data.status || '').includes('Perbaikan') ? 'selected' : ''}>Perlu Perbaikan</option>
+                                    <option value="Dibatalkan" ${(data.status || '').includes('Batal') ? 'selected' : ''}>Dibatalkan</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1.5rem;padding-top:1rem;border-top:1px solid #e5e7eb;">
+                            <button type="button" class="btn" style="background:#f1f5f9;color:#475569;" onclick="closeModal('${modalId}')">Batal</button>
+                            <button type="button" class="btn" style="background:linear-gradient(135deg,#2563eb,#3b82f6);color:white;" onclick="savePengusulEdit('${modalId}')">💾 Simpan Perubahan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        modal.style.display = 'flex';
+        console.log('[SIMBAKES] ✅ Edit modal opened for:', data.nama_lengkap);
+        
+    } catch (error) {
+        console.error('[SIMBAKES] Error opening edit modal:', error);
+        showToast('❌ Gagal membuka edit: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Save edited submission data to Supabase
+ */
+async function savePengusulEdit(modalId) {
+    try {
+        const id = document.getElementById('edit-id').value;
+        
+        if (!id) {
+            showToast('❌ ID tidak valid', 'error');
+            return;
+        }
+        
+        // Collect form data
+        const updateData = {
+            nama_lengkap: document.getElementById('edit-nama_lengkap').value.trim(),
+            nik: document.getElementById('edit-nik').value.trim(),
+            tempat_lahir: document.getElementById('edit-tempat_lahir').value.trim(),
+            tanggal_lahir: document.getElementById('edit-tanggal_lahir').value,
+            no_hp: document.getElementById('edit-no_hp').value.trim(),
+            no_wa: document.getElementById('edit-no_wa').value.trim(),
+            email: document.getElementById('edit-email').value.trim(),
+            alamat_ktp: document.getElementById('edit-alamat_ktp').value.trim(),
+            alamat_domisili: document.getElementById('edit-alamat_domisili').value.trim(),
+            pekerjaan: document.getElementById('edit-pekerjaan').value.trim(),
+            posisi: document.getElementById('edit-posisi').value.trim(),
+            unit_kerja: document.getElementById('edit-unit_kerja').value.trim(),
+            jurusan_tujuan: document.getElementById('edit-jurusan_tujuan').value,
+            jenjang_pendidikan: document.getElementById('edit-jenjang_pendidikan').value,
+            unit_tujuan: document.getElementById('edit-unit_tujuan').value.trim(),
+            rencana_tahun: parseInt(document.getElementById('edit-rencana_tahun').value) || null,
+            status: document.getElementById('edit-status').value,
+            updated_at: new Date().toISOString()
+        };
+        
+        // Validation
+        if (!updateData.nama_lengkap || !updateData.nik) {
+            showToast('❌ Nama Lengkap dan NIK wajib diisi!', 'error');
+            return;
+        }
+        
+        console.log('[SIMBAKES] Saving edit for ID:', id);
+        
+        // Update ke Supabase
+        const { error } = await supabaseClient
+            .from('submissions')
+            .update(updateData)
+            .eq('id', id);
+        
+        if (error) throw error;
+        
+        console.log('[SIMBAKES] ✅ Data updated successfully');
+        
+        showToast(`✅ Data ${updateData.nama_lengkap} berhasil diperbarui!`, 'success');
+        closeModal(modalId);
+        
+        // Refresh table
+        loadDataPengusul();
+        
+    } catch (error) {
+        console.error('[SIMBAKES] Error saving edit:', error);
+        showToast('❌ Gagal menyimpan: ' + error.message, 'error', 5000);
+    }
+}
+
+/**
  * Delete submission - FIXED: Use saved ID from window.currentDeleteId
  */
 async function deletePengusul() {
@@ -18635,6 +19092,48 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML.replace(/"/g, '&quot;');
 }
+
+/**
+ * Add row click handler for lightbox functionality
+ * Membuat baris tabel bisa diklik untuk menampilkan detail (lightbox)
+ */
+function addRowClickHandlers(tbodyId, viewFunction) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    
+    const rows = tbody.querySelectorAll('tr[data-id], tr[data-row-index]');
+    
+    rows.forEach(row => {
+        // Tambahkan class clickable
+        row.classList.add('clickable-row');
+        row.style.cursor = 'pointer';
+        
+        // Hapus event listener lama jika ada (untuk mencegah duplikasi)
+        row.removeEventListener('click', handleRowClick);
+        
+        // Tambahkan event listener baru
+        row.addEventListener('click', handleRowClick);
+    });
+    
+    function handleRowClick(e) {
+        // Jangan trigger jika klik di tombol CRUD
+        if (e.target.closest('.btn-crud') || e.target.closest('.btn-action')) {
+            return;
+        }
+        
+        const row = e.currentTarget;
+        const id = row.dataset.id || row.dataset.rowIndex;
+        
+        if (id && typeof viewFunction === 'function') {
+            viewFunction(id);
+        }
+    }
+}
+
+// Expose functions to global scope
+window.openPengusulEditModal = openPengusulEditModal;
+window.savePengusulEdit = savePengusulEdit;
+window.addRowClickHandlers = addRowClickHandlers;
 
 // Note: originalShowPage already declared above (line ~9381) for Data Penetapan admin module
 // No need to redeclare here - using event listener approach instead
