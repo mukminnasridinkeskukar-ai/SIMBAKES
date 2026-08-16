@@ -6766,10 +6766,10 @@
                                 <th style="min-width:150px;">💼 Pekerjaan</th>
                                 <th style="min-width:100px;">📅 Tahun Studi</th>
                                 <th style="min-width:100px;">🔢 Jumlah Kuota</th>
-                                <th style="min-width:110px;">🏥 Unit Pendayaguna</th>
-                                <th style="min-width:100px;">📊 Status</th>
                                 <th style="min-width:100px;">✅ Kuota Terisi</th>
                                 <th style="min-width:100px;">📋 Sisa Kuota</th>
+                                <th style="min-width:150px;">🏥 Unit Pendayaguna</th>
+                                <th style="min-width:100px;">📊 Status</th>
                                 <th style="min-width:200px;">👤 Nama Penerima</th>
                                 <th style="min-width:110px;border-radius:0 10px 0 0;">Aksi</th>
                             </tr>
@@ -7327,10 +7327,10 @@
                                 <th style="min-width:150px;">Pekerjaan</th>
                                 <th style="min-width:100px;">Tahun Studi</th>
                                 <th style="min-width:100px;">Jumlah Kuota</th>
-                                <th style="min-width:180px;">Unit Pendayaguna</th>
-                                <th style="min-width:100px;">Status</th>
                                 <th style="min-width:100px;">Kuota Terisi</th>
                                 <th style="min-width:100px;">Sisa Kuota</th>
+                                <th style="min-width:150px;">Unit Pendayaguna</th>
+                                <th style="min-width:100px;">Status</th>
                                 <th style="min-width:200px;">Nama Penerima</th>
                                 <th style="min-width:140px;border-radius:0 10px 0 0;">Aksi (CRUD)</th>
                             </tr>
@@ -14435,8 +14435,14 @@ async function loadRoadmapData() {
     emptyStateEl.style.display = 'none';
     
     console.log('🔄 Loading Roadmap Kebutuhan data dari Supabase...');
+    console.log('[DEBUG] Supabase client status:', supabaseClient ? '✅ Connected' : '❌ Not initialized');
     
     try {
+        // Cek Supabase client
+        if (!supabaseClient) {
+            throw new Error('Supabase client belum terinisialisasi. Pastikan koneksi internet stabil.');
+        }
+        
         // Get filter values dengan safety check
         const jurusanSelect = document.getElementById('roadmap-filter-jurusan');
         const ptSelect = document.getElementById('roadmap-filter-pt');
@@ -14449,33 +14455,57 @@ async function loadRoadmapData() {
             .from('roadmap')
             .select('*', { count: 'exact' });
         
+        console.log('[DEBUG] Base query created for table: roadmap');
+        
         // Apply filters if values exist (Supabase filters)
         if (jurusanSelect && jurusanSelect.value) {
             query = query.ilike('jurusan', `%${jurusanSelect.value}%`);
+            console.log('[DEBUG] Filter jurusan:', jurusanSelect.value);
         }
         if (ptSelect && ptSelect.value) {
             query = query.ilike('perguruan_tinggi', `%${ptSelect.value}%`);
+            console.log('[DEBUG] Filter PT:', ptSelect.value);
         }
         if (pekerjaanSelect && pekerjaanSelect.value) {
             query = query.eq('pekerjaan', pekerjaanSelect.value);
+            console.log('[DEBUG] Filter pekerjaan:', pekerjaanSelect.value);
         }
         if (unitSelect && unitSelect.value) {
             query = query.ilike('unit_pendayaguna', `%${unitSelect.value}%`);
+            console.log('[DEBUG] Filter unit:', unitSelect.value);
         }
         if (statusSelect && statusSelect.value) {
             query = query.eq('status', statusSelect.value);
+            console.log('[DEBUG] Filter status:', statusSelect.value);
         }
         
         // Order by tahun dan jurusan
         query = query.order('tahun_studi', { ascending: true })
                    .order('jurusan', { ascending: true });
         
+        console.log('[DEBUG] Executing query...');
+        
         // Execute query
         const { data, error, count } = await query;
         
-        if (error) throw error;
+        if (error) {
+            console.error('[DEBUG] Query error details:', {
+                code: error.code,
+                message: error.message,
+                hint: error.hint,
+                details: error.details
+            });
+            throw error;
+        }
         
-        console.log(`✅ Berhasil mengambil ${data?.length || 0} data roadmap`);
+        console.log(`✅ Berhasil mengambil ${data?.length || 0} data roadmap (count: ${count})`);
+        
+        if (data && data.length > 0) {
+            console.log('[DEBUG] Sample data (first row):', data[0]);
+            console.log('[DEBUG] Available fields:', Object.keys(data[0]));
+        } else {
+            console.warn('[DEBUG] Data kosong - cek apakah tabel memiliki data di Supabase dashboard');
+        }
         
         // Hide loading
         loadingEl.style.display = 'none';
@@ -14490,8 +14520,10 @@ async function loadRoadmapData() {
                 perguruanTinggi: [...new Set(data.map(d => d.perguruan_tinggi).filter(Boolean))].sort(),
                 pekerjaan: [...new Set(data.map(d => d.pekerjaan).filter(Boolean))],
                 unitPendayaguna: [...new Set(data.map(d => d.unit_pendayaguna).filter(Boolean))].sort(),
-                status: ['Terisi', 'Kosong']
+                // Status options dari data aktual, bukan hardcoded
+                status: [...new Set(data.map(d => d.status).filter(Boolean))].sort()
             };
+            console.log('[DEBUG] Filter options built:', roadmapFilterOptions);
             populateRoadmapFilterDropdowns(roadmapFilterOptions);
         }
         
@@ -14506,10 +14538,12 @@ async function loadRoadmapData() {
             tableWrapperEl.style.display = 'none';
             emptyStateEl.style.display = 'block';
             updateRoadmapResultCount(0);
+            console.warn('[DEBUG] Menampilkan empty state - tidak ada data');
         }
         
     } catch (error) {
         console.error('❌ Error loading roadmap data:', error);
+        console.error('[DEBUG] Full error object:', JSON.stringify(error, null, 2));
         loadingEl.style.display = 'none';
         emptyStateEl.style.display = 'block';
         
@@ -14662,79 +14696,79 @@ function renderRoadmapTablePublic(data) {
             <tr style="${bgStyle} border:none; transition:all 0.2s;" 
                 onmouseover="this.style.transform='scale(1.01)';this.style.boxShadow='0 4px 15px rgba(102,126,234,0.2)';"
                 onmouseout="this.style.transform='scale(1)';this.style.boxShadow='none';">
-                <!-- Jurusan -->
+                <!-- 1. Jurusan -->
                 <td style="vertical-align:middle;">
                     <div style="font-weight:600;color:#5b21b6;">${row.jurusan || '-'}</div>
                 </td>
                 
-                <!-- Kualifikasi Awal -->
+                <!-- 2. Kualifikasi Awal -->
                 <td style="vertical-align:middle;">
                     <span style="padding:0.25rem 0.6rem;background:#ede9fe;color:#5b21b6;border-radius:6px;font-size:0.8rem;font-weight:500;">
                         ${row.kualifikasi_awal || '-'}
                     </span>
                 </td>
                 
-                <!-- Jenis Pendidikan -->
+                <!-- 3. Jenis Pendidikan -->
                 <td style="vertical-align:middle;">
                     <div style="color:#6d28d9;font-weight:500;">${row.jenis_pendidikan || '-'}</div>
                 </td>
                 
-                <!-- Perguruan Tinggi -->
+                <!-- 4. Perguruan Tinggi -->
                 <td style="vertical-align:middle;">
                     <div style="color:#374151;font-weight:500;">${row.perguruan_tinggi || '-'}</div>
                 </td>
                 
-                <!-- Pekerjaan -->
+                <!-- 5. Pekerjaan -->
                 <td style="vertical-align:middle;">
                     <span style="padding:0.25rem 0.6rem;background:#dbeafe;color:#1e40af;border-radius:6px;font-size:0.8rem;font-weight:500;">
                         ${row.pekerjaan || '-'}
                     </span>
                 </td>
                 
-                <!-- Tahun Studi -->
+                <!-- 6. Tahun Studi -->
                 <td style="text-align:center;vertical-align:middle;">
                     <span style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.35rem 0.75rem;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;border-radius:8px;font-size:0.9rem;font-weight:700;">
                         📅 ${row.tahun_studi || '-'}
                     </span>
                 </td>
                 
-                <!-- Jumlah Kuota -->
+                <!-- 7. Jumlah Kuota -->
                 <td style="text-align:center;vertical-align:middle;">
                     <span style="display:inline-block;padding:0.35rem 0.75rem;background:#dbeafe;color:#1e40af;border-radius:8px;font-size:0.85rem;font-weight:700;">
                         🔢 ${row.jumlah_kuota || 0}
                     </span>
                 </td>
                 
-                <!-- Unit Pendayaguna -->
-                <td style="vertical-align:middle;">
-                    <div style="color:#047857;font-weight:500;">${row.unit_pendayaguna || '-'}</div>
-                </td>
-                
-                <!-- Status -->
-                <td style="text-align:center;vertical-align:middle;">
-                    ${statusBadge}
-                </td>
-                
-                <!-- Kuota Terisi -->
+                <!-- 8. Kuota Terisi -->
                 <td style="text-align:center;vertical-align:middle;">
                     <span style="display:inline-block;padding:0.35rem 0.75rem;background:#dcfce7;color:#166534;border-radius:8px;font-size:0.85rem;font-weight:700;">
                         ✅ ${row.kuota_terisi || 0}
                     </span>
                 </td>
                 
-                <!-- Sisa Kuota -->
+                <!-- 9. Sisa Kuota (Generated Column) -->
                 <td style="text-align:center;vertical-align:middle;">
                     <span style="display:inline-block;padding:0.35rem 0.75rem;background:${(row.sisa_kuota || 0) > 0 ? '#fef3c7' : '#fee2e2'};color:${(row.sisa_kuota || 0) > 0 ? '#92400e' : '#991b1b'};border-radius:8px;font-size:0.85rem;font-weight:700;">
-                        📋 ${row.sisa_kuota || 0}
+                        📋 ${row.sisa_kuota !== undefined ? row.sisa_kuota : (row.jumlah_kuota || 0) - (row.kuota_terisi || 0)}
                     </span>
                 </td>
                 
-                <!-- Nama Penerima -->
+                <!-- 10. Unit Pendayaguna -->
+                <td style="vertical-align:middle;">
+                    <div style="color:#047857;font-weight:500;">${row.unit_pendayaguna || '-'}</div>
+                </td>
+                
+                <!-- 11. Status -->
+                <td style="text-align:center;vertical-align:middle;">
+                    ${statusBadge}
+                </td>
+                
+                <!-- 12. Nama Penerima -->
                 <td style="vertical-align:middle;">
                     <span style="font-size:0.85rem;color:#374151;">${row.nama_penerima || '-'}</span>
                 </td>
                 
-                <!-- Aksi Column -->
+                <!-- 13. Aksi Column -->
                 <td style="text-align:center;vertical-align:middle;">
                     <button onclick="viewRoadmapDetailPublic('${row.id}')" style="padding:0.4rem 0.8rem;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
                         👁️ Detail
@@ -14748,6 +14782,67 @@ function renderRoadmapTablePublic(data) {
     
     // Render pagination controls
     container.innerHTML = PaginationManager.renderControls('roadmap');
+}
+
+/**
+ * View Roadmap Detail (Public Page)
+ * Menampilkan modal detail untuk data roadmap yang dipilih
+ */
+function viewRoadmapDetailPublic(id) {
+    // Cari data dari cached data
+    const row = roadmapCachedData?.find(r => r.id === id);
+    if (!row) {
+        showToast('❌ Data tidak ditemukan', 'error');
+        console.error('Roadmap data not found for ID:', id);
+        return;
+    }
+    
+    // Tampilkan detail menggunakan alert atau modal sederhana
+    const detailHtml = `
+        <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:1rem;border-radius:12px 12px 0 0;">
+            <h3 style="margin:0;font-size:1.25rem;">🗺️ Detail Roadmap - ${row.jurusan}</h3>
+        </div>
+        <div style="padding:1.5rem;background:white;border-radius:0 0 12px 12px;">
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;font-size:0.9rem;">
+                <div><strong>Kualifikasi Awal:</strong><br>${row.kualifikasi_awal || '-'}</div>
+                <div><strong>Jenis Pendidikan:</strong><br>${row.jenis_pendidikan || '-'}</div>
+                <div><strong>Perguruan Tinggi:</strong><br>${row.perguruan_tinggi || '-'}</div>
+                <div><strong>Pekerjaan:</strong><br>${row.pekerjaan || '-'}</div>
+                <div><strong>Tahun Studi:</strong><br>${row.tahun_studi || '-'}</div>
+                <div><strong>Jumlah Kuota:</strong><br>${row.jumlah_kuota || 0}</div>
+                <div><strong>Kuota Terisi:</strong><br>${row.kuota_terisi || 0}</div>
+                <div><strong>Sisa Kuota:</strong><br>${row.sisa_kuota !== undefined ? row.sisa_kuota : (row.jumlah_kuota || 0) - (row.kuota_terisi || 0)}</div>
+                <div style="grid-column:span 2;"><strong>Unit Pendayaguna:</strong><br>${row.unit_pendayaguna || '-'}</div>
+                <div><strong>Status:</strong><br>${getRoadmapStatusBadge(row.status)}</div>
+                <div style="grid-column:span 2;"><strong>Nama Penerima:</strong><br>${row.nama_penerima || '-'}</div>
+            </div>
+            <div style="margin-top:1rem;text-align:right;">
+                <button onclick="this.closest('.swal2-container')?.remove() || this.closest('.modal-overlay')?.classList.remove('active')" style="padding:0.5rem 1.5rem;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;">✓ Tutup</button>
+            </div>
+        </div>
+    `;
+    
+    // Cek jika ada library SweetAlert, gunakan itu
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            html: detailHtml,
+            width: '600px',
+            showConfirmButton: false,
+            background: '#f8fafc'
+        });
+    } else {
+        // Fallback ke custom modal
+        let modal = document.getElementById('roadmap-detail-public-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'roadmap-detail-public-modal';
+            modal.className = 'modal-overlay';
+            modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+            document.body.appendChild(modal);
+        }
+        modal.innerHTML = `<div class="modal-content" style="max-width:600px;">${detailHtml}</div>`;
+        modal.style.display = 'flex';
+    }
 }
 
 /**
@@ -14979,51 +15074,55 @@ function renderRoadmapTable(data, startIndex) {
         const perguruanTinggi = row.perguruan_tinggi || '-';
         const pekerjaan = row.pekerjaan || '-';
         const tahunStudi = row.tahun_studi || '-';
+        const jumlahKuota = row.jumlah_kuota || 0;
+        const kuotaTerisi = row.kuota_terisi || 0;
+        const sisaKuota = row.sisa_kuota !== undefined ? row.sisa_kuota : (jumlahKuota - kuotaTerisi);
         const unitPendayaguna = row.unit_pendayaguna || '-';
-        const status = row.status || 'Kosong';
+        const status = row.status || 'Aktif';
+        const namaPenerima = row.nama_penerima || '-';
         
         html += `
             <tr data-row-index="${actualIndex}" data-jurusan="${jurusan}">
                 <!-- Row Number -->
                 <td style="text-align:center;font-weight:600;color:#64748b;">${rowNum}</td>
                 
-                <!-- Jurusan -->
+                <!-- 1. Jurusan -->
                 <td><strong style="color:#667eea;">${jurusan}</strong></td>
                 
-                <!-- Kualifikasi Awal -->
+                <!-- 2. Kualifikasi Awal -->
                 <td>${kualifikasi}</td>
                 
-                <!-- Jenis Pendidikan -->
+                <!-- 3. Jenis Pendidikan -->
                 <td>${jenisPendidikan}</td>
                 
-                <!-- Perguruan Tinggi -->
+                <!-- 4. Perguruan Tinggi -->
                 <td>${perguruanTinggi}</td>
                 
-                <!-- Pekerjaan -->
+                <!-- 5. Pekerjaan -->
                 <td>${pekerjaan}</td>
                 
-                <!-- Tahun Studi -->
+                <!-- 6. Tahun Studi -->
                 <td style="text-align:center;">${tahunStudi}</td>
                 
-                <!-- Jumlah Kuota -->
-                <td style="text-align:center;"><span class="badge" style="background:#dbeafe;color:#1e40af;padding:4px 8px;border-radius:6px;font-weight:600;">${row.jumlah_kuota || 0}</span></td>
+                <!-- 7. Jumlah Kuota -->
+                <td style="text-align:center;"><span class="badge" style="background:#dbeafe;color:#1e40af;padding:4px 8px;border-radius:6px;font-weight:600;">${jumlahKuota}</span></td>
                 
-                <!-- Unit Pendayaguna -->
+                <!-- 8. Kuota Terisi -->
+                <td style="text-align:center;"><span class="badge" style="background:#dcfce7;color:#166534;padding:4px 8px;border-radius:6px;font-weight:600;">${kuotaTerisi}</span></td>
+                
+                <!-- 9. Sisa Kuota (Generated Column) -->
+                <td style="text-align:center;"><span class="badge" style="background:${sisaKuota > 0 ? '#fef3c7' : '#fee2e2'};color:${sisaKuota > 0 ? '#92400e' : '#991b1b'};padding:4px 8px;border-radius:6px;font-weight:600;">${sisaKuota}</span></td>
+                
+                <!-- 10. Unit Pendayaguna -->
                 <td>${unitPendayaguna}</td>
                 
-                <!-- Status -->
+                <!-- 11. Status -->
                 <td>${getRoadmapStatusBadge(status)}</td>
                 
-                <!-- Kuota Terisi -->
-                <td style="text-align:center;"><span class="badge" style="background:#dcfce7;color:#166534;padding:4px 8px;border-radius:6px;font-weight:600;">${row.kuota_terisi || 0}</span></td>
+                <!-- 12. Nama Penerima -->
+                <td><span style="font-size:0.85rem;color:#374151;">${namaPenerima}</span></td>
                 
-                <!-- Sisa Kuota -->
-                <td style="text-align:center;"><span class="badge" style="background:${(row.sisa_kuota || 0) > 0 ? '#fef3c7' : '#fee2e2'};color:${(row.sisa_kuota || 0) > 0 ? '#92400e' : '#991b1b'};padding:4px 8px;border-radius:6px;font-weight:600;">${row.sisa_kuota || 0}</span></td>
-                
-                <!-- Nama Penerima -->
-                <td><span style="font-size:0.85rem;color:#374151;">${row.nama_penerima || '-'}</span></td>
-                
-                <!-- CRUD Actions Column (LAST) -->
+                <!-- 13. CRUD Actions Column (LAST) -->
                 <td>
                     <div class="crud-actions">
                         <button class="btn-crud btn-view" onclick="viewDetailRoadmap(${actualIndex})" title="Lihat Detail">👁️</button>
