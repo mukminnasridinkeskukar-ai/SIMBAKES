@@ -5,19 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Peserta - SIMBAKES Dinas Kesehatan</title>
     
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --success: #16a34a;
-            --success-dark: #15803d;
-            --warning: #d97706;
-            --error: #dc2626;
+            --primary-50: #eff6ff;
+            --primary-100: #dbeafe;
+            --primary-200: #bfdbfe;
+            --primary-300: #93c5fd;
+            --primary-400: #60a5fa;
+            --primary-500: #3b82f6;
+            --primary-600: #2563eb;
+            --primary-700: #1d4ed8;
+            --primary-800: #1e40af;
+            
+            --emerald-50: #ecfdf5;
+            --emerald-500: #10b981;
+            --emerald-600: #059669;
+            --emerald-700: #047857;
+            
+            --violet-50: #f5f3ff;
+            --violet-500: #8b5cf6;
+            --violet-600: #7c3aed;
+            
+            --orange-500: #f97316;
+            --orange-600: #ea580c;
+            
+            --cyan-500: #06b6d4;
+            --cyan-600: #0891b2;
+            
             --gray-50: #f9fafb;
             --gray-100: #f3f4f6;
             --gray-200: #e5e7eb;
@@ -27,1646 +49,1145 @@
             --gray-600: #4b5563;
             --gray-700: #374151;
             --gray-800: #1f2937;
-            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
-            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1);
-            --radius: 12px;
+            --gray-900: #111827;
+            
+            --error-500: #ef4444;
+            --error-600: #dc2626;
         }
         
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--primary-50) 0%, var(--violet-50) 50%, var(--emerald-50) 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
-            transition: background 0.5s ease, padding 0.3s ease;
+            position: relative;
+            overflow-x: hidden;
         }
         
-        /* Body state saat profil aktif - FULL SCREEN */
-        body.profile-active {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdf4 100%);
-            align-items: flex-start;
-            padding: 0;
-            display: block;
+        body::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: 
+                radial-gradient(circle at 15% 85%, rgba(59, 130, 246, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 60%);
+            pointer-events: none;
         }
         
-        body.profile-active .container {
-            max-width: 100%;
-            width: 100%;
-        }
+        .container { width: 100%; max-width: 450px; position: relative; z-index: 1; }
         
-        .container { width: 100%; max-width: 480px; }
-        
-        .card {
+        .login-card {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            border-radius: 24px;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
             overflow: hidden;
-            animation: slideUp 0.5s ease-out;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
         
         @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(30px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
         
-        .header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            padding: 32px 24px;
+        /* Header */
+        .login-header {
+            background: linear-gradient(135deg, var(--primary-600) 0%, var(--violet-600) 100%);
+            padding: 36px 28px 32px;
             text-align: center;
-            color: white;
+            position: relative;
+            overflow: hidden;
         }
         
-        .avatar {
-            width: 80px; height: 80px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 50%;
+        .login-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -30%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+        }
+        
+        .logo-icon {
+            width: 80px;
+            height: 80px;
             margin: 0 auto 16px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 36px;
-            border: 3px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.95);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            animation: float 3s ease-in-out infinite;
         }
         
-        .title { font-size: 1.5rem; font-weight: 700; }
-        .subtitle { font-size: 0.875rem; opacity: 0.9; margin-top: 4px; }
-        
-        .body { padding: 28px 24px; }
-        
-        .form-group { margin-bottom: 20px; }
-        
-        .label {
-            display: block;
-            font-size: 0.8125rem;
-            font-weight: 600;
-            color: var(--gray-700);
-            margin-bottom: 8px;
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
         }
+        
+        .logo-icon svg { width: 42px; height: 42px; color: var(--primary-600); }
+        
+        .header-title {
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header-subtitle {
+            color: rgba(255,255,255,0.85);
+            font-size: 0.9rem;
+            margin-top: 4px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Body */
+        .login-body { padding: 32px 28px 28px; }
+        
+        .form-intro { text-align: center; margin-bottom: 28px; }
+        .form-intro h2 { color: var(--gray-800); font-family: 'Poppins', sans-serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 6px; }
+        .form-intro p { color: var(--gray-500); font-size: 0.88rem; line-height: 1.5; }
+        
+        /* Alert */
+        .alert-container { margin-bottom: 20px; }
+        .alert {
+            padding: 14px 18px;
+            border-radius: 12px;
+            font-size: 0.87rem;
+            font-weight: 500;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: alertSlide 0.3s ease-out;
+        }
+        @keyframes alertSlide { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+        .alert.error { background: #fef2f2; color: var(--error-600); border: 1px solid #fecaca; }
+        .alert.success { background: var(--emerald-50); color: var(--emerald-700); border: 1px solid #a7f3d0; }
+        .alert.info { background: var(--primary-50); color: var(--primary-700); border: 1px solid var(--primary-200); }
+        .alert.hidden { display: none; }
+        .alert svg { flex-shrink: 0; width: 20px; height: 20px; margin-top: 1px; }
+        
+        /* Form */
+        .form-group { margin-bottom: 18px; }
+        .form-label { display: block; font-size: 0.87rem; font-weight: 600; color: var(--gray-700); margin-bottom: 6px; }
+        .form-label .required { color: var(--error-500); margin-left: 2px; }
         
         .input-wrapper { position: relative; }
+        .form-input {
+            width: 100%;
+            padding: 13px 14px 13px 42px;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.94rem;
+            font-weight: 500;
+            color: var(--gray-800);
+            background: var(--gray-50);
+            transition: all 0.25s ease;
+            outline: none;
+        }
+        .form-input:hover { border-color: var(--primary-300); background: white; }
+        .form-input:focus { border-color: var(--primary-500); background: white; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+        .form-input::placeholder { color: var(--gray-400); font-weight: 400; }
+        .form-input.error { border-color: var(--error-500); background: #fef2f2; }
         
         .input-icon {
             position: absolute;
-            left: 14px; top: 50%;
+            left: 13px;
+            top: 50%;
             transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
             color: var(--gray-400);
+            transition: color 0.25s ease;
+            pointer-events: none;
         }
+        .input-wrapper:focus-within .input-icon { color: var(--primary-500); }
         
-        .input {
-            width: 100%; height: 48px;
-            padding: 0 16px 0 44px;
-            border: 2px solid var(--gray-200);
-            border-radius: var(--radius);
-            font-size: 0.9375rem;
-            transition: all 0.2s;
-        }
+        .error-message { display: none; color: var(--error-600); font-size: 0.8rem; margin-top: 4px; padding-left: 4px; }
+        .error-message.show { display: block; }
         
-        .input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(37,99,235,0.1);
-        }
-        
-        .input.error { border-color: var(--error); }
-        
-        .error-msg {
-            font-size: 0.75rem;
-            color: var(--error);
-            margin-top: 6px;
-            display: none;
-        }
-        
-        .error-msg.show { display: block; animation: shake 0.4s ease-out; }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-8px); }
-            75% { transform: translateX(8px); }
-        }
-        
-        .btn {
-            width: 100%; height: 52px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white; border: none;
-            border-radius: var(--radius);
-            font-size: 1rem; font-weight: 600;
+        /* Button */
+        .submit-btn {
+            width: 100%;
+            padding: 15px 28px;
+            margin-top: 24px;
+            background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 50%, var(--violet-600) 100%);
+            color: white !important;
+            border: none;
+            border-radius: 14px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
             cursor: pointer;
-            transition: all 0.3s;
-            display: flex; align-items: center; justify-content: center;
-            gap: 10px; margin-top: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
         }
-        
-        .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-        .btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none !important; }
-        
-        .spinner {
-            width: 20px; height: 20px;
-            border: 2px solid rgba(255,255,255,0.3);
+        .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(59, 130, 246, 0.45); }
+        .submit-btn:active { transform: translateY(0); }
+        .submit-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none !important; }
+        .submit-btn.loading span { visibility: hidden; }
+        .submit-btn.loading::after {
+            content: '';
+            width: 22px;
+            height: 22px;
+            border: 3px solid rgba(255,255,255,0.3);
             border-top-color: white;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
+            position: absolute;
         }
-        
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* Profile Section - FULL WIDTH */
-        .profile-section { 
-            display: none; 
-            width: 100%;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdf4 100%);
-        }
-        .profile-section.active { 
-            display: block; 
-            animation: fadeIn 0.4s ease-out; 
-        }
-        
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        .profile-header {
-            background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
-            padding: 40px 32px;
-            text-align: center;
-            color: white;
-        }
-        
-        .profile-avatar {
-            width: 90px; height: 90px;
-            background: rgba(255,255,255,0.25);
-            border-radius: 50%;
-            margin: 0 auto 16px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 2rem; font-weight: 700;
-            border: 4px solid rgba(255,255,255,0.4);
-        }
-        
-        .profile-name { font-size: 1.375rem; font-weight: 700; }
-        .profile-role {
-            display: inline-block;
-            background: rgba(255,255,255,0.2);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.875rem;
-            margin-top: 4px;
-        }
-        
-        .profile-body { 
-            padding: 32px; 
-            max-width: 1440px;
-            margin: 0 auto;
-        }
-        
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-        
-        .info-item {
+        /* Footer */
+        .login-footer {
+            padding: 20px 28px 24px;
             background: var(--gray-50);
-            padding: 14px;
-            border-radius: 10px;
+            border-top: 1px solid var(--gray-200);
+            text-align: center;
+        }
+        .footer-text { color: var(--gray-600); font-size: 0.9rem; }
+        .footer-link {
+            color: var(--primary-600);
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .footer-link:hover { color: var(--primary-700); border-bottom-color: var(--primary-400); }
+        
+        /* ============================================================
+           PROFILE LIGHTBOX (FULL SCREEN)
+           ============================================================ */
+        .profile-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 99999;
+            animation: overlayFadeIn 0.4s ease-out;
+            overflow-y: auto;
+        }
+        .profile-overlay.hidden { display: none; }
+        
+        @keyframes overlayFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         
-        .info-label {
-            font-size: 0.75rem;
-            color: var(--gray-500);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .profile-card {
+            background: white;
+            border-radius: 24px;
+            max-width: 1100px;
+            width: 100%;
+            margin: auto;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+            animation: cardSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
         }
         
-        .info-value {
-            font-size: 0.9375rem;
-            color: var(--gray-800);
-            font-weight: 600;
-            margin-top: 2px;
+        @keyframes cardSlideUp {
+            from { opacity: 0; transform: translateY(40px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
         
-        /* Submissions Cards */
-        .submissions-section {
+        /* Profile Header */
+        .profile-header {
+            background: linear-gradient(135deg, var(--primary-600) 0%, var(--violet-600) 50%, var(--cyan-600) 100%);
+            padding: 28px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        .profile-header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 80% 50%, rgba(255,255,255,0.1) 0%, transparent 60%);
+        }
+        .profile-title {
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            z-index: 1;
+        }
+        .close-btn {
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s ease;
+            position: relative;
+            z-index: 1;
+        }
+        .close-btn:hover {
+            background: rgba(255,255,255,0.25);
+            transform: rotate(90deg);
+        }
+        .close-btn svg { width: 22px; height: 22px; color: white; }
+        
+        /* Profile Content */
+        .profile-content {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            min-height: 500px;
+        }
+        
+        /* Data Section */
+        .data-section {
+            padding: 28px 32px;
+            overflow-y: auto;
+            max-height: calc(100vh - 180px);
+        }
+        
+        .data-group {
+            margin-bottom: 24px;
             background: var(--gray-50);
             border-radius: 16px;
             padding: 20px;
-            margin-top: 20px;
+            border: 1px solid var(--gray-200);
         }
         
-        .submissions-header {
+        .group-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 10px;
             margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--gray-200);
         }
         
-        .submissions-title {
+        .group-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .group-icon svg { width: 20px; height: 20px; color: white; }
+        
+        .group-icon.identitas { background: linear-gradient(135deg, var(--cyan-500), var(--cyan-600)); }
+        .group-icon.kontak { background: linear-gradient(135deg, var(--primary-500), var(--primary-600)); }
+        .group-icon.pendidikan { background: linear-gradient(135deg, var(--violet-500), var(--violet-600)); }
+        .group-icon.pekerjaan { background: linear-gradient(135deg, var(--orange-500), var(--orange-600)); }
+        .group-icon.pengusulan { background: linear-gradient(135deg, var(--emerald-500), var(--emerald-600)); }
+        .group-icon.dokumen { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .group-icon.status { background: linear-gradient(135deg, #ec4899, #db2777); }
+        .group-icon.lainnya { background: linear-gradient(135deg, var(--gray-500), var(--gray-600)); }
+        
+        .group-title {
+            font-family: 'Poppins', sans-serif;
             font-size: 1rem;
             font-weight: 700;
             color: var(--gray-800);
         }
         
-        .badge {
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 4px 12px;
-            border-radius: 20px;
-            text-transform: uppercase;
-        }
-        
-        .badge.loading { background: #dbeafe; color: #1e40af; }
-        .badge.found { background: #dcfce7; color: #166534; }
-        .badge.error { background: #fee2e2; color: #991b1b; }
-        .badge.empty { background: #f3f4f6; color: #4b5563; }
-        
-        .cards-grid { 
-            display: grid; 
-            gap: 24px; 
-            width: 100%;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-        
-        /* Lightbox Card - FULL SCREEN */
-        .lightbox-card {
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 25px 60px -12px rgba(0,0,0,0.25);
-            border: 1px solid var(--gray-200);
-            animation: cardIn 0.6s ease-out both;
-            width: 100%;
-        }
-        
-        @keyframes cardIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .lightbox-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-xl);
-        }
-        
-        .card-inner {
-            display: flex;
-            min-height: 550px;
-            width: 100%;
-        }
-        
-        @media (max-width: 968px) {
-            .card-inner { flex-direction: column-reverse; }
-        }
-        
-        .card-data {
-            flex: 1;
-            padding: 32px;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-        
-        .card-header {
+        .data-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding-bottom: 12px;
-            margin-bottom: 12px;
-            border-bottom: 2px solid var(--gray-100);
-        }
-        
-        .card-reg {
-            font-size: 1rem;
-            font-weight: 800;
-            color: var(--primary);
-        }
-        
-        .status-badge {
-            font-size: 0.7rem;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 20px;
-            text-transform: uppercase;
-        }
-        
-        .status-badge.approved { background: #dcfce7; color: #166534; }
-        .status-badge.rejected { background: #fee2e2; color: #991b1b; }
-        .status-badge.pending { background: #fef3c7; color: #92400e; }
-        
-        /* Data Sections - Grouping */
-        .data-section {
-            margin-bottom: 16px;
-            padding-bottom: 16px;
+            align-items: flex-start;
+            padding: 10px 0;
             border-bottom: 1px dashed var(--gray-200);
         }
+        .data-row:last-child { border-bottom: none; }
         
-        .data-section:last-child {
-            margin-bottom: 0;
-            padding-bottom: 0;
-            border-bottom: none;
-        }
-        
-        .section-title {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 10px;
-            padding-left: 8px;
-            border-left: 3px solid var(--primary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .fields-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            flex: 1;
-        }
-        
-        @media (max-width: 480px) {
-            .fields-grid { grid-template-columns: 1fr; }
-        }
-        
-        .field { display: flex; flex-direction: column; gap: 4px; }
-        .field.full { grid-column: 1 / -1; }
-        
-        .field-label {
-            font-size: 0.6875rem;
-            font-weight: 600;
+        .data-label {
+            font-size: 0.87rem;
             color: var(--gray-500);
-            text-transform: uppercase;
-        }
-        
-        .field-value {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: var(--gray-800);
-            padding: 8px 10px;
-            background: var(--gray-50);
-            border-radius: 8px;
-            border-left: 3px solid var(--primary);
-        }
-        
-        .card-photo {
-            width: 380px;
-            min-height: 550px;
-            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%);
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
+            font-weight: 500;
+            min-width: 140px;
             flex-shrink: 0;
-            position: relative;
+        }
+        .data-value {
+            font-size: 0.9rem;
+            color: var(--gray-800);
+            font-weight: 600;
+            text-align: right;
+            word-break: break-word;
+        }
+        .data-value.empty { color: var(--gray-400); font-style: italic; font-weight: 400; }
+        
+        /* Photo Section */
+        .photo-section {
+            background: linear-gradient(180deg, var(--violet-50) 0%, var(--primary-50) 100%);
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid var(--gray-200);
+        }
+        
+        .photo-label {
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--gray-700);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .photo-container {
+            width: 260px;
+            height: 320px;
+            border-radius: 20px;
             overflow: hidden;
+            background: white;
+            box-shadow: 
+                0 20px 40px rgba(139, 92, 246, 0.2),
+                0 0 0 1px rgba(139, 92, 246, 0.1);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
         
-        .card-photo::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            opacity: 0.5;
+        .photo-container:hover {
+            transform: scale(1.02);
+            box-shadow: 
+                0 25px 50px rgba(139, 92, 246, 0.3),
+                0 0 0 1px rgba(139, 92, 246, 0.2);
         }
         
-        @media (max-width: 968px) {
-            .card-photo { width: 100%; min-height: 280px; }
-        }
-        
-        .card-photo img {
-            width: 100%; 
+        .photo-img {
+            width: 100%;
             height: 100%;
             object-fit: cover;
-            position: relative;
-            z-index: 1;
-            cursor: pointer;
-            transition: transform 0.3s ease;
-        }
-        
-        .card-photo img:hover {
-            transform: scale(1.05);
+            object-position: center top;
         }
         
         .photo-placeholder {
-            text-align: center;
-            color: var(--primary);
-            position: relative;
-            z-index: 1;
-        }
-        
-        .photo-initial {
-            width: 140px; height: 140px;
-            background: white;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 4rem;
-            font-weight: 800;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-            margin: 0 auto 16px;
-            border: 4px solid rgba(255,255,255,0.8);
-        }
-        
-        .photo-text { 
-            font-size: 1rem; 
-            font-weight: 700; 
-            opacity: 0.9;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .card-footer {
-            padding: 12px 20px;
-            background: var(--gray-50);
-            border-top: 1px solid var(--gray-200);
-            font-size: 0.75rem;
-            color: var(--gray-500);
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--gray-500);
-        }
-        
-        .empty-icon { font-size: 3rem; margin-bottom: 12px; }
-        .empty-text { font-size: 1rem; font-weight: 600; color: var(--gray-700); margin-bottom: 4px; }
-        .empty-hint { font-size: 0.875rem; }
-        
-        .btn-logout {
-            width: 100%; height: 48px;
-            background: var(--gray-100);
-            color: var(--gray-700);
-            border: 2px solid var(--gray-200);
-            border-radius: var(--radius);
-            font-size: 0.9375rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex; align-items: center; justify-content: center;
-            gap: 8px;
-            margin-top: 20px;
-        }
-        
-        .btn-logout:hover {
-            background: #fef2f2;
-            border-color: #fecaca;
-            color: var(--error);
-        }
-        
-        .footer {
-            padding: 20px 24px;
-            background: var(--gray-50);
-            text-align: center;
-            border-top: 1px solid var(--gray-200);
-        }
-        
-        .footer-text { font-size: 0.8125rem; color: var(--gray-500); margin-bottom: 8px; }
-        
-        .link {
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.875rem;
-        }
-        
-        /* Toast */
-        .toast-container {
-            position: fixed;
-            top: 20px; right: 20px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .toast {
-            background: white;
-            padding: 14px 18px;
-            border-radius: 12px;
-            box-shadow: var(--shadow-xl);
-            display: flex; align-items: center; gap: 10px;
-            min-width: 280px;
-            max-width: 400px;
-            animation: toastIn 0.3s ease-out;
-            border-left: 4px solid;
-        }
-        
-        @keyframes toastIn {
-            from { opacity: 0; transform: translateX(100px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        
-        .toast.success { border-left-color: var(--success); }
-        .toast.error { border-left-color: var(--error); }
-        .toast.warning { border-left-color: var(--warning); }
-        .toast.info { border-left-color: var(--primary); }
-        
-        .toast-icon { font-size: 1.125rem; }
-        .toast-body { flex: 1; }
-        .toast-title { font-weight: 700; font-size: 0.8125rem; }
-        .toast-msg { font-size: 0.75rem; color: var(--gray-600); margin-top: 2px; }
-        .toast-close { cursor: pointer; color: var(--gray-400); font-size: 1.125rem; }
-        
-        /* Debug Panel */
-        .debug-panel {
-            position: fixed;
-            bottom: 20px; left: 20px;
-            background: rgba(0,0,0,0.95);
-            color: #00ff00;
-            padding: 15px;
-            border-radius: 12px;
-            font-family: monospace;
-            font-size: 11px;
-            max-width: 450px;
-            max-height: 250px;
-            overflow-y: auto;
-            z-index: 99999;
-            display: none;
-        }
-        
-        .debug-panel.show { display: block; }
-        .debug-line { margin: 3px 0; word-break: break-all; }
-        .debug-error { color: #ff6b6b; }
-        .debug-success { color: #51cf66; }
-        .debug-info { color: #74c0fc; }
-        
-        /* Photo Lightbox Overlay */
-        .photo-lightbox-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.92);
-            z-index: 100000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
-            padding: 20px;
-        }
-        
-        .photo-lightbox-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        .photo-lightbox-content {
-            position: relative;
-            max-width: 90vw;
-            max-height: 90vh;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            transform: scale(0.9);
-            transition: transform 0.3s ease;
-        }
-        
-        .photo-lightbox-overlay.active .photo-lightbox-content {
-            transform: scale(1);
-        }
-        
-        .photo-lightbox-close {
-            position: absolute;
-            top: -40px;
-            right: 0;
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            font-size: 1.25rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
             justify-content: center;
+            background: linear-gradient(135deg, var(--gray-100), var(--gray-200));
+            color: var(--gray-500);
         }
+        .photo-placeholder svg { width: 64px; height: 64px; margin-bottom: 12px; opacity: 0.5; }
+        .photo-placeholder span { font-size: 0.9rem; font-weight: 600; }
         
-        .photo-lightbox-close:hover {
-            background: rgba(255,255,255,0.4);
-            transform: rotate(90deg);
-        }
-        
-        .photo-lightbox-content img {
-            max-width: 100%;
-            max-height: 80vh;
-            object-fit: contain;
-            border-radius: 12px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
-            opacity: 0;
-            transition: opacity 0.3s ease 0.1s;
-        }
-        
-        .photo-lightbox-content img.loaded {
-            opacity: 1;
-        }
-        
-        .photo-lightbox-caption {
-            color: white;
+        .photo-hint {
             margin-top: 16px;
-            font-size: 1rem;
-            font-weight: 600;
+            font-size: 0.82rem;
+            color: var(--gray-500);
             text-align: center;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+        
+        /* Loading State */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99998;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .loading-overlay.hidden { display: none; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .spinner {
+            width: 56px;
+            height: 56px;
+            border: 4px solid var(--gray-200);
+            border-top-color: var(--primary-500);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        .loading-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            text-align: center;
+            max-width: 300px;
+        }
+        
+        .loading-subtext {
+            font-size: 0.88rem;
+            color: var(--gray-500);
+            margin-top: 8px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 900px) {
+            .profile-content {
+                grid-template-columns: 1fr;
+            }
+            .photo-section {
+                border-left: none;
+                border-top: 1px solid var(--gray-200);
+                order: -1;
+            }
+            .photo-container {
+                width: 200px;
+                height: 250px;
+            }
+            .data-section { max-height: 400px; }
+        }
+        
+        @media (max-width: 576px) {
+            body { padding: 12px; }
+            .login-header { padding: 28px 20px 24px; }
+            .logo-icon { width: 70px; height: 70px; }
+            .header-title { font-size: 1.2rem; }
+            .login-body { padding: 24px 20px 20px; }
+            .profile-header { padding: 20px; }
+            .profile-title { font-size: 1.2rem; }
+            .data-section { padding: 20px; }
+            .data-group { padding: 16px; }
+            .data-label { min-width: 120px; font-size: 0.83rem; }
+            .data-value { font-size: 0.86rem; }
         }
     </style>
 </head>
 <body>
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
-    
-    <!-- Debug Panel -->
-    <div class="debug-panel" id="debugPanel"></div>
-    
-    <div class="container">
-        <div class="card">
-            <!-- Login Header -->
-            <div class="header">
-                <div class="avatar">👤</div>
-                <h1 class="title">Login Peserta</h1>
-                <p class="subtitle">SIMBAKES Dinas Kesehatan</p>
+    <!-- LOGIN FORM -->
+    <div class="container" id="loginContainer">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <h1 class="header-title">SIMBAKES</h1>
+                <p class="header-subtitle">Login Peserta Beasiswa Kesehatan</p>
             </div>
             
-            <!-- Login Form -->
-            <div class="body" id="loginBody">
-                <form id="loginForm">
+            <div class="login-body">
+                <div class="form-intro">
+                    <h2>Selamat Datang!</h2>
+                    <p>Masukkan username dan password Anda untuk melanjutkan</p>
+                </div>
+                
+                <div class="alert-container" id="alertContainer"></div>
+                
+                <form id="loginForm" onsubmit="handleLogin(event)">
                     <div class="form-group">
-                        <label class="label">Username / Email</label>
+                        <label class="form-label">Username <span class="required">*</span></label>
                         <div class="input-wrapper">
-                            <input type="text" class="input" id="username" placeholder="Masukkan username atau email" autocomplete="username">
-                            <svg class="input-icon" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <input type="text" class="form-input" id="username" placeholder="Masukkan username" required autocomplete="username">
                         </div>
-                        <div class="error-msg" id="usernameError">Username wajib diisi</div>
+                        <div class="error-message" id="usernameError">Username wajib diisi</div>
                     </div>
                     
                     <div class="form-group">
-                        <label class="label">Password</label>
+                        <label class="form-label">Password <span class="required">*</span></label>
                         <div class="input-wrapper">
-                            <input type="password" class="input" id="password" placeholder="Masukkan password" autocomplete="current-password">
-                            <svg class="input-icon" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            <input type="password" class="form-input" id="password" placeholder="Masukkan password" required autocomplete="current-password">
                         </div>
-                        <div class="error-msg" id="passwordError">Password wajib diisi</div>
+                        <div class="error-message" id="passwordError">Password wajib diisi</div>
                     </div>
                     
-                    <button type="submit" class="btn" id="submitBtn">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
-                        <span id="btnText">Masuk</span>
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:22px;height:22px;">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                            <polyline points="10 17 15 12 10 7"/>
+                            <line x1="15" y1="12" x2="3" y2="12"/>
+                        </svg>
+                        <span>MASUK</span>
                     </button>
                 </form>
-                
-                <p style="margin-top: 20px; text-align: center;">
-                    <span class="footer-text">Belum punya akun?</span><br>
-                    <a href="https://simbakes.mukminnasri.com/daftar-peserta.html" class="link" target="_blank">Daftar sebagai Peserta Baru →</a>
+            </div>
+            
+            <div class="login-footer">
+                <p class="footer-text">
+                    Belum punya akun? 
+                    <a href="./daftar-peserta.html" class="footer-link">Daftar di Sini →</a>
                 </p>
-            </div>
-            
-            <!-- Profile Section -->
-            <div class="profile-section" id="profileSection">
-                <div class="profile-header">
-                    <div class="profile-avatar" id="profileAvatar">A</div>
-                    <h2 class="profile-name" id="profileName">Nama User</h2>
-                    <span class="profile-role" id="profileRole">Peserta</span>
-                </div>
-                
-                <div class="profile-body">
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <div class="info-label">NIK</div>
-                            <div class="info-value" id="infoNIK">-</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Email</div>
-                            <div class="info-value" id="infoEmail">-</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Status</div>
-                            <div class="info-value" id="infoStatus">Aktif</div>
-                        </div>
-                        <div class="info-item">
-                            <div class="info-label">Login Terakhir</div>
-                            <div class="info-value" id="infoLastLogin">Baru saja</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Submissions Data -->
-                    <div class="submissions-section" id="submissionsSection">
-                        <div class="submissions-header">
-                            <h3 class="submissions-title">📋 Data Pengajuan Beasiswa</h3>
-                            <span class="badge loading" id="subBadge">Memuat...</span>
-                        </div>
-                        <div class="cards-grid" id="cardsGrid">
-                            <div class="empty-state">
-                                <div class="empty-icon">⏳</div>
-                                <div class="empty-text">Memuat data...</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <button class="btn-logout" onclick="doLogout()">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
-                        Keluar dari Akun
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Footer -->
-            <div class="footer" id="loginFooter">
-                <a href="#" class="link" onclick="history.back()">← Kembali ke Beranda SIMBAKES</a>
             </div>
         </div>
     </div>
 
-    <!-- ============================================================
-         JAVASCRIPT - ULTRA ROBUST LOGIN SYSTEM
-         Multiple Strategies untuk memastikan SUKSES!
-         ============================================================ -->
+    <!-- LOADING OVERLAY -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">Memuat data peserta...</div>
+        <div class="loading-subtext" id="loadingSubtext">Mohon tunggu sebentar</div>
+    </div>
+
+    <!-- PROFILE LIGHTBOX -->
+    <div class="profile-overlay hidden" id="profileOverlay">
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="profile-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:28px;height:28px;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    PROFIL PESERTA
+                </div>
+                <button class="close-btn" onclick="closeProfile()" title="Tutup (ESC)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            
+            <div class="profile-content">
+                <!-- DATA SECTION -->
+                <div class="data-section" id="dataSection">
+                    <!-- Data akan di-render dinamis -->
+                </div>
+                
+                <!-- PHOTO SECTION -->
+                <div class="photo-section">
+                    <div class="photo-label">Foto Peserta</div>
+                    <div class="photo-container" id="photoContainer" onclick="enlargePhoto()">
+                        <!-- Foto akan dimuat dinamis -->
+                    </div>
+                    <div class="photo-hint">Klik foto untuk memperbesar</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUPABASE & LOGIC -->
     <script>
         // ============================================================
         // CONFIGURATION
         // ============================================================
-        const CONFIG = {
-            supabaseUrl: 'https://boeknpvlfamjmddsdopd.supabase.co',
-            supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZWtucHZsZmFtam1kZHNkb3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjcwOTYxMTMsImV4cCI6MjA0MjY3MjEzfQ.kHj7xEY7Wa4zSJwH0rjhiB3Qf0IHriyPlWoh4rdlv3U',
-            tableAkun: 'akun_peserta',  // Tabel untuk autentikasi login peserta
-            tableSubmissions: 'submissions',  // Tabel data pengajuan beasiswa
-            sessionKey: 'simbakes_login_v3'
-        };
+        const SUPABASE_URL = 'https://boeknpvlfamjmddsdopd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZWtucHZsZmFtam1kZHNkb3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NzYwNjIsImV4cCI6MjEwMjA1MjA2Mn0.kHj7xEY7Wa4zSJwH0rjhiB3Qf0IHriyPlWoh4rdlv3U';
         
-        // DEMO USERS (Fallback jika Supabase gagal - HANYA untuk testing!)
-        // Catatan: Gunakan data dari tabel akun_peserta Supabase untuk production
-        const DEMO_USERS = [
-            { username: 'nirwan', password: 'nirwan123', nama_lengkap: 'Nirwan', nik: '1234567890123456', email: 'nirwan@email.com' },
-            { username: 'test', password: 'test123', nama_lengkap: 'Test User', nik: '9876543210987654', email: 'test@email.com' },
-            { username: 'admin', password: 'admin123', nama_lengkap: 'Admin Test', nik: '1111111111111111', email: 'admin@test.com' }
-        ];
+        let supabaseClient = null;
         
-        /*
-        ============================================================
-        STRUKTUR TABEL AKUN_PESERTA (Supabase)
-        ============================================================
-        
-        Kolom yang dibutuhkan untuk autentikasi:
-        - id (UUID, primary key)
-        - username (text, unique) - untuk login
-        - password_hash (text) - password HASHED (SHA-256 + salt 'simbakes_salt_2024')
-        - email (text, unique) - alternatif login
-        - nama_lengkap (text) - nama lengkap peserta
-        - nik (char 16) - nomor induk kependudukan
-        - institusi (text) - institusi/asal peserta
-        - role (text) - peran (peserta/admin), default: peserta
-        - is_active (boolean) - status aktif, default: true
-        - is_verified (boolean) - status verifikasi, default: false
-        
-        PASSWORD HASHING:
-        -----------------
-        Form pendaftaran menggunakan SHA-256 dengan salt:
-        
-        const input = password + 'simbakes_salt_2024';
-        const hash = SHA-256(input); // Output: hex string 64 karakter
-        
-        Contoh:
-        Password: 'nirwan123'
-        Input ke SHA-256: 'nirwan123simbakes_salt_2024'
-        Hash output: '5d41402abc4b2a76b9719d911017c592...' (64 hex chars)
-        
-        Query test di Supabase Editor:
-        SELECT id, username, email, nama_lengkap, 
-               LEFT(password_hash, 20) as hash_preview,
-               is_active 
-        FROM akun_peserta 
-        WHERE username ILIKE 'testuser';
-        
-        ============================================================
-        */
-        
+        try {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('[LOGIN] ✅ Supabase client initialized');
+        } catch (error) {
+            console.error('[LOGIN] ❌ Failed to initialize Supabase:', error);
+        }
+
         // ============================================================
-        // DEBUG LOGGER
+        // FIELD GROUPING CONFIGURATION
         // ============================================================
-        const log = (msg, type = 'info') => {
-            const time = new Date().toLocaleTimeString();
-            const prefix = '[LOGIN-V3]';
-            console.log(`${prefix} ${msg}`);
-            
-            const panel = document.getElementById('debugPanel');
-            if (panel?.classList.contains('show')) {
-                const div = document.createElement('div');
-                div.className = `debug-line debug-${type}`;
-                div.textContent = `${time} ${msg}`;
-                panel.appendChild(div);
-                panel.scrollTop = panel.scrollHeight;
+        const FIELD_GROUPS = {
+            identitas: {
+                label: 'Data Identitas',
+                icon: 'identitas',
+                fields: ['nama', 'nama_lengkap', 'nik', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'golongan_darah', 'status_pernikahan']
+            },
+            kontak: {
+                label: 'Data Kontak',
+                icon: 'kontak',
+                fields: ['email', 'no_telepon', 'no_hp', 'alamat_email']
+            },
+            alamat: {
+                label: 'Alamat',
+                icon: 'lainnya',
+                fields: ['alamat', 'alamat_lengkap', 'alamat_ktp', 'alamat_domisili', 'kelurahan', 'kecamatan', 'kabupaten_kota', 'provinsi', 'kode_pos']
+            },
+            pendidikan: {
+                label: 'Pendidikan',
+                icon: 'pendidikan',
+                fields: ['pendidikan_terakhir', 'jurusan', 'jurusan_tujuan', 'universitas', 'institusi', 'fakultas', 'program_studi', 'tahun_masuk', 'tahun_lulus', 'ipk', 'nomor_ijazah']
+            },
+            pekerjaan: {
+                label: 'Pekerjaan',
+                icon: 'pekerjaan',
+                fields: ['pekerjaan', 'jabatan', 'unit_kerja', 'instansi', 'nip', 'nik_pegawai', 'masa_kerja']
+            },
+            pengusulan: {
+                label: 'Data Pengusulan',
+                icon: 'pengusulan',
+                fields: ['jenis_beasiswa', 'periode', 'tahun_usulan', 'nomor_usulan', 'tanggal_usulan', 'status_usulan', 'catatan_usulan']
+            },
+            dokumen: {
+                label: 'Dokumen',
+                icon: 'dokumen',
+                fields: ['foto', 'file_ktp', 'file_ijazah', 'file_surat_rekomendasi', 'file_lainnya']
+            },
+            status: {
+                label: 'Status & Informasi',
+                icon: 'status',
+                fields: ['status', 'is_verified', 'is_active', 'created_at', 'updated_at', 'last_login_at', 'login_attempts']
             }
         };
-        
-        document.addEventListener('keydown', e => {
-            if (e.key === 'F12') {
-                e.preventDefault();
-                document.getElementById('debugPanel').classList.toggle('show');
-            }
-        });
-        
+
+        // Fields to exclude from display
+        const EXCLUDED_FIELDS = ['id', 'password', 'password_hash', 'role'];
+
         // ============================================================
-        // DOM ELEMENTS
+        // ALERT SYSTEM
         // ============================================================
-        const $ = id => document.getElementById(id);
-        const el = {
-            form: $('loginForm'),
-            username: $('username'),
-            password: $('password'),
-            usernameErr: $('usernameError'),
-            passwordErr: $('passwordError'),
-            submitBtn: $('submitBtn'),
-            btnText: $('btnText'),
-            loginBody: $('loginBody'),
-            loginFooter: $('loginFooter'),
-            profileSection: $('profileSection'),
-            profileAvatar: $('profileAvatar'),
-            profileName: $('profileName'),
-            profileRole: $('profileRole'),
-            infoNIK: $('infoNIK'),
-            infoEmail: $('infoEmail'),
-            infoStatus: $('infoStatus'),
-            infoLastLogin: $('infoLastLogin'),
-            subSection: $('submissionsSection'),
-            subBadge: $('subBadge'),
-            cardsGrid: $('cardsGrid'),
-            toastContainer: $('toastContainer')
-        };
-        
-        let currentSession = null;
-        
-        // ============================================================
-        // TOAST NOTIFICATION
-        // ============================================================
-        function showToast(type, title, msg) {
-            const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `
-                <span class="toast-icon">${icons[type]}</span>
-                <div class="toast-body">
-                    <div class="toast-title">${title}</div>
-                    ${msg ? `<div class="toast-msg">${msg}</div>` : ''}
-                </div>
-                <span class="toast-close" onclick="this.parentElement.remove()">×</span>
-            `;
-            el.toastContainer.appendChild(toast);
-            setTimeout(() => {
-                toast.style.animation = 'toastIn 0.3s ease-out reverse';
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
-        }
-        
-        // ============================================================
-        // AUTHENTICATION - MULTIPLE STRATEGIES
-        // ============================================================
-        
-        async function authenticate(username, password) {
-            log(`🔐 Authenticating: ${username}`, 'info');
-            
-            // Generate hash untuk debugging
-            const inputHash = await hashPassword(password);
-            log(`🔑 Input password hash: ${inputHash.substring(0, 20)}...`, 'info');
-            
-            // STRATEGY 1: Try Supabase JS Client
-            try {
-                log('Strategy 1: Supabase JS Client (akun_peserta)...', 'info');
-                const result = await authViaSupabaseClient(username, password);
-                if (result) return result;
-            } catch (e) {
-                log(`Strategy 1 failed: ${e.message}`, 'error');
-            }
-            
-            // STRATEGY 2: Try Direct REST API Fetch
-            try {
-                log('Strategy 2: Direct REST API (akun_peserta)...', 'info');
-                const result = await authViaRestAPI(username, password);
-                if (result) return result;
-            } catch (e) {
-                log(`Strategy 2 failed: ${e.message}`, 'error');
-            }
-            
-            // STRATEGY 3: Fallback to Demo Users
-            log('Strategy 3: Demo Users Fallback...', 'info');
-            return authViaDemoUsers(username, password);
-        }
-        
-        // Strategy 1: Supabase JS Client - Query ke tabel akun_peserta
-        async function authViaSupabaseClient(username, password) {
-            if (!window.supabase) {
-                throw new Error('Supabase client not loaded');
-            }
-            
-            const client = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
-            
-            // Query ke tabel akun_peserta - cari berdasarkan username atau email
-            const { data, error } = await client
-                .from(CONFIG.tableAkun)  // akun_peserta
-                .select('*')
-                .or(`username.ilike.${username.toLowerCase()},email.ilike.${username.toLowerCase()}`)
-                .limit(1);
-            
-            if (error) throw new Error(error.message);
-            if (!data || data.length === 0) {
-                log(`❌ User '${username}' tidak ditemukan di tabel ${CONFIG.tableAkun}`, 'error');
-                return null;
-            }
-            
-            const user = data[0];
-            log(`👤 User ditemukan: ${user.nama_lengkap} (${user.username})`, 'info');
-            log(`🔐 DB password_hash: ${user.password_hash?.substring(0, 20)}...`, 'info');
-            
-            // Hash password input dan bandingkan dengan password_hash di database
-            const inputPasswordHash = await hashPassword(password);
-            const validPassword = user.password_hash === inputPasswordHash;
-            
-            if (!validPassword) {
-                log(`❌ Password tidak match! Input: ${inputPasswordHash.substring(0, 20)}... vs DB: ${user.password_hash?.substring(0, 20)}...`, 'error');
-                return null;
-            }
-            
-            log(`✅ Auth via Supabase Client (akun_peserta) successful`, 'success');
-            return formatUser(user);
-        }
-        
-        // Strategy 2: Direct REST API (fetch) - Query ke tabel akun_peserta
-        async function authViaRestAPI(username, password) {
-            const url = `${CONFIG.supabaseUrl}/rest/v1/${CONFIG.tableAkun}?or=(username.ilike.${encodeURIComponent(username.toLowerCase())},email.ilike.${encodeURIComponent(username.toLowerCase())})&limit=1`;
-            
-            const response = await fetch(url, {
-                headers: {
-                    'apikey': CONFIG.supabaseKey,
-                    'Authorization': `Bearer ${CONFIG.supabaseKey}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
-            const data = await response.json();
-            if (!data || data.length === 0) {
-                log(`❌ User '${username}' tidak ditemukan (REST)`, 'error');
-                return null;
-            }
-            
-            const user = data[0];
-            log(`👤 User ditemukan (REST): ${user.nama_lengkap} (${user.username})`, 'info');
-            log(`🔐 DB password_hash (REST): ${user.password_hash?.substring(0, 20)}...`, 'info');
-            
-            // Hash password input dan bandingkan dengan password_hash di database
-            const inputPasswordHash = await hashPassword(password);
-            const validPassword = user.password_hash === inputPasswordHash;
-            
-            if (!validPassword) {
-                log(`❌ Password tidak match (REST)! Input: ${inputPasswordHash.substring(0, 20)}... vs DB: ${user.password_hash?.substring(0, 20)}...`, 'error');
-                return null;
-            }
-            
-            log(`✅ Auth via REST API successful`, 'success');
-            return formatUser(user);
-        }
-        
-        // Strategy 3: Demo Users (Fallback)
-        function authViaDemoUsers(username, password) {
-            const user = DEMO_USERS.find(u => 
-                u.username.toLowerCase() === username.toLowerCase() && u.password === password
-            );
-            
-            if (!user) return null;
-            
-            log(`✅ Auth via Demo Users successful`, 'success');
-            return {
-                id: 'demo_' + user.username,
-                nama_lengkap: user.nama_lengkap,
-                email: user.email,
-                username: user.username,
-                nik: user.nik,
-                role: 'peserta',
-                status: 'active',
-                isDemo: true
+        function showAlert(message, type = 'error') {
+            const container = document.getElementById('alertContainer');
+            const icons = {
+                error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+                success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+                info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
             };
+            container.innerHTML = `<div class="alert ${type}">${icons[type] || icons.info}<span>${message}</span></div>`;
+            if (type === 'success') setTimeout(() => container.innerHTML = '', 5000);
         }
         
-        function formatUser(dbUser) {
-            // Format data user dari tabel akun_peserta
-            return {
-                id: dbUser.id,
-                nama_lengkap: dbUser.nama_lengkap || dbUser.name || dbUser.username,
-                email: dbUser.email || '-',
-                username: dbUser.username,
-                nik: dbUser.nik || '-',
-                role: 'peserta',  // Default role untuk peserta
-                status: dbUser.is_active !== false ? 'active' : 'inactive',
-                isDemo: false
+        function clearAlert() { document.getElementById('alertContainer').innerHTML = ''; }
+        
+        function clearErrors() {
+            document.querySelectorAll('.form-input').forEach(el => el.classList.remove('error'));
+            document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show'));
+        }
+        
+        function showError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const errorEl = document.getElementById(fieldId + 'Error');
+            if (field) field.classList.add('error');
+            if (errorEl) { errorEl.textContent = message; errorEl.classList.add('show'); }
+        }
+
+        // ============================================================
+        // LOADING STATE
+        // ============================================================
+        function showLoading(text, subtext) {
+            document.getElementById('loadingText').textContent = text || 'Memuat data...';
+            document.getElementById('loadingSubtext').textContent = subtext || 'Mohon tunggu sebentar';
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
+        // ============================================================
+        // LABEL CONVERTER (Database → Human)
+        // ============================================================
+        function toHumanLabel(field) {
+            const labels = {
+                nama: 'Nama Lengkap',
+                nama_lengkap: 'Nama Lengkap',
+                nik: 'NIK',
+                tempat_lahir: 'Tempat Lahir',
+                tanggal_lahir: 'Tanggal Lahir',
+                jenis_kelamin: 'Jenis Kelamin',
+                golongan_darah: 'Golongan Darah',
+                status_pernikahan: 'Status Pernikahan',
+                email: 'Email',
+                no_telepon: 'No. Telepon',
+                no_hp: 'No. HP',
+                alamat_email: 'Email Alternatif',
+                alamat: 'Alamat',
+                alamat_lengkap: 'Alamat Lengkap',
+                alamat_ktp: 'Alamat KTP',
+                alamat_domisili: 'Alamat Domisili',
+                kelurahan: 'Kelurahan',
+                kecamatan: 'Kecamatan',
+                kabupaten_kota: 'Kab/Kota',
+                provinsi: 'Provinsi',
+                kode_pos: 'Kode Pos',
+                pendidikan_terakhir: 'Pendidikan Terakhir',
+                jurusan: 'Jurusan',
+                jurusan_tujuan: 'Jurusan Tujuan',
+                universitas: 'Universitas',
+                institusi: 'Institusi',
+                fakultas: 'Fakultas',
+                program_studi: 'Program Studi',
+                tahun_masuk: 'Tahun Masuk',
+                tahun_lulus: 'Tahun Lulus',
+                ipk: 'IPK',
+                nomor_ijazah: 'No. Ijazah',
+                pekerjaan: 'Pekerjaan',
+                jabatan: 'Jabatan',
+                unit_kerja: 'Unit Kerja',
+                instansi: 'Instansi',
+                nip: 'NIP',
+                nik_pegawai: 'NIK Pegawai',
+                masa_kerja: 'Masa Kerja',
+                jenis_beasiswa: 'Jenis Beasiswa',
+                periode: 'Periode',
+                tahun_usulan: 'Tahun Usulan',
+                nomor_usulan: 'No. Usulan',
+                tanggal_usulan: 'Tanggal Usulan',
+                status_usulan: 'Status Usulan',
+                catatan_usulan: 'Catatan',
+                foto: 'Foto',
+                file_ktp: 'File KTP',
+                file_ijazah: 'File Ijazah',
+                file_surat_rekomendasi: 'File Surat Rekomendasi',
+                file_lainnya: 'File Lainnya',
+                status: 'Status',
+                is_verified: 'Terverifikasi',
+                is_active: 'Aktif',
+                created_at: 'Tanggal Daftar',
+                updated_at: 'Terakhir Diupdate',
+                last_login_at: 'Terakhir Login',
+                login_attempts: 'Percobaan Login',
+                username: 'Username'
             };
+            return labels[field] || field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         }
-        
-        /*
-        ============================================================
-        PASSWORD HASHING - SAMA DENGAN FORM PENDAFTARAN
-        ============================================================
-        
-        Form daftar peserta menggunakan:
-        - Algorithm: SHA-256
-        - Salt: 'simbakes_salt_2024'
-        - Output: Hex string (64 karakter)
-        
-        Contoh hasil hash untuk password 'test123':
-        Input: 'test123' + 'simbakes_salt_2024' = 'test123simbakes_salt_2024'
-        Output SHA-256 hex: 'a1b2c3d4e5f6...'
-        
-        ============================================================
-        */
-        
-        // Hash password menggunakan SHA-256 + salt (sama seperti form pendaftaran)
-        async function hashPassword(password) {
-            const encoder = new TextEncoder();
-            const passwordData = encoder.encode(password + 'simbakes_salt_2024');
-            const hashBuffer = await crypto.subtle.digest('SHA-256', passwordData);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-        
-        // Legacy simpleHash (untuk backward compatibility)
-        function simpleHash(str) {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                hash = ((hash << 5) - hash) + str.charCodeAt(i);
+
+        // ============================================================
+        // FORMAT VALUE FOR DISPLAY
+        // ============================================================
+        function formatValue(value, field) {
+            if (value === null || value === undefined || value === '') {
+                return '<span class="empty">-</span>';
             }
-            return Math.abs(hash).toString();
-        }
-        
-        // ============================================================
-        // FETCH SUBMISSIONS DATA - MULTIPLE STRATEGIES
-        // ============================================================
-        
-        async function fetchSubmissions(userData) {
-            log(`📊 Fetching submissions for NIK: ${userData?.nik}`, 'info');
-            updateBadge('loading', 'Mencari...');
             
-            let submissions = null;
+            // Boolean formatting
+            if (typeof value === 'boolean') {
+                return value ? '<span style="color: var(--emerald-600);">✓ Ya</span>' : '<span style="color: var(--gray-400);">✗ Tidak</span>';
+            }
             
-            // Strategy 1: Via Supabase Client
-            if (!submissions && window.supabase) {
+            // Date formatting
+            if (field.includes('tanggal') || field.includes('_at') || field.includes('created') || field.includes('updated')) {
                 try {
-                    submissions = await fetchViaClient(userData);
-                } catch (e) {
-                    log(`Client fetch failed: ${e.message}`, 'error');
+                    const date = new Date(value);
+                    if (!isNaN(date.getTime())) {
+                        return date.toLocaleDateString('id-ID', { 
+                            day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                        });
+                    }
+                } catch (e) {}
+            }
+            
+            // URL/Link detection
+            if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('/'))) {
+                if (field.includes('foto') || field.includes('file')) {
+                    return `<a href="${value}" target="_blank" style="color: var(--primary-600); text-decoration: underline;">Lihat File →</a>`;
                 }
             }
             
-            // Strategy 2: Via REST API
-            if (!submissions) {
-                try {
-                    submissions = await fetchViaREST(userData);
-                } catch (e) {
-                    log(`REST fetch failed: ${e.message}`, 'error');
-                }
-            }
-            
-            // Strategy 3: Demo Data (if demo user)
-            if (!submissions && userData.isDemo) {
-                submissions = getDemoSubmissions(userData);
-            }
-            
-            // Render results
-            if (submissions && submissions.length > 0) {
-                log(`✅ Found ${submissions.length} submissions`, 'success');
-                updateBadge('found', `${submissions.length} Ditemukan`);
-                renderCards(submissions);
-                return submissions;
-            } else {
-                log(`ℹ️ No submissions found`, 'info');
-                updateBadge('empty', 'Tidak Ada');
-                renderEmpty();
-                return null;
-            }
+            // Default: escape HTML and return
+            const str = String(value).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return str;
         }
-        
-        async function fetchViaClient(userData) {
-            const client = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
-            
-            let query = client.from(CONFIG.tableSubmissions).select('*').order('created_at', { ascending: false }).limit(10);
-            
-            if (userData.nik) {
-                query = query.eq('nik', userData.nik);
-            } else if (userData.email) {
-                query = query.ilike('email', `%${userData.email}%`);
-            } else if (userData.nama_lengkap) {
-                query = query.ilike('nama_lengkap', `%${userData.nama_lengkap}%`);
-            }
-            
-            const { data, error } = await query;
-            if (error) throw new Error(error.message);
-            return data;
-        }
-        
-        async function fetchViaREST(userData) {
-            let filter = '';
-            if (userData.nik) {
-                filter = `nik.eq.${userData.nik}`;
-            } else if (userData.email) {
-                filter = `email.ilike.%${userData.email}%`;
-            } else if (userData.nama_lengkap) {
-                filter = `nama_lengkap.ilike.%${userData.nama_lengkap}%`;
-            }
-            
-            const url = `${CONFIG.supabaseUrl}/rest/v1/${CONFIG.tableSubmissions}?${filter}&order=created_at.desc&limit=10`;
-            
-            const response = await fetch(url, {
-                headers: {
-                    'apikey': CONFIG.supabaseKey,
-                    'Authorization': `Bearer ${CONFIG.supabaseKey}`
-                }
-            });
-            
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return response.json();
-        }
-        
-        function getDemoSubmissions(userData) {
-            // Return demo submission data for testing
-            return [{
-                id: 'demo-sub-1',
-                no_register: 'REG-2024-DEMO-001',
-                nama_lengkap: userData.nama_lengkap,
-                nik: userData.nik,
-                email: userData.email,
-                no_hp: '08123456789',
-                no_wa: '08123456789',
-                jurusan_tujuan: 'Magister Keperawatan',
-                jenjang_pendidikan: 'S2',
-                unit_tujuan: 'Universitas Indonesia',
-                pekerjaan: 'Perawat',
-                posisi: 'Perawat Pelaksana',
-                unit_kerja: 'RSUD Kota',
-                rencana_tahun: '2024',
-                alamat_domisili: 'Jl. Contoh No. 123, Jakarta',
-                status: 'Proses Verifikasi',
-                created_at: new Date().toISOString(),
-                foto_drive_link: '',
-                catatan_admin: ''
-            }];
-        }
-        
+
         // ============================================================
-        // RENDER LIGHTBOX CARDS
+        // RENDER PROFILE DATA
         // ============================================================
-        
-        function renderCards(submissions) {
+        function renderProfileData(submission) {
+            const dataSection = document.getElementById('dataSection');
             let html = '';
             
-            submissions.forEach((sub, idx) => {
-                const statusClass = getStatusClass(sub.status);
-                const statusText = sub.status || 'Pending';
-                const date = formatDate(sub.created_at || sub.tanggal_pengajuan);
-                const initial = (sub.nama_lengkap || '?').charAt(0).toUpperCase();
-                const photoSrc = sub.foto_drive_link || sub.foto || '';
-                const hasPhoto = photoSrc && photoSrc.length > 0;
+            // Group fields
+            const groupedFields = {};
+            const ungroupedFields = [];
+            
+            // First pass: assign fields to groups
+            for (const [fieldName, value] of Object.entries(submission)) {
+                if (EXCLUDED_FIELDS.includes(fieldName)) continue;
+                
+                let assigned = false;
+                for (const [groupId, groupConfig] of Object.entries(FIELD_GROUPS)) {
+                    if (groupConfig.fields.includes(fieldName)) {
+                        if (!groupedFields[groupId]) groupedFields[groupId] = [];
+                        groupedFields[groupId].push({ field: fieldName, value });
+                        assigned = true;
+                        break;
+                    }
+                }
+                
+                if (!assigned) {
+                    ungroupedFields.push({ field: fieldName, value });
+                }
+            }
+            
+            // Add ungrouped to "Lainnya"
+            if (ungroupedFields.length > 0) {
+                if (!groupedFields['lainnya']) groupedFields['lainnya'] = [];
+                groupedFields['lainnya'].push(...ungroupedFields);
+            }
+            
+            // Render groups
+            for (const [groupId, fields] of Object.entries(groupedFields)) {
+                if (fields.length === 0) continue;
+                
+                const groupConfig = FIELD_GROUPS[groupId] || { label: 'Data Lainnya', icon: 'lainnya' };
                 
                 html += `
-                    <div class="lightbox-card" style="animation-delay: ${idx * 0.1}s">
-                        <div class="card-inner">
-                            <!-- DATA PESERTA (KIRI) -->
-                            <div class="card-data">
-                                <div class="card-header">
-                                    <span class="card-reg">#${escapeHtml(sub.no_register || 'N/A')}</span>
-                                    <span class="status-badge ${statusClass}">${statusText}</span>
-                                </div>
-                                
-                                <!-- SECTION: IDENTITAS -->
-                                <div class="data-section">
-                                    <div class="section-title">👤 Identitas Diri</div>
-                                    <div class="fields-grid">
-                                        <div class="field">
-                                            <span class="field-label">Nama Lengkap</span>
-                                            <span class="field-value">${escapeHtml(sub.nama_lengkap || '-')}</span>
-                                        </div>
-                                        <div class="field">
-                                            <span class="field-label">NIK</span>
-                                            <span class="field-value">${escapeHtml(sub.nik || '-')}</span>
-                                        </div>
-                                        <div class="field">
-                                            <span class="field-label">Tempat Lahir</span>
-                                            <span class="field-value">${escapeHtml(sub.tempat_lahir || '-')}</span>
-                                        </div>
-                                        <div class="field">
-                                            <span class="field-label">Tanggal Lahir</span>
-                                            <span class="field-value">${formatDate(sub.tanggal_lahir)}</span>
-                                        </div>
-                                        <div class="field">
-                                            <span class="field-label">Jenis Kelamin</span>
-                                            <span class="field-value">${escapeHtml(sub.jenis_kelamin || '-')}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- SECTION: ALAMAT -->
-                                ${(sub.alamat_ktp || sub.alamat_domisili) ? `
-                                <div class="data-section">
-                                    <div class="section-title">🏠 Alamat</div>
-                                    <div class="fields-grid">
-                                        ${sub.alamat_ktp ? `<div class="field full"><span class="field-label">Alamat KTP</span><span class="field-value">${escapeHtml(sub.alamat_ktp)}</span></div>` : ''}\n                                        ${sub.alamat_domisili ? `<div class="field full"><span class="field-label">Alamat Domisili</span><span class="field-value">${escapeHtml(sub.alamat_domisili)}</span></div>` : ''}
-                                    </div>
-                                </div>` : ''}
-                                
-                                <!-- SECTION: PENDIDIKAN -->
-                                <div class="data-section">
-                                    <div class="section-title">🎓 Pendidikan</div>
-                                    <div class="fields-grid">
-                                        <div class="field">
-                                            <span class="field-label">Pendidikan Terakhir</span>
-                                            <span class="field-value">${escapeHtml(sub.pendidikan || '-')}</span>
-                                        </div>
-                                        <div class="field">
-                                            <span class="field-label">Jenjang</span>
-                                            <span class="field-value">${escapeHtml(sub.jenjang_pendidikan || '-')}</span>
-                                        </div>
-                                        <div class="field full">
-                                            <span class="field-label">Jurusan Tujuan</span>
-                                            <span class="field-value">${escapeHtml(sub.jurusan_tujuan || '-')}</span>
-                                        </div>
-                                        <div class="field full">
-                                            <span class="field-label">Instansi Tujuan</span>
-                                            <span class="field-value">${escapeHtml(sub.unit_tujuan || '-')}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- SECTION: PEKERJAAN -->
-                                <div class="data-section">
-                                    <div class="section-title">💼 Pekerjaan</div>
-                                    <div class="fields-grid">
-                                        <div class="field">
-                                            <span class="field-label">Pekerjaan</span>
-                                            <span class="field-value">${escapeHtml(sub.pekerjaan || '-')}</span>
-                                        </div>
-                                        <div class="field">
-                                            <span class="field-label">Posisi/Jabatan</span>
-                                            <span class="field-value">${escapeHtml(sub.posisi || '-')}</span>
-                                        </div>
-                                        <div class="field full">
-                                            <span class="field-label">Unit Kerja</span>
-                                            <span class="field-value">${escapeHtml(sub.unit_kerja || '-')}</span>
-                                        </div>
-                                        <div class="field">
-                                            <span class="field-label">Rencana Tahun</span>
-                                            <span class="field-value">${escapeHtml(sub.rencana_tahun || '-')}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- SECTION: KONTAK -->
-                                <div class="data-section">
-                                    <div class="section-title">📱 Kontak</div>
-                                    <div class="fields-grid">
-                                        <div class="field">
-                                            <span class="field-label">No. HP</span>
-                                            <span class="field-value">${escapeHtml(sub.no_hp || '-')}</span>
-                                        </div>
-                                        <div class="field">
-                                            <span class="field-label">No. WhatsApp</span>
-                                            <span class="field-value">${escapeHtml(sub.no_wa || '-')}</span>
-                                        </div>
-                                        <div class="field full">
-                                            <span class="field-label">Email</span>
-                                            <span class="field-value">${escapeHtml(sub.email || '-')}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- SECTION: CATATAN -->
-                                ${sub.catatan_admin ? `
-                                <div class="data-section">
-                                    <div class="section-title" style="color: #d97706;">📝 Catatan Admin</div>
-                                    <div class="fields-grid">
-                                        <div class="field full">
-                                            <span class="field-value" style="border-left-color: #d97706; background: #fffbeb;">${escapeHtml(sub.catatan_admin)}</span>
-                                        </div>
-                                    </div>
-                                </div>` : ''}
+                    <div class="data-group">
+                        <div class="group-header">
+                            <div class="group-icon ${groupConfig.icon}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    ${getGroupIconSvg(groupConfig.icon)}
+                                </svg>
                             </div>
-                            
-                            <!-- FOTO PESERTA (KANAN) -->
-                            <div class="card-photo">
-                                ${hasPhoto ? `
-                                    <img src="${escapeHtml(photoSrc)}" 
-                                         alt="Foto ${escapeHtml(sub.nama_lengkap)}" 
-                                         onclick="openPhotoLightbox('${escapeHtml(photoSrc)}', '${escapeHtml(sub.nama_lengkap)}')"
-                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                                         title="Klik untuk memperbesar">
-                                    <div class="photo-placeholder" style="display:none;">
-                                        <div class="photo-initial">${initial}</div>
-                                        <div class="photo-text">Foto tidak tersedia</div>
-                                    </div>
-                                ` : `
-                                    <div class="photo-placeholder">
-                                        <div class="photo-initial">${initial}</div>
-                                        <div class="photo-text">${escapeHtml(sub.nama_lengkap || 'Peserta')}</div>
-                                    </div>
-                                `}
+                            <div class="group-title">${groupConfig.label}</div>
+                        </div>
+                        ${fields.map(({ field, value }) => `
+                            <div class="data-row">
+                                <div class="data-label">${toHumanLabel(field)}</div>
+                                <div class="data-value">${formatValue(value, field)}</div>
                             </div>
-                        </div>
-                        <div class="card-footer">
-                            <span>📅 Tanggal Pengajuan: ${date}</span>
-                            <span>🆔 ID: ${sub.id?.substring(0, 12)}...</span>
-                        </div>
+                        `).join('')}
                     </div>
                 `;
-            });
+            }
             
-            el.cardsGrid.innerHTML = html;
+            dataSection.innerHTML = html || '<p style="text-align:center;color:var(--gray-500);padding:40px;">Tidak ada data tersedia</p>';
         }
         
-        // Photo Lightbox Function
-        function openPhotoLightbox(src, name) {
-            if (!src) return;
-            
-            // Create lightbox overlay
-            const overlay = document.createElement('div');
-            overlay.className = 'photo-lightbox-overlay';
-            overlay.id = 'photoLightbox';
-            overlay.onclick = (e) => {
-                if (e.target === overlay) closePhotoLightbox();
+        function getGroupIconSvg(iconType) {
+            const icons = {
+                identitas: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+                kontak: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+                pendidikan: '<path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>',
+                pekerjaan: '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+                pengusulan: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>',
+                dokumen: '<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/>',
+                status: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+                lainnya: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>'
             };
+            return icons[iconType] || icons.lainnya;
+        }
+
+        // ============================================================
+        // RENDER PHOTO
+        // ============================================================
+        function renderPhoto(submission) {
+            const photoContainer = document.getElementById('photoContainer');
             
-            overlay.innerHTML = `
-                <div class="photo-lightbox-content">
-                    <button class="photo-lightbox-close" onclick="closePhotoLightbox()" title="Tutup (ESC)">✕</button>
-                    <img src="${src}" alt="Foto ${name}" onload="this.classList.add('loaded')">
-                    <div class="photo-lightbox-caption">${name}</div>
-                </div>
-            `;
+            // Cek berbagai kemungkinan nama field foto
+            const photoFields = ['foto', 'photo', 'pas_foto', 'url_foto', 'image_url'];
+            let photoUrl = null;
             
-            document.body.appendChild(overlay);
-            requestAnimationFrame(() => overlay.classList.add('active'));
-            
-            // ESC key to close
-            document.addEventListener('keydown', function escHandler(e) {
-                if (e.key === 'Escape') {
-                    closePhotoLightbox();
-                    document.removeEventListener('keydown', escHandler);
+            for (const field of photoFields) {
+                if (submission[field] && submission[field].trim() !== '') {
+                    photoUrl = submission[field];
+                    break;
                 }
-            });
+            }
             
-            // Prevent body scroll
+            if (photoUrl) {
+                // Jika ada URL foto
+                photoContainer.innerHTML = `
+                    <img src="${photoUrl}" alt="Foto Peserta" class="photo-img" 
+                         onerror="this.parentElement.innerHTML='<div class=\\'photo-placeholder\\'><svg viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\'><rect x=\\'3\\' y=\\'3\\' width=\\'18\\' height=\\'18\\' rx=\\'2\\' ry=\\'2\\'/><circle cx=\\'8.5\\' cy=\\'8.5\\' r=\\'1.5\\'/><polyline points=\\'21 15 16 10 5 21\\'/></svg><span>FOTO TIDAK TERSEDIA</span></div>'">
+                `;
+            } else {
+                // Placeholder jika tidak ada foto
+                photoContainer.innerHTML = `
+                    <div class="photo-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        <span>FOTO TIDAK TERSEDIA</span>
+                    </div>
+                `;
+            }
+        }
+        
+        function enlargePhoto() {
+            const img = document.querySelector('.photo-img');
+            if (img && img.src) {
+                window.open(img.src, '_blank');
+            }
+        }
+
+        // ============================================================
+        // PROFILE OVERLAY CONTROL
+        // ============================================================
+        function showProfile() {
+            document.getElementById('profileOverlay').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
         
-        function closePhotoLightbox() {
-            const lightbox = document.getElementById('photoLightbox');
-            if (lightbox) {
-                lightbox.classList.remove('active');
-                setTimeout(() => {
-                    lightbox.remove();
-                    document.body.style.overflow = '';
-                }, 300);
-            }
+        function closeProfile() {
+            document.getElementById('profileOverlay').classList.add('hidden');
+            document.body.style.overflow = '';
         }
         
-        function renderEmpty() {
-            el.cardsGrid.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon">📭</div>
-                    <div class="empty-text">Belum Ada Pengajuan</div>
-                    <div class="empty-hint">Anda belum mengajukan beasiswa</div>
-                </div>
-            `;
-        }
+        // Close on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeProfile();
+        });
         
-        function renderError(msg) {
-            el.cardsGrid.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon">⚠️</div>
-                    <div class="empty-text">Gagal Memuat Data</div>
-                    <div class="empty-hint">${escapeHtml(msg)}</div>
-                </div>
-            `;
-            updateBadge('error', 'Error');
-        }
-        
-        function updateBadge(type, text) {
-            el.subBadge.className = `badge ${type}`;
-            el.subBadge.textContent = text;
-        }
-        
-        function getStatusClass(status) {
-            if (!status) return 'pending';
-            const s = status.toLowerCase();
-            if (s.includes('setujui') || s.includes('approve') || s.includes('disetujui')) return 'approved';
-            if (s.includes('tolak') || s.includes('reject') || s.includes('ditolak')) return 'rejected';
-            return 'pending';
-        }
-        
-        function formatDate(dateStr) {
-            try {
-                return new Date(dateStr).toLocaleDateString('id-ID', {
-                    day: 'numeric', month: 'long', year: 'numeric'
-                });
-            } catch {
-                return dateStr || '-';
-            }
-        }
-        
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-        
+        // Close on overlay click
+        document.getElementById('profileOverlay').addEventListener('click', (e) => {
+            if (e.target.id === 'profileOverlay') closeProfile();
+        });
+
         // ============================================================
-        // FORM HANDLING
+        // MAIN LOGIN HANDLER
         // ============================================================
-        
-        function validate() {
-            const username = el.username.value.trim();
-            const password = el.password.value;
-            let valid = true;
+        async function handleLogin(event) {
+            event.preventDefault();
             
-            el.username.classList.remove('error');
-            el.password.classList.remove('error');
-            el.usernameErr.classList.remove('show');
-            el.passwordErr.classList.remove('show');
+            clearErrors();
+            clearAlert();
             
-            if (!username) {
-                el.username.classList.add('error');
-                el.usernameErr.classList.add('show');
-                valid = false;
-            }
+            const username = document.getElementById('username').value.trim().toLowerCase();
+            const password = document.getElementById('password').value;
             
-            if (!password) {
-                el.password.classList.add('error');
-                el.passwordErr.classList.add('show');
-                valid = false;
-            }
+            // Validasi
+            if (!username) { showError('username', 'Username wajib diisi'); return; }
+            if (!password) { showError('password', 'Password wajib diisi'); return; }
             
-            return valid ? { username, password } : null;
-        }
-        
-        function setLoading(isLoading) {
-            el.submitBtn.disabled = isLoading;
-            el.btnText.innerHTML = isLoading ? '<div class="spinner"></div> Memproses...' : 'Masuk';
-        }
-        
-        async function handleLogin(e) {
-            e.preventDefault();
+            // Disable button
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
             
-            const creds = validate();
-            if (!creds) return;
-            
-            setLoading(true);
+            showAlert('⏳ Memproses login...', 'info');
             
             try {
-                log(`🔐 Login attempt: ${creds.username}`, 'info');
+                if (!supabaseClient) throw new Error('Koneksi database tidak tersedia.');
                 
-                const user = await authenticate(creds.username, creds.password);
+                console.log('[LOGIN] Authenticating user:', username);
                 
-                if (user) {
-                    log(`✅ Login SUCCESS: ${user.nama_lengkap}`, 'success');
-                    handleSuccess(user);
-                } else {
-                    log(`❌ Login FAILED: Invalid credentials`, 'error');
-                    showToast('error', '❌ Login Gagal', 'Username atau password salah');
-                    el.password.value = '';
-                    el.password.focus();
-                }
-            } catch (err) {
-                log(`❌ Login ERROR: ${err.message}`, 'error');
-                showToast('error', '❌ Error', err.message);
-            } finally {
-                setLoading(false);
-            }
-        }
-        
-        function handleSuccess(user) {
-            // Save session
-            currentSession = {
-                ...user,
-                loginTime: new Date().toISOString()
-            };
-            localStorage.setItem(CONFIG.sessionKey, JSON.stringify(currentSession));
-            
-            // Update UI
-            showProfile(user);
-            showToast('success', '✅ Login Berhasil', `Selamat datang, ${user.nama_lengkap}!`);
-            
-            // Fetch submissions
-            fetchSubmissions(user).then(() => {
-                log('📋 Submissions loaded', 'info');
-            });
-        }
-        
-        function showProfile(user) {
-            const initial = (user.nama_lengkap || '?').charAt(0).toUpperCase();
-            
-            el.profileAvatar.textContent = initial;
-            el.profileName.textContent = user.nama_lengkap;
-            el.profileRole.textContent = user.isDemo ? 'Demo Mode' : (user.role || 'Peserta');
-            el.infoNIK.textContent = user.nik || '-';
-            el.infoEmail.textContent = user.email || '-';
-            el.infoStatus.textContent = user.status === 'active' ? 'Aktif' : 'Tidak Aktif';
-            el.infoLastLogin.textContent = 'Baru saja';
-            
-            el.loginBody.style.display = 'none';
-            el.loginFooter.style.display = 'none';
-            el.profileSection.classList.add('active');
-            
-            // Add full-screen class to body
-            document.body.classList.add('profile-active');
-        }
-        
-        function showLoginForm() {
-            el.loginBody.style.display = 'block';
-            el.loginFooter.style.display = 'block';
-            el.profileSection.classList.remove('active');
-            // Remove full-screen class from body
-            document.body.classList.remove('profile-active');
-        }
-        
-        function doLogout() {
-            localStorage.removeItem(CONFIG.sessionKey);
-            currentSession = null;
-            
-            // Remove full-screen class from body
-            document.body.classList.remove('profile-active');
-            
-            el.username.value = '';
-            el.password.value = '';
-            showLoginForm();
-            renderEmpty();
-            updateBadge('loading', 'Memuat...');
-            
-            showToast('info', '👋 Logout', 'Anda telah keluar');
-        }
-        
-        // ============================================================
-        // SESSION CHECK
-        // ============================================================
-        
-        function checkSession() {
-            try {
-                const saved = localStorage.getItem(CONFIG.sessionKey);
-                if (!saved) return null;
+                // Query ke tabel akun_peserta
+                const { data: users, error: queryError } = await supabaseClient
+                    .from('akun_peserta')
+                    .select('*')
+                    .or(`username.eq.${username},email.eq.${username}`)
+                    .limit(1);
                 
-                const session = JSON.parse(saved);
+                if (queryError) throw new Error(queryError.message);
                 
-                // Check expiry (24 hours)
-                const age = Date.now() - new Date(session.loginTime).getTime();
-                if (age > 24 * 60 * 60 * 1000) {
-                    localStorage.removeItem(CONFIG.sessionKey);
-                    return null;
+                console.log('[LOGIN] Query result:', users?.length ? 'User found' : 'Not found');
+                
+                // Cek user ditemukan
+                if (!users || users.length === 0) {
+                    throw new Error('Username atau password tidak sesuai.');
                 }
                 
-                return session;
-            } catch {
-                return null;
+                const user = users[0];
+                
+                // Verifikasi password (plaintext comparison sesuai permintaan)
+                if (user.password !== password) {
+                    console.log('[LOGIN] Password mismatch');
+                    throw new Error('Username atau password tidak sesuai.');
+                }
+                
+                console.log('[LOGIN] ✅ Authentication successful!');
+                console.log('[LOGIN] User NIK:', user.nik);
+                
+                // Update last login (optional)
+                await supabaseClient
+                    .from('akun_peserta')
+                    .update({ last_login_at: new Date().toISOString() })
+                    .eq('id', user.id);
+                
+                // Ambil data dari submissions berdasarkan NIK
+                showLoading(
+                    'Mengambil data peserta...',
+                    `Mencari data dengan NIK: ${user.nik}`
+                );
+                
+                const { data: submissions, error: submissionError } = await supabaseClient
+                    .from('submissions')
+                    .select('*')
+                    .eq('nik', user.nik)
+                    .maybeSingle(); // Handle multiple or single results
+                
+                if (submissionError) {
+                    console.error('[LOGIN] Submission query error:', submissionError);
+                    // Tetap tampilkan user info meski submissions error
+                    renderProfileData(user);
+                    renderPhoto({});
+                    showProfile();
+                    hideLoading();
+                    showAlert('⚠️ Login berhasil, tetapi data submissions bermasalah.', 'info');
+                    return;
+                }
+                
+                hideLoading();
+                
+                if (!submissions) {
+                    // User login berhasil tapi tidak ada data di submissions
+                    showAlert('✅ Login berhasil! Menampilkan data akun...', 'success');
+                    renderProfileData(user);
+                    renderPhoto({});
+                    showProfile();
+                    return;
+                }
+                
+                console.log('[LOGIN] ✅ Submissions found:', Object.keys(submissions).length, 'fields');
+                
+                // Render profil lengkap
+                showAlert('✅ Login berhasil!', 'success');
+                renderProfileData(submissions);
+                renderPhoto(submissions);
+                showProfile();
+                
+            } catch (error) {
+                console.error('[LOGIN] Error:', error);
+                
+                let errorMsg = error.message || 'Terjadi kesalahan.';
+                
+                if (errorMsg.includes('401') || errorMsg.includes('authentication')) {
+                    errorMsg = 'Error autentikasi database.';
+                } else if (errorMsg.includes('403') || errorMsg.includes('permission')) {
+                    errorMsg = 'Error izin akses database.';
+                } else if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
+                    errorMsg = 'Gagal terhubung ke server. Periksa koneksi internet.';
+                }
+                
+                showAlert(`❌ ${errorMsg}`, 'error');
+                
+                // Reset button
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('loading');
+                document.getElementById('password').value = '';
+                document.getElementById('password').focus();
             }
         }
-        
+
         // ============================================================
         // INITIALIZATION
         // ============================================================
-        
         document.addEventListener('DOMContentLoaded', () => {
-            log('🚀 Initializing Login Peserta V3...', 'info');
-            log(`📍 Supabase URL: ${CONFIG.supabaseUrl}`, 'info');
-            log(`🔑 Key present: ${!!CONFIG.supabaseKey}`, 'info');
-            log(`📦 Supabase lib: ${!!window.supabase}`, 'info');
+            console.log('[LOGIN] Page loaded successfully');
             
-            // Attach form handler
-            el.form.addEventListener('submit', handleLogin);
+            // Focus username field
+            setTimeout(() => {
+                document.getElementById('username')?.focus();
+            }, 500);
             
-            // Input focus effects
-            el.username.addEventListener('focus', () => {
-                el.username.classList.remove('error');
-                el.usernameErr.classList.remove('show');
-            });
-            
-            el.password.addEventListener('focus', () => {
-                el.password.classList.remove('error');
-                el.passwordErr.classList.remove('show');
-            });
-            
-            // Check existing session
-            const session = checkSession();
-            if (session) {
-                log(`♻️ Session found: ${session.nama}`, 'info');
-                showProfile(session);
-                showToast('info', '♻️ Welcome Back', `Selamat datang, ${session.nama_lengkap}!`);
-                
-                // Auto-fetch submissions
-                fetchSubmissions(session);
+            // Check for recent registration
+            const recentReg = localStorage.getItem('simbakes_registration');
+            if (recentReg) {
+                const reg = JSON.parse(recentReg);
+                if (Date.now() - reg.timestamp < 300000) { // Within 5 minutes
+                    showAlert(`👋 Selamat datang, ${reg.nama}! Silakan login dengan akun yang baru dibuat.`, 'info');
+                }
+                localStorage.removeItem('simbakes_registration');
             }
-            
-            log('✅ Initialization complete!', 'success');
         });
     </script>
-    
-    <!-- Load Supabase Library -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </body>
 </html>

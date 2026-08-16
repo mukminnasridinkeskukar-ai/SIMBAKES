@@ -3,52 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daftar Peserta Beasiswa - SIMBAKES Dinas Kesehatan Kukar</title>
+    <title>Daftar Peserta - SIMBAKES Dinas Kesehatan</title>
     
-    <!-- Supabase JS Client v2 -->
+    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* ============================================================
-           CSS VARIABLES & RESET
-           ============================================================ */
         :root {
-            /* Dinas Kesehatan Theme - Green & Gold (Kutai Kartanegara) */
-            --kukar-green-50: #f0fdf4;
-            --kukar-green-100: #dcfce7;
-            --kukar-green-200: #bbf7d0;
-            --kukar-green-300: #86efac;
-            --kukar-green-400: #4ade80;
-            --kukar-green-500: #22c55e;
-            --kukar-green-600: #16a34a;
-            --kukar-green-700: #15803d;
-            --kukar-green-800: #166534;
-            --kukar-green-900: #14532d;
-            
-            /* Gold Accent (from logo) */
-            --gold-50: #fffbeb;
-            --gold-100: #fef3c7;
-            --gold-200: #fde68a;
-            --gold-300: #fcd34d;
-            --gold-400: #fbbf24;
-            --gold-500: #f59e0b;
-            --gold-600: #d97706;
-            
-            /* Primary Blue for Healthcare */
+            --primary-50: #eff6ff;
+            --primary-100: #dbeafe;
+            --primary-200: #bfdbfe;
+            --primary-300: #93c5fd;
+            --primary-400: #60a5fa;
             --primary-500: #3b82f6;
             --primary-600: #2563eb;
             --primary-700: #1d4ed8;
+            --primary-800: #1e40af;
             
-            /* Error/Warning */
-            --error-500: #ef4444;
-            --error-600: #dc2626;
+            --emerald-50: #ecfdf5;
+            --emerald-500: #10b981;
+            --emerald-600: #059669;
+            --emerald-700: #047857;
             
-            /* Neutral */
+            --violet-50: #f5f3ff;
+            --violet-500: #8b5cf6;
+            --violet-600: #7c3aed;
+            
+            --orange-500: #f97316;
+            --cyan-500: #06b6d4;
+            
             --gray-50: #f9fafb;
             --gray-100: #f3f4f6;
             --gray-200: #e5e7eb;
@@ -60,12 +48,13 @@
             --gray-800: #1f2937;
             --gray-900: #111827;
             
-            /* Shadows */
+            --error-500: #ef4444;
+            --error-600: #dc2626;
+            
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
             --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
             --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-            --shadow-glow: 0 0 40px rgba(22, 163, 74, 0.3);
         }
         
         * {
@@ -76,7 +65,7 @@
         
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, var(--kukar-green-50) 0%, var(--kukar-green-100) 30%, #ffffff 70%, var(--gold-50) 100%);
+            background: linear-gradient(135deg, var(--primary-50) 0%, var(--violet-50) 50%, var(--emerald-50) 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -86,7 +75,6 @@
             overflow-x: hidden;
         }
         
-        /* Background Pattern */
         body::before {
             content: '';
             position: absolute;
@@ -95,11 +83,10 @@
             right: 0;
             bottom: 0;
             background-image: 
-                radial-gradient(circle at 15% 85%, rgba(22, 163, 74, 0.08) 0%, transparent 45%),
-                radial-gradient(circle at 85% 15%, rgba(251, 191, 36, 0.12) 0%, transparent 45%),
-                radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.04) 0%, transparent 60%);
+                radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(16, 185, 129, 0.06) 0%, transparent 50%);
             pointer-events: none;
-            z-index: 0;
         }
         
         .container {
@@ -109,13 +96,10 @@
             z-index: 1;
         }
         
-        /* ============================================================
-           REGISTRATION CARD
-           ============================================================ */
         .register-card {
             background: white;
             border-radius: 24px;
-            box-shadow: var(--shadow-xl), var(--shadow-glow);
+            box-shadow: var(--shadow-xl), 0 0 0 1px rgba(255,255,255,0.8);
             overflow: hidden;
             animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -123,7 +107,7 @@
         @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(40px) scale(0.98);
+                transform: translateY(30px) scale(0.98);
             }
             to {
                 opacity: 1;
@@ -131,73 +115,50 @@
             }
         }
         
-        /* ============================================================
-           HEADER SECTION - Dinas Kesehatan Kukar Branding
-           ============================================================ */
         .register-header {
-            background: linear-gradient(135deg, var(--kukar-green-700) 0%, var(--kukar-green-800) 60%, var(--kukar-green-900) 100%);
-            padding: 40px 28px 32px;
+            background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 50%, var(--violet-600) 100%);
+            padding: 36px 28px 32px;
             text-align: center;
             position: relative;
             overflow: hidden;
         }
         
-        /* Decorative Elements */
         .register-header::before {
             content: '';
             position: absolute;
-            top: -80px;
-            right: -80px;
-            width: 250px;
-            height: 250px;
-            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
             pointer-events: none;
         }
         
-        .register-header::after {
-            content: '';
-            position: absolute;
-            bottom: -60px;
-            left: -60px;
-            width: 200px;
-            height: 200px;
-            background: radial-gradient(circle, rgba(251, 191, 36, 0.1) 0%, transparent 70%);
-            pointer-events: none;
-        }
-        
-        /* Logo Container */
-        .logo-container {
-            width: 110px;
-            height: 110px;
-            margin: 0 auto 20px;
+        .logo-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 16px;
             background: rgba(255,255,255,0.95);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 
-                0 8px 24px rgba(0,0,0,0.2),
-                0 0 0 4px rgba(255,255,255,0.2),
-                inset 0 2px 8px rgba(255,255,255,0.8);
-            animation: floatLogo 3s ease-in-out infinite;
-            position: relative;
-            z-index: 2;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            animation: float 3s ease-in-out infinite;
         }
         
-        @keyframes floatLogo {
+        @keyframes float {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-6px); }
         }
         
-        .logo-container img {
-            width: 90px;
-            height: 90px;
-            object-fit: contain;
-            border-radius: 50%;
+        .logo-icon svg {
+            width: 44px;
+            height: 44px;
+            color: var(--primary-600);
         }
         
-        /* Header Titles */
-        .header-title-main {
+        .header-title {
             color: white;
             font-family: 'Poppins', sans-serif;
             font-size: 1.35rem;
@@ -205,47 +166,20 @@
             letter-spacing: -0.02em;
             line-height: 1.3;
             margin-bottom: 6px;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.2);
             position: relative;
-            z-index: 2;
+            z-index: 1;
         }
         
         .header-subtitle {
-            color: var(--gold-300);
-            font-size: 0.95rem;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-            position: relative;
-            z-index: 2;
-        }
-        
-        .header-description {
             color: rgba(255,255,255,0.85);
-            font-size: 0.88rem;
+            font-size: 0.92rem;
             font-weight: 400;
-            line-height: 1.5;
             position: relative;
-            z-index: 2;
+            z-index: 1;
         }
         
-        /* Gold Divider */
-        .gold-divider {
-            width: 80px;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, var(--gold-400), transparent);
-            margin: 16px auto 0;
-            border-radius: 2px;
-            position: relative;
-            z-index: 2;
-        }
-        
-        /* ============================================================
-           FORM BODY
-           ============================================================ */
         .register-body {
-            padding: 36px 28px 28px;
+            padding: 32px 28px 28px;
         }
         
         .form-intro {
@@ -256,135 +190,17 @@
         .form-intro h2 {
             color: var(--gray-800);
             font-family: 'Poppins', sans-serif;
-            font-size: 1.5rem;
+            font-size: 1.45rem;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         
         .form-intro p {
             color: var(--gray-500);
-            font-size: 0.92rem;
-            line-height: 1.6;
+            font-size: 0.9rem;
+            line-height: 1.5;
         }
         
-        /* Form Groups */
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-label {
-            display: block;
-            font-size: 0.87rem;
-            font-weight: 600;
-            color: var(--gray-700);
-            margin-bottom: 8px;
-            letter-spacing: 0.01em;
-        }
-        
-        .form-label .required {
-            color: var(--error-500);
-            margin-left: 2px;
-        }
-        
-        .form-label .hint {
-            font-weight: 400;
-            color: var(--gray-400);
-            font-size: 0.8rem;
-            margin-left: 6px;
-        }
-        
-        .form-input,
-        .form-select {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid var(--gray-200);
-            border-radius: 12px;
-            font-family: inherit;
-            font-size: 0.95rem;
-            font-weight: 500;
-            color: var(--gray-800);
-            background: var(--gray-50);
-            transition: all 0.25s ease;
-            outline: none;
-        }
-        
-        .form-input:hover,
-        .form-select:hover {
-            border-color: var(--kukar-green-300);
-            background: white;
-        }
-        
-        .form-input:focus,
-        .form-select:focus {
-            border-color: var(--kukar-green-500);
-            background: white;
-            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
-        }
-        
-        .form-input::placeholder {
-            color: var(--gray-400);
-            font-weight: 400;
-        }
-        
-        /* Input Icon Wrapper */
-        .input-wrapper {
-            position: relative;
-        }
-        
-        .input-wrapper .form-input {
-            padding-left: 46px;
-        }
-        
-        .input-icon {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 22px;
-            height: 22px;
-            color: var(--gray-400);
-            transition: color 0.25s ease;
-            pointer-events: none;
-        }
-        
-        .input-wrapper:focus-within .input-icon {
-            color: var(--kukar-green-500);
-        }
-        
-        /* Form Row (2 columns) */
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-        
-        /* Password Strength Indicator */
-        .password-strength {
-            display: flex;
-            gap: 6px;
-            margin-top: 8px;
-        }
-        
-        .strength-bar {
-            flex: 1;
-            height: 4px;
-            background: var(--gray-200);
-            border-radius: 2px;
-            transition: background 0.3s ease;
-        }
-        
-        .strength-bar.weak { background: var(--error-500); }
-        .strength-bar.medium { background: var(--gold-500); }
-        .strength-bar.strong { background: var(--kukar-green-500); }
-        
-        .strength-text {
-            font-size: 0.78rem;
-            color: var(--gray-500);
-            margin-top: 6px;
-            font-weight: 500;
-        }
-        
-        /* Alert Container */
         .alert-container {
             margin-bottom: 20px;
         }
@@ -406,21 +222,25 @@
         }
         
         .alert.error {
-            background: var(--error-50);
+            background: #fef2f2;
             color: var(--error-600);
             border: 1px solid #fecaca;
         }
         
         .alert.success {
-            background: var(--kukar-green-50);
-            color: var(--kukar-green-700);
-            border: 1px solid var(--kukar-green-200);
+            background: var(--emerald-50);
+            color: var(--emerald-700);
+            border: 1px solid #a7f3d0;
         }
         
         .alert.info {
-            background: var(--primary-500);
-            color: white;
-            border: 1px solid var(--primary-600);
+            background: var(--primary-50);
+            color: var(--primary-700);
+            border: 1px solid var(--primary-200);
+        }
+        
+        .alert.hidden {
+            display: none;
         }
         
         .alert svg {
@@ -430,39 +250,121 @@
             margin-top: 1px;
         }
         
-        .alert.hidden {
-            display: none;
+        .form-group {
+            margin-bottom: 18px;
         }
         
-        /* ============================================================
-           SUBMIT BUTTON - BRIGHT & VISIBLE!
-           ============================================================ */
+        .form-label {
+            display: block;
+            font-size: 0.87rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 6px;
+        }
+        
+        .form-label .required {
+            color: var(--error-500);
+            margin-left: 2px;
+        }
+        
+        .form-label .hint {
+            font-weight: 400;
+            color: var(--gray-400);
+            font-size: 0.78rem;
+            margin-left: 6px;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 13px 14px 13px 42px;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.94rem;
+            font-weight: 500;
+            color: var(--gray-800);
+            background: var(--gray-50);
+            transition: all 0.25s ease;
+            outline: none;
+        }
+        
+        .form-input:hover,
+        .form-select:hover {
+            border-color: var(--primary-300);
+            background: white;
+        }
+        
+        .form-input:focus,
+        .form-select:focus {
+            border-color: var(--primary-500);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-input::placeholder {
+            color: var(--gray-400);
+            font-weight: 400;
+        }
+        
+        .form-input.error {
+            border-color: var(--error-500);
+            background: #fef2f2;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            color: var(--gray-400);
+            transition: color 0.25s ease;
+            pointer-events: none;
+        }
+        
+        .input-wrapper:focus-within .input-icon {
+            color: var(--primary-500);
+        }
+        
+        .error-message {
+            display: none;
+            color: var(--error-600);
+            font-size: 0.8rem;
+            margin-top: 4px;
+            padding-left: 4px;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
         .submit-btn {
             width: 100%;
-            padding: 18px 28px;
+            padding: 16px 28px;
             margin-top: 24px;
-            background: linear-gradient(135deg, var(--kukar-green-500) 0%, var(--kukar-green-600) 50%, var(--kukar-green-700) 100%);
+            background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 50%, var(--violet-600) 100%);
             color: white !important;
             border: none;
             border-radius: 14px;
             font-family: 'Poppins', sans-serif;
-            font-size: 1.2rem;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 10px;
             position: relative;
             overflow: hidden;
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 
-                0 8px 24px rgba(22, 163, 74, 0.35),
-                0 4px 8px rgba(22, 163, 74, 0.2),
-                inset 0 1px 0 rgba(255,255,255,0.2);
-            text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
         }
         
         .submit-btn::before {
@@ -472,22 +374,13 @@
             left: -100%;
             width: 100%;
             height: 100%;
-            background: linear-gradient(
-                90deg,
-                transparent,
-                rgba(255,255,255,0.25),
-                transparent
-            );
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
             transition: left 0.6s ease;
         }
         
         .submit-btn:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 
-                0 14px 32px rgba(22, 163, 74, 0.45),
-                0 6px 12px rgba(22, 163, 74, 0.25),
-                inset 0 1px 0 rgba(255,255,255,0.3);
-            background: linear-gradient(135deg, var(--kukar-green-400) 0%, var(--kukar-green-500) 50%, var(--kukar-green-600) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(59, 130, 246, 0.45);
         }
         
         .submit-btn:hover::before {
@@ -495,7 +388,7 @@
         }
         
         .submit-btn:active {
-            transform: translateY(-1px) scale(0.99);
+            transform: translateY(0);
         }
         
         .submit-btn:disabled {
@@ -504,41 +397,27 @@
             transform: none !important;
         }
         
-        .submit-btn svg {
-            width: 26px;
-            height: 26px;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-        }
-        
-        .submit-btn span {
-            position: relative;
-            z-index: 1;
-        }
-        
-        /* Loading State */
         .submit-btn.loading span {
-            display: none;
+            visibility: hidden;
         }
         
         .submit-btn.loading::after {
             content: '';
-            width: 26px;
-            height: 26px;
+            width: 22px;
+            height: 22px;
             border: 3px solid rgba(255,255,255,0.3);
             border-top-color: white;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
+            position: absolute;
         }
         
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
         
-        /* ============================================================
-           FOOTER LINKS
-           ============================================================ */
         .register-footer {
-            padding: 24px 28px 28px;
+            padding: 20px 28px 24px;
             background: var(--gray-50);
             border-top: 1px solid var(--gray-200);
             text-align: center;
@@ -547,11 +426,10 @@
         .footer-text {
             color: var(--gray-600);
             font-size: 0.9rem;
-            margin-bottom: 4px;
         }
         
         .footer-link {
-            color: var(--kukar-green-600);
+            color: var(--primary-600);
             font-weight: 700;
             text-decoration: none;
             transition: all 0.2s ease;
@@ -559,113 +437,16 @@
         }
         
         .footer-link:hover {
-            color: var(--kukar-green-700);
-            border-bottom-color: var(--kukar-green-400);
+            color: var(--primary-700);
+            border-bottom-color: var(--primary-400);
         }
         
-        .footer-info {
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px dashed var(--gray-300);
-        }
-        
-        .footer-info p {
-            color: var(--gray-400);
-            font-size: 0.8rem;
-            line-height: 1.6;
-        }
-        
-        /* Checkbox Styling */
-        .checkbox-group {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin: 24px 0;
-            padding: 16px;
-            background: var(--kukar-green-50);
-            border-radius: 12px;
-            border: 1px solid var(--kukar-green-100);
-        }
-        
-        .checkbox-group input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            margin-top: 2px;
-            accent-color: var(--kukar-green-600);
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-        
-        .checkbox-group label {
-            font-size: 0.87rem;
-            color: var(--gray-700);
-            cursor: pointer;
-            line-height: 1.5;
-        }
-        
-        .checkbox-group label strong {
-            color: var(--kukar-green-700);
-        }
-        
-        /* ============================================================
-           RESPONSIVE DESIGN
-           ============================================================ */
-        @media (max-width: 576px) {
-            body {
-                padding: 12px;
-            }
-            
-            .register-header {
-                padding: 32px 20px 28px;
-            }
-            
-            .logo-container {
-                width: 90px;
-                height: 90px;
-            }
-            
-            .logo-container img {
-                width: 75px;
-                height: 75px;
-            }
-            
-            .header-title-main {
-                font-size: 1.15rem;
-            }
-            
-            .header-subtitle {
-                font-size: 0.85rem;
-            }
-            
-            .register-body {
-                padding: 28px 20px 24px;
-            }
-            
-            .form-row {
-                grid-template-columns: 1fr;
-                gap: 0;
-            }
-            
-            .form-intro h2 {
-                font-size: 1.3rem;
-            }
-            
-            .submit-btn {
-                padding: 16px 24px;
-                font-size: 1.1rem;
-            }
-            
-            .submit-btn svg {
-                width: 22px;
-                height: 22px;
-            }
-        }
-        
-        /* Success Animation Overlay */
+        /* Success Overlay */
         .success-overlay {
             position: fixed;
             inset: 0;
             background: rgba(255,255,255,0.98);
+            backdrop-filter: blur(10px);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -684,16 +465,16 @@
         }
         
         .success-icon {
-            width: 120px;
-            height: 120px;
-            background: linear-gradient(135deg, var(--kukar-green-500), var(--kukar-green-600));
+            width: 110px;
+            height: 110px;
+            background: linear-gradient(135deg, var(--emerald-500), var(--emerald-600));
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 24px;
             animation: successPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 16px 48px rgba(22, 163, 74, 0.4);
+            box-shadow: 0 16px 48px rgba(16, 185, 129, 0.4);
         }
         
         @keyframes successPop {
@@ -702,31 +483,32 @@
         }
         
         .success-icon svg {
-            width: 60px;
-            height: 60px;
+            width: 55px;
+            height: 55px;
             color: white;
         }
         
         .success-title {
             font-family: 'Poppins', sans-serif;
-            font-size: 1.8rem;
+            font-size: 1.75rem;
             font-weight: 800;
-            color: var(--kukar-green-700);
+            color: var(--emerald-700);
             margin-bottom: 12px;
         }
         
         .success-message {
             color: var(--gray-600);
-            font-size: 1.05rem;
+            font-size: 1rem;
             text-align: center;
-            max-width: 350px;
+            max-width: 380px;
             line-height: 1.6;
             margin-bottom: 28px;
+            padding: 0 20px;
         }
         
         .success-btn {
             padding: 14px 32px;
-            background: linear-gradient(135deg, var(--kukar-green-500), var(--kukar-green-600));
+            background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
             color: white;
             border: none;
             border-radius: 12px;
@@ -735,35 +517,43 @@
             font-weight: 700;
             cursor: pointer;
             transition: all 0.25s ease;
-            box-shadow: 0 8px 24px rgba(22, 163, 74, 0.3);
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
         }
         
         .success-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 32px rgba(22, 163, 74, 0.4);
+            box-shadow: 0 12px 32px rgba(59, 130, 246, 0.4);
+        }
+        
+        @media (max-width: 576px) {
+            body { padding: 12px; }
+            .register-header { padding: 28px 20px 24px; }
+            .logo-icon { width: 70px; height: 70px; }
+            .logo-icon svg { width: 38px; height: 38px; }
+            .header-title { font-size: 1.2rem; }
+            .register-body { padding: 24px 20px 20px; }
+            .submit-btn { padding: 14px 24px; font-size: 1rem; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="register-card">
-            <!-- HEADER dengan Logo Dinas Kesehatan Kukar -->
+            <!-- Header -->
             <div class="register-header">
-                <!-- Logo Kabupaten Kutai Kartanegara -->
-                <div class="logo-container">
-                    <img src="./Lambang_Kab._Kutai_Kertanegara (1).png" alt="Logo Kabupaten Kutai Kartanegara" onerror="this.style.display='none'; this.parentElement.innerHTML='<svg viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'#15803d\' stroke-width=\'2\' style=\'width:50px;height:50px\'><path d=\'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5\'/></svg>';">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                    </svg>
                 </div>
-                
-                <h1 class="header-title-main">Dinas Kesehatan<br>Kabupaten Kutai Kartanegara</h1>
-                <p class="header-subtitle">Sistem Beasiswa Kesehatan</p>
-                <p class="header-description">Pendaftaran Peserta Baru Program Beasiswa Tematik Bidang Kesehatan</p>
-                <div class="gold-divider"></div>
+                <h1 class="header-title">SIMBAKES</h1>
+                <p class="header-subtitle">Sistem Beasiswa Kesehatan Dinas Kesehatan Kukar</p>
             </div>
             
-            <!-- FORM BODY -->
+            <!-- Form Body -->
             <div class="register-body">
                 <div class="form-intro">
-                    <h2>📋 Formulir Pendaftaran</h2>
+                    <h2>Pendaftaran Peserta</h2>
                     <p>Lengkapi data diri Anda untuk mendaftar sebagai peserta beasiswa kesehatan</p>
                 </div>
                 
@@ -772,61 +562,19 @@
                 
                 <!-- Registration Form -->
                 <form id="registrationForm" onsubmit="handleRegistration(event)">
-                    <!-- Row 1: Nama Lengkap & Email -->
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                Nama Lengkap <span class="required">*</span>
-                            </label>
-                            <div class="input-wrapper">
-                                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                <input type="text" class="form-input" id="namaLengkap" placeholder="Nama sesuai KTP" required autocomplete="name">
-                            </div>
+                    <!-- Nama Lengkap -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            Nama Lengkap <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <input type="text" class="form-input" id="nama" placeholder="Nama lengkap sesuai KTP" required autocomplete="name">
                         </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">
-                                Email <span class="required">*</span>
-                            </label>
-                            <div class="input-wrapper">
-                                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                                <input type="email" class="form-input" id="email" placeholder="email@contoh.com" required autocomplete="email">
-                            </div>
-                        </div>
+                        <div class="error-message" id="namaError">Nama wajib diisi</div>
                     </div>
                     
-                    <!-- Row 2: Username & Password -->
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">
-                                Username <span class="required">*</span>
-                            </label>
-                            <div class="input-wrapper">
-                                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                <input type="text" class="form-input" id="username" placeholder="Username unik" required pattern="[a-zA-Z0-9_]+" title="Hanya huruf, angka, dan underscore" autocomplete="username">
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">
-                                Password <span class="required">*</span>
-                                <span class="hint">(min. 8 karakter)</span>
-                            </label>
-                            <div class="input-wrapper">
-                                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                <input type="password" class="form-input" id="password" placeholder="••••••••" required minlength="8" autocomplete="new-password" oninput="checkPasswordStrength(this.value)">
-                            </div>
-                            <div class="password-strength" id="passwordStrength" style="display:none;">
-                                <div class="strength-bar" id="str1"></div>
-                                <div class="strength-bar" id="str2"></div>
-                                <div class="strength-bar" id="str3"></div>
-                                <div class="strength-bar" id="str4"></div>
-                            </div>
-                            <p class="strength-text" id="strengthText" style="display:none;"></p>
-                        </div>
-                    </div>
-                    
-                    <!-- NIK Field (16 Digit) - WAJIB -->
+                    <!-- NIK -->
                     <div class="form-group">
                         <label class="form-label">
                             NIK (Nomor Induk Kependudukan) <span class="required">*</span>
@@ -834,47 +582,75 @@
                         </label>
                         <div class="input-wrapper">
                             <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/></svg>
-                            <input type="text" 
-                                   class="form-input" 
-                                   id="nik" 
-                                   placeholder="Masukkan 16 digit NIK" 
-                                   required 
-                                   maxlength="16" 
-                                   minlength="16" 
-                                   pattern="[0-9]{16}" 
-                                   title="NIK harus 16 digit angka"
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                   autocomplete="off">
+                            <input type="text" class="form-input" id="nik" placeholder="Masukkan 16 digit NIK" required maxlength="16" minlength="16" pattern="[0-9]{16}" title="NIK harus 16 digit angka" oninput="this.value = this.value.replace(/[^0-9]/g, '')" autocomplete="off">
                         </div>
-                        <small style="color: var(--gray-400); font-size: 0.78rem; margin-top: 6px; display: block;">
-                            ⚠️ Pastikan NIK sesuai dengan KTP Anda (16 digit angka)
-                        </small>
+                        <div class="error-message" id="nikError">NIK harus 16 digit angka</div>
                     </div>
                     
-                    <!-- Institusi Field -->
+                    <!-- Email -->
                     <div class="form-group">
                         <label class="form-label">
-                            Institusi / Asal Instansi <span class="required">*</span>
+                            Email <span class="required">*</span>
                         </label>
                         <div class="input-wrapper">
-                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 7v1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7H3l2-4h14l2 4M5 21V10.87M19 21V10.87"/></svg>
-                            <input type="text" class="form-input" id="institusi" placeholder="Nama rumah sakit, puskesmas, atau institusi" required autocomplete="organization">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                            <input type="email" class="form-input" id="email" placeholder="email@contoh.com" required autocomplete="email">
                         </div>
+                        <div class="error-message" id="emailError">Format email tidak valid</div>
                     </div>
                     
-                    <!-- Terms Agreement Checkbox -->
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="agreeTerms" required>
-                        <label for="agreeTerms">
-                            Saya menyatakan data yang diisikan adalah <strong>benar</strong> dan saya menyetujui 
-                            <strong>Syarat & Ketentuan</strong> serta <strong>Kebijakan Privasi</strong> SIMBAKES 
-                            Dinas Kesehatan Kabupaten Kutai Kartanegara.
+                    <!-- Username -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            Username <span class="required">*</span>
                         </label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <input type="text" class="form-input" id="username" placeholder="Username unik" required pattern="[a-zA-Z0-9_]+" title="Hanya huruf, angka, dan underscore" autocomplete="username">
+                        </div>
+                        <div class="error-message" id="usernameError">Username wajib diisi</div>
                     </div>
                     
-                    <!-- SUBMIT BUTTON - BRIGHT GREEN! -->
+                    <!-- Password -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            Password <span class="required">*</span>
+                            <span class="hint">(min. 6 karakter)</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            <input type="password" class="form-input" id="password" placeholder="Masukkan password" required minlength="6" autocomplete="new-password">
+                        </div>
+                        <div class="error-message" id="passwordError">Password minimal 6 karakter</div>
+                    </div>
+                    
+                    <!-- Jurusan Tujuan -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            Jurusan Tujuan <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                            <select class="form-select" id="jurusan_tujuan" required style="padding-left: 42px;">
+                                <option value="">-- Pilih Jurusan Tujuan --</option>
+                                <option value="Keperawatan">Keperawatan</option>
+                                <option value="Kebidanan">Kebidanan</option>
+                                <option value="Kesehatan Masyarakat">Kesehatan Masyarakat</option>
+                                <option value="Gizi">Gizi</option>
+                                <option value="Farmasi">Farmasi</option>
+                                <option value="Fisioterapi">Fisioterapi</option>
+                                <option value="Kesehatan Lingkungan">Kesehatan Lingkungan</option>
+                                <option value="Teknologi Laboratorium Medik">Teknologi Laboratorium Medik</option>
+                                <option value="Rekam Medis">Rekam Medis</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                        <div class="error-message" id="jurusanError">Jurusan tujuan wajib dipilih</div>
+                    </div>
+                    
+                    <!-- Submit Button -->
                     <button type="submit" class="submit-btn" id="submitBtn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:22px;height:22px;">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                             <circle cx="8.5" cy="7" r="4"/>
                             <line x1="20" y1="8" x2="20" y2="14"/>
@@ -885,20 +661,12 @@
                 </form>
             </div>
             
-            <!-- FOOTER -->
+            <!-- Footer -->
             <div class="register-footer">
                 <p class="footer-text">
                     Sudah memiliki akun? 
                     <a href="./login-peserta.html" class="footer-link">Login di Sini →</a>
                 </p>
-                
-                <div class="footer-info">
-                    <p>
-                        🏥 <strong>Dinas Kesehatan Kabupaten Kutai Kartanegara</strong><br>
-                        "BENA BENUA ETAM"<br>
-                        <small style="color: var(--gray-400);">© 2024 Sistem Informasi Beasiswa Kesehatan</small>
-                    </p>
-                </div>
             </div>
         </div>
     </div>
@@ -911,11 +679,11 @@
             </svg>
         </div>
         <h2 class="success-title">Pendaftaran Berhasil!</h2>
-        <p class="success-message" id="successMessage">Akun Anda telah berhasil dibuat. Silakan login untuk melanjutkan.</p>
+        <p class="success-message" id="successMessage">Akun peserta berhasil dibuat. Silakan gunakan username dan password tersebut untuk login.</p>
         <button class="success-btn" onclick="goToLogin()">🔐 Login Sekarang</button>
     </div>
 
-    <!-- Supabase Configuration -->
+    <!-- Supabase Configuration & Logic -->
     <script>
         // ============================================================
         // SUPABASE CONFIGURATION
@@ -923,65 +691,13 @@
         const SUPABASE_URL = 'https://boeknpvlfamjmddsdopd.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZWtucHZsZmFtam1kZHNkb3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NzYwNjIsImV4cCI6MjEwMjA1MjA2Mn0.kHj7xEY7Wa4zSJwH0rjhiB3Qf0IHriyPlWoh4rdlv3U';
         
-        // Initialize Supabase Client
         let supabaseClient = null;
         
         try {
             supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            console.log('[DAFTAR PESERTA] ✅ Supabase client initialized');
+            console.log('[DAFTAR] ✅ Supabase client initialized');
         } catch (error) {
-            console.error('[DAFTAR PESERTA] ❌ Failed to initialize Supabase:', error);
-        }
-    </script>
-
-    <!-- Main Application Logic -->
-    <script>
-        // ============================================================
-        // PASSWORD STRENGTH CHECKER
-        // ============================================================
-        function checkPasswordStrength(password) {
-            const strengthContainer = document.getElementById('passwordStrength');
-            const strengthText = document.getElementById('strengthText');
-            const bars = [
-                document.getElementById('str1'),
-                document.getElementById('str2'),
-                document.getElementById('str3'),
-                document.getElementById('str4')
-            ];
-            
-            if (!password) {
-                strengthContainer.style.display = 'none';
-                strengthText.style.display = 'none';
-                return;
-            }
-            
-            strengthContainer.style.display = 'flex';
-            strengthText.style.display = 'block';
-            
-            let strength = 0;
-            if (password.length >= 8) strength++;
-            if (password.length >= 12) strength++;
-            if (/[A-Z]/.test(password) && /[a-z]/.test(password)) strength++;
-            if (/[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) strength++;
-            
-            // Reset all bars
-            bars.forEach(bar => bar.className = 'strength-bar');
-            
-            // Set strength classes
-            const levels = ['weak', 'medium', 'strong', 'strong'];
-            const texts = ['Lemah', 'Cukup', 'Kuat', 'Sangat Kuat'];
-            const colors = [varColor('--error-500'), varColor('--gold-500'), varColor('--kukar-green-500'), varColor('--kukar-green-500')];
-            
-            for (let i = 0; i < strength; i++) {
-                bars[i].classList.add(levels[Math.min(strength - 1, 3)]);
-            }
-            
-            strengthText.textContent = `Kekuatan password: ${texts[strength - 1] || 'Sangat Lemah'}`;
-            strengthText.style.color = colors[strength - 1] || colors[0];
-        }
-        
-        function varColor(name) {
-            return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+            console.error('[DAFTAR] ❌ Failed to initialize Supabase:', error);
         }
 
         // ============================================================
@@ -1002,68 +718,121 @@
                 </div>
             `;
             
-            // Auto-hide after 8 seconds for success messages
             if (type === 'success') {
-                setTimeout(() => {
-                    container.innerHTML = '';
-                }, 8000);
+                setTimeout(() => { container.innerHTML = ''; }, 6000);
             }
         }
         
         function clearAlert() {
             document.getElementById('alertContainer').innerHTML = '';
         }
+        
+        function clearErrors() {
+            document.querySelectorAll('.form-input, .form-select').forEach(el => el.classList.remove('error'));
+            document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show'));
+        }
+        
+        function showError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const errorEl = document.getElementById(fieldId + 'Error');
+            if (field) field.classList.add('error');
+            if (errorEl) {
+                errorEl.textContent = message;
+                errorEl.classList.add('show');
+            }
+        }
 
         // ============================================================
         // FORM VALIDATION
         // ============================================================
-        function validateForm() {
-            const namaLengkap = document.getElementById('namaLengkap').value.trim();
+        async function validateForm() {
+            clearErrors();
+            let isValid = true;
+            
+            const nama = document.getElementById('nama').value.trim();
+            const nik = document.getElementById('nik').value.trim();
             const email = document.getElementById('email').value.trim();
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
-            const nik = document.getElementById('nik').value.trim();
-            const institusi = document.getElementById('institusi').value.trim();
-            const agreeTerms = document.getElementById('agreeTerms').checked;
+            const jurusan = document.getElementById('jurusan_tujuan').value;
             
-            // Check empty fields
-            if (!namaLengkap || !email || !username || !password || !nik || !institusi) {
-                showAlert('❌ Mohon lengkapi semua field yang wajib diisi (*)', 'error');
-                return false;
+            // Validasi Nama
+            if (!nama) {
+                showError('nama', 'Nama wajib diisi');
+                isValid = false;
             }
             
-            // Validate NIK (exactly 16 digits)
-            if (!/^[0-9]{16}$/.test(nik)) {
-                showAlert('❌ NIK harus tepat 16 digit angka (sesuai KTP)', 'error');
-                return false;
+            // Validasi NIK
+            if (!nik) {
+                showError('nik', 'NIK wajib diisi');
+                isValid = false;
+            } else if (!/^[0-9]{16}$/.test(nik)) {
+                showError('nik', 'NIK harus tepat 16 digit angka');
+                isValid = false;
             }
             
-            // Validate email format
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                showAlert('❌ Format email tidak valid', 'error');
-                return false;
+            // Validasi Email
+            if (!email) {
+                showError('email', 'Email wajib diisi');
+                isValid = false;
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showError('email', 'Format email tidak valid');
+                isValid = false;
             }
             
-            // Validate username format
-            if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-                showAlert('❌ Username hanya boleh huruf, angka, underscore (3-20 karakter)', 'error');
-                return false;
+            // Validasi Username
+            if (!username) {
+                showError('username', 'Username wajib diisi');
+                isValid = false;
+            } else if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+                showError('username', 'Username hanya boleh huruf, angka, underscore (3-20 karakter)');
+                isValid = false;
             }
             
-            // Validate password length
-            if (password.length < 8) {
-                showAlert('❌ Password minimal 8 karakter', 'error');
-                return false;
+            // Validasi Password
+            if (!password) {
+                showError('password', 'Password wajib diisi');
+                isValid = false;
+            } else if (password.length < 6) {
+                showError('password', 'Password minimal 6 karakter');
+                isValid = false;
             }
             
-            // Validate terms agreement
-            if (!agreeTerms) {
-                showAlert('❌ Anda harus menyetujui Syarat & Ketentuan', 'error');
-                return false;
+            // Validasi Jurusan
+            if (!jurusan) {
+                showError('jurusan_tujuan', 'Jurusan tujuan wajib dipilih');
+                isValid = false;
             }
             
-            return true;
+            return isValid ? { nama, nik, email, username: username.toLowerCase(), password, jurusan } : null;
+        }
+
+        // ============================================================
+        // CHECK DUPLICATE DATA
+        // ============================================================
+        async function checkDuplicate(nik, email, username) {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('akun_peserta')
+                    .select('nik, email, username')
+                    .or(`nik.eq.${nik},email.eq.${email},username.eq.${username}`)
+                    .limit(3);
+                
+                if (error) throw error;
+                
+                if (data && data.length > 0) {
+                    for (const row of data) {
+                        if (row.nik === nik) throw new Error('NIK sudah terdaftar. Gunakan NIK lain.');
+                        if (row.email === email) throw new Error('Email sudah terdaftar. Gunakan email lain.');
+                        if (row.username === username) throw new Error('Username sudah digunakan. Pilih yang lain.');
+                    }
+                }
+                
+                return true; // Tidak ada duplikat
+                
+            } catch (error) {
+                throw error;
+            }
         }
 
         // ============================================================
@@ -1072,120 +841,94 @@
         async function handleRegistration(event) {
             event.preventDefault();
             
-            // Validate form first
-            if (!validateForm()) {
-                return;
-            }
+            // Validasi form
+            const formData = await validateForm();
+            if (!formData) return;
             
-            // Get form data
-            const formData = {
-                nama_lengkap: document.getElementById('namaLengkap').value.trim(),
-                email: document.getElementById('email').value.trim().toLowerCase(),
-                username: document.getElementById('username').value.trim().toLowerCase(),
-                password: document.getElementById('password').value,
-                nik: document.getElementById('nik').value.trim(),  // 16 digit NIK
-                institusi: document.getElementById('institusi').value.trim()
-            };
-            
-            // Disable submit button and show loading state
+            // Disable button & show loading
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
             submitBtn.classList.add('loading');
-            submitBtn.querySelector('span')?.remove();  // Remove text temporarily
             
             clearAlert();
             showAlert('⏳ Sedang memproses pendaftaran...', 'info');
             
             try {
-                // Check if Supabase client is available
+                // Cek Supabase client
                 if (!supabaseClient) {
                     throw new Error('Koneksi database tidak tersedia. Silakan refresh halaman.');
                 }
                 
-                console.log('[DAFTAR PESERTA] Inserting data to akun_peserta table...');
+                console.log('[DAFTAR] Checking duplicates...');
                 
-                // Method 1: Try Direct INSERT (Recommended - No RPC needed)
-                const encoder = new TextEncoder();
-                const passwordData = encoder.encode(formData.password + 'simbakes_salt_2024');
-                const hashBuffer = await crypto.subtle.digest('SHA-256', passwordData);
-                const hashArray = Array.from(new Uint8Array(hashBuffer));
-                const password_hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                // Cek duplikat data
+                await checkDuplicate(formData.nik, formData.email, formData.username);
                 
+                console.log('[DAFTAR] No duplicates found, inserting...');
+                
+                // Insert ke Supabase
                 const insertData = {
-                    nama_lengkap: formData.nama_lengkap,
-                    email: formData.email,
+                    nama: formData.nama,
+                    nik: formData.nik,
+                    email: formData.email.toLowerCase(),
                     username: formData.username,
-                    nik: formData.nik || null,
-                    password_hash: password_hash,
-                    institusi: formData.institusi || '-',
-                    role: 'peserta',
-                    is_active: true,
-                    is_verified: false
+                    password: formData.password,
+                    jurusan_tujuan: formData.jurusan
                 };
                 
-                console.log('[DAFTAR PESERTA] Inserting:', Object.keys(insertData));
-                
-                const { data: insertData_result, error: insertError } = await supabaseClient
+                const { data: result, error: insertError } = await supabaseClient
                     .from('akun_peserta')
                     .insert([insertData])
-                    .select('id, nama_lengkap, email, username, created_at')
+                    .select('id, nama, email, username, created_at')
                     .single();
                 
                 if (insertError) {
-                    console.error('[DAFTAR PESERTA] Insert Error:', insertError);
+                    console.error('[DAFTAR] Insert Error:', insertError);
                     
+                    // Handle specific errors
                     if (insertError.code === '23505') {
                         const msg = insertError.message.toLowerCase();
-                        if (msg.includes('email')) throw new Error('Email sudah terdaftar. Gunakan email lain.');
-                        if (msg.includes('username')) throw new Error('Username sudah digunakan. Pilih yang lain.');
                         if (msg.includes('nik')) throw new Error('NIK sudah terdaftar.');
+                        if (msg.includes('email')) throw new Error('Email sudah terdaftar.');
+                        if (msg.includes('username')) throw new Error('Username sudah digunakan.');
                         throw new Error('Data duplikat terdeteksi.');
                     }
                     
                     if (insertError.code === '42501' || insertError.message?.includes('permission')) {
-                        throw new Error('Error izin database. Jalankan SQL script di Supabase SQL Editor.');
+                        throw new Error('Error izin database. Pastikan SQL script sudah dijalankan.');
                     }
                     
                     if (insertError.code === '42P01') {
-                        throw new Error('Tabel akun_peserta belum ada. Jalankan file SQL terlebih dahulu.');
+                        throw new Error('Tabel belum ada. Jalankan file SQL terlebih dahulu.');
                     }
                     
                     throw new Error(insertError.message || 'Gagal menyimpan data.');
                 }
                 
-                console.log('[DAFTAR PESERTA] ✅ Registration successful:', insertData_result);
+                console.log('[DAFTAR] ✅ Registration successful:', result);
                 
                 // Show success overlay
-                showSuccessOverlay(formData.nama_lengkap);
+                showSuccessOverlay(formData.nama);
                 
             } catch (error) {
-                console.error('[DAFTAR PESERTA] Registration failed:', error);
+                console.error('[DAFTAR] Registration failed:', error);
                 
                 let errorMsg = error.message || 'Terjadi kesalahan tidak diketahui';
                 
                 // Handle common errors
                 if (errorMsg.includes('401') || errorMsg.includes('authentication')) {
-                    errorMsg = 'Error autentikasi database. Pastikan SQL script RLS sudah dijalankan.';
-                } else if (errorMsg.includes('403') || errorMsg.includes('permission') || errorMsg.includes('RLS')) {
-                    errorMsg = 'Error izin akses. Jalankan script FIX_RLS_Registration_v2.sql di Supabase SQL Editor.';
+                    errorMsg = 'Error autentikasi database.';
+                } else if (errorMsg.includes('403') || errorMsg.includes('permission')) {
+                    errorMsg = 'Error izin akses. Pastikan RLS policy sudah dibuat.';
                 } else if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
-                    errorMsg = 'Gagal terhubung ke server. Periksa koneksi internet Anda.';
+                    errorMsg = 'Gagal terhubung ke server. Periksa koneksi internet.';
                 }
                 
                 showAlert(`❌ Gagal mendaftar: ${errorMsg}`, 'error');
                 
-                // Reset button state
+                // Reset button
                 submitBtn.disabled = false;
                 submitBtn.classList.remove('loading');
-                submitBtn.innerHTML = `
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="8.5" cy="7" r="4"/>
-                        <line x1="20" y1="8" x2="20" y2="14"/>
-                        <line x1="23" y1="11" x2="17" y2="11"/>
-                    </svg>
-                    <span>DAFTAR SEKARANG</span>
-                `;
             }
         }
 
@@ -1200,8 +943,8 @@
             
             overlay.classList.remove('hidden');
             
-            // Store registration info in localStorage for login page
-            localStorage.setItem('simbakes_recent_registration', JSON.stringify({
+            // Save registration info
+            localStorage.setItem('simbakes_registration', JSON.stringify({
                 nama: nama,
                 timestamp: Date.now(),
                 status: 'pending_login'
@@ -1216,13 +959,12 @@
         // INITIALIZATION
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('[DAFTAR PESERTA] Page loaded successfully');
-            console.log('[DAFTAR PESERTA] Ready for user registration');
+            console.log('[DAFTAR] Page loaded successfully');
             
-            // Focus on first input field
+            // Focus on first field
             setTimeout(() => {
-                document.getElementById('namaLengkap')?.focus();
-            }, 600);
+                document.getElementById('nama')?.focus();
+            }, 500);
         });
     </script>
 </body>
