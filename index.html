@@ -11073,7 +11073,8 @@ function openPenetapanAddModal() {
     `;
     
     document.body.appendChild(modal);
-    modal.style.display = 'flex';
+    // ✅ FIX: Add 'active' class to show modal with animation
+    modal.classList.add('active');
 }
 
 /**
@@ -13470,7 +13471,8 @@ function showConnectionTips() {
         </div>
     `;
     
-    modal.style.display = 'flex';
+    // ✅ FIX: Add 'active' class to show modal with animation
+    modal.classList.add('active');
 }
 
 // Console log untuk debugging
@@ -16061,7 +16063,8 @@ function viewRoadmapDetailPublic(id) {
             document.body.appendChild(modal);
         }
         modal.innerHTML = `<div class="modal-content" style="max-width:600px;">${detailHtml}</div>`;
-        modal.style.display = 'flex';
+        // ✅ FIX: Add 'active' class to show modal with animation
+    modal.classList.add('active');
     }
 }
 
@@ -16623,7 +16626,8 @@ function viewDetailRoadmap(index) {
         </div>
     `;
     
-    modal.style.display = 'flex';
+    // ✅ FIX: Add 'active' class to show modal with animation
+    modal.classList.add('active');
 }
 
 /**
@@ -16880,7 +16884,8 @@ function openRoadmapAddModal() {
         </div>
     `;
     
-    modal.style.display = 'flex';
+    // ✅ FIX: Add 'active' class to show modal with animation
+    modal.classList.add('active');
 }
 
 /**
@@ -17007,7 +17012,8 @@ function openRoadmapEditModal(index) {
         </div>
     `;
     
-    modal.style.display = 'flex';
+    // ✅ FIX: Add 'active' class to show modal with animation
+    modal.classList.add('active');
 }
 
 /**
@@ -17158,7 +17164,8 @@ function confirmDeleteRoadmap(index) {
         </div>
     `;
     
-    modal.style.display = 'flex';
+    // ✅ FIX: Add 'active' class to show modal with animation
+    modal.classList.add('active');
 }
 
 /**
@@ -18771,7 +18778,9 @@ function showDetailModal(data) {
         </div>
     `;
     
-    modal.style.display = 'flex';
+    // ✅ FIX: Add 'active' class to show modal with animation
+    modal.classList.add('active');
+    console.log('[MODAL] ✅ Detail modal opened for:', data.noRegister);
 }
 
 /**
@@ -18843,7 +18852,9 @@ function openStatusModal(id, currentStatus) {
         });
     }, 100);
     
-    modal.style.display = 'flex';
+    // ✅ FIX: Add 'active' class to show modal with animation
+    modal.classList.add('active');
+    console.log('[MODAL] ✅ Status update modal opened for ID:', id);
 }
 
 /**
@@ -19099,7 +19110,8 @@ function confirmDeletePengusul(id, namaLengkap) {
         </div>
     `;
     
-    modal.style.display = 'flex';
+    // ✅ FIX: Add 'active' class to show modal with animation
+    modal.classList.add('active');
 }
 
 /**
@@ -19270,7 +19282,8 @@ async function openPengusulEditModal(id) {
             </div>
         `;
         
-        modal.style.display = 'flex';
+        // ✅ FIX: Add 'active' class to show modal with animation
+    modal.classList.add('active');
         console.log('[SIMBAKES] ✅ Edit modal opened for:', data.nama_lengkap);
         
     } catch (error) {
