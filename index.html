@@ -7296,7 +7296,7 @@
             <div class="admin-toolbar">
                 <div class="admin-search-box">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                    <input type="text" id="roadmap-search-input" placeholder="Cari berdasarkan Kode, Jurusan, Perguruan Tinggi..." oninput="debounceSearchRoadmap()">
+                    <input type="text" id="roadmap-search-input" placeholder="Cari berdasarkan Jurusan, PT, Pekerjaan, Unit..." oninput="debounceSearchRoadmap()">
                 </div>
                 <select class="admin-filter-select" id="roadmap-status-filter" onchange="filterDataRoadmap()">
                     <option value="">Semua Status</option>
@@ -7996,14 +7996,22 @@ function openDataCardModal(rowNumber) {
 }
 
 /**
- * Open Data Card Modal for Roadmap
+ * Open Data Card Modal for Roadmap - FIXED with better debugging
  */
 function openRoadmapCardModal(index) {
+    console.log('[DEBUG openRoadmapCardModal] Opening card for index:', index);
+    console.log('[DEBUG openRoadmapCardModal] roadmapAdminData available:', typeof roadmapAdminData !== 'undefined');
+    console.log('[DEBUG openRoadmapCardModal] roadmapAdminData length:', roadmapAdminData?.length || 0);
+    
     const rowData = typeof roadmapAdminData !== 'undefined' ? roadmapAdminData[index] : null;
     if (!rowData) {
+        console.error('[DEBUG openRoadmapCardModal] Data not found at index:', index);
         showToast('❌ Data roadmap tidak ditemukan', 'error');
         return;
     }
+    
+    console.log('[DEBUG openRoadmapCardModal] Row data:', rowData);
+    console.log('[DEBUG openRoadmapCardModal] Row data keys:', Object.keys(rowData));
     
     currentCardData = { index, rowData };
     
@@ -8133,16 +8141,44 @@ function buildCrudActions(data) {
     </div>`;
 }
 
+/**
+ * Build Roadmap Card - FIXED VERSION
+ * Menggunakan OBJECT PROPERTY NAMES sesuai SQL schema tabel roadmap
+ * 
+ * STRUKTUR DATA YANG BENAR (dari Supabase):
+ * - row.id (UUID)
+ * - row.jurusan (text)
+ * - row.kualifikasi_awal (text)
+ * - row.jenis_pendidikan (text)
+ * - row.perguruan_tinggi (text)
+ * - row.pekerjaan (text)
+ * - row.tahun_studi (integer)
+ * - row.jumlah_kuota (integer)
+ * - row.kuota_terisi (integer)
+ * - row.sisa_kuota (generated)
+ * - row.unit_pendayaguna (text)
+ * - row.status (varchar)
+ * - row.nama_penerima (text)
+ */
 function buildRoadmapCard(rowData, index) {
-    const kode = rowData[0] || '-';
-    const jurusan = rowData[1] || '-';
-    const pt = rowData[2] || '-';
-    const prioritas = rowData[3] || '-';
-    const status = rowData[4] || '-';
-    const sumber = rowData[5] || '-';
-    const keterangan = rowData[6] || '-';
+    // FIXED: Gunakan object properties, bukan array indexing
+    console.log('[DEBUG buildRoadmapCard] Input data:', rowData);
+    console.log('[DEBUG buildRoadmapCard] Available keys:', Object.keys(rowData || {}));
     
-    const priorityColor = prioritas === 'Sangat Tinggi' ? '#ef4444' : prioritas === 'Tinggi' ? '#f59e0b' : '#3b82f6';
+    const id = rowData?.id || '-';
+    const jurusan = rowData?.jurusan || '-';
+    const kualifikasiAwal = rowData?.kualifikasi_awal || '-';
+    const jenisPendidikan = rowData?.jenis_pendidikan || '-';
+    const perguruanTinggi = rowData?.perguruan_tinggi || '-';
+    const pekerjaan = rowData?.pekerjaan || '-';
+    const tahunStudi = rowData?.tahun_studi || '-';
+    const jumlahKuota = rowData?.jumlah_kuota || 0;
+    const kuotaTerisi = rowData?.kuota_terisi || 0;
+    const sisaKuota = rowData?.sisa_kuota !== undefined ? rowData.sisa_kuota : (jumlahKuota - kuotaTerisi);
+    const unitPendayaguna = rowData?.unit_pendayaguna || '-';
+    const status = rowData?.status || 'Aktif';
+    const namaPenerima = rowData?.nama_penerima || '-';
+    
     const statusClass = getStatusClassForCard(status);
     
     return `
@@ -8151,38 +8187,52 @@ function buildRoadmapCard(rowData, index) {
             <div class="data-card-photo" style="background: white; width: 120px; height: 120px; font-size: 2.5rem;">
                 🗺️
             </div>
-            <div class="data-card-photo-label"><strong>${kode}</strong> - ${jurusan}</div>
+            <div class="data-card-photo-label"><strong>${jurusan}</strong> - ${tahunStudi}</div>
         </div>
     </div>
     <div class="data-card-fields">
         <div class="data-card-field">
-            <div class="data-card-field-label">Kode Roadmap</div>
-            <div class="data-card-field-value"><strong>${kode}</strong></div>
+            <div class="data-card-field-label">Jurusan / Program Studi</div>
+            <div class="data-card-field-value"><strong>${jurusan}</strong></div>
         </div>
         <div class="data-card-field">
             <div class="data-card-field-label">Status</div>
             <div class="data-card-field-value"><span class="data-card-status" style="${statusClass}">${status}</span></div>
         </div>
         <div class="data-card-field">
-            <div class="data-card-field-label">Jurusan / Program Studi</div>
-            <div class="data-card-field-value">${jurusan}</div>
+            <div class="data-card-field-label">Kualifikasi Awal</div>
+            <div class="data-card-field-value">${kualifikasiAwal}</div>
+        </div>
+        <div class="data-card-field">
+            <div class="data-card-field-label">Jenis Pendidikan</div>
+            <div class="data-card-field-value">${jenisPendidikan}</div>
         </div>
         <div class="data-card-field">
             <div class="data-card-field-label">Perguruan Tinggi</div>
-            <div class="data-card-field-value">${pt}</div>
+            <div class="data-card-field-value">${perguruanTinggi}</div>
         </div>
         <div class="data-card-field">
-            <div class="data-card-field-label">Prioritas</div>
-            <div class="data-card-field-value"><span style="color:${priorityColor};font-weight:700;">${prioritas}</span></div>
+            <div class="data-card-field-label">Pekerjaan</div>
+            <div class="data-card-field-value">${pekerjaan}</div>
         </div>
         <div class="data-card-field">
-            <div class="data-card-field-label">Sumber Data</div>
-            <div class="data-card-field-value"><small>${sumber}</small></div>
+            <div class="data-card-field-label">Tahun Studi</div>
+            <div class="data-card-field-value"><strong>${tahunStudi}</strong></div>
         </div>
+        <div class="data-card-field">
+            <div class="data-card-field-label">Kuota</div>
+            <div class="data-card-field-value">${kuotaTerisi} / ${jumlahKuota} <small>(Sisa: ${sisaKuota})</small></div>
+        </div>
+        <div class="data-card-field">
+            <div class="data-card-field-label">Unit Pendayaguna</div>
+            <div class="data-card-field-value">${unitPendayaguna}</div>
+        </div>
+        ${namaPenerima && namaPenerima !== '-' ? `
         <div class="data-card-field full-width">
-            <div class="data-card-field-label">Keterangan</div>
-            <div class="data-card-field-value">${keterangan}</div>
+            <div class="data-card-field-label">Nama Penerima</div>
+            <div class="data-card-field-value"><em>${namaPenerima}</em></div>
         </div>
+        ` : ''}
     </div>
     <div class="data-card-actions">
         <button class="btn btn-action-edit" onclick="editRoadmapFromCard(${index})">
@@ -14928,9 +14978,13 @@ function loadDataRoadmap() {
 /**
  * Load and Render Roadmap Admin Table with pagination, search, filter
  * Menggunakan Supabase client dan error handling yang lebih baik
+ * FIXED: Enhanced with comprehensive debugging and RLS error detection
  */
 async function loadRoadmapAdminTable() {
     const tbody = document.getElementById('roadmap-admin-table-body');
+    
+    console.log('=== [ROADMAP ADMIN] Starting loadRoadmapAdminTable ===');
+    console.log('[ROADMAP ADMIN] tbody element found:', !!tbody);
     
     // Show loading state
     tbody.innerHTML = `
@@ -14946,16 +15000,23 @@ async function loadRoadmapAdminTable() {
     try {
         // Pastikan Supabase client tersedia
         if (!supabaseClient) {
-            throw new Error('Supabase client belum terinisialisasi');
+            console.error('[ROADMAP ADMIN] ❌ Supabase client not initialized!');
+            throw new Error('Supabase client belum terinisialisasi. Pastikan koneksi internet stabil.');
         }
+        
+        console.log('[ROADMAP ADMIN] ✅ Supabase client available');
         
         const search = document.getElementById('roadmap-search-input')?.value?.trim() || '';
         const statusFilter = document.getElementById('roadmap-status-filter')?.value || '';
         
-        console.log('[SIMBAKES] Loading roadmap admin table...', { search, statusFilter });
+        console.log('[ROADMAP ADMIN] Filters:', { search, statusFilter });
         
         // Fetch data using the main fetchRoadmapData function
+        console.log('[ROADMAP ADMIN] Calling fetchRoadmapData()...');
         const data = await fetchRoadmapData();
+        
+        console.log('[ROADMAP ADMIN] Data received:', data?.length || 0, 'records');
+        console.log('[ROADMAP ADMIN] Sample data (first record):', data?.[0]);
         
         // Store all data for filtering
         roadmapAdminData = data || [];
@@ -14976,12 +15037,14 @@ async function loadRoadmapAdminTable() {
                 String(row.nama_penerima || '').toLowerCase().includes(searchLower) ||
                 String(row.status || '').toLowerCase().includes(searchLower)
             );
+            console.log('[ROADMAP ADMIN] After search filter:', filteredData.length, 'records');
         }
         
         if (statusFilter && statusFilter !== '') {
             filteredData = filteredData.filter(row => 
                 String(row.status || '').toLowerCase() === statusFilter.toLowerCase()
             );
+            console.log('[ROADMAP ADMIN] After status filter:', filteredData.length, 'records');
         }
         
         // Calculate pagination
@@ -14991,47 +15054,72 @@ async function loadRoadmapAdminTable() {
         const endIndex = Math.min(startIndex + roadmapPageSize, roadmapTotalRecords);
         const paginatedData = filteredData.slice(startIndex, endIndex);
         
+        console.log('[ROADMAP ADMIN] Pagination:', { 
+            total: roadmapTotalRecords, 
+            page: roadmapCurrentPage, 
+            pageSize: roadmapPageSize,
+            showing: paginatedData.length 
+        });
+        
         renderRoadmapTable(paginatedData, startIndex);
         updateRoadmapPagination();
         updateRoadmapStats();
         
+        console.log('=== [ROADMAP ADMIN] Load complete ===');
+        
     } catch (error) {
-        console.error('[SIMBAKES] Error fetching roadmap data:', error);
-        console.error('[SIMBAKES] Roadmap error details:', {
+        console.error('=== [ROADMAP ADMIN] ERROR ===');
+        console.error('[ROADMAP ADMIN] Error fetching roadmap data:', error);
+        console.error('[ROADMAP ADMIN] Error details:', {
             message: error.message,
             code: error.code,
-            status: error.status
+            status: error.status,
+            hint: error.hint,
+            details: error.details
         });
         
-        // Tampilkan pesan error yang lebih informatif
+        // Tampilkan pesan error yang lebih informatif dengan RLS detection
         let errorMsg = error.message || 'Terjadi kesalahan tidak diketahui';
+        let errorIcon = '⚠️';
         const isNetworkError = !error.status && (error.message?.includes('network') || error.message?.includes('fetch'));
         
-        // Berikan pesan spesifik
-        if (error.status === 400) {
-            errorMsg = `Error query roadmap (400). Detail: ${error.message}`;
-        } else if (error.status === 401) {
-            errorMsg = 'Error autentikasi (401). RLS Policy mungkin memblokir akses.';
-        } else if (error.status === 404) {
-            errorMsg = 'Tabel roadmap tidak ditemukan. Pastikan SQL schema sudah dijalankan.';
+        // DETEKSI SPESIFIK untuk berbagai jenis error
+        if (error.status === 401 || error.code === 'PGRST301' || error.message?.includes('permission')) {
+            errorMsg = '<strong>ERROR RLS/AUTENTIKASI (401)</strong><br><br>Row Level Security (RLS) memblokir akses ke tabel.<br>Solusi: Pastikan policy SELECT sudah diatur untuk anon role di Supabase Dashboard.<br><br><small>Detail: ' + error.message + '</small>';
+            errorIcon = '🔒';
+        } else if (error.status === 403 || error.code === 'PGRST302') {
+            errorMsg = '<strong>ERROR FORBIDDEN (403)</strong><br><br>Akses ditolak oleh RLS Policy.<br>Solusi: Cek tabel policies di Supabase Dashboard.<br><br><small>Detail: ' + error.message + '</small>';
+            errorIcon = '🚫';
+        } else if (error.status === 404 || error.code === 'PGRST116') {
+            errorMsg = '<strong>TABEL TIDAK DITEMUKAN (404)</strong><br><br>Tabel "roadmap" tidak ditemukan.<br>Solusi: Pastikan SQL schema sudah dijalankan di Supabase SQL Editor.<br><br><small>Detail: ' + error.message + '</small>';
+            errorIcon = '❓';
+        } else if (error.status === 400 || error.code === 'PGRST201' || error.code === 'PGRST202') {
+            errorMsg = '<strong>ERROR QUERY (400)</strong><br><br>Query tidak valid atau kolom tidak ditemukan.<br>Solusi: Periksa nama kolom sesuai schema.<br><br><small>Detail: ' + error.message + '</small>';
+            errorIcon = '⚙️';
+        } else if (isNetworkError) {
+            errorMsg = '<strong>ERROR JARINGAN</strong><br><br>Tidak dapat terhubung ke server Supabase.<br>Solusi: Periksa koneksi internet Anda.<br><br><small>Detail: ' + error.message + '</small>';
+            errorIcon = '🌐';
         }
         
         tbody.innerHTML = `
             <tr>
                 <td colspan="14" style="text-align:center;padding:3rem;color:#dc2626;">
-                    <div style="font-size:2.5rem;margin-bottom:1rem;">${isNetworkError ? '🌐' : '⚠️'}</div>
+                    <div style="font-size:2.5rem;margin-bottom:1rem;">${errorIcon}</div>
                     <p style="font-weight:600;margin-bottom:0.5rem;">Gagal Memuat Data Roadmap</p>
-                    <p style="font-size:0.875rem;color:#64748b;margin-bottom:1rem;max-width:500px;margin-left:auto;margin-right:auto;">
+                    <div style="font-size:0.875rem;color:#64748b;margin-bottom:1rem;max-width:600px;margin-left:auto;margin-right:auto;text-align:left;background:#fef2f2;padding:1rem;border-radius:8px;border:1px solid #fecaca;">
                         ${errorMsg}
-                    </p>
+                    </div>
                     <p style="font-size:0.75rem;color:#94a3b8;margin-bottom:1rem;">
-                        Error Code: ${error.code || error.status || 'Unknown'}
+                        Error Code: ${error.code || error.status || 'Unknown'} | Status: ${error.status || 'N/A'}
                     </p>
                     <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-top:1rem;">
                         <button class="btn btn-primary btn-sm" onclick="loadDataRoadmap()" style="margin-top:0.5rem;">
                             🔄 Coba Lagi
                         </button>
-                        <button class="btn btn-sm" onclick="location.reload();" style="background:#e0e7ff;color:#4338ca;margin-top:0.5rem;">
+                        <button class="btn btn-sm" onclick="testSupabaseConnection()" style="background:#e0e7ff;color:#4338ca;margin-top:0.5rem;">
+                            🔗 Test Koneksi
+                        </button>
+                        <button class="btn btn-sm" onclick="location.reload();" style="background:#f1f5f9;color:#475569;margin-top:0.5rem;">
                             🔃 Refresh Halaman
                         </button>
                     </div>
@@ -15128,7 +15216,7 @@ function renderRoadmapTable(data, startIndex) {
                     <div class="crud-actions">
                         <button class="btn-crud btn-view" onclick="viewDetailRoadmap(${actualIndex})" title="Lihat Detail">👁️</button>
                         <button class="btn-crud btn-edit" onclick="openRoadmapEditModal(${actualIndex})" title="Edit Data">✏️</button>
-                        <button class="btn-crud btn-delete" onclick="confirmDeleteRoadmap(${actualIndex}, '${jurusan}')" title="Hapus Data">🗑️</button>
+                        <button class="btn-crud btn-delete" onclick="confirmDeleteRoadmap(${actualIndex})" title="Hapus Data">🗑️</button>
                     </div>
                 </td>
             </tr>
@@ -15246,7 +15334,7 @@ function viewDetailRoadmap(index) {
                     <button onclick="closeModal('${modalId}'); openRoadmapEditModal(${index});" class="btn btn-sm" style="background:#fef3c7;color:#d97706;">
                         ✏️ Edit Data
                     </button>
-                    <button onclick="closeModal('${modalId}'); confirmDeleteRoadmap(${index}, '${jurusan}');" class="btn btn-sm" style="background:#fee2e2;color:#dc2626;">
+                    <button onclick="closeModal('${modalId}'); confirmDeleteRoadmap(${index});" class="btn btn-sm" style="background:#fee2e2;color:#dc2626;">
                         🗑️ Hapus Data
                     </button>
                 </div>
@@ -15341,19 +15429,62 @@ function refreshDataRoadmap() {
 }
 
 /**
- * Export Roadmap data to CSV
+ * Export Roadmap data to CSV - FIXED VERSION
+ * Menggunakan header dan field mapping yang sesuai SQL schema
  */
 function exportDataRoadmap() {
+    console.log('[Roadmap] Starting export...');
+    console.log('[Roadmap] Total records to export:', roadmapAdminData?.length || 0);
+    
     showToast('📥 Mempersiapkan export data...', 'info');
     
-    const headers = ['Kode', 'Jurusan', 'Kualifikasi Awal', 'Jenis Pendidikan', 'Perguruan Tinggi', 'Pekerjaan', 'Tahun Studi', 'Unit Pendayaguna', 'Status'];
+    // FIXED: Header sesuai dengan kolom tabel roadmap di Supabase
+    const headers = [
+        'No',
+        'Jurusan', 
+        'Kualifikasi Awal', 
+        'Jenis Pendidikan', 
+        'Perguruan Tinggi', 
+        'Pekerjaan', 
+        'Tahun Studi', 
+        'Jumlah Kuota', 
+        'Kuota Terisi', 
+        'Sisa Kuota', 
+        'Unit Pendayaguna', 
+        'Status', 
+        'Nama Penerima'
+    ];
+    
     let csvContent = '\uFEFF'; // BOM for UTF-8
     csvContent += headers.join(',') + '\n';
     
-    roadmapAdminData.forEach(row => {
-        const rowData = row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`);
-        csvContent += rowData.join(',') + '\n';
-    });
+    if (roadmapAdminData && roadmapAdminData.length > 0) {
+        roadmapAdminData.forEach((row, index) => {
+            // FIXED: Gunakan object properties yang sesuai schema
+            const sisaKuota = row.sisa_kuota !== undefined ? row.sisa_kuota : ((row.jumlah_kuota || 0) - (row.kuota_terisi || 0));
+            
+            const rowData = [
+                index + 1,
+                `"${String(row.jurusan || '').replace(/"/g, '""')}"`,
+                `"${String(row.kualifikasi_awal || '').replace(/"/g, '""')}"`,
+                `"${String(row.jenis_pendidikan || '').replace(/"/g, '""')}"`,
+                `"${String(row.perguruan_tinggi || '').replace(/"/g, '""')}"`,
+                `"${String(row.pekerjaan || '').replace(/"/g, '""')}"`,
+                `"${row.tahun_studi || ''}"`,
+                `"${row.jumlah_kuota || 0}"`,
+                `"${row.kuota_terisi || 0}"`,
+                `"${sisaKuota}"`,
+                `"${String(row.unit_pendayaguna || '').replace(/"/g, '""')}"`,
+                `"${row.status || 'Aktif'}"`,
+                `"${String(row.nama_penerima || '').replace(/"/g, '""')}"`
+            ];
+            csvContent += rowData.join(',') + '\n';
+        });
+        
+        console.log('[Roadmap] Export prepared with', roadmapAdminData.length, 'rows');
+    } else {
+        console.warn('[Roadmap] No data to export');
+    }
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -15681,9 +15812,16 @@ async function submitRoadmapForm(event) {
 }
 
 /**
- * Confirm Delete Roadmap
+ * Confirm Delete Roadmap - FIXED VERSION
+ * Menampilkan detail data yang akan dihapus (tanpa field 'kode' yang sudah tidak ada)
  */
-function confirmDeleteRoadmap(index, kode) {
+function confirmDeleteRoadmap(index) {
+    const rowData = roadmapAdminData[index];
+    if (!rowData) {
+        showToast('❌ Data tidak ditemukan', 'error');
+        return;
+    }
+    
     const modalId = 'roadmap-delete-modal';
     
     let modal = document.getElementById(modalId);
@@ -15695,8 +15833,9 @@ function confirmDeleteRoadmap(index, kode) {
         document.body.appendChild(modal);
     }
     
+    // FIXED: Tampilkan field yang benar dari schema (tanpa 'kode')
     modal.innerHTML = `
-        <div class="modal-content" style="max-width:450px;">
+        <div class="modal-content" style="max-width:500px;">
             <div class="modal-header" style="background:linear-gradient(135deg,#dc2626,#ef4444);color:white;">
                 <h3 class="modal-title">🗑️ Konfirmasi Hapus Data Roadmap</h3>
                 <button class="modal-close" onclick="closeModal('${modalId}')">
@@ -15710,7 +15849,10 @@ function confirmDeleteRoadmap(index, kode) {
                     <p style="color:#64748b;font-size:0.875rem;">Tindakan ini tidak dapat dibatalkan!</p>
                 </div>
                 <div style="background:#fef2f2;border:1px solid #fecaca;padding:1rem;border-radius:8px;margin-bottom:1.5rem;">
-                    <p style="font-size:0.875rem;"><strong>Kode:</strong> ${kode}</p>
+                    <p style="font-size:0.875rem;margin-bottom:0.5rem;"><strong>Jurusan:</strong> ${rowData.jurusan || '-'}</p>
+                    <p style="font-size:0.875rem;margin-bottom:0.5rem;"><strong>Perguruan Tinggi:</strong> ${rowData.perguruan_tinggi || '-'}</p>
+                    <p style="font-size:0.875rem;margin-bottom:0.5rem;"><strong>Tahun Studi:</strong> ${rowData.tahun_studi || '-'}</p>
+                    <p style="font-size:0.875rem;margin-bottom:0;"><strong>Status:</strong> ${rowData.status || '-'}</p>
                 </div>
                 <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
                     <button class="btn" style="background:#f1f5f9;color:#475569;" onclick="closeModal('${modalId}')">Batal</button>
