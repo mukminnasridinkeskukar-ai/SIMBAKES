@@ -775,7 +775,7 @@
             
             <!-- Footer -->
             <div class="footer" id="loginFooter">
-                <a href="https://simbakes.mukminnasri.com/index.html" class="link" onclick="history.back()">← Kembali ke Beranda SIMBAKES</a>
+                <a href="#" class="link" onclick="history.back()">← Kembali ke Beranda SIMBAKES</a>
             </div>
         </div>
     </div>
@@ -812,17 +812,33 @@
         Kolom yang dibutuhkan untuk autentikasi:
         - id (UUID, primary key)
         - username (text, unique) - untuk login
-        - password (text) - password (plain text atau hash)
+        - password_hash (text) - password HASHED (SHA-256 + salt 'simbakes_salt_2024')
         - email (text, unique) - alternatif login
         - nama_lengkap (text) - nama lengkap peserta
-        - nik (text, unique) - nomor induk kependudukan
+        - nik (char 16) - nomor induk kependudukan
+        - institusi (text) - institusi/asal peserta
+        - role (text) - peran (peserta/admin), default: peserta
+        - is_active (boolean) - status aktif, default: true
+        - is_verified (boolean) - status verifikasi, default: false
         
-        Kolom opsional:
-        - is_active (boolean) - status aktif
-        - password_hash (text) - jika password di-hash
+        PASSWORD HASHING:
+        -----------------
+        Form pendaftaran menggunakan SHA-256 dengan salt:
         
-        Contoh query test di Supabase Editor:
-        SELECT * FROM akun_peserta WHERE username ILIKE 'nirwan';
+        const input = password + 'simbakes_salt_2024';
+        const hash = SHA-256(input); // Output: hex string 64 karakter
+        
+        Contoh:
+        Password: 'nirwan123'
+        Input ke SHA-256: 'nirwan123simbakes_salt_2024'
+        Hash output: '5d41402abc4b2a76b9719d911017c592...' (64 hex chars)
+        
+        Query test di Supabase Editor:
+        SELECT id, username, email, nama_lengkap, 
+               LEFT(password_hash, 20) as hash_preview,
+               is_active 
+        FROM akun_peserta 
+        WHERE username ILIKE 'testuser';
         
         ============================================================
         */
@@ -911,9 +927,13 @@
         async function authenticate(username, password) {
             log(`🔐 Authenticating: ${username}`, 'info');
             
+            // Generate hash untuk debugging
+            const inputHash = await hashPassword(password);
+            log(`🔑 Input password hash: ${inputHash.substring(0, 20)}...`, 'info');
+            
             // STRATEGY 1: Try Supabase JS Client
             try {
-                log('Strategy 1: Supabase JS Client...', 'info');
+                log('Strategy 1: Supabase JS Client (akun_peserta)...', 'info');
                 const result = await authViaSupabaseClient(username, password);
                 if (result) return result;
             } catch (e) {
@@ -922,7 +942,7 @@
             
             // STRATEGY 2: Try Direct REST API Fetch
             try {
-                log('Strategy 2: Direct REST API...', 'info');
+                log('Strategy 2: Direct REST API (akun_peserta)...', 'info');
                 const result = await authViaRestAPI(username, password);
                 if (result) return result;
             } catch (e) {
@@ -950,16 +970,23 @@
                 .limit(1);
             
             if (error) throw new Error(error.message);
-            if (!data || data.length === 0) return null;
+            if (!data || data.length === 0) {
+                log(`❌ User '${username}' tidak ditemukan di tabel ${CONFIG.tableAkun}`, 'error');
+                return null;
+            }
             
             const user = data[0];
+            log(`👤 User ditemukan: ${user.nama_lengkap} (${user.username})`, 'info');
+            log(`🔐 DB password_hash: ${user.password_hash?.substring(0, 20)}...`, 'info');
             
-            // Check password (plain text atau hash comparison untuk akun_peserta)
-            const validPassword = user.password === password || 
-                                  user.password_hash === password ||
-                                  (user.password_hash && user.password_hash === simpleHash(password));
+            // Hash password input dan bandingkan dengan password_hash di database
+            const inputPasswordHash = await hashPassword(password);
+            const validPassword = user.password_hash === inputPasswordHash;
             
-            if (!validPassword) return null;
+            if (!validPassword) {
+                log(`❌ Password tidak match! Input: ${inputPasswordHash.substring(0, 20)}... vs DB: ${user.password_hash?.substring(0, 20)}...`, 'error');
+                return null;
+            }
             
             log(`✅ Auth via Supabase Client (akun_peserta) successful`, 'success');
             return formatUser(user);
@@ -980,16 +1007,23 @@
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             
             const data = await response.json();
-            if (!data || data.length === 0) return null;
+            if (!data || data.length === 0) {
+                log(`❌ User '${username}' tidak ditemukan (REST)`, 'error');
+                return null;
+            }
             
             const user = data[0];
+            log(`👤 User ditemukan (REST): ${user.nama_lengkap} (${user.username})`, 'info');
+            log(`🔐 DB password_hash (REST): ${user.password_hash?.substring(0, 20)}...`, 'info');
             
-            // Check password (plain text atau hash comparison untuk akun_peserta)
-            const validPassword = user.password === password || 
-                                  user.password_hash === password ||
-                                  (user.password_hash && user.password_hash === simpleHash(password));
+            // Hash password input dan bandingkan dengan password_hash di database
+            const inputPasswordHash = await hashPassword(password);
+            const validPassword = user.password_hash === inputPasswordHash;
             
-            if (!validPassword) return null;
+            if (!validPassword) {
+                log(`❌ Password tidak match (REST)! Input: ${inputPasswordHash.substring(0, 20)}... vs DB: ${user.password_hash?.substring(0, 20)}...`, 'error');
+                return null;
+            }
             
             log(`✅ Auth via REST API successful`, 'success');
             return formatUser(user);
@@ -1030,6 +1064,33 @@
             };
         }
         
+        /*
+        ============================================================
+        PASSWORD HASHING - SAMA DENGAN FORM PENDAFTARAN
+        ============================================================
+        
+        Form daftar peserta menggunakan:
+        - Algorithm: SHA-256
+        - Salt: 'simbakes_salt_2024'
+        - Output: Hex string (64 karakter)
+        
+        Contoh hasil hash untuk password 'test123':
+        Input: 'test123' + 'simbakes_salt_2024' = 'test123simbakes_salt_2024'
+        Output SHA-256 hex: 'a1b2c3d4e5f6...'
+        
+        ============================================================
+        */
+        
+        // Hash password menggunakan SHA-256 + salt (sama seperti form pendaftaran)
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const passwordData = encoder.encode(password + 'simbakes_salt_2024');
+            const hashBuffer = await crypto.subtle.digest('SHA-256', passwordData);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        
+        // Legacy simpleHash (untuk backward compatibility)
         function simpleHash(str) {
             let hash = 0;
             for (let i = 0; i < str.length; i++) {
