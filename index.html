@@ -9303,8 +9303,58 @@ function getCurrentUserRole() {
 function isAdminAuthenticated() {
     return currentAdminUser !== null;
 }
-\n\n// Get avatar icon based on RBAC role\nfunction getAvatarForRole(role) {\n    const avatars = {\n        superadmin: "👑",\n        operator: "⚙️",\n        viewer: "👁️"\n    };\n    return avatars[role] || "👤";  // Default\n}
-\n\n// ===== RBAC HELPER FUNCTIONS =====\nfunction getCurrentRoleConfig() {\n    if (!currentAdminUser) return null;\n    return ROLE_CONFIG[currentAdminUser.role] || null;\n}\n\nfunction debugRBAC() {\n    console.log("[RBAC] Debug Info:");\n    console.log("  User:", currentAdminUser?.name);\n    console.log("  Role:", currentAdminUser?.role);\n}\n\nfunction mapLegacyRole(oldRole) {\n    return { admin: "superadmin", operator: "operator", viewer: "viewer" }[oldRole] || "viewer";\n}\n\nconst canCreate = () => hasPermission("create");\nconst canUpdate = () => hasPermission("update");\nconst canDelete = () => hasPermission("delete");\nisSuperAdmin = () => getCurrentUserRole() === "superadmin";\nisOperator = () => getCurrentUserRole() === "operator";\nisViewer = () => getCurrentUserRole() === "viewer";\n
+
+// ============================================================
+// RBAC AVATAR & HELPER FUNCTIONS
+// ============================================================
+
+/**
+ * Get avatar icon based on RBAC role
+ */
+function getAvatarForRole(role) {
+    const avatars = {
+        superadmin: "👑",
+        operator: "⚙️",
+        viewer: "👁️"
+    };
+    return avatars[role] || "👤";
+}
+
+/**
+ * Get current role configuration object
+ */
+function getCurrentRoleConfig() {
+    if (!currentAdminUser) return null;
+    return ROLE_CONFIG[currentAdminUser.role] || null;
+}
+
+/**
+ * Debug RBAC state to console
+ */
+function debugRBAC() {
+    console.log("[RBAC] Debug Info:");
+    console.log("  User:", currentAdminUser?.name);
+    console.log("  Role:", currentAdminUser?.role);
+}
+
+/**
+ * Map legacy role names to new RBAC roles
+ */
+function mapLegacyRole(oldRole) {
+    return { 
+        admin: "superadmin", 
+        operator: "operator", 
+        viewer: "viewer" 
+    }[oldRole] || "viewer";
+}
+
+// Permission helper functions (shorthand)
+const canCreate = () => hasPermission("create");
+const canUpdate = () => hasPermission("update");
+const canDelete = () => hasPermission("delete");
+const isSuperAdmin = () => getCurrentUserRole() === "superadmin";
+const isOperator = () => getCurrentUserRole() === "operator";
+const isViewer = () => getCurrentUserRole() === "viewer";
 
 /**
  * Start auto-logout timer
