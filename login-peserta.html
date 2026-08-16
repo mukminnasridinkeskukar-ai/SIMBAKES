@@ -112,7 +112,7 @@
         
         .container {
             width: 100%;
-            max-width: 480px;
+            max-width: 520px;
             position: relative;
             z-index: 1;
         }
@@ -549,6 +549,166 @@
             margin-bottom: 24px;
         }
         
+        /* Submissions Data Section - NEW! */
+        .submissions-section {
+            margin-top: 24px;
+            background: var(--gray-50);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            text-align: left;
+        }
+        
+        .submissions-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--primary-100);
+        }
+        
+        .submissions-header h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary-700);
+            flex: 1;
+        }
+        
+        .submissions-badge {
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .submissions-badge.found {
+            background: var(--success-100);
+            color: var(--success-700);
+        }
+        
+        .submissions-badge.notfound {
+            background: var(--warning-100);
+            color: var(--warning-600);
+        }
+        
+        .submissions-badge.loading {
+            background: var(--primary-100);
+            color: var(--primary-700);
+        }
+        
+        .submissions-grid {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .submission-card {
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 16px;
+            border: 1px solid var(--gray-200);
+            transition: all 0.2s ease;
+        }
+        
+        .submission-card:hover {
+            border-color: var(--primary-300);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .submission-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .submission-no-register {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary-600);
+            background: var(--primary-50);
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
+        }
+        
+        .submission-status {
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .submission-status.disetujui {
+            background: var(--success-100);
+            color: var(--success-700);
+        }
+        
+        .submission-status.ditolak {
+            background: var(--error-100);
+            color: var(--error-700);
+        }
+        
+        .submission-status.proses {
+            background: var(--warning-100);
+            color: var(--warning-600);
+        }
+        
+        .submission-status.pending {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+        
+        .submission-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .submission-field {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .submission-field-label {
+            font-size: 0.7rem;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        
+        .submission-field-value {
+            font-size: 0.85rem;
+            color: var(--gray-800);
+            font-weight: 500;
+        }
+        
+        .submission-field.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .no-submissions {
+            text-align: center;
+            padding: 24px;
+            color: var(--gray-500);
+        }
+        
+        .no-submissions-icon {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+        }
+        
+        .no-submissions-text {
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+        
+        .no-submissions-hint {
+            font-size: 0.8rem;
+            color: var(--gray-400);
+        }
+        
         .profile-info {
             background: var(--gray-50);
             border-radius: var(--radius-lg);
@@ -708,6 +868,10 @@
             .btn-group {
                 flex-direction: column;
             }
+            
+            .submission-fields {
+                grid-template-columns: 1fr;
+            }
         }
         
         /* Config Error Banner */
@@ -763,6 +927,7 @@
     </style>
 </head>
 <body>
+
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
     
@@ -916,6 +1081,20 @@
                     </div>
                 </div>
                 
+                <!-- SUBMISSIONS DATA SECTION - NEW! -->
+                <div class="submissions-section" id="submissionsSection">
+                    <div class="submissions-header">
+                        <h3>📋 Data Pengajuan Beasiswa</h3>
+                        <span class="submissions-badge loading" id="submissionsBadge">Memuat...</span>
+                    </div>
+                    <div class="submissions-grid" id="submissionsGrid">
+                        <div class="no-submissions" id="noSubmissionsMsg" style="display:none;">
+                            <div class="no-submissions-icon">📭</div>
+                            <div class="no-submissions-text">Memuat data pengajuan...</div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="btn-group">
                     <button type="button" class="btn btn-primary" id="continueBtn" onclick="goToDashboard()">
                         <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -954,7 +1133,7 @@
     </div>
 
     <!-- ============================================================
-         JAVASCRIPT - SECURE AUTHENTICATION
+         JAVASCRIPT - SECURE AUTHENTICATION WITH SUBMISSIONS DATA
          ============================================================ -->
     <script>
         // ============================================================
@@ -999,7 +1178,7 @@
                 cleanUrl = cleanUrl.replace('/rest/v1', '');     // Remove /rest/v1 for JS client
                 cleanUrl = cleanUrl.replace('/rest', '');        // Remove /rest also
                 
-                console.log('🔗 Initializing Supabase with URL:', cleanUrl.substring(0, 40) + '...');
+                console.log('[LOGIN-PESERTA] 🔗 Initializing Supabase with URL:', cleanUrl.substring(0, 40) + '...');
                 
                 // Create Supabase client dengan options yang proper
                 supabaseClient = window.supabase.createClient(
@@ -1007,8 +1186,8 @@
                     SUPABASE_ANON_KEY,
                     {
                         auth: {
-                            autoRefreshToken: false,  // Tidak perlu refresh token untuk RPC
-                            persistSession: false      // Jangan persist session auth (kita pakai custom session)
+                            autoRefreshToken: false,
+                            persistSession: false
                         },
                         global: {
                             headers: {
@@ -1018,23 +1197,22 @@
                     }
                 );
                 
-                // Test connection dengan simple query
+                // Test connection
                 supabaseClient.from('multiusers').select('id').limit(1)
                     .then(({ error }) => {
                         if (error) {
-                            console.warn('⚠️ Supabase connection test warning:', error.message);
-                            // Jangan throw error - mungkin karena RLS, tapi RPC tetap bisa dipanggil
+                            console.warn('[LOGIN-PESERTA] ⚠️ Supabase connection test warning:', error.message);
                         } else {
-                            console.log('✅ Supabase connection test successful');
+                            console.log('[LOGIN-PESERTA] ✅ Supabase connection test successful');
                         }
                     });
                 
                 supabaseStatus.initialized = true;
-                console.log('✅ Supabase client initialized successfully');
+                console.log('[LOGIN-PESERTA] ✅ Supabase client initialized successfully');
                 return true;
                 
             } catch (error) {
-                console.error('❌ Failed to initialize Supabase:', error);
+                console.error('[LOGIN-PESERTA] ❌ Failed to initialize Supabase:', error);
                 supabaseStatus.error = error.message;
                 showConfigError(error.message);
                 return false;
@@ -1077,7 +1255,12 @@
             profileEmail: document.getElementById('profileEmail'),
             profileNIK: document.getElementById('profileNIK'),
             profileUsername: document.getElementById('profileUsername'),
-            profileLastLogin: document.getElementById('profileLastLogin')
+            profileLastLogin: document.getElementById('profileLastLogin'),
+            // Submissions elements
+            submissionsSection: document.getElementById('submissionsSection'),
+            submissionsBadge: document.getElementById('submissionsBadge'),
+            submissionsGrid: document.getElementById('submissionsGrid'),
+            noSubmissionsMsg: document.getElementById('noSubmissionsMsg')
         };
         
         // ============================================================
@@ -1087,7 +1270,6 @@
             const type = elements.passwordInput.type === 'password' ? 'text' : 'password';
             elements.passwordInput.type = type;
             
-            // Toggle icon
             if (type === 'text') {
                 elements.eyeIcon.innerHTML = `
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
@@ -1147,42 +1329,286 @@
         // SECURE AUTHENTICATION FUNCTION (via Supabase RPC)
         // ============================================================
         async function authenticateUser(username, password) {
-            // Validasi: Pastikan Supabase client sudah terinisialisasi
             if (!supabaseClient || !supabaseStatus.initialized) {
                 throw new Error('Supabase client belum siap. Silakan refresh halaman.');
             }
             
-            console.log('🔐 Calling RPC fn_authenticate_peserta for user:', username);
+            console.log('[LOGIN-PESERTA] 🔐 Calling RPC fn_authenticate_peserta for user:', username);
             
-            // Gunakan Supabase JS Client untuk memanggil RPC function
-            // Ini lebih aman dan otomatis handle headers/auth
             const { data, error } = await supabaseClient.rpc('fn_authenticate_peserta', {
                 p_username: username,
                 p_password: password
             });
             
             if (error) {
-                console.error('❌ RPC Error details:', {
+                console.error('[LOGIN-PESERTA] ❌ RPC Error details:', {
                     message: error.message,
                     code: error.code,
                     hint: error.hint,
                     details: error.details
                 });
                 
-                // Handle specific error codes
                 if (error.code === '42501' || error.message.includes('permission')) {
                     throw new Error('Izin ditolak. Pastikan SQL function sudah dibuat dengan SECURITY DEFINER.');
                 } else if (error.code === '42883' || error.message.includes('does not exist')) {
-                    throw new Error('Function fn_authenticate_peserta tidak ditemukan. Jalankan SQL setup terlebih dahulu.');
-                } else if (error.code === '23505') {
-                    throw new Error('Constraint violation. Data mungkin duplikat.');
+                    throw new Error('Function fn_authenticate_peserta tidak ditemukan.');
                 }
                 
                 throw new Error(error.message || 'Gagal mengautentikasi');
             }
             
-            console.log('✅ RPC Response received:', data ? 'success' : 'null');
+            console.log('[LOGIN-PESERTA] ✅ RPC Response received:', data ? 'success' : 'null');
             return data;
+        }
+        
+        // ============================================================
+        // FETCH SUBMISSIONS DATA - NEW FUNCTION!
+        // Query tabel submissions berdasarkan identitas user
+        // ============================================================
+        async function fetchSubmissionsData(userData) {
+            console.log('[LOGIN-PESERTA] 📊 Starting fetchSubmissionsData...');
+            console.log('[LOGIN-PESERTA] 📊 User data received:', {
+                nik: userData?.nik,
+                email: userData?.email,
+                username: userData?.username,
+                id: userData?.id
+            });
+            
+            // Update badge status
+            updateSubmissionsBadge('loading', 'Mencari data...');
+            
+            if (!supabaseClient || !supabaseStatus.initialized) {
+                console.error('[LOGIN-PESERTA] ❌ Supabase client not ready for submissions query');
+                renderNoSubmissions('error', 'Koneksi database belum siap');
+                return null;
+            }
+            
+            try {
+                // STRATEGI QUERY: Coba beberapa field sebagai identifier
+                // Prioritas: NIK > Email > Username > ID
+                
+                let submissionsData = null;
+                let queryError = null;
+                
+                // Strategy 1: Query by NIK (paling akurat)
+                if (userData?.nik) {
+                    console.log('[LOGIN-PESERTA] 📊 Strategy 1: Query by NIK:', userData.nik);
+                    const result = await supabaseClient
+                        .from('submissions')
+                        .select('*')
+                        .eq('nik', userData.nik)
+                        .order('created_at', { ascending: false })
+                        .limit(10);
+                    
+                    if (!result.error && result.data && result.data.length > 0) {
+                        submissionsData = result.data;
+                        console.log(`[LOGIN-PESERTA] ✅ Found ${submissionsData.length} submission(s) by NIK`);
+                    } else {
+                        console.log('[LOGIN-PESERTA] ℹ️ No submissions found by NIK, trying next strategy...');
+                        queryError = result.error;
+                    }
+                }
+                
+                // Strategy 2: Query by Email (jika NIK tidak ada hasil)
+                if ((!submissionsData || submissionsData.length === 0) && userData?.email) {
+                    console.log('[LOGIN-PESERTA] 📊 Strategy 2: Query by email:', userData.email);
+                    const result = await supabaseClient
+                        .from('submissions')
+                        .select('*')
+                        .eq('email', userData.email)
+                        .order('created_at', { ascending: false })
+                        .limit(10);
+                    
+                    if (!result.error && result.data && result.data.length > 0) {
+                        submissionsData = result.data;
+                        console.log(`[LOGIN-PESERTA] ✅ Found ${submissionsData.length} submission(s) by email`);
+                    } else {
+                        console.log('[LOGIN-PESERTA] ℹ️ No submissions found by email');
+                        queryError = result.error;
+                    }
+                }
+                
+                // Strategy 3: Query by nama_lengkap (fallback)
+                if ((!submissionsData || submissionsData.length === 0) && userData?.nama_lengkap) {
+                    console.log('[LOGIN-PESERTA] 📊 Strategy 3: Query by nama_lengkap:', userData.nama_lengkap);
+                    const result = await supabaseClient
+                        .from('submissions')
+                        .select('*')
+                        .ilike('nama_lengkap', `%${userData.nama_lengkap}%`)
+                        .order('created_at', { ascending: false })
+                        .limit(10);
+                    
+                    if (!result.error && result.data && result.data.length > 0) {
+                        submissionsData = result.data;
+                        console.log(`[LOGIN-PESERTA] ✅ Found ${submissionsData.length} submission(s) by nama_lengkap`);
+                    } else {
+                        queryError = result.error;
+                    }
+                }
+                
+                // Handle results
+                if (submissionsData && submissionsData.length > 0) {
+                    console.log('[LOGIN-PESERTA] ✅ Submissions data found:', submissionsData.length, 'records');
+                    console.log('[LOGIN-PESERTA] 📋 Sample submission data:', submissionsData[0]);
+                    
+                    updateSubmissionsBadge('found', `${submissionsData.length} Ditemukan`);
+                    renderSubmissionsCards(submissionsData);
+                    
+                    return submissionsData;
+                } else {
+                    console.log('[LOGIN-PESERTA] ⚠️ No submissions found for this user');
+                    
+                    if (queryError) {
+                        console.error('[LOGIN-PESERTA] ❌ Submissions query error:', queryError);
+                        
+                        // Check for RLS errors
+                        if (queryError.code === 'PGRST116' || queryError.message?.includes('does not exist')) {
+                            renderNoSubmissions('error', 'Tabel submissions tidak ditemukan');
+                        } else if (queryError.status === 401 || queryError.status === 403) {
+                            renderNoSubmissions('rls', 'Akses ditolak oleh RLS policy');
+                        } else {
+                            renderNoSubmissions('error', queryError.message);
+                        }
+                    } else {
+                        renderNoSubmissions('empty', 'Belum ada pengajuan beasiswa');
+                    }
+                    
+                    return null;
+                }
+                
+            } catch (error) {
+                console.error('[LOGIN-PESERTA] ❌ Exception in fetchSubmissionsData:', error);
+                renderNoSubmissions('error', error.message || 'Terjadi kesalahan saat mengambil data');
+                return null;
+            }
+        }
+        
+        // ============================================================
+        // RENDER SUBMISSIONS CARDS - NEW FUNCTION!
+        // Menampilkan data submissions dalam bentuk card
+        // ============================================================
+        function renderSubmissionsCards(submissions) {
+            if (!elements.submissionsGrid) return;
+            
+            let html = '';
+            
+            submissions.forEach((sub, index) => {
+                const statusClass = getStatusClass(sub.status);
+                const statusText = sub.status || 'Pending';
+                
+                // Format tanggal
+                const createdDate = sub.created_at ? formatDate(sub.created_at) : '-';
+                const updatedDate = sub.updated_at ? formatDate(sub.updated_at) : '-';
+                
+                html += `
+                    <div class="submission-card" style="animation: fadeIn 0.3s ease-out ${index * 0.1}s both;">
+                        <div class="submission-card-header">
+                            <span class="submission-no-register">${escapeHtml(sub.no_register || 'N/A')}</span>
+                            <span class="submission-status ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="submission-fields">
+                            <div class="submission-field">
+                                <span class="submission-field-label">Nama Lengkap</span>
+                                <span class="submission-field-value">${escapeHtml(sub.nama_lengkap || '-')}</span>
+                            </div>
+                            <div class="submission-field">
+                                <span class="submission-field-label">NIK</span>
+                                <span class="submission-field-value">${escapeHtml(sub.nik || '-')}</span>
+                            </div>
+                            <div class="submission-field">
+                                <span class="submission-field-label">Email</span>
+                                <span class="submission-field-value">${escapeHtml(sub.email || '-')}</span>
+                            </div>
+                            <div class="submission-field">
+                                <span class="submission-field-label">Jurusan/Program</span>
+                                <span class="submission-field-value">${escapeHtml(sub.jurusan || sub.program_studi || '-')}</span>
+                            </div>
+                            <div class="submission-field">
+                                <span class="submission-field-label">Perguruan Tinggi</span>
+                                <span class="submission-field-value">${escapeHtml(sub.perguruan_tinggi || sub.institusi || '-')}</span>
+                            </div>
+                            <div class="submission-field">
+                                <span class="submission-field-label">Tanggal Daftar</span>
+                                <span class="submission-field-value">${createdDate}</span>
+                            </div>
+                            ${sub.alamat ? `
+                            <div class="submission-field full-width">
+                                <span class="submission-field-label">Alamat</span>
+                                <span class="submission-field-value">${escapeHtml(sub.alamat)}</span>
+                            </div>
+                            ` : ''}
+                            ${sub.no_hp || sub.telepon ? `
+                            <div class="submission-field">
+                                <span class="submission-field-label">No. HP</span>
+                                <span class="submission-field-value">${escapeHtml(sub.no_hp || sub.telepon)}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            elements.submissionsGrid.innerHTML = html;
+        }
+        
+        // ============================================================
+        // HELPER: Get Status CSS Class
+        // ============================================================
+        function getStatusClass(status) {
+            if (!status) return 'pending';
+            const s = status.toLowerCase();
+            if (s.includes('setujui') || s.includes('approve') || s.includes('disetujui')) return 'disetujui';
+            if (s.includes('tolak') || s.includes('reject') || s.includes('ditolak')) return 'ditolak';
+            if (s.includes('proses') || s.includes('verifikasi') || s.includes('pending')) return 'proses';
+            return 'pending';
+        }
+        
+        // ============================================================
+        // HELPER: Render "No Submissions" Message
+        // ============================================================
+        function renderNoSubmissions(type, message) {
+            if (!elements.submissionsGrid) return;
+            
+            const icons = {
+                empty: '📭',
+                error: '⚠️',
+                rls: '🔒',
+                loading: '⏳'
+            };
+            
+            const titles = {
+                empty: 'Belum Ada Pengajuan',
+                error: 'Gagal Memuat Data',
+                rls: 'Akses Dibatasi',
+                loading: 'Memuat Data...'
+            };
+            
+            const hints = {
+                empty: 'Anda belum mengajukan beasiswa. Silakan daftar melalui form pendaftaran.',
+                error: 'Terjadi kesalahan saat mengambil data. Silakan coba lagi atau hubungi admin.',
+                rls: 'Kebijakan keamanan membatasi akses data. Hubungi administrator.',
+                loading: 'Sedang mencari data pengajuan Anda...'
+            };
+            
+            updateSubmissionsBadge(type === 'empty' ? 'notfound' : 'notfound', 'Tidak Ditemukan');
+            
+            elements.submissionsGrid.innerHTML = `
+                <div class="no-submissions">
+                    <div class="no-submissions-icon">${icons[type] || icons.empty}</div>
+                    <div class="no-submissions-text">${titles[type] || 'Tidak Ada Data'}</div>
+                    <div class="no-submissions-hint">${hints[type] || message}</div>
+                </div>
+            `;
+        }
+        
+        // ============================================================
+        // HELPER: Update Submissions Badge
+        // ============================================================
+        function updateSubmissionsBadge(type, text) {
+            if (!elements.submissionsBadge) return;
+            
+            elements.submissionsBadge.className = 'submissions-badge ' + type;
+            elements.submissionsBadge.textContent = text;
         }
         
         // ============================================================
@@ -1195,12 +1621,12 @@
                 });
                 
                 if (error) {
-                    console.warn('Logout RPC warning:', error);
+                    console.warn('[LOGIN-PESERTA] Logout RPC warning:', error);
                 }
                 
                 return data;
             } catch (e) {
-                console.warn('Server logout failed:', e);
+                console.warn('[LOGIN-PESERTA] Server logout failed:', e);
                 return null;
             }
         }
@@ -1218,12 +1644,12 @@
             showLoading(true);
             
             try {
-                console.log('🔐 Authenticating user...');
+                console.log('[LOGIN-PESERTA] 🔐 Authenticating user...');
                 
                 // Call secure authentication function
                 const result = await authenticateUser(credentials.username, credentials.password);
                 
-                console.log('📥 Auth response:', result);
+                console.log('[LOGIN-PESERTA] 📥 Auth response:', result);
                 
                 if (result.success) {
                     // ✅ LOGIN BERHASIL
@@ -1234,9 +1660,7 @@
                 }
                 
             } catch (error) {
-                console.error('❌ Authentication error:', error);
-                
-                // Handle network/server errors
+                console.error('[LOGIN-PESERTA] ❌ Authentication error:', error);
                 showToast('error', '❌ Kesalahan Sistem', getErrorMessage(error));
                 
             } finally {
@@ -1245,11 +1669,16 @@
         }
         
         // ============================================================
-        // SUCCESSFUL LOGIN HANDLER
+        // SUCCESSFUL LOGIN HANDLER - UPDATED!
+        // Now includes fetching submissions data
         // ============================================================
-        function handleSuccessfulLogin(result) {
+        async function handleSuccessfulLogin(result) {
             const user = result.user;
             const session = result.session;
+            
+            console.log('[LOGIN-PESERTA] ✅ Processing successful login for user:', user.username);
+            console.log('[LOGIN-PESERTA] 👤 User object keys:', Object.keys(user));
+            console.log('[LOGIN-PESERTA] 📊 User data sample:', JSON.stringify(user).substring(0, 200));
             
             // Create secure session object (NO sensitive data)
             const sessionData = {
@@ -1265,24 +1694,51 @@
                 sessionToken: session.token,
                 sessionExpiresAt: session.expires_at,
                 loginTime: new Date().toISOString(),
-                // For security: hash of some data for integrity check
                 integrityHash: simpleHash(user.id + session.token)
             };
             
             // Save session to localStorage
             localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
             
-            // Update UI
+            // Update UI with basic profile info
             renderProfile(user);
             showProfile();
             
             // Show success message
             showToast('success', '✅ Login Berhasil', `Selamat datang, ${user.nama_lengkap}!`);
             
+            // ===========================================
+            // 🆕 FETCH SUBMISSIONS DATA AFTER LOGIN
+            // ===========================================
+            console.log('[LOGIN-PESERTA] 🔄 Now fetching submissions data...');
+            
+            try {
+                const submissions = await fetchSubmissionsData(user);
+                
+                // Store submissions data in session for later use
+                if (submissions && submissions.length > 0) {
+                    sessionData.submissions = submissions;
+                    sessionData.hasSubmissions = true;
+                    localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+                    
+                    console.log('[LOGIN-PESERTA] ✅ Submissions data saved to session');
+                    showToast('info', '📋 Data Ditemukan', `Menemukan ${submissions.length} pengajuan beasiswa`);
+                } else {
+                    sessionData.hasSubmissions = false;
+                    localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+                    
+                    console.log('[LOGIN-PESERTA] ℹ️ No submissions data found for this user');
+                }
+            } catch (submissionsError) {
+                console.error('[LOGIN-PESERTA] ⚠️ Error fetching submissions (non-fatal):', submissionsError);
+                // Don't fail the login - just note the error
+                showToast('warning', '⚠️ Peringatan Data', 'Login berhasil, tapi data pengajuan gagal dimuat');
+            }
+            
             // Send callback to opener window (if any)
             sendCallbackToOpener(sessionData);
             
-            console.log('✅ User logged in successfully:', user.username);
+            console.log('[LOGIN-PESERTA] ✅ User logged in successfully:', user.username);
         }
         
         // ============================================================
@@ -1296,8 +1752,6 @@
                 case 'INVALID_CREDENTIALS':
                     title = '⚠️ Kredensial Salah';
                     message = 'Username atau password salah.';
-                    
-                    // Show attempts remaining if available
                     if (result.attempts_remaining !== undefined && result.attempts_remaining > 0) {
                         message += ` Percobaan tersisa: ${result.attempts_remaining}`;
                     }
@@ -1387,9 +1841,6 @@
         // SESSION MANAGEMENT
         // ============================================================
         
-        /**
-         * Check if valid session exists
-         */
         function checkExistingSession() {
             try {
                 const sessionStr = localStorage.getItem(SESSION_KEY);
@@ -1397,7 +1848,6 @@
                 
                 const session = JSON.parse(sessionStr);
                 
-                // Check if session is still valid
                 if (!session.isLoggedIn || !session.sessionExpiresAt) {
                     clearSession();
                     return null;
@@ -1414,36 +1864,30 @@
                 // Verify integrity
                 if (session.integrityHash !== simpleHash(session.userId + session.sessionToken)) {
                     clearSession();
-                    console.warn('Session integrity check failed - possible tampering');
+                    console.warn('[LOGIN-PESERTA] Session integrity check failed - possible tampering');
                     return null;
                 }
                 
                 return session;
                 
             } catch (error) {
-                console.error('Error checking session:', error);
+                console.error('[LOGIN-PESERTA] Error checking session:', error);
                 clearSession();
                 return null;
             }
         }
         
-        /**
-         * Clear session (logout)
-         */
         function clearSession() {
             localStorage.removeItem(SESSION_KEY);
-            console.log('🗑️ Session cleared');
+            console.log('[LOGIN-PESERTA] 🗑️ Session cleared');
         }
         
-        /**
-         * Simple hash function for integrity check (NOT cryptographic, just for tamper detection)
-         */
         function simpleHash(str) {
             let hash = 0;
             for (let i = 0; i < str.length; i++) {
                 const char = str.charCodeAt(i);
                 hash = ((hash << 5) - hash) + char;
-                hash = hash & hash; // Convert to 32bit integer
+                hash = hash & hash;
             }
             return hash.toString(16);
         }
@@ -1453,12 +1897,9 @@
         // ============================================================
         async function handleLogout() {
             try {
-                // Get current session
                 const session = checkExistingSession();
                 
                 if (session && session.sessionToken) {
-                    // Call logout RPC to invalidate server-side session
-                    // Menggunakan Supabase Client (lebih aman)
                     await logoutFromServer(session.sessionToken);
                 }
                 
@@ -1484,8 +1925,7 @@
                 }
                 
             } catch (error) {
-                console.error('Logout error:', error);
-                // Still clear local session even if server call fails
+                console.error('[LOGIN-PESERTA] Logout error:', error);
                 clearSession();
                 showLoginForm();
                 showToast('success', '✅ Logout Berhasil', 'Anda telah berhasil logout.');
@@ -1496,9 +1936,6 @@
         // NAVIGATION FUNCTIONS
         // ============================================================
         
-        /**
-         * Go to SIMBAKES Dashboard after successful login
-         */
         function goToDashboard() {
             const session = checkExistingSession();
             if (!session) {
@@ -1512,9 +1949,7 @@
             setTimeout(() => {
                 const homeUrl = getSimbakesHomeUrl();
                 
-                // Add session info to URL or use postMessage
                 if (window.opener) {
-                    // Send session data to parent window
                     window.opener.postMessage({
                         type: 'PESERTA_LOGIN_SUCCESS',
                         session: session
@@ -1526,11 +1961,8 @@
             }, 800);
         }
         
-        /**
-         * Go to SIMBAKES Home/Beranda
-         */
         function goToSimbakesHome() {
-            console.log('🏠 Navigating to SIMBAKES Home...');
+            console.log('[LOGIN-PESERTA] 🏠 Navigating to SIMBAKES Home...');
             
             const homeUrl = getSimbakesHomeUrl();
             showToast('info', '🔄 Mengalihkan...', 'Anda akan dialihkan ke Beranda SIMBAKES');
@@ -1540,22 +1972,16 @@
             }, 800);
         }
         
-        /**
-         * Get SIMBAKES Home URL
-         */
         function getSimbakesHomeUrl() {
-            // Priority 1: Saved URL
             const savedUrl = localStorage.getItem('simbakes_return_url');
             if (savedUrl && !savedUrl.includes('login-peserta')) {
                 return savedUrl;
             }
             
-            // Priority 2: Referrer
             if (document.referrer && !document.referrer.includes('login-peserta')) {
                 return document.referrer;
             }
             
-            // Priority 3: Default paths
             const possiblePaths = [
                 '../upload/SIMBAKES_Supabase%20(25).html',
                 '../upload/SIMBAKES_MultiUser_Integrated.html',
@@ -1580,11 +2006,7 @@
             }
         }
         
-        // Listen for messages from parent window
         window.addEventListener('message', (event) => {
-            // Validate origin in production!
-            // if (event.origin !== EXPECTED_ORIGIN) return;
-            
             if (event.data?.type === 'CHECK_SESSION') {
                 const session = checkExistingSession();
                 event.source.postMessage({
@@ -1622,14 +2044,13 @@
                 </div>
                 <button class="toast-close" onclick="this.parentElement.classList.add('hiding'); setTimeout(() => this.parentElement.remove(), 300)">
                     <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.207a1 1 0 010-1.414z" clip-rule="evenodd"/>
                     </svg>
                 </button>
             `;
             
             container.appendChild(toast);
             
-            // Auto-remove after duration
             setTimeout(() => {
                 if (toast.parentElement) {
                     toast.classList.add('hiding');
@@ -1643,6 +2064,7 @@
         // ============================================================
         
         function escapeHtml(text) {
+            if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
@@ -1655,6 +2077,16 @@
                 year: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit'
+            }).format(date);
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return new Intl.DateTimeFormat('id-ID', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
             }).format(date);
         }
         
@@ -1675,7 +2107,7 @@
         // INITIALIZATION
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Initializing Login Peserta page...');
+            console.log('[LOGIN-PESERTA] 🚀 Initializing Login Peserta page...');
             
             // Initialize Supabase
             initSupabase();
@@ -1686,13 +2118,33 @@
             // Check for existing session
             const existingSession = checkExistingSession();
             if (existingSession) {
-                console.log('♻️ Found existing session for:', existingSession.nama);
+                console.log('[LOGIN-PESERTA] ♻️ Found existing session for:', existingSession.nama);
                 
                 // Render profile from session
                 renderProfile(existingSession);
                 showProfile();
                 
                 showToast('info', '♻️ Session Ditemukan', `Selamat datang kembali, ${existingSession.nama}!`);
+                
+                // 🆕 Auto-fetch submissions data on page reload with existing session
+                if (existingSession.nik || existingSession.email || existingSession.nama) {
+                    console.log('[LOGIN-PESERTA] 🔄 Auto-fetching submissions for existing session...');
+                    fetchSubmissionsData({
+                        nik: existingSession.nik,
+                        email: existingSession.email,
+                        nama_lengkap: existingSession.nama,
+                        username: existingSession.username,
+                        id: existingSession.userId
+                    }).then(submissions => {
+                        if (submissions && submissions.length > 0) {
+                            existingSession.submissions = submissions;
+                            existingSession.hasSubmissions = true;
+                            localStorage.setItem(SESSION_KEY, JSON.stringify(existingSession));
+                        }
+                    }).catch(err => {
+                        console.warn('[LOGIN-PESERTA] ⚠️ Auto-fetch submissions failed:', err);
+                    });
+                }
             }
             
             // Input focus effects
@@ -1706,20 +2158,13 @@
                 elements.passwordError.classList.remove('show');
             });
             
-            console.log('✅ Login Peserta page initialized successfully');
+            console.log('[LOGIN-PESERTA] ✅ Login Peserta page initialized successfully');
         });
         
         // ============================================================
-        // SECURITY: Prevent console-based attacks
+        // SECURITY: Clear sensitive data on page unload
         // ============================================================
-        
-        // Disable right-click context menu (optional, light security)
-        // document.addEventListener('contextmenu', e => e.preventDefault());
-        
-        // Clear sensitive data on page unload
         window.addEventListener('beforeunload', function() {
-            // Don't clear session here - we want it to persist
-            // But clear any in-memory sensitive data
             if (elements.passwordInput) {
                 elements.passwordInput.value = '';
             }
