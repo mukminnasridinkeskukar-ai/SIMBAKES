@@ -5194,11 +5194,11 @@
                     <div id="admin-menu" style="display:none;">
                         <button class="nav-item amber" onclick="showPage('data-pengusul')" id="nav-data-pengusul">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                            Data Pengusul
+                            Data Pengusulan
                         </button>
                         <button class="nav-item amber" onclick="showPage('data-roadmap')" id="nav-data-roadmap">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
-                            Data Existing Roadmap
+                            Data Roadmap
                         </button>
                         <button class="nav-item purple" onclick="showPage('data-penetapan')" id="nav-data-penetapan">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -7060,7 +7060,7 @@
         <div class="page" id="page-data-pengusul">
             <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
                 <div>
-                    <h2>📋 Data Pengusul</h2>
+                    <h2>📋 Data Pengusulan</h2>
                     <p>Kelola seluruh data pengajuan beasiswa tematik kesehatan</p>
                 </div>
                 <div style="display:flex;gap:0.5rem;">
@@ -7069,6 +7069,9 @@
                     </button>
                     <button class="btn btn-sm" style="background:#f1f5f9;color:#475569;" onclick="refreshDataPengusul()">
                         🔄 Refresh
+                    </button>
+                    <button class="btn btn-primary btn-sm" style="background:linear-gradient(135deg,#059669,#10b981);" onclick="openPengusulAddModal()">
+                        ➕ Tambah Data
                     </button>
                 </div>
             </div>
@@ -7148,7 +7151,6 @@
                     <table class="admin-table" id="admin-pengusul-table">
                         <thead>
                             <tr>
-                                <th style="min-width:130px;">Aksi (CRUD)</th>
                                 <th style="min-width:70px;">Foto</th>
                                 <th style="min-width:60px;">No</th>
                                 <th style="min-width:180px;">No Register</th>
@@ -7176,6 +7178,7 @@
                                 <th style="min-width:280px;">Link Foto</th>
                                 <th style="min-width:280px;">Link Dokumen</th>
                                 <th style="min-width:50px;">Row#</th>
+                                <th style="min-width:130px;border-radius:0 10px 0 0;">AKSI</th>
                             </tr>
                         </thead>
                         <tbody id="pengusul-table-body">
@@ -7228,7 +7231,7 @@
         <div class="page" id="page-data-roadmap">
             <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
                 <div>
-                    <h2>🗺️ Data Existing Roadmap</h2>
+                    <h2>🗺️ Data Roadmap</h2>
                     <p>Kelola data roadmap kebutuhan beasiswa</p>
                 </div>
                 <div style="display:flex;gap:0.5rem;">
@@ -17601,21 +17604,6 @@ function renderAdminTable(data) {
         
         html += `
             <tr data-id="${id}" data-index="${actualIndex}">
-                <!-- CRUD Actions Column -->
-                <td>
-                    <div class="crud-actions">
-                        <button class="btn-crud btn-view" onclick="viewDetailPengusul('${id}')" title="Lihat Detail">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                        </button>
-                        <button class="btn-crud btn-status" onclick="openStatusModal('${id}', '${escapeHtml(row.status || '')}')" title="Ubah Status">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                        </button>
-                        <button class="btn-crud btn-delete" onclick="confirmDeletePengusul('${id}', '${escapeHtml(row.nama_lengkap || '')}')" title="Hapus Data">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                        </button>
-                    </div>
-                </td>
-                
                 <!-- Photo -->
                 <td>${photoCell}</td>
                 
@@ -17704,6 +17692,21 @@ function renderAdminTable(data) {
                 
                 <!-- ID Reference (hidden) -->
                 <td style="text-align:center;font-family:monospace;font-size:0.7rem;color:#94a3b8;" title="UUID: ${id}">${id ? id.substring(0, 8) + '...' : '-'}</td>
+                
+                <!-- AKSI Column (LAST) -->
+                <td>
+                    <div class="crud-actions">
+                        <button class="btn-crud btn-view" onclick="viewDetailPengusul('${id}')" title="Lihat Detail">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                        <button class="btn-crud btn-status" onclick="openStatusModal('${id}', '${escapeHtml(row.status || '')}')" title="Ubah Status">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button class="btn-crud btn-delete" onclick="confirmDeletePengusul('${id}', '${escapeHtml(row.nama_lengkap || '')}')" title="Hapus Data">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        </button>
+                    </div>
+                </td>
             </tr>
         `;
     });
@@ -18159,6 +18162,165 @@ async function submitStatusUpdate() {
     } catch (error) {
         console.error('[SIMBAKES] Error updating status:', error);
         showToast(`❌ Gagal update status: ${error.message}`, 'error');
+    }
+}
+
+/**
+ * Open Add Modal for new Submission (Data Pengusulan)
+ */
+function openPengusulAddModal() {
+    const modalId = 'pengusul-add-modal';
+    
+    // Create modal if not exists
+    if (!document.getElementById(modalId)) {
+        const modalHTML = `
+            <div class="modal-overlay" id="${modalId}" onclick="if(event.target===this)closeModal('${modalId}')">
+                <div class="modal-content" style="max-width:800px;">
+                    <div class="modal-header" style="background:linear-gradient(135deg,#059669,#10b981);color:white;padding:1.25rem;">
+                        <h3 class="modal-title">➕ Tambah Data Pengusulan Baru</h3>
+                        <button class="modal-close" onclick="closeModal('${modalId}')">×</button>
+                    </div>
+                    <div class="modal-body" style="padding:1.5rem;max-height:70vh;overflow-y:auto;">
+                        <form id="pengusul-add-form" onsubmit="return false;">
+                            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;">
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Nama Lengkap *</label>
+                                    <input type="text" id="add-nama_lengkap" required placeholder="Nama sesuai KTP" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">NIK *</label>
+                                    <input type="text" id="add-nik" required maxlength="16" placeholder="16 digit NIK" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;font-family:monospace;">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Email *</label>
+                                    <input type="email" id="add-email" required placeholder="email@contoh.com" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">No. HP</label>
+                                    <input type="text" id="add-no_hp" placeholder="08xxxxxxxxxx" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Jurusan Tujuan *</label>
+                                    <select id="add-jurusan_tujuan" required style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                                        <option value="">Pilih Jurusan</option>
+                                        <option value="Keperawatan">Keperawatan</option>
+                                        <option value="Kebidanan">Kebidanan</option>
+                                        <option value="Kesehatan Masyarakat">Kesehatan Masyarakat</option>
+                                        <option value="Gizi">Gizi</option>
+                                        <option value="Farmasi">Farmasi</option>
+                                        <option value="Kedokteran">Kedokteran</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Jenjang Pendidikan</label>
+                                    <select id="add-jenjang_pendidikan" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                                        <option value="">Pilih Jenjang</option>
+                                        <option value="D3">D3 (Diploma)</option>
+                                        <option value="D4">D4 (Diploma Terapan)</option>
+                                        <option value="S1">S1 (Sarjana)</option>
+                                        <option value="S2">S2 (Magister)</option>
+                                        <option value="Profesi">Profesi</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Status</label>
+                                    <select id="add-status" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                                        <option value="Proses Verifikasi">Proses Verifikasi</option>
+                                        <option value="Disetujui">Disetujui</option>
+                                        <option value="Ditolak">Ditolak</option>
+                                        <option value="Perbaikan">Perbaikan</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Pekerjaan</label>
+                                    <input type="text" id="add-pekerjaan" placeholder="Pekerjaan saat ini" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-top:1rem;">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Alamat KTP</label>
+                                <textarea id="add-alamat_ktp" rows="2" placeholder="Alamat sesuai KTP" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;resize:vertical;"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Unit Kerja / Penempatan</label>
+                                <input type="text" id="add-unit_kerja" placeholder="Unit kerja tujuan" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer" style="padding:1rem;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:0.75rem;">
+                        <button class="btn btn-sm" style="background:#f1f5f9;color:#475569;" onclick="closeModal('${modalId}')">Batal</button>
+                        <button class="btn btn-sm" style="background:linear-gradient(135deg,#059669,#10b981);color:white;" onclick="saveNewPengusul('${modalId}')">
+                            💾 Simpan Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+    
+    // Show modal
+    document.getElementById(modalId).style.display = 'flex';
+}
+
+/**
+ * Save new submission to Supabase
+ */
+async function saveNewPengusul(modalId) {
+    // Collect form data
+    const newData = {
+        nama_lengkap: document.getElementById('add-nama_lengkap')?.value?.trim(),
+        nik: document.getElementById('add-nik')?.value?.trim(),
+        email: document.getElementById('add-email')?.value?.trim(),
+        no_hp: document.getElementById('add-no_hp')?.value?.trim(),
+        jurusan_tujuan: document.getElementById('add-jurusan_tujuan')?.value,
+        jenjang_pendidikan: document.getElementById('add-jenjang_pendidikan')?.value,
+        status: document.getElementById('add-status')?.value || 'Proses Verifikasi',
+        pekerjaan: document.getElementById('add-pekerjaan')?.value?.trim(),
+        alamat_ktp: document.getElementById('add-alamat_ktp')?.value?.trim(),
+        unit_kerja: document.getElementById('add-unit_kerja')?.value?.trim()
+    };
+    
+    // Validation
+    if (!newData.nama_lengkap || !newData.nik || !newData.email || !newData.jurusan_tujuan) {
+        showToast('⚠️ Mohon isi field yang wajib (*)', 'warning');
+        return;
+    }
+    
+    // Validate NIK length
+    if (newData.nik.length !== 16 || !/^\d+$/.test(newData.nik)) {
+        showToast('⚠️ NIK harus 16 digit angka', 'warning');
+        return;
+    }
+    
+    try {
+        showToast('🔄 Menyimpan data...', 'info');
+        
+        // Insert to Supabase
+        const { data, error } = await supabaseClient
+            .from('submissions')
+            .insert([{
+                ...newData,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            }])
+            .select();
+        
+        if (error) throw error;
+        
+        console.log('✅ New submission created:', data);
+        
+        // Close modal
+        closeModal(modalId);
+        
+        // Show success
+        showToast('✅ Data pengusulan berhasil ditambahkan', 'success');
+        
+        // Refresh table
+        loadDataPengusul();
+        
+    } catch (error) {
+        console.error('❌ Error saving new pengusul:', error);
+        showToast(`❌ Gagal menyimpan: ${error.message}`, 'error');
     }
 }
 
