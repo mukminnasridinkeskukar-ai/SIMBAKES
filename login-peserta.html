@@ -981,11 +981,61 @@
         const STORAGE_BUCKETS = ['uploads', 'photos', 'submissions', 'fotos', 'images', 'public', 'files'];
         
         /**
+         * Extract Google Drive File ID dari berbagai format URL
+         */
+        function extractGoogleDriveFileId(url) {
+            const patterns = [
+                /\/file\/d\/([a-zA-Z0-9_-]+)/,           // /file/d/FILE_ID
+                /[?&]id=([a-zA-Z0-9_-]+)/,                 // ?id=FILE_ID or &id=FILE_ID
+                /\/d\/([a-zA-Z0-9_-]+)/,                   // /d/FILE_ID
+                /^([a-zA-Z0-9_-]{28,})$/                    // Just FILE_ID (28+ chars)
+            ];
+            
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match && match[1]) {
+                    return match[1];
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Konversi Google Drive sharing link ke direct image URL
+         */
+        function convertGoogleDriveToDirectUrl(url) {
+            const fileId = extractGoogleDriveFileId(url);
+            if (!fileId) return null;
+            
+            console.log(`[PHOTO] 🔄 Google Drive File ID extracted: ${fileId}`);
+            
+            // Format direct URL (paling reliable untuk <img>)
+            const directUrls = [
+                `https://lh3.googleusercontent.com/d/${fileId}`,      // Thumbnail (cepat)
+                `https://drive.google.com/thumbnail?id=${fileId}`,    // Thumbnail resmi
+                `https://drive.google.com/uc?export=view&id=${fileId}`, // Direct view
+            ];
+            
+            return { fileId, directUrls };
+        }
+
+        /**
+         * Cek apakah URL adalah Google Drive link
+         */
+        function isGoogleDriveUrl(url) {
+            return url.includes('drive.google.com') || 
+                   url.includes('google.com/file') ||
+                   url.includes('google.com/open') ||
+                   (url.length > 25 && /^[a-zA-Z0-9_-]{28,}$/.test(url));
+        }
+
+        /**
          * Resolve foto URL dari berbagai format:
-         * 1. Full URL (http/https) → langsung digunakan
-         * 2. Data URI (base64) → langsung digunakan  
-         * 3. Supabase Storage path → dikonversi ke public URL
-         * 4. Relative path → dicoba dengan storage buckets
+         * 1. Google Drive Link → konversi ke direct image URL ⭐ NEW
+         * 2. Full URL (http/https) → langsung digunakan
+         * 3. Data URI (base64) → langsung digunakan  
+         * 4. Supabase Storage path → dikonversi ke public URL
+         * 5. Relative path → dicoba dengan storage buckets
          */
         async function resolvePhotoUrl(photoValue) {
             if (!photoValue || (typeof photoValue === 'string' && photoValue.trim() === '')) {
@@ -994,19 +1044,31 @@
             
             const trimmedValue = String(photoValue).trim();
             
-            // Case 1: Sudah full URL (http/https)
+            // Case 1: Google Drive Link → Konversi ke Direct Image URL ⭐
+            if (isGoogleDriveUrl(trimmedValue)) {
+                console.log('[PHOTO] 🔗 Detected Google Drive URL, converting...');
+                const driveData = convertGoogleDriveToDirectUrl(trimmedValue);
+                
+                if (driveData) {
+                    // Return first direct URL (thumbnail - paling cepat dan reliable)
+                    console.log(`[PHOTO] ✅ Converted to: ${driveData.directUrls[0]}`);
+                    return driveData.directUrls[0];
+                }
+            }
+            
+            // Case 2: Sudah full URL (http/https) - bukan Google Drive
             if (trimmedValue.startsWith('http://') || trimmedValue.startsWith('https://')) {
-                console.log('[PHOTO] ✅ Detected full URL');
+                console.log('[PHOTO] ✅ Detected full URL (non-Google Drive)');
                 return trimmedValue;
             }
             
-            // Case 2: Data URI (base64)
+            // Case 3: Data URI (base64)
             if (trimmedValue.startsWith('data:image/')) {
                 console.log('[PHOTO] ✅ Detected data URI');
                 return trimmedValue;
             }
             
-            // Case 3 & 4: Coba resolve via Supabase Storage
+            // Case 4 & 5: Coba resolve via Supabase Storage
             if (supabaseClient) {
                 // Path yang mungkin (dengan atau tanpa prefix folder)
                 const possiblePaths = [
@@ -1102,7 +1164,7 @@
             }
             
             try {
-                // Resolve URL (handle Supabase Storage paths)
+                // Resolve URL (handle Supabase Storage paths & Google Drive)
                 const resolvedUrl = await resolvePhotoUrl(photoValue);
                 
                 if (!resolvedUrl) {
@@ -1111,22 +1173,67 @@
                     return;
                 }
                 
+                // Simpan semua URL alternatif (untuk Google Drive)
+                let alternativeUrls = [];
+                if (isGoogleDriveUrl(photoValue)) {
+                    const driveData = convertGoogleDriveToDirectUrl(photoValue);
+                    if (driveData && driveData.directUrls) {
+                        alternativeUrls = driveData.directUrls.filter(url => url !== resolvedUrl);
+                        // Tambahkan original URL sebagai opsi terakhir
+                        alternativeUrls.push(photoValue);
+                    }
+                } else {
+                    alternativeUrls.push(resolvedUrl); // Fallback: URL yang sama
+                }
+                
                 console.log('[PHOTO] Rendering with URL:', resolvedUrl);
+                console.log('[PHOTO] Alternative URLs available:', alternativeUrls.length);
                 
                 // Render foto dengan error handling yang lebih baik
                 photoContainer.innerHTML = `
                     <img src="${resolvedUrl}" alt="Foto Peserta" class="photo-img"
                          style="max-width: 100%; max-height: 280px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
                          onload="console.log('[PHOTO] ✅ Image loaded successfully')"
-                         onerror="this.handlePhotoError ? this.handlePhotoError() : handleImageError(this)">
+                         onerror="this.handlePhotoError ? this.handlePhotoError() : handleImageError(this, ${JSON.stringify(alternativeUrls)})">
                 `;
                 
-                // Tambahkan fungsi error handler global
-                window.handleImageError = function(imgElement) {
-                    console.log('[PHOTO] ❌ Image failed to load, showing placeholder');
+                // Tambahkan fungsi error handler global dengan retry support
+                window.handleImageError = function(imgElement, altUrls = []) {
+                    console.log('[PHOTO] ❌ Image failed to load');
+                    console.log('[PHOTO] Alternative URLs:', altUrls);
                     
-                    // Coba alternatif: buka di tab baru untuk debugging
-                    const originalSrc = imgElement.src;
+                    const currentSrc = imgElement.src;
+                    
+                    // Jika ada URL alternatif, coba yang berikutnya
+                    if (altUrls && altUrls.length > 0) {
+                        const nextUrl = altUrls[0];
+                        const remainingUrls = altUrls.slice(1);
+                        
+                        console.log(`[PHOTO] 🔄 Retrying with alternative URL... (${remainingUrls.length} more available)`);
+                        
+                        // Update img src ke URL alternatif
+                        imgElement.src = nextUrl;
+                        
+                        // Update onerror handler dengan remaining URLs
+                        imgElement.onerror = function() {
+                            handleImageError(this, remainingUrls);
+                        };
+                        
+                        return; // Jangan show placeholder dulu, tunggu retry
+                    }
+                    
+                    // Semua URL gagal - tampilkan placeholder dengan opsi manual
+                    console.log('[PHOTO] 💥 All URLs failed, showing manual options');
+                    
+                    // Generate tombol untuk setiap URL yang dicoba
+                    const allUrls = [currentSrc, ...(altUrls || [])];
+                    const buttonsHtml = allUrls.map((url, index) => {
+                        const label = index === 0 ? 'Link Asli' : `Alternatif ${index}`;
+                        return `<button onclick="window.open('${url}', '_blank')" 
+                                style="margin: 4px; padding: 6px 10px; background: ${index === 0 ? '#ef4444' : '#3b82f6'}; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.7rem;">
+                                ${label}
+                            </button>`;
+                    }).join('');
                     
                     imgElement.parentElement.innerHTML = `
                         <div class="photo-placeholder">
@@ -1137,10 +1244,10 @@
                                 <line x1="4" y1="4" x2="20" y2="20" style="stroke: #ef4444;"/>
                             </svg>
                             <span>FOTO GAGAL DIMUAT</span>
-                            <button onclick="window.open('${originalSrc}', '_blank')" 
-                                    style="margin-top: 8px; padding: 6px 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem;">
-                                Buka Link Foto
-                            </button>
+                            <div style="margin-top: 12px;">
+                                <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px;">Coba buka link secara manual:</p>
+                                ${buttonsHtml}
+                            </div>
                         </div>
                     `;
                 };
