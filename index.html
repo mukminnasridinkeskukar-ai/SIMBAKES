@@ -6573,13 +6573,14 @@ function openDetailLightbox(record) {
     console.log('  - Keys count:', Object.keys(record).length);
     console.groupEnd();
     
-    // Delegate ke CRUD Lightbox system
-    if (typeof openLightboxWithCRUD === 'function') {
+    // Delegate ke FINAL Lightbox system
+    if (typeof openFullScreenLightbox === 'function') {
+        openFullScreenLightbox(record);
+    } else if (typeof openLightboxWithCRUD === 'function') {
         openLightboxWithCRUD(record);
     } else {
-        console.warn('⚠️ openLightboxWithCRUD tidak tersedia, menggunakan fallback');
-        // Fallback: tampilkan data sederhana
-        showSimpleDataModal(record.id || record.nik);
+        console.error('❌ Tidak ada lightbox tersedia!');
+        ToastManager.error('Sistem popup belum dimuat. Silakan refresh.');
     }
 }
 
@@ -7719,241 +7720,19 @@ console.log('[CRUD SYSTEM] ℹ️ Table: renderAdminTableClean() | Lightbox: ope
 
     </script>
 
+    </script>
+
 <body>
     
-    <!-- ===== CRITICAL FIX: Early Load CRUD Functions ===== -->
+    <!-- ===== SIMBAKES ADMIN FINAL SYSTEM ===== -->
+    <!-- Sistem FINAL: Tanpa Fallback, Tanpa Simple Modal, Tanpa Polling -->
+    <script src="/home/z/my-project/scripts/simbakes-admin-final.js"></script>
     <script>
-    // Fallback handler - akan di-override oleh script CRUD lengkap
-    // PERBAIKAN: Gunakan INDEX-based lookup (sama dengan handler utama)
-    window.handleTableRowClick = function(recordId, index) {
-        console.log('[FALLBACK] Row clicked - ID:', recordId, 'Index:', index);
-        
-        // ============================================================
-        // CEK 1: Index-based lookup (UTAMA - paling reliable)
-        // ============================================================
-        if (typeof index === 'number' && !isNaN(index) && index >= 0) {
-            if (typeof pengusulData !== 'undefined' && Array.isArray(pengusulData) && pengusulData[index]) {
-                const record = pengusulData[index];
-                console.log('[FALLBACK] ✅ Record via INDEX:', index);
-                window.activeRecord = record;
-                if (typeof openLightboxWithCRUD === 'function') {
-                    openLightboxWithCRUD(record);
-                    return;
-                }
-            }
-        }
-        
-        // Cek apakah fungsi lengkap sudah tersedia (ID fallback)
-        if (typeof openLightboxWithCRUD === 'function' && typeof pengusulData !== 'undefined') {
-            const record = pengusulData.find(item => 
-                item.id === recordId || 
-                String(item.id) === String(recordId) ||
-                item.nik === recordId ||
-                item.no_register === recordId
-            );
-            if (record) {
-                window.activeRecord = record;
-                openLightboxWithCRUD(record);
-                return;
-            }
-        }
-        
-        // POLLING: Coba berulang kali sampai CRUD system siap (max 10 detik)
-        console.log('[FALLBACK] CRUD system not ready yet, starting poll...');
-        
-        let attempts = 0;
-        const maxAttempts = 50; // 50 x 200ms = 10 detik max
-        const pollInterval = setInterval(() => {
-            attempts++;
-            
-            // Cek apakah sudah ready
-            if (typeof openLightboxWithCRUD === 'function' && typeof pengusulData !== 'undefined') {
-                clearInterval(pollInterval);
-                console.log(`[FALLBACK] ✅ CRUD ready after ${attempts * 200}ms`);
-                
-                // Gunakan INDEX dulu (lebih reliable)
-                let record = null;
-                if (typeof index === 'number' && !isNaN(index) && index >= 0 && pengusulData[index]) {
-                    record = pengusulData[index];
-                }
-                
-                // Fallback ke ID jika index gagal
-                if (!record) {
-                    record = pengusulData.find(item => 
-                        item.id === recordId || 
-                        String(item.id) === String(recordId) ||
-                        item.nik === recordId ||
-                        item.no_register === recordId
-                    );
-                }
-                
-                if (record) {
-                    window.activeRecord = record;
-                    openLightboxWithCRUD(record);
-                } else {
-                    console.error('[FALLBACK] Record not found after CRUD loaded');
-                    showSimpleDataModal(recordId);
-                }
-                return;
-            }
-            
-            // Timeout - setelah 10 detik, gunakan fallback modal sederhana
-            if (attempts >= maxAttempts) {
-                clearInterval(pollInterval);
-                console.warn('[FALLBACK] ⏱️ Timeout waiting for CRUD system');
-                showSimpleDataModal(recordId);
-            }
-        }, 200); // Coba setiap 200ms
-    };
-    
-    // Pastikan activeRecord selalu ada
-    window.activeRecord = window.activeRecord || null;
-    
-    console.log('[FIX] ✅ Fallback handleTableRowClick loaded early');
+    console.log("✅ SIMBAKES FINAL SYSTEM LOADED - No fallbacks");
     </script>
-    
-    <!-- ===== SIMPLE FALLBACK MODAL (If CRUD fails to load) ===== -->
-    <script>
-    /**
-     * showSimpleDataModal() - Modal sederhana sebagai fallback
-     * Menampilkan data tanpa fitur CRUD lengkap
-     * PERBAIKAN: Terima index sebagai parameter tambahan
-     */
-    function showSimpleDataModal(recordId, index) {
-        console.log('[SIMPLE MODAL] Opening for ID:', recordId, 'Index:', index);
-        
-        // Cari record - GUNAKAN INDEX dulu (lebih reliable)
-        let record = null;
-        
-        if (typeof index === 'number' && !isNaN(index) && index >= 0) {
-            if (typeof pengusulData !== 'undefined' && Array.isArray(pengusulData) && pengusulData[index]) {
-                record = pengusulData[index];
-                console.log('[SIMPLE MODAL] ✅ Record via INDEX:', index);
-            }
-        }
-        
-        // Fallback ke ID-based lookup
-        if (!record && typeof pengusulData !== 'undefined' && Array.isArray(pengusulData)) {
-            record = pengusulData.find(item => 
-                item.id === recordId || 
-                String(item.id) === String(recordId) ||
-                item.nik === recordId ||
-                item.no_register === recordId
-            );
-            if (record) {
-                console.log('[SIMPLE MODAL] ⚠️ Record via ID fallback');
-            }
-        }
-        
-        if (!record || typeof record !== 'object') {
-            console.error('[SIMPLE MODAL] ❌ Record tidak ditemukan!');
-            alert('Data tidak ditemukan. Silakan refresh halaman.');
-            return;
-        }
-        
-        // Buat atau dapatkan modal container
-        let modal = document.getElementById('simple-data-modal');
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'simple-data-modal';
-            modal.style.cssText = `
-                position: fixed; inset: 0; z-index: 99998;
-                background: rgba(15, 23, 42, 0.85);
-                backdrop-filter: blur(8px);
-                display: flex; align-items: center; justify-content: center;
-                opacity: 0; visibility: hidden; transition: all 0.3s ease;
-            `;
-            document.body.appendChild(modal);
-        }
-        
-        // Format data
-        const escapeHtml = (t) => { if(!t) return ''; const d=document.createElement('div'); d.textContent=t; return d.innerHTML; };
-        const formatDate = (d) => { try { return new Date(d).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'}); } catch { return '-'; } };
-        
-        // Generate fields HTML
-        const fields = [
-            ['🆔 NIK', record.nik],
-            ['👤 Nama Lengkap', record.nama_lengkap || record.nama],
-            ['📍 Tempat Lahir', record.tempat_lahir],
-            ['🎂 Tanggal Lahir', formatDate(record.tanggal_lahir)],
-            ['🎓 Jurusan Tujuan', record.jurusan_tujuan],
-            ['📚 Jenjang Pendidikan', record.jenjang_pendidikan],
-            ['🏥 Unit Penempatan', record.unit_tujuan || record.unit_kerja],
-            ['📅 Rencana Tahun Studi', record.rencana_tahun],
-            ['💼 Pekerjaan', record.pekerjaan],
-            ['📱 No HP', record.no_hp],
-            ['💬 No WhatsApp', record.no_wa],
-            ['✉️ Email', record.email],
-            ['📊 Status', record.status || 'Pending'],
-            ['🕐 Tanggal Daftar', formatDate(record.created_at)]
-        ];
-        
-        let fieldsHtml = '';
-        fields.forEach(([label, value]) => {
-            fieldsHtml += `
-                <div style="display:flex; justify-content:space-between; padding:0.6rem 0; border-bottom:1px solid #e2e8f0;">
-                    <span style="font-weight:600;color:#475569;">${label}</span>
-                    <span style="color:#1e293b;text-align:right;max-width:60%;word-break:break-word;">${escapeHtml(String(value || '-'))}</span>
-                </div>
-            `;
-        });
-        
-        modal.innerHTML = `
-            <div style="background:white;border-radius:16px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;
-                        box-shadow:0 25px 50px rgba(0,0,0,0.25);transform:scale(0.9);transition:transform 0.3s;">
-                <div style="padding:1.5rem;background:linear-gradient(135deg,#1e293b,#334155);color:white;
-                            border-radius:16px 16px 0 0;display:flex;justify-content:space-between;align-items:center;">
-                    <h2 style="margin:0;font-size:1.2rem;font-family:Tahoma,sans-serif;">
-                        📋 Detail Data Peserta
-                    </h2>
-                    <button onclick="closeSimpleModal()" style="background:rgba(255,255,255,0.1);border:none;color:white;
-                                width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:1.3rem;">
-                        ✕
-                    </button>
-                </div>
-                <div style="padding:1.5rem;">
-                    ${fieldsHtml}
-                </div>
-                <div style="padding:1rem 1.5rem;background:#f8fafc;border-top:1px solid #e2e8f0;
-                            border-radius:0 0 16px 16px;text-align:center;">
-                    <p style="margin:0 0 0.75rem 0;color:#64748b;font-size:0.85rem;">
-                        ⚠️ Mode tampilan sederhana. Fitur CRUD sedang dimuat.
-                    </p>
-                    <button onclick="closeSimpleModal();location.reload();" 
-                            style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;border:none;
-                                   padding:0.7rem 1.5rem;border-radius:8px;cursor:pointer;font-weight:700;
-                                   font-family:Tahoma,sans-serif;">
-                        🔄 Refresh Halaman
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        // Show modal
-        requestAnimationFrame(() => {
-            modal.style.opacity = '1';
-            modal.style.visibility = 'visible';
-            modal.querySelector('div').style.transform = 'scale(1)';
-        });
-    }
-    
-    function closeSimpleModal() {
-        const modal = document.getElementById('simple-data-modal');
-        if (modal) {
-            modal.style.opacity = '0';
-            modal.style.visibility = 'hidden';
-            setTimeout(() => {
-                if (modal.parentNode) modal.parentNode.removeChild(modal);
-            }, 300);
-        }
-    }
-    
-    // Global
-    window.showSimpleDataModal = showSimpleDataModal;
-    window.closeSimpleModal = closeSimpleModal;
-    
-    console.log('[FIX] ✅ Simple fallback modal function ready');
-    </script>
+
+
+<!-- ===== LANDING PAGE ===== -->
 
 
 <!-- ===== LANDING PAGE ===== -->
@@ -20951,13 +20730,15 @@ async function fetchAdminData() {
         console.log(`✅ Berhasil mengambil ${data?.length || 0} data pengusul`);
         
         // ============================================================
-        // KRITIS: Simpan data ke pengusulData untuk CRUD Lightbox!
+        // KRITIS: Simpan data ke pengusulData DAN submissionsData untuk CRUD Lightbox!
         // Ini memastikan record tersedia saat baris diklik
         // ============================================================
         if (data && Array.isArray(data)) {
-            pengusulData = data;  // SIMPAN DATA GLOBAL!
+            pengusulData = data;  // SIMPAN DATA GLOBAL (legacy)
+            window.submissionsData = data;  // SIMPAN DATA GLOBAL (sistem FINAL)
             console.group('📦 SIMBAKES DATA STORE');
             console.log('✅ pengusulData diupdate:', pengusulData.length, 'records');
+            console.log('✅ submissionsData diupdate:', window.submissionsData.length, 'records');
             console.log('Sample record keys:', Object.keys(pengusulData[0] || {}));
             console.log('Sample first record:', pengusulData[0]);
             console.groupEnd();
@@ -21051,54 +20832,25 @@ async function fetchAdminData() {
 }
 
 /**
- * Render admin table - CLEAN VERSION (No CRUD Buttons)
- * Table hanya untuk melihat dan memilih data.
- * Semua operasi CRUD ada di dalam Lightbox.
+ * Render admin table - FINAL VERSION (No CRUD Buttons)
+ * Menggunakan sistem FINAL: 5 kolom, warna baris, event delegation
  * Kolom: NIK | Nama | Jurusan | Rencana Tahun Studi | Unit Penempatan
  */
 function renderAdminTable(data) {
-    // Use clean renderer without CRUD buttons
-    if (typeof renderAdminTableClean === 'function') {
-        renderAdminTableClean(data);
+    // Gunakan SISTEM FINAL (simbakes-admin-final.js)
+    if (typeof renderAdminTableFinal === 'function') {
+        renderAdminTableFinal(data);
     } else {
-        console.warn('[TABLE] renderAdminTableClean not available, using fallback');
-        renderAdminTableFallback(data);
+        console.error('[TABLE] ❌ renderAdminTableFinal not loaded! Check simbakes-admin-final.js');
+        // Fallback minimal: tampilkan error di tabel
+        const tbody = document.getElementById('pengusul-table-body');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:3rem;color:#dc2626;">
+                <p style="font-size:1.2rem;font-weight:700;">⚠️ Sistem tabel belum dimuat</p>
+                <p style="font-size:0.9rem;margin-top:0.5rem;">Silakan refresh halaman</p>
+            </td></tr>`;
+        }
     }
-}
-
-/**
- * Fallback renderer if clean version not loaded yet
- */
-function renderAdminTableFallback(data) {
-    const tbody = document.getElementById('pengusul-table-body');
-    if (!tbody) return;
-    
-    if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:3rem;color:#64748b;">
-            <div style="font-size:3rem;margin-bottom:1rem;">📭</div>
-            <p style="font-size:1rem;font-weight:600;">Tidak ada data ditemukan</p>
-            <p style="font-size:0.85rem;opacity:0.7;">Klik baris data untuk melihat detail dan mengelola data</p>
-        </td></tr>`;
-        return;
-    }
-    
-    const escapeHtml = (t) => { if(!t) return ''; const d=document.createElement('div'); d.textContent=t; return d.innerHTML; };
-    const colors = ['tr-color-0','tr-color-1','tr-color-2','tr-color-3','tr-color-4'];
-    
-    let html = '';
-    data.forEach((row, i) => {
-        const c = colors[i % 5];
-        html += `<tr data-id="${row.id||''}" class="${c}" style="cursor:pointer;" onclick="handleTableRowClick('${row.id||''}',${i})">
-            <td class="col-nik" style="font-family:monospace;font-weight:700;">${escapeHtml(row.nik||'-')}</td>
-            <td class="col-nama"><strong>${escapeHtml(row.nama_lengkap||row.nama||'-')}</strong></td>
-            <td class="col-jurusan">${escapeHtml(row.jurusan_tujuan||row.jurusan||'-')}</td>
-            <td class="col-tahun" style="text-align:center;"><span style="background:linear-gradient(135deg,#dbeafe,#bfdbfe);color:#1e40af;padding:0.35rem 0.8rem;border-radius:8px;font-weight:700;">${escapeHtml(row.rencana_tahun||'-')}</span></td>
-            <td class="col-unit">${escapeHtml((row.unit_tujuan||row.unit_kerja||'-').substring(0,30))}</td>
-        </tr>`;
-    });
-    
-    tbody.innerHTML = html;
-    console.log(`[TABLE] ✅ Rendered ${data.length} rows (fallback mode)`);
 }
 
 /**
