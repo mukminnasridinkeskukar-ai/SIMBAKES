@@ -7901,6 +7901,61 @@ function formatDate(dateStr) {
 }
 
 // ============================================================
+// GOOGLE DRIVE URL RESOLVER - Konversi sharing link ke direct URL
+// ============================================================
+
+/**
+ * Cek apakah URL adalah Google Drive link
+ */
+function isGoogleDriveUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    return url.includes('drive.google.com') || 
+           url.includes('google.com/file') ||
+           url.includes('google.com/open') ||
+           (url.length > 25 && /^[a-zA-Z0-9_-]{28,}$/.test(url.trim()));
+}
+
+/**
+ * Extract Google Drive File ID dari berbagai format URL
+ */
+function extractGoogleDriveFileId(url) {
+    if (!url) return null;
+    
+    const patterns = [
+        /\/file\/d\/([a-zA-Z0-9_-]+)/,           // /file/d/FILE_ID
+        /[?&]id=([a-zA-Z0-9_-]+)/,                 // ?id=FILE_ID or &id=FILE_ID
+        /\/d\/([a-zA-Z0-9_-]+)/,                   // /d/FILE_ID
+        /^([a-zA-Z0-9_-]{28,})$/                    // Just FILE_ID (28+ chars)
+    ];
+    
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match && match[1]) {
+            return match[1];
+        }
+    }
+    return null;
+}
+
+/**
+ * Konversi Google Drive sharing link ke direct image URLs (multiple formats)
+ */
+function convertGoogleDriveToDirectUrls(url) {
+    const fileId = extractGoogleDriveFileId(url);
+    if (!fileId) return null;
+    
+    console.log(`[GDRIVE] Extracted File ID: ${fileId}`);
+    
+    // Multiple URL formats untuk mencoba (urutan: paling reliable dulu)
+    return [
+        `https://lh3.googleusercontent.com/d/${fileId}`,      // Thumbnail (paling cepat)
+        `https://drive.google.com/thumbnail?id=${fileId}`,    // Thumbnail resmi
+        `https://drive.google.com/uc?export=view&id=${fileId}`, // Direct view
+        `https://drive.google.com/uc?export=download&id=${fileId}` // Download
+    ];
+}
+
+// ============================================================
 // SUPABASE PHOTO RESOLVER - Multi-method URL detection
 // ============================================================
 
@@ -7957,13 +8012,35 @@ async function resolveSupabaseImage(record) {
     for (const candidate of candidates) {
         console.log(`Testing: ${candidate.source}`);
         
+        let testUrl = candidate.url;
+        
+        // ⭐ GOOGLE DRIVE URL CONVERSION - Konversi sharing link ke direct image URL
+        if (isGoogleDriveUrl(candidate.url)) {
+            console.log('🔗 Detected Google Drive URL, converting...');
+            const driveUrls = convertGoogleDriveToDirectUrls(candidate.url);
+            if (driveUrls && driveUrls.length > 0) {
+                // Test setiap format URL Google Drive
+                for (const driveUrl of driveUrls) {
+                    const isValid = await testImageUrl(driveUrl);
+                    if (isValid) {
+                        console.log(`✅ Valid Google Drive URL found: ${candidate.source}`);
+                        console.groupEnd();
+                        return { url: driveUrl, source: `${candidate.source}-gdrive` };
+                    }
+                }
+                // Jika semua format gagal, coba yang pertama saja
+                testUrl = driveUrls[0];
+                console.log('⚠️ Using first Google Drive URL as fallback');
+            }
+        }
+        
         // Jika sudah full URL dan bisa diakses langsung
-        if (candidate.url.startsWith('http://') || candidate.url.startsWith('https://')) {
-            const isValid = await testImageUrl(candidate.url);
+        if (testUrl.startsWith('http://') || testUrl.startsWith('https://')) {
+            const isValid = await testImageUrl(testUrl);
             if (isValid) {
                 console.log(`✅ Valid URL found: ${candidate.source}`);
                 console.groupEnd();
-                return { url: candidate.url, source: candidate.source };
+                return { url: testUrl, source: candidate.source };
             }
         }
         
@@ -9159,7 +9236,7 @@ function closeEditMode() {
 }
 
 /**
- * handleEditSubmit() - Simpan perubahan edit ke Supabase
+ * handleEditSubmit() - Simpan perubahan edit ke Supabase (FIXED VERSION)
  */
 async function handleEditSubmit(event) {
     event.preventDefault();
@@ -9175,24 +9252,47 @@ async function handleEditSubmit(event) {
         return;
     }
     
-    // Collect form data
+    // Collect form data dengan penanganan yang lebih baik
     const formData = new FormData(event.target);
     const updatedData = {};
     
+    // Fields yang sebaiknya tidak diupdate (system fields)
+    const excludedFields = ['id', 'created_at', 'updated_at', 'uuid'];
+    
     for (const [key, value] of formData.entries()) {
-        if (value !== '') {
-            // Convert number fields
-            const originalValue = window.activeRecord[key];
-            if (typeof originalValue === 'number' && !isNaN(value)) {
-                updatedData[key] = parseFloat(value);
-            } else {
-                updatedData[key] = value;
-            }
+        // Skip excluded fields
+        if (excludedFields.includes(key)) continue;
+        
+        const originalValue = window.activeRecord[key];
+        
+        // Handle empty values - set to null untuk menghapus data
+        if (value === '' || value === null || value === undefined) {
+            // Hanya set null jika original value juga bukan null/empty
+            // Ini memastikan field bisa dikosongkan jika perlu
+            updatedData[key] = null;
+        } 
+        // Convert number fields
+        else if (typeof originalValue === 'number' && !isNaN(value)) {
+            updatedData[key] = parseFloat(value);
+        } 
+        // Convert boolean strings
+        else if (value === 'true') {
+            updatedData[key] = true;
+        } else if (value === 'false') {
+            updatedData[key] = false;
+        }
+        // String values
+        else {
+            updatedData[key] = value.trim();  // Trim whitespace
         }
     }
     
+    // Tambahkan updated_at timestamp
+    updatedData.updated_at = new Date().toISOString();
+    
     console.log('[EDIT] Updating record:', primaryKeyValue);
     console.log('[EDIT] Updated data:', updatedData);
+    console.log('[EDIT] Data keys:', Object.keys(updatedData));
     
     try {
         // Disable save button
@@ -9202,38 +9302,86 @@ async function handleEditSubmit(event) {
             saveBtn.textContent = '⏳ MENYIMPAN...';
         }
         
-        // UPDATE ke Supabase
-        const { data, error } = await supabaseClient
-            .from('submissions')
-            .update(updatedData)
-            .eq(window.PRIMARY_KEY_FIELD, primaryKeyValue)
-            .select()
-            .single();
+        // UPDATE ke Supabase dengan error handling yang lebih baik
+        let result, updateError;
         
-        if (error) throw error;
+        try {
+            const response = await supabaseClient
+                .from('submissions')
+                .update(updatedData)
+                .eq(window.PRIMARY_KEY_FIELD, primaryKeyValue)
+                .select()
+                .single();
+            
+            result = response.data;
+            updateError = response.error;
+            
+            console.log('[EDIT] Supabase response:', { result, updateError });
+            
+        } catch (supabaseError) {
+            console.error('[EDIT] Supabase client error:', supabaseError);
+            throw new Error(`Koneksi database gagal: ${supabaseError.message}`);
+        }
+        
+        // Handle specific error codes
+        if (updateError) {
+            console.error('[EDIT] Supabase error details:', updateError);
+            
+            switch (updateError.code) {
+                case '23505':  // Unique violation
+                    throw new Error('Data duplikat terdeteksi. Pastikan tidak ada data yang sama.');
+                case '23503':  // Foreign key violation
+                    throw new Error('Referensi data tidak valid.');
+                case '42501':  // Permission denied / RLS
+                    throw new Error('Tidak memiliki izin untuk mengubah data ini. Cek RLS policies.');
+                case '22P02':  // Invalid text representation
+                    throw new Error('Format data tidak valid. Periksa tipe data input.');
+                case '406':    // Not Acceptable
+                    throw new Error('Format data tidak diterima server. Periksa kembali isian form.');
+                default:
+                    throw new Error(updateError.message || 'Gagal menyimpan data ke database.');
+            }
+        }
+        
+        if (!result) {
+            throw new Error('Server tidak mengembalikan data setelah update.');
+        }
+        
+        console.log('[EDIT] ✅ Update successful:', result);
         
         // Update active record
-        window.activeRecord = data;
+        window.activeRecord = result;
         
         // Update local array
-        const localIndex = window.submissionsData.findIndex(item => item.id === primaryKeyValue);
+        const localIndex = window.submissionsData.findIndex(item => item[window.PRIMARY_KEY_FIELD] === primaryKeyValue);
         if (localIndex >= 0) {
-            window.submissionsData[localIndex] = data;
+            window.submissionsData[localIndex] = result;
+            console.log('[EDIT] Local array updated at index:', localIndex);
+        } else {
+            console.warn('[EDIT] Record not found in local array');
         }
         
         // Close edit mode and refresh view
         closeEditMode();
-        populateLightboxContent(document.getElementById('fullscreen-lightbox'), data);
         
-        // Re-render table
-        renderAdminTableFinal(window.submissionsData);
+        // Re-populate lightbox dengan data terbaru
+        const lightbox = document.getElementById('fullscreen-lightbox');
+        if (lightbox && typeof populateLightboxContent === 'function') {
+            populateLightboxContent(lightbox, result);
+        }
         
-        ToastManager.success('✅ Data berhasil diperbarui!');
-        console.log('[EDIT] ✅ Update successful');
+        // Re-render table jika fungsi tersedia
+        if (typeof renderAdminTableFinal === 'function') {
+            renderAdminTableFinal(window.submissionsData);
+        }
+        
+        ToastManager.success('✅ Data berhasil diperbarui dan disimpan!');
+        console.log('[EDIT] ✅ All views refreshed');
         
     } catch (error) {
         console.error('[EDIT] ❌ Update failed:', error);
-        ToastManager.error(`Gagal menyimpan: ${error.message}`);
+        console.error('[EDIT] Error stack:', error.stack);
+        ToastManager.error(`❌ Gagal menyimpan: ${error.message}`);
     } finally {
         const saveBtn = event.target.querySelector('.fs-btn-save');
         if (saveBtn) {
