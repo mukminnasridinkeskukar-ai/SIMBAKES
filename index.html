@@ -6456,27 +6456,135 @@ function renderAdminTableClean(data) {
 
 /**
  * handleTableRowClick() - Handle click pada baris tabel
- * Membuka Lightbox dengan record yang diklik
+ * PERBAIKAN KRITIS: Gunakan index-based lookup langsung dari array
+ * JANGAN cari berdasarkan ID/NIK - gunakan record yang SUDAH ADA di memory
  */
 function handleTableRowClick(recordId, index) {
-    console.log(`[ROW CLICK] Opening Lightbox for ID: ${recordId}, Index: ${index}`);
+    console.group('🖱️ SIMBAKES ROW CLICK DEBUG');
+    console.log('recordId (dari data-id):', recordId);
+    console.log('index (dari data-index):', index);
+    console.log('pengusulData length:', typeof pengusulData !== 'undefined' ? pengusulData.length : 'UNDEFINED');
+    console.log('pengusulData is Array:', Array.isArray(pengusulData));
     
-    // Cari record dari data global
+    // ============================================================
+    // PERBAIKAN: Gunakan INDEX langsung, bukan pencarian ID
+    // Record sudah ada di pengusulData[index] saat tabel dirender
+    // ============================================================
     let record = null;
     
-    if (typeof pengusulData !== 'undefined' && Array.isArray(pengusulData)) {
-        record = pengusulData.find(item => item.id === recordId || String(item.id) === String(recordId));
+    // CEK 1: Index-based lookup (UTAMA - paling reliable)
+    if (typeof index === 'number' && !isNaN(index) && index >= 0) {
+        if (typeof pengusulData !== 'undefined' && Array.isArray(pengusulData) && pengusulData[index]) {
+            record = pengusulData[index];
+            console.log('✅ Record ditemukan via INDEX:', index);
+        }
     }
     
+    // CEK 2: Fallback ID-based lookup (jika index gagal)
+    if (!record && recordId && typeof pengusulData !== 'undefined' && Array.isArray(pengusulData)) {
+        record = pengusulData.find(item => 
+            item.id === recordId || 
+            String(item.id) === String(recordId) ||
+            item.nik === recordId ||
+            item.no_register === recordId
+        );
+        if (record) {
+            console.log('⚠️ Record ditemukan via ID fallback:', recordId);
+        }
+    }
+    
+    // DEBUG: Tampilkan status akhir
+    console.log('FINAL RECORD:', record);
     if (record) {
+        console.log('Record keys:', Object.keys(record));
+        console.log('Record ID:', record.id);
+        console.log('Record NIK:', record.nik);
+        console.log('Record Nama:', record.nama_lengkap || record.nama);
+    }
+    console.groupEnd();
+    
+    if (record && typeof record === 'object' && Object.keys(record).length > 0) {
         // Set activeRecord SEBELUM membuka lightbox
         activeRecord = record;
-        openLightboxWithCRUD(record);
+        console.log('[ROW CLICK] ✅ Membuka Lightbox dengan record valid');
+        // Gunakan openDetailLightbox (wrapper yang lebih robust)
+        openDetailLightbox(record);
     } else {
-        console.error('[ROW CLICK] Record not found for ID:', recordId);
-        ToastManager.error('Data tidak ditemukan');
+        console.error('[ROW CLICK] ❌ Gagal mendapatkan record!');
+        console.error('[ROW CLICK] Diagnosa:');
+        console.error('  - pengusulData ada?', typeof pengusulData !== 'undefined');
+        console.error('  - pengusulData array?', Array.isArray(pengusulData));
+        console.error('  - pengusulData length:', typeof pengusulData !== 'undefined' ? pengusulData.length : 'N/A');
+        console.error('  - index valid?', index, typeof index);
+        console.error('  - recordId:', recordId);
+        
+        if (typeof ToastManager !== 'undefined' && ToastManager.error) {
+            ToastManager.error('Gagal memuat record. Silakan refresh halaman.');
+        } else {
+            alert('Gagal memuat record. Silakan refresh halaman.');
+        }
     }
 }
+
+// ============================================================
+// OPEN DETAIL LIGHTBOX - Fungsi utama pembuka popup
+// MENERIMA RECORD LANGSUNG, tidak melakukan query ulang
+// ============================================================
+
+/**
+ * openDetailLightbox() - Buka popup detail dengan record yang sudah ada
+ * @param {Object} record - Record object lengkap dari pengusulData
+ * 
+ * Alur: SUPABASE → pengusulData[] → render table → data-record-index 
+ *       → klik baris → pengusulData[index] → activeRecord → openDetailLightbox(activeRecord)
+ * 
+ * JANGAN lakukan query Supabase lagi di dalam fungsi ini!
+ */
+function openDetailLightbox(record) {
+    console.group('🔓 SIMBAKES OPEN DETAIL LIGHTBOX');
+    console.log('RECEIVED RECORD:', record);
+    
+    // Validasi record
+    if (!record || typeof record !== 'object') {
+        console.error('❌ Invalid record:', record);
+        if (typeof ToastManager !== 'undefined' && ToastManager.error) {
+            ToastManager.error('Record tidak valid', 'error');
+        }
+        console.groupEnd();
+        return;
+    }
+    
+    if (Object.keys(record).length === 0) {
+        console.error('❌ Record is empty object');
+        if (typeof ToastManager !== 'undefined' && ToastManager.error) {
+            ToastManager.error('Record kosong', 'error');
+        }
+        console.groupEnd();
+        return;
+    }
+    
+    // Set activeRecord GLOBAL (digunakan oleh semua fungsi CRUD)
+    activeRecord = record;
+    
+    console.log('✅ Active record set:');
+    console.log('  - ID:', record.id);
+    console.log('  - NIK:', record.nik);
+    console.log('  - Nama:', record.nama_lengkap || record.nama);
+    console.log('  - Keys count:', Object.keys(record).length);
+    console.groupEnd();
+    
+    // Delegate ke CRUD Lightbox system
+    if (typeof openLightboxWithCRUD === 'function') {
+        openLightboxWithCRUD(record);
+    } else {
+        console.warn('⚠️ openLightboxWithCRUD tidak tersedia, menggunakan fallback');
+        // Fallback: tampilkan data sederhana
+        showSimpleDataModal(record.id || record.nik);
+    }
+}
+
+// Export globally
+window.openDetailLightbox = openDetailLightbox;
 
 // ============================================================
 // LIGHTBOX WITH FULL CRUD SYSTEM
@@ -7569,6 +7677,7 @@ window.renderAdminTableClean = renderAdminTableClean;
 window.handleTableRowClick = handleTableRowClick;
 
 // Lightbox functions
+window.openDetailLightbox = openDetailLightbox;
 window.openLightboxWithCRUD = openLightboxWithCRUD;
 window.closeLightboxCRUD = closeLightboxCRUD;
 window.navigateLightboxCRUD = navigateLightboxCRUD;
@@ -7615,12 +7724,33 @@ console.log('[CRUD SYSTEM] ℹ️ Table: renderAdminTableClean() | Lightbox: ope
     <!-- ===== CRITICAL FIX: Early Load CRUD Functions ===== -->
     <script>
     // Fallback handler - akan di-override oleh script CRUD lengkap
+    // PERBAIKAN: Gunakan INDEX-based lookup (sama dengan handler utama)
     window.handleTableRowClick = function(recordId, index) {
-        console.log('[FALLBACK] Row clicked:', recordId, index);
+        console.log('[FALLBACK] Row clicked - ID:', recordId, 'Index:', index);
         
-        // Cek apakah fungsi lengkap sudah tersedia
+        // ============================================================
+        // CEK 1: Index-based lookup (UTAMA - paling reliable)
+        // ============================================================
+        if (typeof index === 'number' && !isNaN(index) && index >= 0) {
+            if (typeof pengusulData !== 'undefined' && Array.isArray(pengusulData) && pengusulData[index]) {
+                const record = pengusulData[index];
+                console.log('[FALLBACK] ✅ Record via INDEX:', index);
+                window.activeRecord = record;
+                if (typeof openLightboxWithCRUD === 'function') {
+                    openLightboxWithCRUD(record);
+                    return;
+                }
+            }
+        }
+        
+        // Cek apakah fungsi lengkap sudah tersedia (ID fallback)
         if (typeof openLightboxWithCRUD === 'function' && typeof pengusulData !== 'undefined') {
-            const record = pengusulData.find(item => item.id === recordId || String(item.id) === String(recordId));
+            const record = pengusulData.find(item => 
+                item.id === recordId || 
+                String(item.id) === String(recordId) ||
+                item.nik === recordId ||
+                item.no_register === recordId
+            );
             if (record) {
                 window.activeRecord = record;
                 openLightboxWithCRUD(record);
@@ -7641,24 +7771,36 @@ console.log('[CRUD SYSTEM] ℹ️ Table: renderAdminTableClean() | Lightbox: ope
                 clearInterval(pollInterval);
                 console.log(`[FALLBACK] ✅ CRUD ready after ${attempts * 200}ms`);
                 
-                const record = pengusulData.find(item => 
-                    item.id === recordId || String(item.id) === String(recordId)
-                );
+                // Gunakan INDEX dulu (lebih reliable)
+                let record = null;
+                if (typeof index === 'number' && !isNaN(index) && index >= 0 && pengusulData[index]) {
+                    record = pengusulData[index];
+                }
+                
+                // Fallback ke ID jika index gagal
+                if (!record) {
+                    record = pengusulData.find(item => 
+                        item.id === recordId || 
+                        String(item.id) === String(recordId) ||
+                        item.nik === recordId ||
+                        item.no_register === recordId
+                    );
+                }
+                
                 if (record) {
                     window.activeRecord = record;
                     openLightboxWithCRUD(record);
                 } else {
                     console.error('[FALLBACK] Record not found after CRUD loaded');
+                    showSimpleDataModal(recordId);
                 }
                 return;
             }
             
-            // Timeout - setelah 10 detiik, gunakan fallback modal sederhana
+            // Timeout - setelah 10 detik, gunakan fallback modal sederhana
             if (attempts >= maxAttempts) {
                 clearInterval(pollInterval);
                 console.warn('[FALLBACK] ⏱️ Timeout waiting for CRUD system');
-                
-                // Tampilkan data dengan modal sederhana (tanpa CRUD features)
                 showSimpleDataModal(recordId);
             }
         }, 200); // Coba setiap 200ms
@@ -7675,19 +7817,36 @@ console.log('[CRUD SYSTEM] ℹ️ Table: renderAdminTableClean() | Lightbox: ope
     /**
      * showSimpleDataModal() - Modal sederhana sebagai fallback
      * Menampilkan data tanpa fitur CRUD lengkap
+     * PERBAIKAN: Terima index sebagai parameter tambahan
      */
-    function showSimpleDataModal(recordId) {
-        console.log('[SIMPLE MODAL] Opening for:', recordId);
+    function showSimpleDataModal(recordId, index) {
+        console.log('[SIMPLE MODAL] Opening for ID:', recordId, 'Index:', index);
         
-        // Cari record
+        // Cari record - GUNAKAN INDEX dulu (lebih reliable)
         let record = null;
-        if (typeof pengusulData !== 'undefined' && Array.isArray(pengusulData)) {
-            record = pengusulData.find(item => 
-                item.id === recordId || String(item.id) === String(recordId)
-            );
+        
+        if (typeof index === 'number' && !isNaN(index) && index >= 0) {
+            if (typeof pengusulData !== 'undefined' && Array.isArray(pengusulData) && pengusulData[index]) {
+                record = pengusulData[index];
+                console.log('[SIMPLE MODAL] ✅ Record via INDEX:', index);
+            }
         }
         
-        if (!record) {
+        // Fallback ke ID-based lookup
+        if (!record && typeof pengusulData !== 'undefined' && Array.isArray(pengusulData)) {
+            record = pengusulData.find(item => 
+                item.id === recordId || 
+                String(item.id) === String(recordId) ||
+                item.nik === recordId ||
+                item.no_register === recordId
+            );
+            if (record) {
+                console.log('[SIMPLE MODAL] ⚠️ Record via ID fallback');
+            }
+        }
+        
+        if (!record || typeof record !== 'object') {
+            console.error('[SIMPLE MODAL] ❌ Record tidak ditemukan!');
             alert('Data tidak ditemukan. Silakan refresh halaman.');
             return;
         }
@@ -20790,6 +20949,22 @@ async function fetchAdminData() {
         if (error) throw error;
         
         console.log(`✅ Berhasil mengambil ${data?.length || 0} data pengusul`);
+        
+        // ============================================================
+        // KRITIS: Simpan data ke pengusulData untuk CRUD Lightbox!
+        // Ini memastikan record tersedia saat baris diklik
+        // ============================================================
+        if (data && Array.isArray(data)) {
+            pengusulData = data;  // SIMPAN DATA GLOBAL!
+            console.group('📦 SIMBAKES DATA STORE');
+            console.log('✅ pengusulData diupdate:', pengusulData.length, 'records');
+            console.log('Sample record keys:', Object.keys(pengusulData[0] || {}));
+            console.log('Sample first record:', pengusulData[0]);
+            console.groupEnd();
+        } else {
+            pengusulData = [];
+            console.warn('⚠️ Data kosong atau tidak valid, pengusulData dikosongkan');
+        }
         
         // Render table
         if (data && data.length > 0) {
