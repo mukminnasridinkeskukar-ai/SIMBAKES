@@ -1356,7 +1356,72 @@
                     throw new Error('Username atau password tidak sesuai.');
                 }
                 
-                console.log('[LOGIN] ✅ Authentication successful!');
+                // ⭐ CEK STATUS PERSETUJUAN ADMIN
+                const userStatus = user.status || 'pending';  // Default pending jika null
+                console.log('[LOGIN] User status:', userStatus);
+                
+                if (userStatus !== 'approved') {
+                    let statusMessage = '';
+                    
+                    switch (userStatus) {
+                        case 'pending':
+                            statusMessage = `Akun Anda masih <strong>MENUNGGU PERSETUJUAN</strong> dari admin Dinkes.<br><br>
+                                            Silakan tunggu 1-2 hari kerja untuk verifikasi.<br>
+                                            Jika sudah lewat dari waktu tersebut, hubungi admin Dinas Kesehatan.`;
+                            break;
+                        case 'rejected':
+                            statusMessage = `Akun Anda <strong>DITOLAK</strong> oleh admin Dinkes.<br><br>
+                                            Alasan: ${user.status_note || 'Tidak ada catatan'}<br><br>
+                                            Silakan hubungi admin untuk informasi lebih lanjut.`;
+                            break;
+                        case 'suspended':
+                            statusMessage = `Akun Anda <strong>DITANGGUHKAN</strong> sementara.<br><br>
+                                            Alasan: ${user.status_note || 'Tidak ada catatan'}<br><br>
+                                            Hubungi admin Dinas Kesehatan untuk reaktivasi akun.`;
+                            break;
+                        default:
+                            statusMessage = `Akun Anda dalam status <strong>${userStatus.toUpperCase()}</strong>.<br><br>
+                                            Hubungi admin Dinas Kesehatan untuk informasi lebih lanjut.`;
+                    }
+                    
+                    // Tampilkan pesan status yang jelas
+                    const statusAlertDiv = document.createElement('div');
+                    statusAlertDiv.className = 'alert status-warning';
+                    statusAlertDiv.style.cssText = `
+                        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+                        border-left: 5px solid #f59e0b;
+                        padding: 20px;
+                        border-radius: 12px;
+                        margin: 20px 0;
+                        text-align: left;
+                    `;
+                    statusAlertDiv.innerHTML = `
+                        <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                            <span style="font-size: 24px; margin-right: 10px;">⏳</span>
+                            <span style="font-weight: 700; color: #92400e; font-size: 1rem;">STATUS AKUN: ${userStatus.toUpperCase()}</span>
+                        </div>
+                        <div style="color: #a16207; font-size: 0.9rem; line-height: 1.6;">
+                            ${statusMessage}
+                        </div>
+                        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #fcd34d;">
+                            <p style="margin: 0; color: #92400e; font-size: 0.8rem;">
+                                📞 Hubungi Admin Dinkes jika ada pertanyaan
+                            </p>
+                        </div>
+                    `;
+                    
+                    // Ganti alert container dengan pesan status
+                    document.getElementById('alertContainer').innerHTML = '';
+                    document.getElementById('alertContainer').appendChild(statusAlertDiv);
+                    
+                    // Reset button dan stop login
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('loading');
+                    document.getElementById('password').value = '';
+                    return;  // STOP - tidak lanjut ke login
+                }
+                
+                console.log('[LOGIN] ✅ Authentication successful & Account Approved!');
                 console.log('[LOGIN] User NIK:', user.nik);
                 
                 // Update last login (optional)

@@ -974,14 +974,17 @@
                 
                 console.log('[DAFTAR] No duplicates found, inserting...');
                 
-                // Insert to Supabase
+                // Insert to Supabase dengan status PENDING (menunggu persetujuan admin)
                 const insertData = {
                     nama: formData.nama,
                     nik: formData.nik,
                     email: formData.email.toLowerCase(),
                     username: formData.username,
                     password: formData.password,
-                    jurusan_tujuan: formData.jurusan
+                    jurusan_tujuan: formData.jurusan,
+                    status: 'pending',  // ⭐ Baru daftar, menunggu persetujuan admin Dinkes
+                    status_note: 'Pendaftaran baru, menunggu verifikasi',
+                    login_attempts: 0
                 };
                 
                 const { data: result, error: insertError } = await supabaseClient
@@ -1041,26 +1044,53 @@
         }
 
         // ============================================================
-        // SUCCESS OVERLAY
+        // SUCCESS OVERLAY (dengan info persetujuan admin)
         // ============================================================
         function showSuccessOverlay(nama) {
             const overlay = document.getElementById('successOverlay');
             const messageEl = document.getElementById('successMessage');
             
             if (messageEl) {
-                messageEl.textContent = `Selamat, ${nama}! Akun peserta beasiswa Anda telah berhasil dibuat. Silakan login menggunakan username dan password yang telah Anda daftarkan.`;
+                messageEl.innerHTML = `
+                    <div style="text-align: left; margin-bottom: 20px;">
+                        <p style="font-size: 1.1rem; margin-bottom: 16px;">
+                            🎉 <strong>Selamat, ${nama}!</strong>
+                        </p>
+                        <p style="color: #4b5563; margin-bottom: 12px;">
+                            Pendaftaran akun peserta beasiswa Anda <strong>berhasil disimpan</strong>.
+                        </p>
+                        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 8px; margin: 16px 0;">
+                            <p style="margin: 0; color: #92400e; font-weight: 600; font-size: 0.95rem;">
+                                ⏳ Menunggu Persetujuan Admin Dinkes
+                            </p>
+                            <p style="margin: 8px 0 0 0; color: #a16207; font-size: 0.85rem;">
+                                Akun Anda dalam status <strong>"PENDING"</strong>.<br>
+                                Username dan password <strong>tidak bisa digunakan</strong> sampai disetujui oleh admin Dinas Kesehatan.
+                            </p>
+                        </div>
+                        <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 8px;">
+                            📋 <strong>Langkah selanjutnya:</strong>
+                        </p>
+                        <ol style="color: #6b7280; font-size: 0.85rem; margin: 0; padding-left: 20px;">
+                            <li>Tunggu verifikasi dari admin Dinkes (1-2 hari kerja)</li>
+                            <li>Cek email untuk notifikasi persetujuan</li>
+                            <li>Jika disetujui, login dengan username & password Anda</li>
+                        </ol>
+                    </div>
+                `;
             }
             
             if (overlay) {
                 overlay.classList.remove('hidden');
             }
             
-            // Save registration info
+            // Save registration info dengan status pending
             try {
                 localStorage.setItem('simbakes_registration', JSON.stringify({
                     nama: nama,
                     timestamp: Date.now(),
-                    status: 'pending_login'
+                    status: 'pending_approval',  // ⭐ Update status
+                    message: 'Menunggu persetujuan admin Dinkes'
                 }));
             } catch (e) {
                 console.warn('[DAFTAR] Could not save to localStorage:', e);
