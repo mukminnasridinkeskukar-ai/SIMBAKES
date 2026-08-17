@@ -6186,17 +6186,11 @@ body {
 /**
  * SIMBAKES Panel Admin - LIGHTBOX CRUD SYSTEM (Complete Implementation)
  * ================================================================
- * Implementasi CRUD AKTIF di dalam Lightbox:
- * - Tabel utama: Hanya 5 kolom, tanpa tombol CRUD
- * - Lightbox: Pusat pengelolaan data dengan CRUD di footer
- * - Semua operasi terhubung ke Supabase NYATA
- * 
- * PRINSIP: Tabel untuk melihat & memilih, Lightbox untuk mengelola data
+ * Implementasi CRUD AKTIF di dalam Lightbox
  */
 
-// ============================================================
-// GLOBAL STATE - Active Record Tracking
-// ============================================================
+// ERROR HANDLING: Wrap entire CRUD system in try-catch
+try {
 
 /**
  * activeRecord - Record yang sedang dibuka di Lightbox
@@ -7597,6 +7591,23 @@ window.setActiveRecord = (rec) => { activeRecord = rec; };
 console.log('[CRUD SYSTEM] 📦 Module loaded - All CRUD functions are now available');
 console.log('[CRUD SYSTEM] ℹ️ Table: renderAdminTableClean() | Lightbox: openLightboxWithCRUD()');
 
+} catch (error) {
+    // CRITICAL: Log error if CRUD system fails to load
+    console.error('[CRUD SYSTEM] ❌ FATAL ERROR loading CRUD system!');
+    console.error('[CRUD SYSTEM] Error:', error);
+    console.error('[CRUD SYSTEM] Stack:', error.stack);
+    
+    // Store error for debugging
+    window.CRUD_LOAD_ERROR = {
+        message: error.message,
+        stack: error.stack,
+        time: new Date().toISOString()
+    };
+    
+    // Alert developer (in production, this could send to error tracking service)
+    console.warn('[CRUD SYSTEM] ⚠️ Fallback modal will be used for row clicks');
+}
+
     </script>
 
 <body>
@@ -7617,27 +7628,172 @@ console.log('[CRUD SYSTEM] ℹ️ Table: renderAdminTableClean() | Lightbox: ope
             }
         }
         
-        // Fallback sederhana: tampilkan alert dengan info
-        console.warn('[FALLBACK] CRUD system not fully loaded yet');
+        // POLLING: Coba berulang kali sampai CRUD system siap (max 10 detik)
+        console.log('[FALLBACK] CRUD system not ready yet, starting poll...');
         
-        // Coba load data dan buka lightbox setelah delay
-        setTimeout(() => {
+        let attempts = 0;
+        const maxAttempts = 50; // 50 x 200ms = 10 detik max
+        const pollInterval = setInterval(() => {
+            attempts++;
+            
+            // Cek apakah sudah ready
             if (typeof openLightboxWithCRUD === 'function' && typeof pengusulData !== 'undefined') {
-                const record = pengusulData.find(item => item.id === recordId);
+                clearInterval(pollInterval);
+                console.log(`[FALLBACK] ✅ CRUD ready after ${attempts * 200}ms`);
+                
+                const record = pengusulData.find(item => 
+                    item.id === recordId || String(item.id) === String(recordId)
+                );
                 if (record) {
                     window.activeRecord = record;
                     openLightboxWithCRUD(record);
+                } else {
+                    console.error('[FALLBACK] Record not found after CRUD loaded');
                 }
-            } else {
-                alert('Sistem CRUD sedang dimuat. Silakan coba lagi beberapa saat.');
+                return;
             }
-        }, 500);
+            
+            // Timeout - setelah 10 detiik, gunakan fallback modal sederhana
+            if (attempts >= maxAttempts) {
+                clearInterval(pollInterval);
+                console.warn('[FALLBACK] ⏱️ Timeout waiting for CRUD system');
+                
+                // Tampilkan data dengan modal sederhana (tanpa CRUD features)
+                showSimpleDataModal(recordId);
+            }
+        }, 200); // Coba setiap 200ms
     };
     
     // Pastikan activeRecord selalu ada
     window.activeRecord = window.activeRecord || null;
     
     console.log('[FIX] ✅ Fallback handleTableRowClick loaded early');
+    </script>
+    
+    <!-- ===== SIMPLE FALLBACK MODAL (If CRUD fails to load) ===== -->
+    <script>
+    /**
+     * showSimpleDataModal() - Modal sederhana sebagai fallback
+     * Menampilkan data tanpa fitur CRUD lengkap
+     */
+    function showSimpleDataModal(recordId) {
+        console.log('[SIMPLE MODAL] Opening for:', recordId);
+        
+        // Cari record
+        let record = null;
+        if (typeof pengusulData !== 'undefined' && Array.isArray(pengusulData)) {
+            record = pengusulData.find(item => 
+                item.id === recordId || String(item.id) === String(recordId)
+            );
+        }
+        
+        if (!record) {
+            alert('Data tidak ditemukan. Silakan refresh halaman.');
+            return;
+        }
+        
+        // Buat atau dapatkan modal container
+        let modal = document.getElementById('simple-data-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'simple-data-modal';
+            modal.style.cssText = `
+                position: fixed; inset: 0; z-index: 99998;
+                background: rgba(15, 23, 42, 0.85);
+                backdrop-filter: blur(8px);
+                display: flex; align-items: center; justify-content: center;
+                opacity: 0; visibility: hidden; transition: all 0.3s ease;
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        // Format data
+        const escapeHtml = (t) => { if(!t) return ''; const d=document.createElement('div'); d.textContent=t; return d.innerHTML; };
+        const formatDate = (d) => { try { return new Date(d).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'}); } catch { return '-'; } };
+        
+        // Generate fields HTML
+        const fields = [
+            ['🆔 NIK', record.nik],
+            ['👤 Nama Lengkap', record.nama_lengkap || record.nama],
+            ['📍 Tempat Lahir', record.tempat_lahir],
+            ['🎂 Tanggal Lahir', formatDate(record.tanggal_lahir)],
+            ['🎓 Jurusan Tujuan', record.jurusan_tujuan],
+            ['📚 Jenjang Pendidikan', record.jenjang_pendidikan],
+            ['🏥 Unit Penempatan', record.unit_tujuan || record.unit_kerja],
+            ['📅 Rencana Tahun Studi', record.rencana_tahun],
+            ['💼 Pekerjaan', record.pekerjaan],
+            ['📱 No HP', record.no_hp],
+            ['💬 No WhatsApp', record.no_wa],
+            ['✉️ Email', record.email],
+            ['📊 Status', record.status || 'Pending'],
+            ['🕐 Tanggal Daftar', formatDate(record.created_at)]
+        ];
+        
+        let fieldsHtml = '';
+        fields.forEach(([label, value]) => {
+            fieldsHtml += `
+                <div style="display:flex; justify-content:space-between; padding:0.6rem 0; border-bottom:1px solid #e2e8f0;">
+                    <span style="font-weight:600;color:#475569;">${label}</span>
+                    <span style="color:#1e293b;text-align:right;max-width:60%;word-break:break-word;">${escapeHtml(String(value || '-'))}</span>
+                </div>
+            `;
+        });
+        
+        modal.innerHTML = `
+            <div style="background:white;border-radius:16px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;
+                        box-shadow:0 25px 50px rgba(0,0,0,0.25);transform:scale(0.9);transition:transform 0.3s;">
+                <div style="padding:1.5rem;background:linear-gradient(135deg,#1e293b,#334155);color:white;
+                            border-radius:16px 16px 0 0;display:flex;justify-content:space-between;align-items:center;">
+                    <h2 style="margin:0;font-size:1.2rem;font-family:Tahoma,sans-serif;">
+                        📋 Detail Data Peserta
+                    </h2>
+                    <button onclick="closeSimpleModal()" style="background:rgba(255,255,255,0.1);border:none;color:white;
+                                width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:1.3rem;">
+                        ✕
+                    </button>
+                </div>
+                <div style="padding:1.5rem;">
+                    ${fieldsHtml}
+                </div>
+                <div style="padding:1rem 1.5rem;background:#f8fafc;border-top:1px solid #e2e8f0;
+                            border-radius:0 0 16px 16px;text-align:center;">
+                    <p style="margin:0 0 0.75rem 0;color:#64748b;font-size:0.85rem;">
+                        ⚠️ Mode tampilan sederhana. Fitur CRUD sedang dimuat.
+                    </p>
+                    <button onclick="closeSimpleModal();location.reload();" 
+                            style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;border:none;
+                                   padding:0.7rem 1.5rem;border-radius:8px;cursor:pointer;font-weight:700;
+                                   font-family:Tahoma,sans-serif;">
+                        🔄 Refresh Halaman
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // Show modal
+        requestAnimationFrame(() => {
+            modal.style.opacity = '1';
+            modal.style.visibility = 'visible';
+            modal.querySelector('div').style.transform = 'scale(1)';
+        });
+    }
+    
+    function closeSimpleModal() {
+        const modal = document.getElementById('simple-data-modal');
+        if (modal) {
+            modal.style.opacity = '0';
+            modal.style.visibility = 'hidden';
+            setTimeout(() => {
+                if (modal.parentNode) modal.parentNode.removeChild(modal);
+            }, 300);
+        }
+    }
+    
+    // Global
+    window.showSimpleDataModal = showSimpleDataModal;
+    window.closeSimpleModal = closeSimpleModal;
+    
+    console.log('[FIX] ✅ Simple fallback modal function ready');
     </script>
 
 
