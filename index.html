@@ -7240,21 +7240,31 @@ async function handleEditSubmit(event) {
             throw new Error('Supabase client tidak tersedia');
         }
         
-        // EXECUTE UPDATE - Use actual primary key (usually 'id')
+        // EXECUTE UPDATE - Use actual primary key (usually 'id') - TANPA .single() ⭐
         const primaryKeyField = 'id';
         const primaryKeyValue = activeRecord.id;
         
-        const { data: result, error } = await client
+        console.log('[EDIT] Updating record ID:', primaryKeyValue);
+        console.log('[EDIT] Update data:', updatedData);
+        
+        const { data: resultArray, error } = await client
             .from('submissions')
             .update(updatedData)
             .eq(primaryKeyField, primaryKeyValue)
-            .select()
-            .single();
+            .select('*');  // TANPA .single() - return array
         
+        // Handle error
         if (error) {
             console.error('[EDIT] Supabase error:', error);
             throw new Error(error.message || 'Gagal menyimpan data ke database');
         }
+        
+        // Validasi hasil (array, bukan single object)
+        if (!resultArray || !Array.isArray(resultArray) || resultArray.length === 0) {
+            throw new Error('Update tidak menghasilkan data. Periksa ID record atau RLS policy.');
+        }
+        
+        const result = resultArray[0];  // Ambil record pertama dari array
         
         console.log('[EDIT] ✅ Update successful:', result);
         
@@ -7430,21 +7440,29 @@ async function handleStatusChange(newStatus) {
             throw new Error('Supabase client tidak tersedia');
         }
         
-        // Execute UPDATE
-        const { data: result, error } = await client
+        // Execute UPDATE - TANPA .single() ⭐
+        console.log('[STATUS] Executing status update...');
+        
+        const { data: resultArray, error } = await client
             .from('submissions')
             .update({ 
                 status: newStatus,
                 updated_at: new Date().toISOString()
             })
             .eq('id', activeRecord.id)
-            .select()
-            .single();
+            .select('*');  // TANPA .single()
         
         if (error) {
             console.error('[STATUS] Supabase error:', error);
             throw new Error(error.message || 'Gagal mengubah status');
         }
+        
+        // Validasi hasil array
+        if (!resultArray || !Array.isArray(resultArray) || resultArray.length === 0) {
+            throw new Error('Status update tidak menghasilkan data. Periksa ID atau RLS policy.');
+        }
+        
+        const result = resultArray[0];  // Ambil dari array
         
         console.log('[STATUS] ✅ Changed successfully:', result);
         
@@ -7897,6 +7915,241 @@ function formatDate(dateStr) {
         });
     } catch {
         return dateStr;
+    }
+}
+
+// ============================================================
+// CENTRALIZED CRUD FUNCTIONS - TANPA .single()
+// ============================================================
+
+/**
+ * updateSubmission() - Fungsi UPDATE terpusat untuk tabel submissions
+ * 
+ * @param {Object} record - Record yang akan diupdate (harus memiliki field 'id')
+ * @param {Object} updateData - Data yang akan diupdate (hanya field yang boleh diubah)
+ * @returns {Promise<Object>} Record yang sudah diperbarui
+ * @throws {Error} Jika record tidak valid, error Supabase, atau hasil tidak sesuai
+ */
+async function updateSubmission(record, updateData) {
+    // ============================================================
+    // VALIDASI INPUT
+    // ============================================================
+    if (!record) {
+        throw new Error('Record tidak tersedia. Tidak dapat melakukan update.');
+    }
+
+    const recordId = record.id;
+
+    if (!recordId) {
+        console.error('[CRUD] ❌ Record tanpa ID:', record);
+        throw new Error('Primary key (id) record tidak tersedia. Data tidak dapat diperbarui.');
+    }
+
+    if (!updateData || Object.keys(updateData).length === 0) {
+        throw new Error('Tidak ada data yang akan diperbarui. Update data kosong.');
+    }
+
+    if (!supabaseClient) {
+        throw new Error('Koneksi ke Supabase tidak tersedia.');
+    }
+
+    console.log('[CRUD] 🔄 Updating record ID:', recordId);
+    console.log('[CRUD] 📦 Update payload:', updateData);
+    console.log('[CRUD] 🔑 Payload keys:', Object.keys(updateData));
+
+    // ============================================================
+    // EKSEKUSI UPDATE - TANPA .single() ⭐
+    // ============================================================
+    const { data, error } = await supabaseClient
+        .from('submissions')
+        .update(updateData)
+        .eq('id', recordId)  // Gunakan primary key 'id' (UUID), BUKAN NIK!
+        .select('*');         // Ambil semua kolom hasil update
+
+    console.log('[CRUD] 📊 Supabase response:', {
+        dataType: typeof data,
+        dataLength: Array.isArray(data) ? data.length : 'not array',
+        data: data,
+        error: error
+    });
+
+    // ============================================================
+    // HANDLE ERROR
+    // ============================================================
+    if (error) {
+        console.error('[CRUD] ❌ Supabase error details:', error);
+        console.error('[CRUD] ❌ Error code:', error.code);
+        console.error('[CRUD] ❌ Error message:', error.message);
+        console.error('[CRUD] ❌ Error hints:', error.hints);
+        
+        // Handle specific error codes
+        switch (error.code) {
+            case '23505':  // Unique violation
+                throw new Error(`Data duplikat terdeteksi: ${error.message}`);
+            case '23503':  // Foreign key violation
+                throw new Error(`Referensi data tidak valid: ${error.message}`);
+            case '42501':  // Permission denied / RLS
+                throw new Error(`Tidak memiliki izin UPDATE. Cek RLS policies: ${error.message}`);
+            case '22P02':  // Invalid text representation
+                throw new Error(`Format data tidak valid: ${error.message}`);
+            case '406':    // Not Acceptable (biasanya karena .single() tapi kita sudah hapus)
+                throw new Error(`Format data tidak diterima server: ${error.message}`);
+            default:
+                throw new Error(`Gagal menyimpan data ke database: ${error.message || 'Unknown error'}`);
+        }
+    }
+
+    // ============================================================
+    // VALIDASI HASIL - PASTIKAN DATA BENAR-BENAR TERUPDATE
+    // ============================================================
+    
+    // Cek apakah data ada dan adalah array
+    if (!data) {
+        console.error('[CRUD] ❌ Update mengembalikan data null/undefined');
+        throw new Error(
+            'Update tidak menghasilkan data. Kemungkinan:\n' +
+            '- Record ID tidak ditemukan\n' +
+            '- RLS policy memblok SELECT setelah UPDATE\n' +
+            '- Trigger database menyebabkan error'
+        );
+    }
+
+    // Pastikan data adalah array (tanpa .single(), Supabase return array)
+    if (!Array.isArray(data)) {
+        console.warn('[CRUD] ⚠️ Data bukan array, mencoba konversi...');
+        // Jika somehow bukan array, coba wrap dalam array
+        const dataArray = [data];
+        console.log('[CRUD] ✅ Dikonversi ke array:', dataArray);
+        return dataArray[0];
+    }
+
+    // Cek jumlah record yang terupdate
+    if (data.length === 0) {
+        console.error('[CRUD] ❌ Update mengembalikan 0 records');
+        throw new Error(
+            'Tidak ada record yang berhasil diperbarui.\n' +
+            'Kemungkinan penyebab:\n' +
+            `- ID record "${recordId}" tidak ditemukan di tabel\n` +
+            `- WHERE clause tidak match dengan record manapun\n` +
+            `- RLS policy membatasi akses`
+        );
+    }
+
+    if (data.length > 1) {
+        console.error('[CRUD] ❌ Update mengembalikan', data.length, 'records! Seharusnya hanya 1.');
+        console.error('[CRUD] ❌ IDs:', data.map(r => r.id));
+        // Lanjutkan saja dengan record pertama, tapi log warning
+        console.warn('[CRUD] ⚠️ Menggunakan record pertama dari', data.length, 'records');
+    }
+
+    // ============================================================
+    // SUKSES - KEMBALIKAN RECORD YANG DIPERBARUI
+    // ============================================================
+    const updatedRecord = data[0];
+    
+    console.log('[CRUD] ✅ Update BERHASIL!');
+    console.log('[CRUD] ✅ Updated record ID:', updatedRecord.id);
+    console.log('[CRUD] ✅ Updated at:', updatedRecord.updated_at);
+    console.table({
+        'Record ID': updatedRecord.id,
+        'Fields Updated': Object.keys(updateData).length,
+        'New Values': JSON.stringify(updateData).substring(0, 100) + '...'
+    });
+
+    return updatedRecord;
+}
+
+/**
+ * deleteSubmission() - Fungsi DELETE terpusat
+ * 
+ * @param {Object} Record yang akan dihapus
+ * @returns {Promise<boolean>} True jika berhasil
+ */
+async function deleteSubmission(record) {
+    if (!record || !record.id) {
+        throw new Error('Record atau ID tidak tersedia untuk dihapus.');
+    }
+
+    console.log('[CRUD] 🗑️ Deleting record ID:', record.id);
+
+    const { error } = await supabaseClient
+        .from('submissions')
+        .delete()
+        .eq('id', record.id);  // Gunakan primary key, TANPA .select().single()
+
+    if (error) {
+        console.error('[CRUD] ❌ Delete error:', error);
+        throw new Error(`Gagal menghapus data: ${error.message}`);
+    }
+
+    console.log('[CRUD] ✅ Delete successful for ID:', record.id);
+    return true;
+}
+
+/**
+ * verifyDatabaseRecord() - Verifikasi record benar-benar ada di database
+ * Digunakan untuk debugging dan validasi pasca-update
+ * 
+ * @param {string} recordId - ID record yang akan diverifikasi
+ * @returns {Promise<Object|null>} Record atau null jika tidak ditemukan
+ */
+async function verifyDatabaseRecord(recordId) {
+    if (!recordId || !supabaseClient) return null;
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('submissions')
+            .select('*')
+            .eq('id', recordId)
+            .maybeSingle();  // Gunakan maybeSingle() untuk SELECT yang boleh return null
+
+        if (error) {
+            console.warn('[VERIFY] Query error:', error);
+            return null;
+        }
+
+        return data;
+    } catch (e) {
+        console.error('[VERIFY] Exception:', e);
+        return null;
+    }
+}
+
+/**
+ * reloadSubmissionsData() - Reload seluruh data submissions dari Supabase
+ * Dipanggil setelah UPDATE/DELETE berhasil untuk sinkronisasi
+ * 
+ * @returns {Promise<Array>} Data submissions terbaru
+ */
+async function reloadSubmissionsData() {
+    console.log('[RELOAD] 🔄 Reloading submissions data from Supabase...');
+
+    try {
+        const { data, error } = await supabaseClient
+            .from('submissions')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('[RELOAD] ❌ Error loading data:', error);
+            throw new Error(`Gagal reload data: ${error.message}`);
+        }
+
+        if (!data || !Array.isArray(data)) {
+            console.warn('[RELOAD] ⚠️ Data tidak valid');
+            return window.submissionsData || [];
+        }
+
+        // Update global state
+        window.submissionsData = data;
+        window.filteredSubmissions = data;  // Reset filter
+
+        console.log('[RELOAD] ✅ Reloaded', data.length, 'records');
+        return data;
+
+    } catch (error) {
+        console.error('[RELOAD] ❌ Reload failed:', error);
+        throw error;
     }
 }
 
@@ -9236,157 +9489,235 @@ function closeEditMode() {
 }
 
 /**
- * handleEditSubmit() - Simpan perubahan edit ke Supabase (FIXED VERSION)
+ * handleEditSubmit() - Simpan perubahan edit ke Supabase (PERBAIKAN TOTAL)
+ * 
+ * Alur:
+ * 1. Validasi input & collect form data
+ * 2. Panggil updateSubmission() (fungsi terpusat TANPA .single())
+ * 3. Reload data dari Supabase
+ * 4. Verify database record
+ * 5. Refresh semua views (lightbox, table)
  */
 async function handleEditSubmit(event) {
     event.preventDefault();
     
-    if (!window.activeRecord || !supabaseClient) {
-        ToastManager.error('Gagal menyimpan: data atau koneksi tidak tersedia');
+    // ============================================================
+    // VALIDASI AWAL
+    // ============================================================
+    console.log('[EDIT] 🚀 Starting edit submission...');
+    
+    if (!window.activeRecord) {
+        console.error('[EDIT] ❌ No active record');
+        ToastManager.error('Tidak ada record aktif yang sedang diedit.');
         return;
     }
     
-    const primaryKeyValue = window.activeRecord[window.PRIMARY_KEY_FIELD];
-    if (!primaryKeyValue) {
-        ToastManager.error('Identifier record tidak ditemukan');
+    if (!supabaseClient) {
+        console.error('[EDIT] ❌ No Supabase client');
+        ToastManager.error('Koneksi database tidak tersedia.');
+        return;
+    }
+
+    const record = window.activeRecord;
+    
+    console.log('[EDIT] 📋 Active Record:');
+    console.log('[EDIT]    - ID:', record.id);
+    console.log('[EDIT]    - Keys:', Object.keys(record));
+    console.log('[EDIT]    - Nama:', record.nama_lengkap || record.nama || 'N/A');
+    
+    if (!record.id) {
+        console.error('[EDIT] ❌ Record has no ID field!');
+        ToastManager.error('Record tidak memiliki ID. Data tidak dapat diperbarui.');
         return;
     }
     
-    // Collect form data dengan penanganan yang lebih baik
+    // ============================================================
+    // COLLECT FORM DATA
+    // ============================================================
     const formData = new FormData(event.target);
     const updatedData = {};
     
-    // Fields yang sebaiknya tidak diupdate (system fields)
-    const excludedFields = ['id', 'created_at', 'updated_at', 'uuid'];
+    // Fields yang TIDAK BOLEH diupdate (system fields)
+    const excludedFields = ['id', 'created_at', 'updated_at', 'uuid', 'row_num'];
     
     for (const [key, value] of formData.entries()) {
-        // Skip excluded fields
-        if (excludedFields.includes(key)) continue;
-        
-        const originalValue = window.activeRecord[key];
-        
-        // Handle empty values - set to null untuk menghapus data
-        if (value === '' || value === null || value === undefined) {
-            // Hanya set null jika original value juga bukan null/empty
-            // Ini memastikan field bisa dikosongkan jika perlu
-            updatedData[key] = null;
-        } 
-        // Convert number fields
-        else if (typeof originalValue === 'number' && !isNaN(value)) {
-            updatedData[key] = parseFloat(value);
-        } 
-        // Convert boolean strings
-        else if (value === 'true') {
-            updatedData[key] = true;
-        } else if (value === 'false') {
-            updatedData[key] = false;
+        // Skip system fields
+        if (excludedFields.includes(key)) {
+            console.log(`[EDIT] ⏭️ Skipping excluded field: ${key}`);
+            continue;
         }
-        // String values
+        
+        const originalValue = record[key];
+        
+        // Handle different value types
+        if (value === '' || value === null || value === undefined) {
+            // Empty values → set to null (untuk mengosongkan field)
+            updatedData[key] = null;
+            console.log(`[EDIT] 📝 ${key}: null (empty)`);
+        } 
+        else if (typeof originalValue === 'number' && !isNaN(value)) {
+            // Number fields
+            updatedData[key] = parseFloat(value);
+            console.log(`[EDIT] 📝 ${key}: ${updatedData[key]} (number)`);
+        } 
+        else if (value === 'true' || value === 'false') {
+            // Boolean conversion
+            updatedData[key] = value === 'true';
+            console.log(`[EDIT] 📝 ${key}: ${updatedData[key]} (boolean)`);
+        }
         else {
-            updatedData[key] = value.trim();  // Trim whitespace
+            // String values - trim whitespace
+            updatedData[key] = value.trim();
+            console.log(`[EDIT] 📝 ${key}: "${updatedData[key]}" (string)`);
         }
     }
     
-    // Tambahkan updated_at timestamp
+    // Tambahkan timestamp
     updatedData.updated_at = new Date().toISOString();
     
-    console.log('[EDIT] Updating record:', primaryKeyValue);
-    console.log('[EDIT] Updated data:', updatedData);
-    console.log('[EDIT] Data keys:', Object.keys(updatedData));
+    console.log('[EDIT] 📦 Final Update Payload:', updatedData);
+    console.log('[EDIT] 🔑 Payload keys:', Object.keys(updatedData));
     
+    // ============================================================
+    // EKSEKUSI UPDATE via fungsi terpusat
+    // ============================================================
     try {
-        // Disable save button
+        // Disable save button & show loading state
         const saveBtn = event.target.querySelector('.fs-btn-save');
         if (saveBtn) {
             saveBtn.disabled = true;
             saveBtn.textContent = '⏳ MENYIMPAN...';
+            saveBtn.style.opacity = '0.7';
         }
         
-        // UPDATE ke Supabase dengan error handling yang lebih baik
-        let result, updateError;
+        console.log('[EDIT] 🔄 Calling updateSubmission()...');
+        
+        // ⭐ PANGGIL FUNGSI TERPUSAT (tanpa .single())
+        const updatedRecord = await updateSubmission(record, updatedData);
+        
+        console.log('[EDIT] ✅ updateSubmission() returned successfully!');
+        console.log('[EDIT] ✅ Updated Record:', updatedRecord);
+        
+        // ============================================================
+        // VERIFY DATABASE RECORD (opsional, untuk debugging)
+        // ============================================================
+        console.log('[EDIT] 🔍 Verifying database record...');
+        const verifiedRecord = await verifyDatabaseRecord(updatedRecord.id);
+        
+        if (verifiedRecord) {
+            console.log('[EDIT] ✅ Database verification PASSED');
+            console.table({
+                'ID': verifiedRecord.id,
+                'Updated At': verifiedRecord.updated_at,
+                'Nama': verifiedRecord.nama_lengkap || verifiedRecord.nama
+            });
+        } else {
+            console.warn('[EDIT] ⚠️ Database verification FAILED (record not found or error)');
+        }
+        
+        // ============================================================
+        // RELOAD DATA DARI SUPABASE (WAJIB!)
+        // ============================================================
+        console.log('[EDIT] 🔄 Reloading submissions data...');
         
         try {
-            const response = await supabaseClient
-                .from('submissions')
-                .update(updatedData)
-                .eq(window.PRIMARY_KEY_FIELD, primaryKeyValue)
-                .select()
-                .single();
-            
-            result = response.data;
-            updateError = response.error;
-            
-            console.log('[EDIT] Supabase response:', { result, updateError });
-            
-        } catch (supabaseError) {
-            console.error('[EDIT] Supabase client error:', supabaseError);
-            throw new Error(`Koneksi database gagal: ${supabaseError.message}`);
+            await reloadSubmissionsData();
+            console.log('[EDIT] ✅ Data reloaded from Supabase');
+        } catch (reloadError) {
+            console.warn('[EDIT] ⚠️ Reload failed (non-critical):', reloadError.message);
+            // Lanjutkan meski reload gagal, kita masih punya updatedRecord
         }
         
-        // Handle specific error codes
-        if (updateError) {
-            console.error('[EDIT] Supabase error details:', updateError);
-            
-            switch (updateError.code) {
-                case '23505':  // Unique violation
-                    throw new Error('Data duplikat terdeteksi. Pastikan tidak ada data yang sama.');
-                case '23503':  // Foreign key violation
-                    throw new Error('Referensi data tidak valid.');
-                case '42501':  // Permission denied / RLS
-                    throw new Error('Tidak memiliki izin untuk mengubah data ini. Cek RLS policies.');
-                case '22P02':  // Invalid text representation
-                    throw new Error('Format data tidak valid. Periksa tipe data input.');
-                case '406':    // Not Acceptable
-                    throw new Error('Format data tidak diterima server. Periksa kembali isian form.');
-                default:
-                    throw new Error(updateError.message || 'Gagal menyimpan data ke database.');
-            }
-        }
+        // ============================================================
+        // UPDATE LOCAL STATE
+        // ============================================================
         
-        if (!result) {
-            throw new Error('Server tidak mengembalikan data setelah update.');
-        }
+        // Update active record dengan data dari Supabase (bukan dari response update)
+        // Ini memastikan data konsisten dengan database
+        const refreshedRecord = window.submissionsData.find(item => item.id === updatedRecord.id);
         
-        console.log('[EDIT] ✅ Update successful:', result);
-        
-        // Update active record
-        window.activeRecord = result;
-        
-        // Update local array
-        const localIndex = window.submissionsData.findIndex(item => item[window.PRIMARY_KEY_FIELD] === primaryKeyValue);
-        if (localIndex >= 0) {
-            window.submissionsData[localIndex] = result;
-            console.log('[EDIT] Local array updated at index:', localIndex);
+        if (refreshedRecord) {
+            window.activeRecord = refreshedRecord;
+            console.log('[EDIT] ✅ Active record updated from reloaded data');
         } else {
-            console.warn('[EDIT] Record not found in local array');
+            // Fallback: gunakan hasil update jika tidak ada di reloaded data
+            window.activeRecord = updatedRecord;
+            console.log('[EDIT] ⚠️ Using update result as active record (not found in reloaded data)');
         }
         
-        // Close edit mode and refresh view
-        closeEditMode();
+        // ============================================================
+        // REFRESH VIEWS
+        // ============================================================
         
-        // Re-populate lightbox dengan data terbaru
+        // Close edit mode
+        closeEditMode();
+        console.log('[EDIT] ✅ Edit mode closed');
+        
+        // Re-populate lightbox dengan data TERBARU
         const lightbox = document.getElementById('fullscreen-lightbox');
         if (lightbox && typeof populateLightboxContent === 'function') {
-            populateLightboxContent(lightbox, result);
+            populateLightboxContent(lightbox, window.activeRecord);
+            console.log('[EDIT] ✅ Lightbox content refreshed');
         }
         
-        // Re-render table jika fungsi tersedia
+        // Re-render table dengan data TERBARU
         if (typeof renderAdminTableFinal === 'function') {
-            renderAdminTableFinal(window.submissionsData);
+            renderAdminTableFinal(window.submissionsData || []);
+            console.log('[EDIT] ✅ Table re-rendered with', (window.submissionsData || []).length, 'records');
         }
         
-        ToastManager.success('✅ Data berhasil diperbarui dan disimpan!');
-        console.log('[EDIT] ✅ All views refreshed');
+        // Apply current filters jika ada
+        if (typeof applyCurrentFilters === 'function') {
+            applyCurrentFilters();
+        }
+        
+        // ============================================================
+        // SUKSES!
+        // ============================================================
+        ToastManager.success('✅ Data berhasil diperbarui dan tersimpan ke database!');
+        
+        console.log('[EDIT] ========================================');
+        console.log('[EDIT] ✅ EDIT OPERATION COMPLETED SUCCESSFULLY!');
+        console.log('[EDIT] ========================================');
+        console.log('[EDIT] 📊 Summary:');
+        console.log('[EDIT]    • Record ID:', window.activeRecord.id);
+        console.log('[EDIT]    • Fields Updated:', Object.keys(updatedData).length);
+        console.log('[EDIT]    • Total Records in Table:', (window.submissionsData || []).length);
+        console.log('[EDIT] ========================================');
         
     } catch (error) {
-        console.error('[EDIT] ❌ Update failed:', error);
-        console.error('[EDIT] Error stack:', error.stack);
-        ToastManager.error(`❌ Gagal menyimpan: ${error.message}`);
+        // ============================================================
+        // ERROR HANDLING
+        // ============================================================
+        console.error('[EDIT] ========================================');
+        console.error('[EDIT] ❌ EDIT OPERATION FAILED!');
+        console.error('[EDIT] ========================================');
+        console.error('[EDIT] Error:', error);
+        console.error('[EDIT] Message:', error.message);
+        console.error('[EDIT] Stack:', error.stack);
+        console.error('[EDIT] ========================================');
+        
+        // Tampilkan error yang jelas ke user
+        let userMessage = error.message || 'Gagal menyimpan perubahan.';
+        
+        // Simplify technical messages untuk user
+        if (userMessage.includes('406')) {
+            userMessage = 'Format data tidak valid. Periksa kembali isian form.';
+        } else if (userMessage.includes('RLS') || userMessage.includes('permission')) {
+            userMessage = 'Tidak memiliki izin untuk menyimpan. Hubungi admin.';
+        } else if (userMessage.includes('unique') || userMessage.includes('duplikat')) {
+            userMessage = 'Data duplikat terdeteksi. Gunakan nilai yang berbeda.';
+        }
+        
+        ToastManager.error(`❌ ${userMessage}`);
+        
     } finally {
+        // Reset button state
         const saveBtn = event.target.querySelector('.fs-btn-save');
         if (saveBtn) {
             saveBtn.disabled = false;
             saveBtn.textContent = '💾 SIMPAN PERUBAHAN';
+            saveBtn.style.opacity = '1';
         }
     }
 }
@@ -9440,11 +9771,20 @@ function closeStatusMode() {
 }
 
 /**
- * confirmStatusChange() - Konfirmasi ubah status
+ * confirmStatusChange() - Konfirmasi ubah status (PERBAIKAN - TANPA .single())
  */
 async function confirmStatusChange() {
-    if (!window.activeRecord || !supabaseClient) {
-        ToastManager.error('Gagal mengubah status');
+    console.log('[STATUS] 🚀 Starting status change...');
+    
+    if (!window.activeRecord) {
+        console.error('[STATUS] ❌ No active record');
+        ToastManager.error('Tidak ada record aktif.');
+        return;
+    }
+    
+    if (!supabaseClient) {
+        console.error('[STATUS] ❌ No Supabase client');
+        ToastManager.error('Koneksi database tidak tersedia.');
         return;
     }
     
@@ -9455,35 +9795,63 @@ async function confirmStatusChange() {
     }
     
     const newStatus = selectedBtn.dataset.status;
-    const primaryKeyValue = window.activeRecord[window.PRIMARY_KEY_FIELD];
+    const record = window.activeRecord;
+    
+    console.log('[STATUS] 📋 Status Change Info:');
+    console.log('[STATUS]    • Record ID:', record.id);
+    console.log('[STATUS]    • Current Status:', record.status || 'N/A');
+    console.log('[STATUS]    • New Status:', newStatus);
     
     try {
-        const { data, error } = await supabaseClient
-            .from('submissions')
-            .update({ status: newStatus })
-            .eq(window.PRIMARY_KEY_FIELD, primaryKeyValue)
-            .select()
-            .single();
+        // ⭐ Gunakan fungsi updateSubmission() terpusat
+        const updatedRecord = await updateSubmission(record, { 
+            status: newStatus,
+            updated_at: new Date().toISOString()
+        });
         
-        if (error) throw error;
+        console.log('[STATUS] ✅ Status updated successfully!');
+        console.log('[STATUS] ✅ New Record:', updatedRecord);
         
-        // Update state
-        window.activeRecord = data;
-        
-        const localIndex = window.submissionsData.findIndex(item => item.id === primaryKeyValue);
-        if (localIndex >= 0) {
-            window.submissionsData[localIndex] = data;
+        // Reload data dari Supabase
+        try {
+            await reloadSubmissionsData();
+            console.log('[STATUS] ✅ Data reloaded');
+        } catch (reloadError) {
+            console.warn('[STATUS] ⚠️ Reload failed (non-critical):', reloadError.message);
         }
         
-        closeStatusMode();
-        populateLightboxContent(document.getElementById('fullscreen-lightbox'), data);
-        renderAdminTableFinal(window.submissionsData);
+        // Update active record dari data terbaru
+        const refreshedRecord = window.submissionsData.find(item => item.id === updatedRecord.id);
+        window.activeRecord = refreshedRecord || updatedRecord;
         
-        ToastManager.success(`✅ Status diubah menjadi "${newStatus}"`);
+        // Close status mode & refresh views
+        closeStatusMode();
+        
+        // Refresh lightbox
+        const lightbox = document.getElementById('fullscreen-lightbox');
+        if (lightbox && typeof populateLightboxContent === 'function') {
+            populateLightboxContent(lightbox, window.activeRecord);
+        }
+        
+        // Refresh table
+        if (typeof renderAdminTableFinal === 'function') {
+            renderAdminTableFinal(window.submissionsData || []);
+        }
+        
+        ToastManager.success(`✅ Status berhasil diubah menjadi "${newStatus}"`);
+        
+        console.log('[STATUS] ========================================');
+        console.log('[STATUS] ✅ STATUS CHANGE COMPLETED SUCCESSFULLY!');
+        console.log('[STATUS] ========================================');
         
     } catch (error) {
+        console.error('[STATUS] ========================================');
+        console.error('[STATUS] ❌ STATUS CHANGE FAILED!');
         console.error('[STATUS] Error:', error);
-        ToastManager.error(`Gagal mengubah status: ${error.message}`);
+        console.error('[STATUS] Message:', error.message);
+        console.error('[STATUS] ========================================');
+        
+        ToastManager.error(`❌ Gagal mengubah status: ${error.message}`);
     }
 }
 
@@ -15518,19 +15886,28 @@ async function savePenetapanChanges() {
         saveBtn.innerHTML = '⏳ Menyimpan...';
         saveBtn.disabled = true;
         
-        // Update via Supabase
-        const { data: updatedRecord, error: updateError } = await supabaseClient
+        // Update via Supabase - TANPA .single() ⭐
+        console.log('[PENETAPAN] Updating record ID:', penetapanEditingId);
+        
+        const { data: updatedRecordArray, error: updateError } = await supabaseClient
             .from('penetapan')
             .update(updateData)
             .eq('id', penetapanEditingId)
-            .select()
-            .single();
+            .select('*');  // TANPA .single()
         
         if (updateError) {
+            console.error('[PENETAPAN] Update error:', updateError);
             throw new Error(updateError.message || 'Gagal menyimpan perubahan');
         }
         
-        console.log('✅ Successfully updated record:', updatedRecord);
+        // Validasi hasil array
+        if (!updatedRecordArray || !Array.isArray(updatedRecordArray) || updatedRecordArray.length === 0) {
+            throw new Error('Update penetapan tidak menghasilkan data. Periksa ID atau RLS policy.');
+        }
+        
+        const updatedRecord = updatedRecordArray[0];  // Ambil dari array
+        
+        console.log('[PENETAPAN] ✅ Successfully updated record:', updatedRecord);
         
         // Close modal
         closeEditPenetapanModal();
@@ -23078,7 +23455,7 @@ async function viewDetailPengusul(id) {
             return;
         }
         
-        // Query data dari Supabase berdasarkan ID
+        // Query data dari Supabase berdasarkan ID - gunakan .maybeSingle() untuk SELECT ⭐
         if (!supabaseClient) {
             throw new Error('Supabase client tidak tersedia');
         }
@@ -23087,7 +23464,7 @@ async function viewDetailPengusul(id) {
             .from('submissions')
             .select('*')
             .eq('id', id)
-            .single();
+            .maybeSingle();  // Gunakan .maybeSingle() - boleh return null jika tidak ditemukan
         
         if (error) throw error;
         
@@ -23367,17 +23744,24 @@ async function submitStatusUpdate() {
             throw new Error('Supabase client tidak tersedia');
         }
         
-        const { data, error } = await supabaseClient
+        // UPDATE status - TANPA .single() ⭐
+        const { data: dataArray, error } = await supabaseClient
             .from('submissions')
             .update({ 
                 status: newStatus,
                 updated_at: new Date().toISOString()
             })
             .eq('id', id)
-            .select()
-            .single();
+            .select('*');  // TANPA .single()
         
         if (error) throw error;
+        
+        // Validasi hasil array
+        if (!dataArray || !Array.isArray(dataArray) || dataArray.length === 0) {
+            throw new Error('Status update tidak menghasilkan data.');
+        }
+        
+        const data = dataArray[0];  // Ambil dari array
         
         console.log('[SIMBAKES] ✅ Status updated:', data.status);
         
@@ -23618,11 +24002,12 @@ async function openPengusulEditModal(id) {
             throw new Error('Supabase client tidak tersedia');
         }
         
+        // Fetch data dari Supabase - gunakan .maybeSingle() untuk SELECT ⭐
         const { data, error } = await supabaseClient
             .from('submissions')
             .select('*')
             .eq('id', id)
-            .single();
+            .maybeSingle();  // Gunakan .maybeSingle() - boleh return null
         
         if (error) throw error;
         if (!data) {
