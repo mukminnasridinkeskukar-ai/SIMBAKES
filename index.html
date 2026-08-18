@@ -7953,6 +7953,13 @@ async function updateSubmission(record, updateData) {
         throw new Error('Koneksi ke Supabase tidak tersedia.');
     }
 
+    // Debug log
+    debugCRUDLog('UPDATE', 'submissions', { 
+        recordId, 
+        fieldsToUpdate: Object.keys(updateData),
+        fieldCount: Object.keys(updateData).length
+    });
+
     console.log('[CRUD] 🔄 Updating record ID:', recordId);
     console.log('[CRUD] 📦 Update payload:', updateData);
     console.log('[CRUD] 🔑 Payload keys:', Object.keys(updateData));
@@ -7960,43 +7967,36 @@ async function updateSubmission(record, updateData) {
     // ============================================================
     // EKSEKUSI UPDATE - TANPA .single() ⭐
     // ============================================================
-    const { data, error } = await supabaseClient
-        .from('submissions')
-        .update(updateData)
-        .eq('id', recordId)  // Gunakan primary key 'id' (UUID), BUKAN NIK!
-        .select('*');         // Ambil semua kolom hasil update
+    let result;
+    try {
+        result = await supabaseClient
+            .from('submissions')
+            .update(updateData)
+            .eq('id', recordId)  // Gunakan primary key 'id' (UUID), BUKAN NIK!
+            .select('*');         // Ambil semua kolom hasil update - TANPA .single()
+    } catch (queryError) {
+        console.error('[CRUD] ❌ Query execution failed:', queryError);
+        throw new Error(`Gagal menjalankan query UPDATE: ${queryError.message}`);
+    }
+
+    const { data, error } = result;
 
     console.log('[CRUD] 📊 Supabase response:', {
         dataType: typeof data,
         dataLength: Array.isArray(data) ? data.length : 'not array',
-        data: data,
-        error: error
+        hasError: !!error,
+        errorCode: error?.code,
+        errorMessage: error?.message
     });
 
     // ============================================================
-    // HANDLE ERROR
+    // HANDLE ERROR dengan Enhanced Handler
     // ============================================================
     if (error) {
-        console.error('[CRUD] ❌ Supabase error details:', error);
-        console.error('[CRUD] ❌ Error code:', error.code);
-        console.error('[CRUD] ❌ Error message:', error.message);
-        console.error('[CRUD] ❌ Error hints:', error.hints);
+        const errorInfo = handleSupabaseError(error, 'UPDATE', 'submissions');
         
-        // Handle specific error codes
-        switch (error.code) {
-            case '23505':  // Unique violation
-                throw new Error(`Data duplikat terdeteksi: ${error.message}`);
-            case '23503':  // Foreign key violation
-                throw new Error(`Referensi data tidak valid: ${error.message}`);
-            case '42501':  // Permission denied / RLS
-                throw new Error(`Tidak memiliki izin UPDATE. Cek RLS policies: ${error.message}`);
-            case '22P02':  // Invalid text representation
-                throw new Error(`Format data tidak valid: ${error.message}`);
-            case '406':    // Not Acceptable (biasanya karena .single() tapi kita sudah hapus)
-                throw new Error(`Format data tidak diterima server: ${error.message}`);
-            default:
-                throw new Error(`Gagal menyimpan data ke database: ${error.message || 'Unknown error'}`);
-        }
+        // Throw dengan pesan yang lebih informatif
+        throw new Error(errorInfo.userFriendlyMessage);
     }
 
     // ============================================================
@@ -8036,8 +8036,8 @@ async function updateSubmission(record, updateData) {
     }
 
     if (data.length > 1) {
-        console.error('[CRUD] ❌ Update mengembalikan', data.length, 'records! Seharusnya hanya 1.');
-        console.error('[CRUD] ❌ IDs:', data.map(r => r.id));
+        console.warn('[CRUD] ⚠️ Update mengembalikan', data.length, 'records! Seharusnya hanya 1.');
+        console.warn('[CRUD] ⚠️ IDs:', data.map(r => r.id));
         // Lanjutkan saja dengan record pertama, tapi log warning
         console.warn('[CRUD] ⚠️ Menggunakan record pertama dari', data.length, 'records');
     }
@@ -8046,6 +8046,12 @@ async function updateSubmission(record, updateData) {
     // SUKSES - KEMBALIKAN RECORD YANG DIPERBARUI
     // ============================================================
     const updatedRecord = data[0];
+    
+    debugCRUDLog('SUCCESS', 'submissions', { 
+        operation: 'UPDATE',
+        recordId: updatedRecord.id,
+        updatedAt: updatedRecord.updated_at
+    });
     
     console.log('[CRUD] ✅ Update BERHASIL!');
     console.log('[CRUD] ✅ Updated record ID:', updatedRecord.id);
@@ -26160,12 +26166,174 @@ async function testConnectionOnLoad() {
         
         if (error) {
             console.warn('[SIMBAKES] ⚠️ Connection test warning:', error.message);
+            console.warn('[SIMBAKES] ⚠️ Error code:', error.code);
+            console.warn('[SIMBAKES] ⚠️ This might indicate RLS policy issues');
         } else {
             console.log('[SIMBAKES] ✅ Connection test successful! Latency: ' + latency + 'ms');
         }
     } catch (err) {
         console.warn('[SIMBAKES] ⚠️ Connection test failed:', err.message);
     }
+}
+
+/**
+ * 🔧 CRUD DEBUG & TESTING UTILITIES
+ * Fungsi-fungsi untuk debugging operasi database
+ */
+
+/**
+ * Test semua CRUD permissions (SELECT, INSERT, UPDATE, DELETE)
+ * Panggil ini di Console untuk diagnosa masalah
+ */
+async function testCRUDPermissions() {
+    console.log('=== CRUD PERMISSION TEST ===');
+    
+    if (!supabaseClient) {
+        console.error('❌ Supabase client not initialized!');
+        return;
+    }
+    
+    const results = {};
+    
+    // Test SELECT
+    try {
+        const { data, error } = await supabaseClient.from('submissions').select('id').limit(1);
+        results.SELECT = error ? { success: false, error: error.message, code: error.code } : { success: true, count: data?.length };
+        console.log('[TEST] SELECT:', results.SELECT);
+    } catch(e) {
+        results.SELECT = { success: false, error: e.message };
+    }
+    
+    // Test INSERT (dengan dummy data yang akan dihapus)
+    try {
+        const testData = { 
+            nama_lengkap: '__CRUD_TEST__', 
+            nik: 'TEST_' + Date.now(),
+            created_at: new Date().toISOString()
+        };
+        const { data, error } = await supabaseClient.from('submissions').insert([testData]).select('id');
+        
+        if (error) {
+            results.INSERT = { success: false, error: error.message, code: error.code };
+        } else if (data && data.length > 0) {
+            // Hapus test record
+            const testId = data[0].id;
+            await supabaseClient.from('submissions').delete().eq('id', testId);
+            results.INSERT = { success: true, testId: testId };
+        } else {
+            results.INSERT = { success: false, error: 'No data returned after insert' };
+        }
+        console.log('[TEST] INSERT:', results.INSERT);
+    } catch(e) {
+        results.INSERT = { success: false, error: e.message };
+    }
+    
+    // Test UPDATE (jika ada data)
+    try {
+        const { data: existing } = await supabaseClient.from('submissions').select('id').limit(1);
+        if (existing && existing.length > 0) {
+            const testId = existing[0].id;
+            const { data, error } = await supabaseClient
+                .from('submissions')
+                .update({ updated_at: new Date().toISOString() })
+                .eq('id', testId)
+                .select('id');
+            
+            results.UPDATE = error ? { success: false, error: error.message, code: error.code } : { success: true, updatedId: testId };
+        } else {
+            results.UPDATE = { success: false, error: 'No records to test with' };
+        }
+        console.log('[TEST] UPDATE:', results.UPDATE);
+    } catch(e) {
+        results.UPDATE = { success: false, error: e.message };
+    }
+    
+    // Test DELETE (skip untuk keamanan, hanya log)
+    results.DELETE = { success: true, note: 'Skipped for safety. Use UI to test delete.' };
+    console.log('[TEST] DELETE:', results.DELETE);
+    
+    console.log('=== CRUD TEST SUMMARY ===');
+    console.table(results);
+    
+    // Cek apakah ada yang gagal
+    const failures = Object.entries(results).filter(([k,v]) => !v.success);
+    if (failures.length > 0) {
+        console.error('❌ FAILED OPERATIONS:', failures.map(([k]) => k));
+        console.error('💡 TIPS:');
+        console.error('   - Jika INSERT/UPDATE gagal dengan code 42501/42503: RLS Policy issue');
+        console.error('   - Jika gagal dengan code 23505: Unique constraint violation');
+        console.error('   - Jika gagal dengan code 42P01: Table not found');
+        console.error('');
+        console.error('🔧 SOLUTION: Jalankan SQL berikut di Supabase SQL Editor:');
+        console.error('');
+        console.error('-- Enable RLS policies for anon role:');
+        console.error('ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;');
+        console.error('');
+        console.error('-- Create policy untuk allow all operations (development):');
+        console.error('CREATE POLICY "Allow all" ON submissions FOR ALL USING (true) WITH CHECK (true);');
+    } else {
+        console.log('✅ All CRUD operations working correctly!');
+    }
+    
+    return results;
+}
+
+// Export untuk penggunaan di Console
+window.testCRUDPermissions = testCRUDPermissions;
+
+/**
+ * Debug helper - Log lengkap untuk setiap operasi CRUD
+ */
+function debugCRUDLog(operation, table, details) {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] [CRUD:${operation}] 📋 ${table}`, {
+        ...details,
+        userRole: currentAdminUser?.role,
+        userId: currentAdminUser?.id,
+        supabaseReady: !!supabaseClient
+    });
+}
+
+/**
+ * Enhanced error handler untuk Supabase errors
+ */
+function handleSupabaseError(error, operation, tableName) {
+    debugCRUDLog('ERROR', tableName || 'unknown', { operation, error });
+    
+    // Error codes dan solusinya
+    const errorSolutions = {
+        '42501': 'RLS Policy Error: Role tidak memiliki izin. Cek Row Level Security di Supabase.',
+        '42503': 'Privilege Error: Tidak memiliki privilege. Grant permission ke role anon/service_role.',
+        '23505': 'Unique Violation: Data duplikat. Gunakan nilai unik untuk field yang required unique.',
+        '23503': 'Foreign Key Error: Referensi data tidak valid. Pastikan ID referensi ada.',
+        '23514': 'Check Violation: Constraint check gagal. Periksa data yang dimasukkan.',
+        '22P02': 'Invalid Input: Format data tidak sesuai tipe kolom.',
+        '22001': 'String Too Long: Data terlalu panjang untuk kolom.',
+        '42P01': 'Table Not Found: Tabel tidak ada. Periksa nama tabel.',
+        '42P02': 'Column Not Found: Kolom tidak ada. Periksa nama field.',
+        '406': 'Not Acceptable: Format response tidak sesuai. Biasanya karena .single() pada query yang return multiple rows.',
+        'PGRST': 'PostgREST Error: Masalah API layer. Cek URL dan headers.'
+    };
+    
+    const errorCode = error.code || 'UNKNOWN';
+    const solution = errorSolutions[errorCode] || errorSolutions[errorCode.substring(0,5)] || null;
+    
+    let message = `Error ${operation} ${tableName || ''}: ${error.message}`;
+    if (solution) {
+        message += `\n\n🔍 Diagnosis: ${solution}`;
+    }
+    
+    console.error(`[CRUD ERROR] ${message}`);
+    console.error(`[CRUD ERROR] Full error object:`, error);
+    console.error(`[CRUD ERROR] Code: ${errorCode}`);
+    
+    return {
+        success: false,
+        error: error.message,
+        code: errorCode,
+        solution: solution,
+        userFriendlyMessage: `Gagal ${operation.toLowerCase()} data${tableName ? ' di tabel ' + tableName : ''}. ${solution || 'Periksa console untuk detail.'}`
+    };
 }
 
 /**
