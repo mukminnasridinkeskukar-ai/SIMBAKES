@@ -18317,6 +18317,11 @@ async function trackVisitor(visitorData) {
 /**
  * Get Visitor Stats - Enhanced version with complete data for dashboard
  * Returns data structure expected by fetchVisitorStats()
+ * 
+ * PERBAIKAN:
+ * - Negara diambil dari data asli (bukan hardcoded)
+ * - Online estimate lebih realistis
+ * - Data per hari lengkap 30 hari
  */
 async function getVisitorStats() {
     // Default response structure
@@ -18364,44 +18369,133 @@ async function getVisitorStats() {
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         const { data: chartData, error: chartError } = await supabaseClient
             .from('visitors')
-            .select('visited_at')
+            .select('visited_at, country, language')
             .gte('visited_at', thirtyDaysAgo.toISOString())
             .order('visited_at', { ascending: true });
         
-        // Process chart data - group by date
-        const dailyVisits = {};
+        // ==========================================
+        // PROCESS COUNTRY DATA (dari database!)
+        // ==========================================
+        const countryCounts = {};
         if (chartData && chartData.length > 0) {
             chartData.forEach(v => {
-                const date = v.visited_at ? v.visited_at.split('T')[0] : new Date().toISOString().split('T')[0];
-                dailyVisits[date] = (dailyVisits[date] || 0) + 1;
+                // Prioritas: country field → extract dari language → Unknown
+                let countryName = v.country;
+                
+                if (!countryName || countryName === 'Unknown' || countryName === '-') {
+                    // Coba extract dari language (id-ID → Indonesia)
+                    if (v.language) {
+                        const langParts = v.language.split('-');
+                        if (langParts.length > 1) {
+                            countryName = langParts[1];
+                        } else {
+                            countryName = v.language;
+                        }
+                    }
+                }
+                
+                // Default ke Indonesia jika masih unknown dan language id
+                if ((!countryName || countryName === 'Unknown') && 
+                    (v.language?.startsWith('id') || v.language === 'id')) {
+                    countryName = 'Indonesia';
+                }
+                
+                // Final fallback
+                if (!countryName || countryName === '-' || countryName === 'Unknown') {
+                    countryName = 'Other';
+                }
+                
+                countryCounts[countryName] = (countryCounts[countryName] || 0) + 1;
             });
         }
         
-        // Convert to array format for chart
-        const dataPerHari = Object.entries(dailyVisits).map(([tanggal, jumlah]) => ({
-            tanggal,
-            jumlah
-        }));
+        // Jika tetap kosong, set default
+        if (Object.keys(countryCounts).length === 0) {
+            countryCounts['Indonesia'] = total || 1;
+        }
         
-        // Process recent visitors for table
+        // ==========================================
+        // PROCESS CHART DATA - Group by date
+        // ==========================================
+        const dailyVisits = {};
+        
+        // Initialize last 30 days dengan 0
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
+            dailyVisits[dateStr] = 0;
+        }
+        
+        // Fill dengan data aktual
+        if (chartData && chartData.length > 0) {
+            chartData.forEach(v => {
+                const date = v.visited_at ? v.visited_at.split('T')[0] : new Date().toISOString().split('T')[0];
+                if (dailyVisits.hasOwnProperty(date)) {
+                    dailyVisits[date]++;
+                } else {
+                    dailyVisits[date] = 1;
+                }
+            });
+        }
+        
+        // Convert to array format for chart (sorted by date)
+        const dataPerHari = Object.entries(dailyVisits)
+            .map(([tanggal, jumlah]) => ({
+                tanggal,
+                jumlah
+            }))
+            .sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+        
+        // ==========================================
+        // PROCESS RECENT VISITORS FOR TABLE
+        // ==========================================
         const kunjunganTerakhir = (recentVisitors || []).map((v, idx) => ({
             no: idx + 1,
-            waktu: v.visited_at ? new Date(v.visited_at).toLocaleString('id-ID') : '-',
+            waktu: v.visited_at ? new Date(v.visited_at).toLocaleString('id-ID', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }) : '-',
             halaman: v.page || '/',
             browser: v.user_agent ? extractBrowserName(v.user_agent) : 'Unknown',
-            referrer: v.referrer === 'direct' ? 'Langsung' : (v.referrer || '-')
+            referrer: v.referrer === 'direct' ? '🏠 Langsung' : 
+                     (v.referrer?.includes('google') ? '🔍 Google' :
+                      v.referrer?.includes('facebook') ? '📘 Facebook' :
+                      v.referrer?.includes('instagram') ? '📷 Instagram' :
+                      v.referrer?.includes('twitter') || v.referrer?.includes('t.co') ? '🐦 Twitter' :
+                      v.referrer || '-')
         }));
         
-        // Extract countries from language/navigator data (simplified)
-        const negara = { 'Indonesia': total || 1 }; // Default to Indonesia
+        // ==========================================
+        // ONLINE ESTIMATE (lebih realistis)
+        // ==========================================
+        // Hitung pengunjung dalam 5 menit terakhir sebagai "online"
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        const { count: onlineCount } = await supabaseClient
+            .from('visitors')
+            .select('*', { count: 'exact', head: true })
+            .gte('visited_at', fiveMinutesAgo);
+        
+        const onlineEstimate = Math.max(onlineCount || 1, 1); // Minimal current user
+        
+        console.log('[VISITOR STATS] 📊 Data:', {
+            total,
+            today: todayCount,
+            online: onlineEstimate,
+            countries: Object.keys(countryCounts).length,
+            chartPoints: dataPerHari.length
+        });
         
         return {
             status: 'success',
             data: {
                 totalKunjungan: total || 0,
                 hariIni: todayCount || 0,
-                onlineEstimate: Math.max(1, Math.floor(Math.random() * 5) + 1), // Simulated
-                negara,
+                onlineEstimate: onlineEstimate,
+                negara: countryCounts,
                 dataPerHari,
                 kunjunganTerakhir
             }
@@ -19559,13 +19653,21 @@ async function renderDashboard() {
         fetchVisitorStats()
     ]);
     
-    // Log hasil (tanpa menghentikan dashboard)
+    // Log hasil (tanpa menghentukan dashboard)
     results.forEach((result, index) => {
         const names = ['fetchDashboardStats', 'fetchRecentSubmissions', 'fetchVisitorStats'];
         if (result.status === 'rejected') {
             console.warn(`⚠️ ${names[index]} failed:`, result.reason);
         }
     });
+    
+    // 🆕 Inisialisasi Real-time Visitor Stats System (setelah data pertama load)
+    if (typeof initVisitorRealtimeSystem === 'function') {
+        // Delay sedikit untuk memastikan DOM siap
+        setTimeout(() => {
+            initVisitorRealtimeSystem();
+        }, 1000);
+    }
     
     // Update timestamp
     updateLastUpdateTime();
@@ -19970,19 +20072,191 @@ function renderStatusDetailPaginated() {
 
 /**
  * Track visitor ke Supabase (opsional - non-critical)
- * Tidak menggunakan API eksternal untuk menghindari CORS/rate limit
+ * VERSI ENHANCED: Mengisi SEMUA kolom dengan data lengkap
+ * 
+ * Kolom yang diisi:
+ * - user_agent ✅
+ * - page ✅
+ * - referrer ✅
+ * - language ✅
+ * - screen_resolution ✅
+ * - ip_address ✅ (jika bisa didapat)
+ * - country ✅ (dari language/timezone)
+ * - city ✅ (default Unknown)
+ * - visited_at ✅
  */
 async function trackVisitorSimple() {
     try {
-        // Data dasar yang bisa dikumpulkan tanpa API eksternal
-        const visitorData = {
-            user_agent: navigator.userAgent.substring(0, 200),
-            page: window.location.pathname,
-            referrer: document.referrer || 'direct',
-            language: navigator.language,
-            screen_resolution: `${screen.width}x${screen.height}`,
-            visited_at: new Date().toISOString()
+        // ==========================================
+        // DETEKSI PERANGKAT & BROWSER (LENGKAP)
+        // ==========================================
+        const ua = navigator.userAgent;
+        
+        // Deteksi Browser
+        let browser = 'Unknown';
+        let browserVersion = '';
+        
+        if (ua.includes('Firefox/')) {
+            browser = 'Firefox';
+            browserVersion = ua.split('Firefox/')[1]?.split(' ')[0] || '';
+        } else if (ua.includes('Edg/')) {
+            browser = 'Edge';
+            browserVersion = ua.split('Edg/')[1]?.split(' ')[0] || '';
+        } else if (ua.includes('Chrome/')) {
+            browser = 'Chrome';
+            browserVersion = ua.split('Chrome/')[1]?.split(' ')[0] || '';
+        } else if (ua.includes('Safari/') && !ua.includes('Chrome')) {
+            browser = 'Safari';
+            browserVersion = ua.split('Version/')[1]?.split(' ')[0] || '';
+        } else if (ua.includes('Opera') || ua.includes('OPR/')) {
+            browser = 'Opera';
+            browserVersion = ua.split('OPR/')[1]?.split(' ')[0] || ua.split('Version/')[1]?.split(' ')[0] || '';
+        }
+        
+        // Deteksi OS
+        let os = 'Unknown';
+        if (ua.includes('Windows NT 10')) os = 'Windows 10/11';
+        else if (ua.includes('Windows NT 6.3')) os = 'Windows 8.1';
+        else if (ua.includes('Windows NT 6.2')) os = 'Windows 8';
+        else if (ua.includes('Windows NT 6.1')) os = 'Windows 7';
+        else if (ua.includes('Mac OS X')) {
+            const macVersion = ua.match(/Mac OS X (\d+[._]\d+)/);
+            os = 'macOS ' + (macVersion ? macVersion[1].replace('_', '.') : '');
+        }
+        else if (ua.includes('Android')) {
+            const androidVersion = ua.match(/Android (\d+\.?\d*)/);
+            os = 'Android ' + (androidVersion ? androidVersion[1] : '');
+        }
+        else if (ua.includes('iOS') || ua.includes('iPhone OS')) {
+            const iosVersion = ua.match(/OS (\d+_?\d*)/);
+            os = 'iOS ' + (iosVersion ? iosVersion[1].replace('_', '.') : '');
+        }
+        else if (ua.includes('Linux') && !ua.includes('Android')) os = 'Linux';
+        
+        // Deteksi Device Type
+        let deviceType = 'Desktop';
+        if (/Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
+            deviceType = /iPad|Tablet/i.test(ua) ? 'Tablet' : 'Mobile';
+        }
+        
+        // Deteksi Screen Info
+        const screenWidth = screen.width;
+        const screenHeight = screen.height;
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        const pixelRatio = window.devicePixelRatio || 1;
+        const colorDepth = screen.colorDepth;
+        const orientation = screen.orientation?.type || (windowWidth > windowHeight ? 'landscape' : 'portrait');
+        
+        // ==========================================
+        // DETEKSI LOKASI (dari language/timezone)
+        // ==========================================
+        const language = navigator.language || navigator.userLanguage || 'id-ID';
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unknown';
+        
+        // Extract country dari language atau timezone
+        let country = 'Unknown';
+        let city = 'Unknown';
+        
+        // Dari language code (en-US → US)
+        if (language && language.includes('-')) {
+            country = language.split('-')[1].toUpperCase();
+        } else if (language) {
+            country = language.toUpperCase();
+        }
+        
+        // Mapping timezone ke negara (simplified)
+        const timezoneCountryMap = {
+            'Asia/Jakarta': 'Indonesia',
+            'Asia/Makassar': 'Indonesia',
+            'Asia/Jayapura': 'Indonesia',
+            'Asia/Singapore': 'Singapore',
+            'Asia/Kuala_Lumpur': 'Malaysia',
+            'Asia/Manila': 'Philippines',
+            'Asia/Bangkok': 'Thailand',
+            'Asia/Ho_Chi_Minh': 'Vietnam',
+            'Asia/Yangon': 'Myanmar',
+            'Asia/Rangoon': 'Myanmar',
+            'Asia/Phnom_Penh': 'Cambodia',
+            'Asia/Vientiane': 'Laos',
+            'Asia/Bandar_Seri_Begawan': 'Brunei',
+            'Asia/Dili': 'Timor-Leste',
+            'Australia/Sydney': 'Australia',
+            'America/New_York': 'United States',
+            'America/Los_Angeles': 'United States',
+            'America/Chicago': 'United States',
+            'Europe/London': 'United Kingdom',
+            'Europe/Paris': 'France',
+            'Europe/Berlin': 'Germany',
+            'Europe/Madrid': 'Spain',
+            'Europe/Rome': 'Italy',
+            'Europe/Amsterdam': 'Netherlands',
+            'Asia/Tokyo': 'Japan',
+            'Asia/Seoul': 'South Korea',
+            'Asia/Shanghai': 'China',
+            'Asia/Hong_Kong': 'Hong Kong',
+            'Asia/Taipei': 'Taiwan'
         };
+        
+        if (timezoneCountryMap[timezone]) {
+            country = timezoneCountryMap[timezone];
+        }
+        
+        // City estimation (very basic)
+        if (timezone === 'Asia/Jakarta') city = 'Jakarta (est.)';
+        else if (timezone === 'Asia/Makassar') city = 'Makassar (est.)';
+        else if (timezone === 'Asia/Jayapura') city = 'Jayapura (est.)';
+        else city = 'Unknown';
+        
+        // ==========================================
+        // KOMPILASI DATA VISITOR (LENGKAP!)
+        // ==========================================
+        const visitorData = {
+            // Data dasar (wajib)
+            user_agent: `${browser} ${browserVersion} (${os}) [${deviceType}]`,
+            page: window.location.pathname + window.location.search,
+            referrer: document.referrer || 'direct',
+            language: language,
+            
+            // Device & Screen info
+            screen_resolution: `${screenWidth}x${screenHeight}`,
+            
+            // Lokasi (estimated)
+            ip_address: '-',  // IP tidak bisa didapat client-side tanpa API eksternal
+            country: country,
+            city: city,
+            
+            // Timestamp
+            visited_at: new Date().toISOString(),
+            
+            // Metadata tambahan (untuk analisis)
+            _meta: JSON.stringify({
+                browser: browser,
+                browserVersion: browserVersion,
+                os: os,
+                deviceType: deviceType,
+                screenWidth,
+                screenHeight,
+                windowWidth,
+                windowHeight,
+                pixelRatio,
+                colorDepth,
+                orientation,
+                timezone,
+                platform: navigator.platform,
+                cookiesEnabled: navigator.cookieEnabled,
+                doNotTrack: navigator.doNotTrack,
+                connection: navigator.connection?.effectiveType || 'unknown'
+            })
+        };
+        
+        console.log('[VISITOR] 📊 Tracking data:', {
+            browser: `${browser} ${browserVersion}`,
+            os,
+            deviceType,
+            resolution: `${screenWidth}x${screenHeight}`,
+            location: `${city}, ${country}`
+        });
         
         // Simpan ke Supabase (jika tabel visitors ada dan RLS mengizinkan)
         if (typeof supabaseClient !== 'undefined' && supabaseClient) {
@@ -19991,15 +20265,61 @@ async function trackVisitorSimple() {
                 .insert([visitorData]);
             
             if (error) {
-                console.warn('[SIMBAKES] Visitor tracking skipped (table may not exist):', error.message);
+                console.warn('[VISITOR] ⚠️ Tracking skipped:', error.message, error.code);
+                
+                // Coba insert tanpa field _meta jika error (kolom mungkin tidak ada)
+                if (error.code === '42703' || error.message?.includes('_meta')) {
+                    console.log('[VISITOR] 🔄 Retrying without _meta field...');
+                    const { error: retryError } = await supabaseClient
+                        .from('visitors')
+                        .insert([{
+                            user_agent: visitorData.user_agent,
+                            page: visitorData.page,
+                            referrer: visitorData.referrer,
+                            language: visitorData.language,
+                            screen_resolution: visitorData.screen_resolution,
+                            ip_address: visitorData.ip_address,
+                            country: visitorData.country,
+                            city: visitorData.city,
+                            visited_at: visitorData.visited_at
+                        }]);
+                    
+                    if (retryError) {
+                        console.warn('[VISITOR] ❌ Retry also failed:', retryError.message);
+                    } else {
+                        console.log('[VISITOR] ✅ Tracked successfully (without metadata)');
+                    }
+                }
             } else {
-                console.log('[SIMBAKES] 🌐 Visitor tracked');
+                console.log('[VISITOR] ✅ Visitor tracked successfully');
             }
+        } else {
+            console.log('[VISITOR] ℹ️ Supabase client not available');
         }
     } catch (error) {
         // Silent fail - visitor tracking tidak kritis
-        console.log('[SIMBAKES] Visitor tracking skipped:', error.message);
+        console.log('[VISITOR] ⚠️ Tracking skipped:', error.message);
     }
+}
+
+/**
+ * Extract browser name from user agent string (ENHANCED VERSION)
+ */
+function extractBrowserName(userAgent) {
+    if (!userAgent) return 'Unknown';
+    
+    // Prioritas tinggi → rendah
+    if (userAgent.includes('Edg/')) return '🌐 Edge';
+    if (userAgent.includes('OPR/')) return '🎭 Opera';
+    if (userAgent.includes('Firefox/')) return '🦊 Firefox';
+    if (userAgent.includes('Chrome/')) return '⭕ Chrome';
+    if (userAgent.includes('Safari/') && !userAgent.includes('Chrome')) return '🧭 Safari';
+    
+    // Mobile browsers
+    if (userAgent.includes('SamsungBrowser')) return '📱 Samsung Browser';
+    if (userAgent.includes('UCBrowser')) return '📱 UC Browser';
+    
+    return '🌐 Browser';
 }
 
 /**
@@ -20049,6 +20369,296 @@ async function fetchVisitorStats() {
         if (vCountries) vCountries.textContent = '0';
     }
 }
+
+// ============================================================
+// REAL-TIME VISITOR STATS UPDATE SYSTEM
+// ============================================================
+// Fitur: Update statistik pengunjung secara realtime
+//       TANPA BLINK / FLICKER!
+// ============================================================
+
+/**
+ * Global state untuk visitor stats real-time
+ */
+const VisitorStatsRealtime = {
+    lastUpdate: null,
+    intervalId: null,
+    isUpdating: false,
+    updateInterval: 30000, // 30 detik
+    currentData: null,
+    
+    // Cache elemen DOM untuk performa
+    elements: {
+        total: null,
+        today: null,
+        online: null,
+        countries: null
+    }
+};
+
+/**
+ * Inisialisasi Real-time Visitor Stats System
+ * Panggil sekali saat page load
+ */
+function initVisitorRealtimeSystem() {
+    console.log('[VISITOR RT] 🚀 Initializing real-time stats system...');
+    
+    // Cache DOM elements
+    VisitorStatsRealtime.elements.total = document.getElementById('visitor-total');
+    VisitorStatsRealtime.elements.today = document.getElementById('visitor-today');
+    VisitorStatsRealtime.elements.online = document.getElementById('visitor-online');
+    VisitorStatsRealtime.elements.countries = document.getElementById('visitor-countries');
+    
+    // Add CSS transitions untuk smooth updates
+    addVisitorStatsTransitions();
+    
+    // Start auto-update interval
+    startVisitorAutoRefresh();
+    
+    console.log('[VISITOR RT] ✅ Real-time system initialized (refresh every', VisitorStatsRealtime.updateInterval/1000, 'seconds)');
+}
+
+/**
+ * Add CSS transitions untuk smooth number changes (tanpa blink!)
+ */
+function addVisitorStatsTransitions() {
+    const styleId = 'visitor-stats-transitions';
+    if (document.getElementById(styleId)) return; // Sudah ada
+    
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+        /* Smooth transitions untuk visitor stat values */
+        #visitor-total,
+        #visitor-today,
+        #visitor-online,
+        #visitor-countries {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-block;
+        }
+        
+        /* Pulse animation saat nilai berubah */
+        .visitor-value-updated {
+            animation: visitorPulse 0.5s ease-out;
+        }
+        
+        @keyframes visitorPulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; color: #16a34a; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Live indicator pulse */
+        .live-indicator-pulse {
+            animation: livePulse 2s infinite;
+        }
+        
+        @keyframes livePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+/**
+ * Update visitor stats dengan SMOOTH TRANSITION (tanpa blink!)
+ * 
+ * @param {Object} newData - Data baru dari getVisitorStats()
+ */
+async function updateVisitorStatsSmooth(newData) {
+    // Prevent concurrent updates
+    if (VisitorStatsRealtime.isUpdating) {
+        console.log('[VISITOR RT] ⏳ Update in progress, skipping...');
+        return;
+    }
+    
+    VisitorStatsRealtime.isUpdating = true;
+    
+    try {
+        const data = newData.data || newData;
+        const prevData = VisitorStatsRealtime.currentData || {};
+        
+        // Update each stat dengan smooth transition
+        await animateValueChange(
+            VisitorStatsRealtime.elements.total, 
+            prevData.totalKunjungan || 0, 
+            data.totalKunjungan || 0
+        );
+        
+        await animateValueChange(
+            VisitorStatsRealtime.elements.today, 
+            prevData.hariIni || 0, 
+            data.hariIni || 0
+        );
+        
+        await animateValueChange(
+            VisitorStatsRealtime.elements.online, 
+            prevData.onlineEstimate || 1, 
+            data.onlineEstimate || 1
+        );
+        
+        await animateValueChange(
+            VisitorStatsRealtime.elements.countries, 
+            Object.keys(prevData.negara || {}).length || 0, 
+            Object.keys(data.negara || {}).length || 0
+        );
+        
+        // Update chart jika ada perubahan data
+        if (data.dataPerHari && data.dataPerHari.length > 0) {
+            renderVisitorChart(data.dataPerHari);
+        }
+        
+        // Update recent visitors table
+        if (data.kunjunganTerakhir && data.kunjunganTerakhir.length > 0) {
+            renderRecentVisitorsTable(data.kunjunganTerakhir);
+        }
+        
+        // Save current data
+        VisitorStatsRealtime.currentData = data;
+        VisitorStatsRealtime.lastUpdate = new Date();
+        
+        console.log('[VISITOR RT] ✅ Stats updated smoothly at:', VisitorStatsRealtime.lastUpdate.toLocaleTimeString());
+        
+    } catch (error) {
+        console.error('[VISITOR RT] ❌ Error updating stats:', error);
+    } finally {
+        VisitorStatsRealtime.isUpdating = false;
+    }
+}
+
+/**
+ * Animasi perubahan nilai dengan counter effect (tanpa blink!)
+ * 
+ * @param {HTMLElement} element - Element yang akan diupdate
+ * @param {number} startValue - Nilai awal
+ * @param {number} endValue - Nilai akhir
+ * @param {number} duration - Durasi animasi (ms)
+ */
+function animateValueChange(element, startValue, endValue, duration = 500) {
+    return new Promise((resolve) => {
+        if (!element) {
+            resolve();
+            return;
+        }
+        
+        // Jika nilai sama, skip animasi
+        if (startValue === endValue) {
+            resolve();
+            return;
+        }
+        
+        const startTime = performance.now();
+        
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Easing function (ease-out-cubic)
+            const eased = 1 - Math.pow(1 - progress, 3);
+            
+            // Calculate current value
+            const currentValue = Math.round(startValue + (endValue - startValue) * eased);
+            
+            // Format dan tampilkan
+            element.textContent = formatNumber(currentValue);
+            
+            // Add pulse class saat selesai
+            if (progress >= 1) {
+                element.classList.add('visitor-value-updated');
+                setTimeout(() => element.classList.remove('visitor-value-updated'), 500);
+                resolve();
+            } else {
+                requestAnimationFrame(update);
+            }
+        }
+        
+        requestAnimationFrame(update);
+    });
+}
+
+/**
+ * Format angka dengan separator ribuan
+ */
+function formatNumber(num) {
+    if (num >= 1000000) {
+        return (num / 1000000).toFixed(1) + 'M';
+    } else if (num >= 1000) {
+        return num.toLocaleString('id-ID');
+    }
+    return num.toString();
+}
+
+/**
+ * Start auto-refresh visitor stats
+ */
+function startVisitorAutoRefresh() {
+    // Stop existing interval if any
+    stopVisitorAutoRefresh();
+    
+    // Start new interval
+    VisitorStatsRealtime.intervalId = setInterval(async () => {
+        console.log('[VISITOR RT] 🔄 Auto-refreshing stats...');
+        
+        try {
+            const result = await getVisitorStats();
+            if (result.status === 'success') {
+                await updateVisitorStatsSmooth(result);
+            }
+        } catch (error) {
+            console.warn('[VISITOR RT] ⚠️ Auto-refresh failed:', error.message);
+        }
+    }, VisitorStatsRealtime.updateInterval);
+    
+    console.log('[VISITOR RT] ⏱️ Auto-refresh started (interval:', VisitorStatsRealtime.updateInterval/1000, 's)');
+}
+
+/**
+ * Stop auto-refresh visitor stats
+ */
+function stopVisitorAutoRefresh() {
+    if (VisitorStatsRealtime.intervalId) {
+        clearInterval(VisitorStatsRealtime.intervalId);
+        VisitorStatsRealtime.intervalId = null;
+        console.log('[VISITOR RT] ⏹️ Auto-refresh stopped');
+    }
+}
+
+/**
+ * Manual refresh visitor stats (dipanggil dari UI)
+ */
+async function manualRefreshVisitorStats() {
+    const btn = document.getElementById('visitor-refresh-btn');
+    
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳...';
+    }
+    
+    try {
+        const result = await getVisitorStats();
+        if (result.status === 'success') {
+            await updateVisitorStatsSmooth(result);
+            showToast('📊 Statistik pengunjung diperbarui', 'success', 2000);
+        }
+    } catch (error) {
+        showToast('❌ Gagal memperbarui statistik', 'error', 3000);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '🔄 Refresh';
+        }
+    }
+}
+
+// Export functions ke global scope
+window.initVisitorRealtimeSystem = initVisitorRealtimeSystem;
+window.updateVisitorStatsSmooth = updateVisitorStatsSmooth;
+window.manualRefreshVisitorStats = manualRefreshVisitorStats;
+window.startVisitorAutoRefresh = startVisitorAutoRefresh;
+window.stopVisitorAutoRefresh = stopVisitorAutoRefresh;
+
+/**
 
 /**
  * Fetch statistik dari tabel Penetapan & Submissions (NEW)
