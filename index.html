@@ -10119,7 +10119,7 @@ console.log('🚀 NO FALLBACKS - NO SIMPLE MODAL - NO POLLING');
     
     <h1 class="landing-title">SIMBAKES</h1>
     <p class="landing-subtitle">Beasiswa Tematik Bidang Kesehatan</p>
-    <p class="landing-desc">Sistem Informasi Manajemen Beasiswa Tematik Kesehatan untuk Mendukung Pengembangan SDM Kesehatan Indonesia</p>
+    <p class="landing-desc">Sistem Informasi Manajemen Beasiswa Tematik Bidang Kesehatan Pemkab Kutai Kartanegara untuk Mendukung Pengembangan SDM Kesehatan di Kabupaten Kutai Kartanegara</p>
     
     <div class="progress-bar-container">
         <div class="progress-bar" id="progress-bar"></div>
@@ -14974,7 +14974,7 @@ function renderPesertaCards(data) {
         const jurusan = getField(peserta, 'jurusan_tujuan', 'jurusanTujuan', 'jurusan');
         const jenjang = getField(peserta, 'jenjang_pendidikan', 'jenjangPendidikan', 'jenjang');
         const perguruanTinggi = getField(peserta, 'perguruan_tinggi', 'perguruanTinggi', 'pt');
-        const unitKerja = getField(peserta, 'unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayagunaan');
+        const unitPendayaguna = getField(peserta, 'unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayaguna', 'unit_pendayagunaan');
         const linkFoto = getField(peserta, 'link_foto', 'linkFoto', 'foto', 'photo');
         const statusPenetapan = getField(peserta, 'status_penetapan', 'statusPenetapan', 'status', 'Lulus');
 
@@ -15021,8 +15021,8 @@ function renderPesertaCards(data) {
                     <div class="peserta-card-info-item">
                         <span class="peserta-card-info-icon">🏢</span>
                         <span class="peserta-card-info-text">
-                            <strong>Unit Kerja</strong>
-                            ${escapeHtml(unitKerja)}
+                            <strong>Unit Pendayaguna</strong>
+                            ${escapeHtml(unitPendayaguna)}
                         </span>
                     </div>
                 </div>
@@ -15134,10 +15134,10 @@ function showPesertaDetailModal(peserta) {
                         </div>
                     </div>
                     <div class="peserta-modal-field">
-                        <span class="peserta-modal-field-label">Unit Pendayagunaan / Kerja</span>
+                        <span class="peserta-modal-field-label">Unit Pendayaguna</span>
                         <div class="peserta-modal-field-value">
                             <span class="peserta-modal-field-icon">🏢</span>
-                            ${escapeHtml(unitKerja)}
+                            ${escapeHtml(unitPendayaguna)}
                         </div>
                     </div>
                     ${noSK && noSK !== '-' ? `
