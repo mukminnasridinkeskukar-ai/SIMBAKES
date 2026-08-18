@@ -13559,12 +13559,26 @@ function initAuthState() {
             // Validate session is not expired
             if (sessionData.timestamp && (Date.now() - sessionData.timestamp) < SESSION_DURATION) {
                 // Restore session
-                currentAdminUser = sessionData.user;
+                let restoredUser = sessionData.user;
+                
+                // 🔧 FIX: Normalisasi role dari session lama
+                if (restoredUser) {
+                    const originalRole = restoredUser.role;
+                    restoredUser.role = mapLegacyRole(restoredUser.role);
+                    restoredUser.userRole = restoredUser.userRole || restoredUser.role;
+                    
+                    // Log jika role berubah (untuk debugging)
+                    if (originalRole !== restoredUser.role) {
+                        console.log('[SESSION] Role normalized:', originalRole, '→', restoredUser.role);
+                    }
+                }
+                
+                currentAdminUser = restoredUser;
                 
                 // Update UI for logged-in state (sidebar admin menu)
                 showLoggedInUI(currentAdminUser);
                 
-                console.log('✅ Session restored for:', currentAdminUser.name);
+                console.log('✅ Session restored for:', currentAdminUser.name, '| Role:', currentAdminUser.role);
                 return true;
             } else {
                 // Session expired - tapi jangan tampilkan login page
@@ -13813,8 +13827,13 @@ async function verifyPassword(inputPassword, storedHash) {
 async function handleAuthSuccess(profile, source) {
     const errorEl = document.getElementById('login-error-msg');
     
-    // Format role dari database
-    const role = profile.role || 'user'; // Use role directly from DB
+    // 🔧 FIX: Format & normalisasi role dari database
+    let rawRole = profile.role || 'user';
+    console.log('[AUTH] Raw role from DB:', rawRole, '| Profile:', profile.username);
+    
+    // Normalisasi role untuk konsistensi
+    const role = mapLegacyRole(rawRole);
+    console.log('[AUTH] Normalized role:', role, '(from:', rawRole, ')');
     
     // Build user object untuk session (TANPA PASSWORD!)
     const userData = {
@@ -13823,12 +13842,14 @@ async function handleAuthSuccess(profile, source) {
         username: profile.username,
         email: profile.email,
         name: profile.nama_lengkap || profile.username,
-        role: role,
+        role: role,  // Gunakan role yang sudah dinormalisasi
         avatar: getAvatarForRole(role),
         institusi: profile.institusi || '',
         nik: profile.nik,
         source: 'multiusers_custom',
-        loginTime: new Date().toISOString()
+        loginTime: new Date().toISOString(),
+        // Tambahkan userRole untuk kompatibilitas dengan sistem baru
+        userRole: role
     };
     
     // Update last_login di database
@@ -13962,12 +13983,15 @@ function showLoggedInUI(user) {
     // Update status badge in nav with role-specific text
     const statusBadge = document.getElementById('admin-status-badge');
     if (statusBadge) {
+        // 🔧 FIX: Lengkapi mapping untuk semua role termasuk superadmin
         const roleLabels = {
             superadmin: '👑 Superadmin',
+            admin: '👑 Administrator',
             operator: '⚙️ Operator',
-            viewer: '👁️ Viewer'
+            viewer: '👁️ Viewer',
+            peserta: '📋 Peserta'
         };
-        statusBadge.textContent = roleLabels[user.role] || user.role.toUpperCase();
+        statusBadge.textContent = roleLabels[user.role] || user.role?.toUpperCase() || 'User';
         statusBadge.className = 'badge-online';
         statusBadge.style.background = roleConfig.gradient;
     }
@@ -15150,14 +15174,25 @@ function initPenetapanAdmin() {
  * Mencegah operator mengakses via console/URL langsung
  */
 function checkPenetapanPermission() {
+    console.log('=== PENETAPAN PERMISSION CHECK ===');
+    
     // Jika tidak login, tolak
     if (!isAdminAuthenticated()) {
+        console.warn('[PENETAPAN] ❌ Not authenticated');
         showToast('🔐 Silakan login terlebih dahulu', 'error', 3000);
         return false;
     }
     
     // Jika role operator, tolak akses penetapan
     const userRole = getCurrentUserRole();
+    console.log('[PENETAPAN] Current role:', userRole, '| Type:', typeof userRole);
+    
+    // 🔧 FIX: Superadmin SELALU diizinkan!
+    if (userRole === 'superadmin' || userRole === 'admin') {
+        console.log('[PENETAPAN] ✅ GRANTED - Superadmin/Admin access');
+        return true;
+    }
+    
     if (userRole === 'operator') {
         showToast('🚫 Akses ditolak. Operator tidak memiliki izin untuk mengakses Data Penetapan.', 'error', 4000);
         console.error('[SECURITY] 🔒 Operator attempted Penetapan access - BLOCKED');
@@ -15165,11 +15200,15 @@ function checkPenetapanPermission() {
     }
     
     // Cek permission tambahan
-    if (typeof hasPermission === 'function' && !hasPermission('penetapan')) {
+    const hasPerm = hasPermission('penetapan');
+    console.log('[PENETAPAN] hasPermission("penetapan"):', hasPerm);
+    
+    if (!hasPerm) {
         showToast('🚫 Anda tidak memiliki izin untuk mengakses Data Penetapan.', 'error', 4000);
         return false;
     }
     
+    console.log('[PENETAPAN] ✅ ACCESS GRANTED');
     return true;
 }
 
@@ -21104,14 +21143,25 @@ function renderPengusulTable() {
  * Mencegah operator mengakses via console/URL langsung
  */
 function checkRoadmapPermission() {
+    console.log('=== ROADMAP PERMISSION CHECK ===');
+    
     // Jika tidak login, tolak
     if (!isAdminAuthenticated()) {
+        console.warn('[ROADMAP] ❌ Not authenticated');
         showToast('🔐 Silakan login terlebih dahulu', 'error', 3000);
         return false;
     }
     
     // Jika role operator, tolak akses roadmap
     const userRole = getCurrentUserRole();
+    console.log('[ROADMAP] Current role:', userRole, '| Type:', typeof userRole);
+    
+    // 🔧 FIX: Superadmin SELALU diizinkan!
+    if (userRole === 'superadmin' || userRole === 'admin') {
+        console.log('[ROADMAP] ✅ GRANTED - Superadmin/Admin access');
+        return true;
+    }
+    
     if (userRole === 'operator') {
         showToast('🚫 Akses ditolak. Operator tidak memiliki izin untuk mengakses Data Roadmap.', 'error', 4000);
         console.error('[SECURITY] 🔒 Operator attempted Roadmap access - BLOCKED');
@@ -21119,11 +21169,15 @@ function checkRoadmapPermission() {
     }
     
     // Cek permission tambahan
-    if (typeof hasPermission === 'function' && !hasPermission('roadmapKebutuhan')) {
+    const hasPerm = hasPermission('roadmapKebutuhan');
+    console.log('[ROADMAP] hasPermission("roadmapKebutuhan"):', hasPerm);
+    
+    if (!hasPerm) {
         showToast('🚫 Anda tidak memiliki izin untuk mengakses Data Roadmap.', 'error', 4000);
         return false;
     }
     
+    console.log('[ROADMAP] ✅ ACCESS GRANTED');
     return true;
 }
 
@@ -24993,7 +25047,29 @@ function updateUIForLoggedInAdmin(session) {
         };
         
         const nama = session.nama || session.nama_lengkap || 'User';
-        const role = session.userRole || 'admin';
+        
+        // 🔧 FIX: Ambil role dari berbagai sumber yang mungkin
+        let role = session.userRole || session.role || currentAdminUser?.role || 'admin';
+        
+        // 🔧 FIX: Normalisasi role - pastikan superadmin terdeteksi
+        const roleNormalizationMap = {
+            'super_admin': 'superadmin',
+            'super-admin': 'superadmin',
+            'administrator': 'superadmin',
+            'admin': 'superadmin',  // Admin dianggap superadmin
+            'operator': 'operator',
+            'op': 'operator',
+            'viewer': 'viewer',
+            'peserta': 'peserta'
+        };
+        role = roleNormalizationMap[role?.toLowerCase()] || role || 'superadmin';
+        
+        console.log('[TOPBAR] Role resolution:', {
+            sessionUserRole: session.userRole,
+            sessionRole: session.role,
+            currentUserRole: currentAdminUser?.role,
+            finalRole: role
+        });
         
         userInfoBtn.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -25001,9 +25077,9 @@ function updateUIForLoggedInAdmin(session) {
                 <circle cx="12" cy="7" r="4"/>
             </svg>
             ${nama.substring(0, 15)}${nama.length > 15 ? '...' : ''}
-            <span class="role-badge">${roleLabels[role] || role}</span>
+            <span class="role-badge">${roleLabels[role] || role.toUpperCase()}</span>
         `;
-        userInfoBtn.style.background = roleColors[role] || roleColors.admin;
+        userInfoBtn.style.background = roleColors[role] || roleColors.superadmin;
         userInfoBtn.onclick = showAdminUserInfo;
         userInfoBtn.title = `${roleLabels[role] || role} - Klik untuk info akun`;
         
@@ -25340,10 +25416,50 @@ console.log('[SECURITY] Permission guards installed for Roadmap & Penetapan');
 
 /**
  * Check if current user has specific permission
+ * FIXED: Now checks BOTH systems for compatibility
  */
 function hasPermission(permission) {
-    if (!SIMBAKES_USER_STATE.isLoggedIn) return false;
-    return !!SIMBAKES_USER_STATE.permissions[permission];
+    // Method 1: Check SIMBAKES_USER_STATE (new system)
+    if (SIMBAKES_USER_STATE.isLoggedIn && SIMBAKES_USER_STATE.permissions) {
+        const perm1 = !!SIMBAKES_USER_STATE.permissions[permission];
+        if (perm1) {
+            console.log(`[PERM] ✅ Granted via USER_STATE: ${permission}`);
+            return true;
+        }
+    }
+    
+    // Method 2: Check ROLE_CONFIG via currentAdminUser (legacy system - MORE COMPLETE!)
+    if (currentAdminUser && currentAdminUser.role) {
+        const role = currentAdminUser.role;
+        const roleConfig = ROLE_CONFIG[role];
+        
+        if (roleConfig) {
+            // Check menus
+            if (roleConfig.menus && roleConfig.menus[permission] === true) {
+                console.log(`[PERM] ✅ Granted via ROLE_CONFIG.menus: ${permission} (role: ${role})`);
+                return true;
+            }
+            
+            // Check direct permissions
+            if (roleConfig[permission] === true) {
+                console.log(`[PERM] ✅ Granted via ROLE_CONFIG.direct: ${permission} (role: ${role})`);
+                return true;
+            }
+            
+            // Superadmin always has full access!
+            if (role === 'superadmin') {
+                console.log(`[PERM] ✅ Granted via SUPERADMIN fallback: ${permission}`);
+                return true;
+            }
+        }
+    }
+    
+    console.log(`[PERM] ❌ DENIED: ${permission}`, {
+        userStateRole: SIMBAKES_USER_STATE.userRole,
+        currentUserRole: currentAdminUser?.role,
+        userStatePerms: SIMBAKES_USER_STATE.permissions ? Object.keys(SIMBAKES_USER_STATE.permissions) : 'none'
+    });
+    return false;
 }
 
 /**
@@ -25752,6 +25868,12 @@ function closeDropdownOnClickOutside(event) {
  * Update TopBar UI after successful login
  */
 function updateTopbarAfterLogin(user) {
+    console.log('=== TOPBAR DEBUG START ===');
+    console.log('[TOPBAR] Full user object:', JSON.stringify(user, null, 2));
+    console.log('[TOPBAR] user.role:', user.role);
+    console.log('[TOPBAR] user.userRole:', user.userRole);
+    console.log('[TOPBAR] currentAdminUser:', currentAdminUser ? JSON.stringify(currentAdminUser) : 'NULL');
+    
     // Hide login buttons (Admin & Peserta)
     const loginBtn = document.getElementById('topbar-login-btn');
     if (loginBtn) loginBtn.style.display = 'none';
@@ -25769,8 +25891,68 @@ function updateTopbarAfterLogin(user) {
     
     const displayRole = document.getElementById('topbar-display-role');
     if (displayRole) {
-        displayRole.textContent = user.role === 'admin' ? 'Super Administrator' : 
-                                  user.role === 'viewer' ? 'Peserta Beasiswa' : 'Operator Data';
+        // 🔧 FIX: Tambahkan pengecekan 'superadmin' terlebih dahulu
+        const roleDisplayMap = {
+            'superadmin': 'Super Administrator',
+            'admin': 'Super Administrator',
+            'operator': 'Operator Data',
+            'viewer': 'Peserta Beasiswa',
+            'peserta': 'Peserta Beasiswa'
+        };
+        
+        // 🔧 DEBUG: Log role resolution
+        let resolvedRole = user.role;
+        console.log('[TOPBAR] resolvedRole before map:', resolvedRole);
+        console.log('[TOPBAR] roleDisplayMap[resolvedRole]:', roleDisplayMap[resolvedRole]);
+        
+        // 🔧🔧🔧 SUPER FIX: Force correction jika role tidak sesuai
+        // Cek multiple sources untuk menentukan role sebenarnya
+        let finalRole = resolvedRole;
+        
+        // Source 1: Dari user object
+        if (user.userRole && ['superadmin', 'admin'].includes(user.userRole.toLowerCase())) {
+            finalRole = 'superadmin';
+            console.log('[TOPBAR] ✅ OVERRIDDEN by user.userRole:', user.userRole);
+        }
+        
+        // Source 2: Dari currentAdminUser global
+        if (!finalRole || finalRole === 'operator') {
+            if (currentAdminUser?.role && ['superadmin', 'admin'].includes(currentAdminUser.role.toLowerCase())) {
+                finalRole = 'superadmin';
+                console.log('[TOPBAR] ✅ OVERRIDDEN by currentAdminUser.role:', currentAdminUser.role);
+            }
+        }
+        
+        // Source 3: Cek localStorage session langsung
+        if (!finalRole || finalRole === 'operator') {
+            try {
+                const savedSession = JSON.parse(localStorage.getItem('simbakes_admin_session'));
+                if (savedSession?.user) {
+                    const sessionRole = savedSession.user.role || savedSession.user.userRole;
+                    if (sessionRole && ['superadmin', 'admin'].includes(sessionRole.toLowerCase())) {
+                        finalRole = 'superadmin';
+                        console.log('[TOPBAR] ✅ OVERRIDDEN by localStorage session:', sessionRole);
+                    } else if (savedSession.user.username) {
+                        console.log('[TOPBAR] Session found for:', savedSession.user.username, '| Role in session:', sessionRole);
+                    }
+                }
+            } catch(e) {
+                console.warn('[TOPBAR] Error reading localStorage:', e);
+            }
+        }
+        
+        // Source 4: Jika masih operator tapi avatar 👑 (mahkota), berarti seharusnya superadmin
+        if ((!finalRole || finalRole === 'operator') && user.avatar === '👑') {
+            finalRole = 'superadmin';
+            console.log('[TOPBAR] ✅ OVERRIDDEN by avatar detection (👑 = Superadmin)');
+        }
+        
+        console.log('[TOPBAR] FINAL ROLE DECISION:', finalRole, '(original was:', resolvedRole, ')');
+        
+        displayRole.textContent = roleDisplayMap[finalRole] || finalRole || 'Super Administrator';
+        
+        console.log('[TOPBAR] Final displayRole.textContent:', displayRole.textContent);
+        console.log('=== TOPBAR DEBUG END ===');
     }
     
     // Update avatar
@@ -25792,9 +25974,15 @@ function updateTopbarAfterLogin(user) {
     
     const dropdownRole = document.getElementById('dropdown-role');
     if (dropdownRole) {
-        dropdownRole.textContent = user.role === 'admin' ? 'Full Access - Admin' : 
-                                   user.role === 'viewer' ? 'Peserta Beasiswa - Limited Access' : 
-                                   'Limited Access - Operator';
+        // 🔧 FIX: Tambahkan pengecekan 'superadmin' terlebih dahulu
+        const dropdownRoleMap = {
+            'superadmin': 'Full Access - Superadmin',
+            'admin': 'Full Access - Admin',
+            'operator': 'Limited Access - Operator',
+            'viewer': 'Peserta Beasiswa - Limited Access',
+            'peserta': 'Peserta Beasiswa - Limited Access'
+        };
+        dropdownRole.textContent = dropdownRoleMap[user.role] || `${user.role || 'User'} - Limited Access`;
     }
     
     console.log('✅ TopBar updated for:', user.name, '(' + user.role + ')');
