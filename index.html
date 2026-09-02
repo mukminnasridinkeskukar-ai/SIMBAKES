@@ -6178,6 +6178,200 @@ body {
     }
 }
 
+    /* ===== PESERTA LOGIN MODAL & DASHBOARD ===== */
+    .peserta-login-overlay {
+        position: fixed; inset: 0; z-index: 10000;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e3a5f 100%);
+        display: none; align-items: center; justify-content: center;
+        padding: 20px;
+        animation: fadeIn 0.3s ease-out;
+    }
+    .peserta-login-overlay.show { display: flex; }
+
+    .peserta-login-card {
+        background: white; border-radius: 24px; padding: 2.5rem;
+        width: 100%; max-width: 440px;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+        animation: slideUp 0.4s ease-out;
+        position: relative;
+    }
+    .peserta-login-header {
+        text-align: center; margin-bottom: 2rem;
+    }
+    .peserta-login-logo {
+        width: 72px; height: 72px;
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        border-radius: 18px; display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1rem; font-size: 2rem; color: white;
+        box-shadow: 0 10px 25px rgba(5,150,105,0.3);
+    }
+    .peserta-login-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin-bottom: 0.25rem; }
+    .peserta-login-subtitle { color: #64748b; font-size: 0.9rem; }
+
+    .peserta-login-form .form-group { margin-bottom: 1.1rem; }
+    .peserta-login-form label { display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 0.4rem; }
+    .peserta-login-form input {
+        width: 100%; height: 46px; padding: 0 14px 0 42px; border: 2px solid #e2e8f0;
+        border-radius: 10px; font-size: 0.95rem; outline: none; transition: all 0.2s;
+        background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") 14px center no-repeat;
+    }
+    .peserta-login-form input.pw-input {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E");
+    }
+    .peserta-login-form input:focus { border-color: #059669; box-shadow: 0 0 0 4px rgba(5,150,105,0.1); }
+    .peserta-login-btn {
+        width: 100%; height: 48px; border: none; border-radius: 12px;
+        background: linear-gradient(135deg, #059669, #047857); color: white;
+        font-size: 1rem; font-weight: 700; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        margin-top: 0.5rem; transition: all 0.2s;
+    }
+    .peserta-login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(5,150,105,0.35); }
+    .peserta-login-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+    .peserta-login-btn .spinner { width: 18px; height: 18px; border-width: 2px; }
+    .peserta-login-alert {
+        padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem;
+        margin-top: 1rem; display: none; align-items: center; gap: 0.5rem;
+    }
+    .peserta-login-alert.show { display: flex; }
+    .peserta-login-alert.error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .peserta-login-alert.success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    .peserta-login-alert.info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    .peserta-login-close {
+        position: absolute; top: 16px; right: 16px; width: 36px; height: 36px;
+        border-radius: 50%; border: none; background: #f1f5f9; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        color: #64748b; font-size: 1.25rem; transition: all 0.2s; z-index: 2;
+    }
+    .peserta-login-close:hover { background: #e2e8f0; transform: rotate(90deg); }
+    .peserta-login-footer {
+        text-align: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;
+        font-size: 0.8rem; color: #94a3b8;
+    }
+    .peserta-login-footer a { color: #059669; text-decoration: none; font-weight: 600; }
+    .peserta-login-footer a:hover { text-decoration: underline; }
+
+    /* ===== PESERTA DASHBOARD OVERLAY (2 CARDS) ===== */
+    .peserta-dashboard-overlay {
+        position: fixed; inset: 0; z-index: 9998;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f0fdf4 100%);
+        display: none; flex-direction: column;
+        animation: fadeIn 0.4s ease-out;
+    }
+    .peserta-dashboard-overlay.show { display: flex; }
+
+    .peserta-dashboard-topbar {
+        background: white; border-bottom: 1px solid #e2e8f0;
+        padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05); flex-shrink: 0; z-index: 10;
+    }
+    .peserta-dashboard-brand { display: flex; align-items: center; gap: 12px; }
+    .peserta-dashboard-brand-icon {
+        width: 40px; height: 40px; background: linear-gradient(135deg, #059669, #0d9488);
+        border-radius: 10px; display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 1.25rem;
+    }
+    .peserta-dashboard-brand h2 { font-size: 1.1rem; font-weight: 700; color: #0f172a; }
+    .peserta-dashboard-brand p { font-size: 0.75rem; color: #64748b; }
+    .peserta-dashboard-user { display: flex; align-items: center; gap: 12px; }
+    .peserta-dashboard-avatar {
+        width: 38px; height: 38px; border-radius: 10px;
+        background: linear-gradient(135deg, #059669, #047857);
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-weight: 700; font-size: 1rem;
+    }
+    .peserta-dashboard-username { font-weight: 600; color: #1e293b; font-size: 0.9rem; }
+    .peserta-dashboard-logout {
+        padding: 0.4rem 0.8rem; background: #fef2f2; color: #dc2626;
+        border: 1px solid #fecaca; border-radius: 8px; font-size: 0.8rem;
+        font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .peserta-dashboard-logout:hover { background: #fee2e2; }
+
+    .peserta-dashboard-body {
+        flex: 1; overflow-y: auto; padding: 2rem;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .peserta-cards-grid {
+        display: grid; grid-template-columns: repeat(2, 1fr);
+        gap: 2rem; max-width: 800px; width: 100%;
+    }
+    @media (max-width: 640px) { .peserta-cards-grid { grid-template-columns: 1fr; gap: 1.5rem; } }
+
+    .peserta-action-card {
+        background: white; border-radius: 20px; padding: 2.5rem 2rem;
+        border: 2px solid #e2e8f0; cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+        text-align: center; position: relative; overflow: hidden;
+    }
+    .peserta-action-card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px;
+        transition: opacity 0.3s; opacity: 0;
+    }
+    .peserta-action-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+        border-color: transparent;
+    }
+    .peserta-action-card:hover::before { opacity: 1; }
+    .peserta-action-card.card-ajukan::before { background: linear-gradient(90deg, #059669, #10b981); }
+    .peserta-action-card.card-ajukan:hover { border-color: #059669; }
+    .peserta-action-card.card-cekstatus::before { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+    .peserta-action-card.card-cekstatus:hover { border-color: #2563eb; }
+
+    .peserta-card-icon {
+        width: 72px; height: 72px; border-radius: 18px;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1.5rem; font-size: 2rem;
+    }
+    .card-ajukan .peserta-card-icon { background: linear-gradient(135deg, #ecfdf5, #d1fae5); box-shadow: 0 8px 20px rgba(5,150,105,0.15); }
+    .card-cekstatus .peserta-card-icon { background: linear-gradient(135deg, #eff6ff, #dbeafe); box-shadow: 0 8px 20px rgba(37,99,235,0.15); }
+    .peserta-card-title { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; }
+    .peserta-card-desc { font-size: 0.9rem; color: #64748b; line-height: 1.5; margin-bottom: 1.5rem; }
+    .peserta-card-btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 600;
+        font-size: 0.9rem; cursor: pointer; border: none; transition: all 0.2s;
+    }
+    .card-ajukan .peserta-card-btn { background: linear-gradient(135deg, #059669, #047857); color: white; }
+    .card-ajukan .peserta-card-btn:hover { box-shadow: 0 8px 20px rgba(5,150,105,0.35); transform: translateY(-2px); }
+    .card-cekstatus .peserta-card-btn { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; }
+    .card-cekstatus .peserta-card-btn:hover { box-shadow: 0 8px 20px rgba(37,99,235,0.35); transform: translateY(-2px); }
+
+    /* ===== FULL-SCREEN CONTENT POPUP (Ajukan & Cek Status) ===== */
+    .peserta-content-popup {
+        position: fixed; inset: 0; z-index: 10001;
+        background: #f8fafc; display: none; flex-direction: column;
+        animation: fadeIn 0.3s ease-out;
+    }
+    .peserta-content-popup.show { display: flex; }
+    .peserta-popup-topbar {
+        background: white; border-bottom: 1px solid #e2e8f0;
+        padding: 0.875rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05); flex-shrink: 0; z-index: 10;
+    }
+    .peserta-popup-title {
+        font-size: 1.1rem; font-weight: 700; color: #0f172a;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .peserta-popup-close {
+        width: 38px; height: 38px; border-radius: 10px; border: 1px solid #e2e8f0;
+        background: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        color: #64748b; font-size: 1.25rem; transition: all 0.2s;
+    }
+    .peserta-popup-close:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+    .peserta-popup-body {
+        flex: 1; overflow-y: auto; padding: 2rem;
+    }
+    @media (max-width: 768px) { .peserta-popup-body { padding: 1rem; } }
+
+    /* Backdrop blur for login overlay */
+    .peserta-login-overlay::before {
+        content: ''; position: absolute; inset: 0;
+        background: rgba(0,0,0,0.3); backdrop-filter: blur(4px);
+    }
+    .peserta-login-card { position: relative; z-index: 1; }
+
     </style>
 
     </style>
@@ -7741,7 +7935,119 @@ console.log('[CRUD SYSTEM] ℹ️ Table: renderAdminTableClean() | Lightbox: ope
     </script>
 
 <body>
-    
+
+    <!-- ===== PESERTA LOGIN MODAL ===== -->
+    <div class="peserta-login-overlay" id="peserta-login-overlay">
+        <div class="peserta-login-card">
+            <button class="peserta-login-close" onclick="closePesertaLoginModal()" title="Tutup">×</button>
+            <div class="peserta-login-header">
+                <div class="peserta-login-logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="36" height="36"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <h1 class="peserta-login-title">SIMBAKES</h1>
+                <p class="peserta-login-subtitle">Login Peserta Beasiswa Kesehatan</p>
+            </div>
+
+            <div class="peserta-login-alert" id="peserta-login-alert"></div>
+
+            <form class="peserta-login-form" onsubmit="handlePesertaLoginInModal(event)">
+                <div class="form-group">
+                    <label>Username <span style="color:#ef4444;">*</span></label>
+                    <input type="text" id="peserta-login-username" placeholder="Masukkan username" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label>Password <span style="color:#ef4444;">*</span></label>
+                    <input type="password" class="pw-input" id="peserta-login-password" placeholder="Masukkan password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="peserta-login-btn" id="peserta-login-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                    <span>MASUK</span>
+                </button>
+            </form>
+
+            <div class="peserta-login-footer">
+                Belum punya akun? <a href="https://simbakes.mukminnasri.com/daftar-peserta.html" target="_blank">Daftar di Sini →</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== PESERTA DASHBOARD OVERLAY (2 CARDS) ===== -->
+    <div class="peserta-dashboard-overlay" id="peserta-dashboard-overlay">
+        <div class="peserta-dashboard-topbar">
+            <div class="peserta-dashboard-brand">
+                <div class="peserta-dashboard-brand-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                </div>
+                <div>
+                    <h2>SIMBAKES Portal Peserta</h2>
+                    <p>Beasiswa Tematik Bidang Kesehatan</p>
+                </div>
+            </div>
+            <div class="peserta-dashboard-user">
+                <div class="peserta-dashboard-avatar" id="peserta-dash-avatar">P</div>
+                <span class="peserta-dashboard-username" id="peserta-dash-username">Peserta</span>
+                <button class="peserta-dashboard-logout" onclick="pesertaLogout()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:middle;margin-right:4px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Logout
+                </button>
+            </div>
+        </div>
+
+        <div class="peserta-dashboard-body">
+            <div class="peserta-cards-grid">
+                <!-- KARTU 1: AJUKAN REKOMENDASI -->
+                <div class="peserta-action-card card-ajukan" onclick="openPesertaAjukan()">
+                    <div class="peserta-card-icon">📝</div>
+                    <h3 class="peserta-card-title">Ajukan Rekomendasi</h3>
+                    <p class="peserta-card-desc">Isi formulir pengajuan beasiswa tematik bidang kesehatan. Data akan tersimpan langsung ke sistem.</p>
+                    <button class="peserta-card-btn" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                        Buka Formulir
+                    </button>
+                </div>
+
+                <!-- KARTU 2: CEK STATUS PENGAJUAN -->
+                <div class="peserta-action-card card-cekstatus" onclick="openPesertaCekStatus()">
+                    <div class="peserta-card-icon">🔍</div>
+                    <h3 class="peserta-card-title">Cek Status Pengajuan</h3>
+                    <p class="peserta-card-desc">Lacak status pengajuan beasiswa Anda. Masukkan NIK atau Nomor Register untuk melihat progress.</p>
+                    <button class="peserta-card-btn" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        Cek Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== FULL-SCREEN POPUP: AJUKAN REKOMENDASI ===== -->
+    <div class="peserta-content-popup" id="peserta-ajukan-popup">
+        <div class="peserta-popup-topbar">
+            <div class="peserta-popup-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                Ajukan Rekomendasi Beasiswa
+            </div>
+            <button class="peserta-popup-close" onclick="closePesertaAjukan()" title="Tutup">×</button>
+        </div>
+        <div class="peserta-popup-body" id="peserta-ajukan-body">
+            <!-- Content will be dynamically moved here from page-ajukan -->
+        </div>
+    </div>
+
+    <!-- ===== FULL-SCREEN LIGHTBOX: CEK STATUS PENGAJUAN ===== -->
+    <div class="peserta-content-popup" id="peserta-cekstatus-popup">
+        <div class="peserta-popup-topbar">
+            <div class="peserta-popup-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" width="22" height="22"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                Cek Status Pengajuan
+            </div>
+            <button class="peserta-popup-close" onclick="closePesertaCekStatus()" title="Tutup">×</button>
+        </div>
+        <div class="peserta-popup-body" id="peserta-cekstatus-body">
+            <!-- Content will be dynamically moved here from page-cek-status -->
+        </div>
+    </div>
+
     <!-- ===== SIMBAKES ADMIN FINAL SYSTEM ===== -->
     <!-- Sistem FINAL: Tanpa Fallback, Tanpa Simple Modal, Tanpa Polling -->
     <script>
@@ -25216,46 +25522,386 @@ function openTopbarLogin() {
 }
 
 /**
- * Open Login Peserta - Redirect ke halaman login-peserta.html (standalone)
- * Halaman standalone ini memiliki fitur pencarian lengkap berdasarkan NIK/Email
+ * Open Login Peserta - Tampilkan modal login di dalam index.html
+ * (Tidak lagi redirect ke login-peserta.html)
  */
 function openPesertaLogin() {
-    console.log('[SIMBAKES] Redirecting to Login Peserta page...');
-    
-    // Simpan URL saat ini untuk redirect kembali setelah login berhasil
-    const currentUrl = window.location.href;
-    const currentPage = getCurrentPageId();
-    
-    // Simpan ke localStorage untuk digunakan oleh login-peserta.html
-    localStorage.setItem('simbakes_return_url', currentUrl);
-    localStorage.setItem('simbakes_return_page', currentPage);
-    localStorage.setItem('simbakes_login_timestamp', Date.now().toString());
-    
-    // Redirect ke halaman login peserta standalone
-    // Asumsi: login-peserta.html berada di folder yang sama atau /download/
-    const loginPageUrl = getLoginPageUrl();
-    
-    console.log('[SIMBAKES] Opening:', loginPageUrl);
-    
-    // Buka di tab/window yang sama (bukan popup)
-    window.location.href = loginPageUrl;
+    console.log('[SIMBAKES] Membuka modal login peserta...');
+    const overlay = document.getElementById('peserta-login-overlay');
+    if (overlay) {
+        overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => {
+            document.getElementById('peserta-login-username')?.focus();
+        }, 300);
+    }
 }
 
 /**
+ * Close Peserta Login Modal
+ */
+function closePesertaLoginModal() {
+    const overlay = document.getElementById('peserta-login-overlay');
+    if (overlay) {
+        overlay.classList.remove('show');
+        document.body.style.overflow = '';
+        // Reset form
+        document.getElementById('peserta-login-username').value = '';
+        document.getElementById('peserta-login-password').value = '';
+        const alert = document.getElementById('peserta-login-alert');
+        alert.className = 'peserta-login-alert';
+        alert.innerHTML = '';
+    }
+}
+
+/**
+ * Handler Login Peserta di dalam modal (index.html)
+ * Authenticate ke Supabase tabel akun_peserta
+ */
+let pesertaSessionData = null;
+
+async function handlePesertaLoginInModal(event) {
+    event.preventDefault();
+    
+    const username = document.getElementById('peserta-login-username').value.trim().toLowerCase();
+    const password = document.getElementById('peserta-login-password').value;
+    const alertEl = document.getElementById('peserta-login-alert');
+    const btn = document.getElementById('peserta-login-btn');
+    
+    // Clear previous alert
+    alertEl.className = 'peserta-login-alert';
+    alertEl.innerHTML = '';
+    
+    if (!username || !password) {
+        alertEl.className = 'peserta-login-alert error show';
+        alertEl.innerHTML = '❌ Username dan password wajib diisi';
+        return;
+    }
+    
+    // Loading state
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Memproses...';
+    alertEl.className = 'peserta-login-alert info show';
+    alertEl.innerHTML = '⏳ Memproses login...';
+    
+    try {
+        if (!supabaseClient) throw new Error('Koneksi database tidak tersedia.');
+        
+        console.log('[PESERTA LOGIN] Authenticating:', username);
+        
+        // Query ke tabel akun_peserta
+        const { data: users, error: queryError } = await supabaseClient
+            .from('akun_peserta')
+            .select('*')
+            .or(`username.eq.${username},email.eq.${username}`)
+            .limit(1);
+        
+        if (queryError) throw new Error(queryError.message);
+        
+        if (!users || users.length === 0) {
+            throw new Error('Username atau password tidak sesuai.');
+        }
+        
+        const user = users[0];
+        
+        // Verifikasi password
+        if (user.password !== password) {
+            throw new Error('Username atau password tidak sesuai.');
+        }
+        
+        // Cek status akun
+        const userStatus = user.status || 'pending';
+        if (userStatus !== 'approved') {
+            let msg = '';
+            switch (userStatus) {
+                case 'pending':
+                    msg = 'Akun Anda masih <strong>MENUNGGU PERSETUJUAN</strong> dari admin Dinkes. Silakan tunggu 1-2 hari kerja.';
+                    break;
+                case 'rejected':
+                    msg = `Akun Anda <strong>DITOLAK</strong>. Alasan: ${user.status_note || 'Tidak ada catatan'}. Hubungi admin.`;
+                    break;
+                case 'suspended':
+                    msg = `Akun Anda <strong>DITANGGUHKAN</strong>. Alasan: ${user.status_note || 'Tidak ada catatan'}. Hubungi admin.`;
+                    break;
+                default:
+                    msg = `Akun dalam status <strong>${userStatus.toUpperCase()}</strong>. Hubungi admin.`;
+            }
+            alertEl.className = 'peserta-login-alert error show';
+            alertEl.innerHTML = `⏳ ${msg}`;
+            btn.disabled = false;
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg><span>MASUK</span>';
+            document.getElementById('peserta-login-password').value = '';
+            return;
+        }
+        
+        console.log('[PESERTA LOGIN] ✅ Login successful! NIK:', user.nik);
+        
+        // Update last login
+        await supabaseClient
+            .from('akun_peserta')
+            .update({ last_login_at: new Date().toISOString() })
+            .eq('id', user.id);
+        
+        // Store session
+        pesertaSessionData = {
+            id: user.id,
+            nama: user.nama || user.nama_lengkap || 'Peserta',
+            nik: user.nik || '',
+            email: user.email || '',
+            username: user.username
+        };
+        
+        // Update topbar button
+        updateUIForLoggedInPeserta(pesertaSessionData);
+        
+        // Close login modal
+        closePesertaLoginModal();
+        
+        // Show peserta dashboard with 2 cards
+        showPesertaDashboard(pesertaSessionData);
+        
+    } catch (error) {
+        console.error('[PESERTA LOGIN] Error:', error);
+        alertEl.className = 'peserta-login-alert error show';
+        alertEl.innerHTML = `❌ ${error.message || 'Terjadi kesalahan.'}`;
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg><span>MASUK</span>';
+        document.getElementById('peserta-login-password').value = '';
+        document.getElementById('peserta-login-password').focus();
+    }
+}
+
+// showPesertaDashboard is defined below (unified version)
+
+/**
+ * Close Peserta Dashboard
+ */
+function closePesertaDashboard() {
+    const dashboard = document.getElementById('peserta-dashboard-overlay');
+    if (dashboard) {
+        dashboard.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+}
+
+/**
+ * Logout Peserta
+ */
+function pesertaLogout() {
+    if (confirm('Apakah Anda yakin ingin logout?')) {
+        pesertaSessionData = null;
+        localStorage.removeItem('simbakes_peserta_session');
+        
+        // Close all peserta overlays
+        closePesertaDashboard();
+        closePesertaAjukan();
+        closePesertaCekStatus();
+        
+        // Reset topbar button
+        const loginBtn = document.getElementById('topbar-peserta-login-btn');
+        if (loginBtn) {
+            loginBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                Login Peserta
+            `;
+            loginBtn.onclick = openPesertaLogin;
+            loginBtn.style.background = '';
+            loginBtn.title = '';
+        }
+        
+        showToast?.('info', '👋 Logout Berhasil', 'Anda telah keluar dari akun peserta');
+    }
+}
+
+/**
+ * Open Ajukan Rekomendasi Popup
+ * Memindahkan konten page-ajukan ke dalam popup full-screen
+ */
+function openPesertaAjukan() {
+    const popup = document.getElementById('peserta-ajukan-popup');
+    const body = document.getElementById('peserta-ajukan-body');
+    const pageAjukan = document.getElementById('page-ajukan');
+    
+    if (!popup || !body || !pageAjukan) {
+        console.error('[PESERTA] Elemen popup/page-ajukan tidak ditemukan');
+        return;
+    }
+    
+    // Move the page content into popup body
+    body.innerHTML = '';
+    // Clone the inner content (excluding the .page wrapper to avoid display:none)
+    const clone = pageAjukan.cloneNode(true);
+    clone.classList.add('active');
+    clone.style.display = 'block';
+    clone.removeAttribute('id'); // Remove duplicate id
+    body.appendChild(clone);
+    
+    // Initialize form if needed (generate nomor register & tanggal)
+    if (typeof generateRegNumber === 'function') generateRegNumber();
+    if (typeof generateTimestamp === 'function') generateTimestamp();
+    
+    // Pre-fill NIK if available
+    if (pesertaSessionData && pesertaSessionData.nik) {
+        const nikInput = clone.querySelector('#nik');
+        if (nikInput) nikInput.value = pesertaSessionData.nik;
+    }
+    
+    // Override submitForm to close popup on success
+    const origSubmitForm = window.submitForm;
+    window.submitForm = async function() {
+        await origSubmitForm.call(this);
+        // Check if success modal appeared, if so add close handler
+        setTimeout(() => {
+            const successModal = document.getElementById('success-modal');
+            if (successModal && successModal.classList.contains('active')) {
+                // Modify the cek status button to close popup instead
+                const cekBtn = successModal.querySelector('button[onclick*="cek-status"]');
+                if (cekBtn) {
+                    cekBtn.setAttribute('onclick', 'closePesertaAjukan(); openPesertaCekStatus();');
+                }
+            }
+        }, 500);
+    };
+    
+    // Show popup
+    popup.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+/**
+ * Close Ajukan Popup
+ */
+function closePesertaAjukan() {
+    const popup = document.getElementById('peserta-ajukan-popup');
+    const body = document.getElementById('peserta-ajukan-body');
+    if (popup) {
+        popup.classList.remove('show');
+        if (body) body.innerHTML = ''; // Clean up cloned content
+        document.body.style.overflow = '';
+    }
+}
+
+/**
+ * Open Cek Status Lightbox
+ * Memindahkan konten page-cek-status ke dalam lightbox full-screen
+ */
+function openPesertaCekStatus() {
+    const popup = document.getElementById('peserta-cekstatus-popup');
+    const body = document.getElementById('peserta-cekstatus-body');
+    const pageCekStatus = document.getElementById('page-cek-status');
+    
+    if (!popup || !body || !pageCekStatus) {
+        console.error('[PESERTA] Elemen popup/page-cek-status tidak ditemukan');
+        return;
+    }
+    
+    // Clone the cek-status page content
+    body.innerHTML = '';
+    const clone = pageCekStatus.cloneNode(true);
+    clone.classList.add('active');
+    clone.style.display = 'block';
+    clone.removeAttribute('id'); // Remove duplicate id
+    body.appendChild(clone);
+    
+    // Pre-fill NIK if available from peserta session
+    if (pesertaSessionData && pesertaSessionData.nik) {
+        const nikInput = clone.querySelector('#search-nik');
+        if (nikInput) nikInput.value = pesertaSessionData.nik;
+    }
+    
+    // Rebind searchSubmissionData to work within the clone
+    // The original function uses getElementById which will find the first match
+    // Since the cloned elements don't have IDs (we removed them), we need to patch
+    const searchBtn = clone.querySelector('button[onclick*="searchSubmissionData"]');
+    if (searchBtn) {
+        searchBtn.onclick = async function(e) {
+            e.preventDefault();
+            // Get values from cloned inputs
+            const clonedNik = clone.querySelector('input[placeholder*="16 digit NIK"]');
+            const clonedReg = clone.querySelector('input[placeholder*="REG-SIMBAKES"]');
+            const nik = clonedNik ? clonedNik.value.trim() : '';
+            const register = clonedReg ? clonedReg.value.trim() : '';
+            
+            // Put values into the original fields (which the searchSubmissionData function reads)
+            const origNik = document.getElementById('search-nik');
+            const origReg = document.getElementById('search-register');
+            if (origNik) origNik.value = nik;
+            if (origReg) origReg.value = register;
+            
+            // Also put result containers into the clone
+            // Move search-result-content into the clone's result area
+            await searchSubmissionData();
+            
+            // After search, move the result display into the popup clone
+            const origResultContent = document.getElementById('search-result-content');
+            const clonedResultContent = clone.querySelector('#search-result-content') || clone.querySelector('.status-card-body');
+            if (origResultContent && clonedResultContent) {
+                clonedResultContent.innerHTML = origResultContent.innerHTML;
+            }
+            
+            // Handle result container visibility
+            const origResultContainer = document.getElementById('result-container');
+            const clonedResultContainer = clone.querySelector('#result-container') || clone.querySelector('.result-container');
+            if (origResultContainer && clonedResultContainer) {
+                clonedResultContainer.classList.add('active');
+                clonedResultContainer.style.display = '';
+            }
+            
+            // Hide loading
+            const clonedLoading = clone.querySelector('#search-loading');
+            if (clonedLoading) clonedLoading.style.display = 'none';
+            
+            // Handle not found
+            const origNotFound = document.getElementById('not-found-container');
+            const clonedNotFound = clone.querySelector('#not-found-container');
+            if (origNotFound && clonedNotFound) {
+                clonedNotFound.style.display = origNotFound.style.display;
+                clonedNotFound.innerHTML = origNotFound.innerHTML;
+            }
+        };
+    }
+    
+    // Show popup
+    popup.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+/**
+ * Close Cek Status Lightbox
+ */
+function closePesertaCekStatus() {
+    const popup = document.getElementById('peserta-cekstatus-popup');
+    const body = document.getElementById('peserta-cekstatus-body');
+    if (popup) {
+        popup.classList.remove('show');
+        if (body) body.innerHTML = '';
+        document.body.style.overflow = '';
+    }
+}
+
+// ESC key handler for peserta overlays
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        if (document.getElementById('peserta-ajukan-popup')?.classList.contains('show')) {
+            closePesertaAjukan();
+        } else if (document.getElementById('peserta-cekstatus-popup')?.classList.contains('show')) {
+            closePesertaCekStatus();
+        } else if (document.getElementById('peserta-dashboard-overlay')?.classList.contains('show')) {
+            pesertaLogout();
+        } else if (document.getElementById('peserta-login-overlay')?.classList.contains('show')) {
+            closePesertaLoginModal();
+        }
+    }
+});
+
+/**
  * Helper: Tentukan URL halaman login peserta
- * Mendukung berbagai lokasi hosting
+ * (Kept for backward compatibility)
  */
 function getLoginPageUrl() {
-    // Cek jika sudah di environment yang sama (relative path)
-    const possiblePaths = [
-        './login-peserta.html',           // Folder yang sama
-        '../login-peserta.html',          // Satu level up
-        '/login-peserta.html',            // Root domain
-        '/download/login-peserta.html',   // Path download
-        'login-peserta.html'              // Default
-    ];
-    
-    // Untuk development/testing, gunakan path relatif
     return './login-peserta.html';
 }
 
@@ -25328,21 +25974,40 @@ function updateUIForLoggedInPeserta(loginData) {
     console.log('[SIMBAKES] UI updated for logged-in peserta');
 }
 
-/**
- * Tampilkan dashboard/info untuk peserta yang sudah login
- */
-function showPesertaDashboard() {
-    // Ambil data session
-    const sessionData = localStorage.getItem('simbakes_peserta_session');
-    if (!sessionData) {
-        openPesertaLogin(); // Belum login, buka halaman login
+function showPesertaDashboard(sessionOrUndefined) {
+    const session = sessionOrUndefined || pesertaSessionData;
+    if (session) {
+        // Update dashboard UI
+        const avatar = document.getElementById('peserta-dash-avatar');
+        const username = document.getElementById('peserta-dash-username');
+        if (avatar) avatar.textContent = (session.nama || 'P').charAt(0).toUpperCase();
+        if (username) username.textContent = session.nama || 'Peserta';
+        // Show dashboard overlay
+        const dashboard = document.getElementById('peserta-dashboard-overlay');
+        if (dashboard) {
+            dashboard.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
         return;
     }
-    
-    const session = JSON.parse(sessionData);
-    
-    // Tampilkan modal dengan info peserta
-    showModalPesertaInfo(session);
+    // Fallback: Ambil data session dari localStorage
+    const sessionData = localStorage.getItem('simbakes_peserta_session');
+    if (!sessionData) {
+        openPesertaLogin();
+        return;
+    }
+    const stored = JSON.parse(sessionData);
+    pesertaSessionData = stored;
+    // Call self with session data
+    const avatar = document.getElementById('peserta-dash-avatar');
+    const username = document.getElementById('peserta-dash-username');
+    if (avatar) avatar.textContent = (stored.nama || 'P').charAt(0).toUpperCase();
+    if (username) username.textContent = stored.nama || 'Peserta';
+    const dashboard = document.getElementById('peserta-dashboard-overlay');
+    if (dashboard) {
+        dashboard.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
 }
 
 /**
@@ -25419,30 +26084,8 @@ function closePesertaInfoModal() {
  * Logout peserta
  */
 function logoutPeserta() {
-    if (confirm('Apakah Anda yakin ingin logout?')) {
-        localStorage.removeItem('simbakes_peserta_session');
-        closePesertaInfoModal();
-        
-        // Reset tombol login
-        const loginBtn = document.getElementById('topbar-peserta-login-btn');
-        if (loginBtn) {
-            loginBtn.innerHTML = `
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                </svg>
-                Login Peserta
-            `;
-            loginBtn.onclick = openPesertaLogin;
-            loginBtn.style.background = '';
-            loginBtn.title = '';
-        }
-        
-        showToast?.('info', '👋 Logout Berhasil', 'Anda telah keluar dari akun peserta');
-        
-        // Redirect ke halaman login
-        setTimeout(() => openPesertaLogin(), 500);
-    }
+    // Redirect to new pesertaLogout
+    pesertaLogout();
 }
 
 /**
