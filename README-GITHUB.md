@@ -110,6 +110,35 @@ Panel Admin benar-benar tidak menampilkan apa pun saat sesi terhapus.
 > atas** (desain bawaan template). Setelah login sekali, sesi akan bertahan
 > meski halaman di-refresh berkali-kali.
 
+## 🆕 Perbaikan Darurat: 7+ Menu Kontennya Kosong Putih (`index.html`)
+
+**Gejala:** setelah login, hampir semua menu (Roadmap Kebutuhan, Lulus Tes,
+Petunjuk, Cek Status, Cek Penetapan, Data Pengusulan/Roadmap/Penetapan/Akun
+Peserta) menampilkan **area konten kosong putih total**, padahal Dashboard dan
+Ajukan Rekomendasi normal. Di console muncul error `roundRect ... Radius value
+negative` dari `07-dashboard.js` (ini hanya gejala ikutan).
+
+**Penyebab:** saat merapikan formulir (penghapusan field lama "Link Template
+Opsional"), **satu tag `</div>` penutup ikut terhapus** di area tombol
+"Download Template". Akibatnya div `page-ajukan` tidak pernah tertutup dan
+**seluruh halaman setelahnya ikut "bersarang" di dalamnya** menurut parser
+browser — sehingga meski diaktifkan lewat menu, halaman-halaman itu tetap
+tersembunyi di dalam halaman Ajukan yang sedang nonaktif (`display:none`).
+
+**Perbaikan:** tag `</div>` dikembalikan tepat setelah tombol Download Template
+(menutup `.template-actions`). Keseimbangan tag kini 619/620 pas dan semua 11
+halaman kembali menjadi anak langsung `<main>` (terverifikasi browser: 11/11
+halaman render normal).
+
+**Sekalian (kecil, `js/07-dashboard.js`):** auto-refresh statistik pengunjung
+tiap 30 detik ikut dijaga — bila chart pengunjung sedang tidak terlihat
+(user sedang di halaman lain), render dilewati sehingga error `roundRect`
+tidak lagi muncul di console.
+
+> ⚠️ **PENTING saat deploy ulang:** upload `index.html` + `js/07-dashboard.js`,
+> lalu **hard-refresh browser (Ctrl+Shift+R)** — cache JS lama bisa membuat
+> perbaikan tampak "tidak efek".
+
 ## 🆕 Fitur Baru: Data Akun Peserta (Panel Admin)
 
 Menu **Data Akun Peserta** di Panel Admin (muncul setelah login admin) untuk

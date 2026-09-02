@@ -684,6 +684,13 @@ function renderVisitorChart(chartData) {
     const chartWidth = width - padding.left - padding.right;
     const chartHeight = height - padding.top - padding.bottom;
     
+    // Guard: canvas tersembunyi (offsetWidth 0) saat auto-refresh berjalan
+    // di halaman lain -> lebar negatif -> jangan render (hindari RangeError roundRect)
+    if (chartWidth <= 0) {
+        console.log('[SIMBAKES] ℹ️ Visitor chart tidak terlihat (lebar 0), render dilewati');
+        return;
+    }
+    
     // Find max value for scaling
     const maxVal = Math.max(...chartData.map(d => d.jumlah), 10);
     const niceMax = Math.ceil(maxVal / 5) * 5; // Round up to nearest 5
@@ -724,7 +731,7 @@ function renderVisitorChart(chartData) {
         // Draw rounded bar
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        const radius = Math.min(barWidth / 4, 8);
+        const radius = Math.max(0, Math.min(barWidth / 4, 8));
         ctx.roundRect(x, y, barWidth, barHeight, [radius, radius, 0, 0]);
         ctx.fill();
         
