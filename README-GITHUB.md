@@ -31,6 +31,7 @@ simbakes-split/
 │   ├── 11-topbar-session.js    ← Topbar login + login peserta + proteksi halaman
 │   ├── 12-multiuser-init.js    ← Multi-user session + registrasi user + inisialisasi
 │   ├── 13-akun-peserta.js      ← 🆕 Data Akun Peserta (CRUD tabel akun_peserta)
+│   ├── 14-panel-admin-fix.js   ← 🆕 Panel Admin Fix (sesi tahan refresh + pulihkan menu admin)
 │   ├── supabase-config.js      ← ⚙️ KONFIGURASI SUPABASE (URL + anon key + init)
 │   └── ui-overhaul.js          ← Skrip UI overhaul (lihat catatan di bawah)
 ├── sql/
@@ -77,6 +78,37 @@ Cara mengunggah ke GitHub Pages:
   ```
 - Tabel yang dipakai: `submissions`, `roadmap`, `multiusers`, `akun_peserta` 🆕
   + storage bucket `simbakes` (folder `photos`).
+
+## 🆕 Panel Admin Fix — Sesi Tahan Refresh (`js/14-panel-admin-fix.js`)
+
+**Masalah yang diperbaiki:** setiap halaman di-refresh, login admin tiba-tiba
+"hilang semua" — menu Data Pengusulan/Roadmap/Penetapan/Akun Peserta lenyap
+dari sidebar dan section "Panel Admin" tampak kosong, padahal barusan login.
+
+**Penyebab (bug bawaan template):** ada dua sistem auth yang sama-sama membaca
+`localStorage "simbakes_admin_session"` dengan format berbeda. Modul auth lama
+menyimpan `{ user, timestamp }`, sementara modul multi-user menuntut
+`{ isLoggedIn, expiresAt }` dan **menghapus** sesi yang tidak cocok saat
+halaman dimuat. Ditambah lagi, form login di sidebar sengaja disembunyikan CSS
+(design login lewat tombol **"Login Admin" di kanan atas**), sehingga section
+Panel Admin benar-benar tidak menampilkan apa pun saat sesi terhapus.
+
+**Yang dilakukan modul ini (100% aditif, tidak mengubah modul lama):**
+1. **Menyatukan kedua format sesi** sebelum modul multi-user berjalan, sehingga
+   sesi login tidak lagi terhapus dan **tahan refresh** (maks. 8 jam).
+2. **Memulihkan menu admin otomatis** saat halaman dibuka — tidak perlu login
+   ulang atau klik dua kali setelah refresh.
+3. **Klik "Panel Admin" saat belum login** kini langsung membuka form login
+   (tidak lagi kosong tanpa pesan).
+4. **Klik pertama setelah refresh** pada Data Pengusulan/Roadmap/Penetapan
+   tidak lagi ditolak.
+5. **Kartu dashboard tidak lagi mentok di 0** — statistik dirender ulang
+   otomatis begitu koneksi Supabase siap.
+6. Badge "PANEL ADMIN" dirapikan agar teks role tidak menumpuk.
+
+> Catatan login: form login memang ada di **tombol "Login Admin" pojok kanan
+> atas** (desain bawaan template). Setelah login sekali, sesi akan bertahan
+> meski halaman di-refresh berkali-kali.
 
 ## 🆕 Fitur Baru: Data Akun Peserta (Panel Admin)
 
