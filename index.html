@@ -6178,200 +6178,6 @@ body {
     }
 }
 
-    /* ===== PESERTA LOGIN MODAL & DASHBOARD ===== */
-    .peserta-login-overlay {
-        position: fixed; inset: 0; z-index: 10000;
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e3a5f 100%);
-        display: none; align-items: center; justify-content: center;
-        padding: 20px;
-        animation: fadeIn 0.3s ease-out;
-    }
-    .peserta-login-overlay.show { display: flex; }
-
-    .peserta-login-card {
-        background: white; border-radius: 24px; padding: 2.5rem;
-        width: 100%; max-width: 440px;
-        box-shadow: 0 25px 60px rgba(0,0,0,0.3);
-        animation: slideUp 0.4s ease-out;
-        position: relative;
-    }
-    .peserta-login-header {
-        text-align: center; margin-bottom: 2rem;
-    }
-    .peserta-login-logo {
-        width: 72px; height: 72px;
-        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-        border-radius: 18px; display: flex; align-items: center; justify-content: center;
-        margin: 0 auto 1rem; font-size: 2rem; color: white;
-        box-shadow: 0 10px 25px rgba(5,150,105,0.3);
-    }
-    .peserta-login-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin-bottom: 0.25rem; }
-    .peserta-login-subtitle { color: #64748b; font-size: 0.9rem; }
-
-    .peserta-login-form .form-group { margin-bottom: 1.1rem; }
-    .peserta-login-form label { display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 0.4rem; }
-    .peserta-login-form input {
-        width: 100%; height: 46px; padding: 0 14px 0 42px; border: 2px solid #e2e8f0;
-        border-radius: 10px; font-size: 0.95rem; outline: none; transition: all 0.2s;
-        background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") 14px center no-repeat;
-    }
-    .peserta-login-form input.pw-input {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E");
-    }
-    .peserta-login-form input:focus { border-color: #059669; box-shadow: 0 0 0 4px rgba(5,150,105,0.1); }
-    .peserta-login-btn {
-        width: 100%; height: 48px; border: none; border-radius: 12px;
-        background: linear-gradient(135deg, #059669, #047857); color: white;
-        font-size: 1rem; font-weight: 700; cursor: pointer;
-        display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-        margin-top: 0.5rem; transition: all 0.2s;
-    }
-    .peserta-login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(5,150,105,0.35); }
-    .peserta-login-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
-    .peserta-login-btn .spinner { width: 18px; height: 18px; border-width: 2px; }
-    .peserta-login-alert {
-        padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem;
-        margin-top: 1rem; display: none; align-items: center; gap: 0.5rem;
-    }
-    .peserta-login-alert.show { display: flex; }
-    .peserta-login-alert.error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
-    .peserta-login-alert.success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
-    .peserta-login-alert.info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
-    .peserta-login-close {
-        position: absolute; top: 16px; right: 16px; width: 36px; height: 36px;
-        border-radius: 50%; border: none; background: #f1f5f9; cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
-        color: #64748b; font-size: 1.25rem; transition: all 0.2s; z-index: 2;
-    }
-    .peserta-login-close:hover { background: #e2e8f0; transform: rotate(90deg); }
-    .peserta-login-footer {
-        text-align: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;
-        font-size: 0.8rem; color: #94a3b8;
-    }
-    .peserta-login-footer a { color: #059669; text-decoration: none; font-weight: 600; }
-    .peserta-login-footer a:hover { text-decoration: underline; }
-
-    /* ===== PESERTA DASHBOARD OVERLAY (2 CARDS) ===== */
-    .peserta-dashboard-overlay {
-        position: fixed; inset: 0; z-index: 9998;
-        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f0fdf4 100%);
-        display: none; flex-direction: column;
-        animation: fadeIn 0.4s ease-out;
-    }
-    .peserta-dashboard-overlay.show { display: flex; }
-
-    .peserta-dashboard-topbar {
-        background: white; border-bottom: 1px solid #e2e8f0;
-        padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05); flex-shrink: 0; z-index: 10;
-    }
-    .peserta-dashboard-brand { display: flex; align-items: center; gap: 12px; }
-    .peserta-dashboard-brand-icon {
-        width: 40px; height: 40px; background: linear-gradient(135deg, #059669, #0d9488);
-        border-radius: 10px; display: flex; align-items: center; justify-content: center;
-        color: white; font-size: 1.25rem;
-    }
-    .peserta-dashboard-brand h2 { font-size: 1.1rem; font-weight: 700; color: #0f172a; }
-    .peserta-dashboard-brand p { font-size: 0.75rem; color: #64748b; }
-    .peserta-dashboard-user { display: flex; align-items: center; gap: 12px; }
-    .peserta-dashboard-avatar {
-        width: 38px; height: 38px; border-radius: 10px;
-        background: linear-gradient(135deg, #059669, #047857);
-        display: flex; align-items: center; justify-content: center;
-        color: white; font-weight: 700; font-size: 1rem;
-    }
-    .peserta-dashboard-username { font-weight: 600; color: #1e293b; font-size: 0.9rem; }
-    .peserta-dashboard-logout {
-        padding: 0.4rem 0.8rem; background: #fef2f2; color: #dc2626;
-        border: 1px solid #fecaca; border-radius: 8px; font-size: 0.8rem;
-        font-weight: 600; cursor: pointer; transition: all 0.2s;
-    }
-    .peserta-dashboard-logout:hover { background: #fee2e2; }
-
-    .peserta-dashboard-body {
-        flex: 1; overflow-y: auto; padding: 2rem;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .peserta-cards-grid {
-        display: grid; grid-template-columns: repeat(2, 1fr);
-        gap: 2rem; max-width: 800px; width: 100%;
-    }
-    @media (max-width: 640px) { .peserta-cards-grid { grid-template-columns: 1fr; gap: 1.5rem; } }
-
-    .peserta-action-card {
-        background: white; border-radius: 20px; padding: 2.5rem 2rem;
-        border: 2px solid #e2e8f0; cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-        text-align: center; position: relative; overflow: hidden;
-    }
-    .peserta-action-card::before {
-        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px;
-        transition: opacity 0.3s; opacity: 0;
-    }
-    .peserta-action-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 20px 50px rgba(0,0,0,0.12);
-        border-color: transparent;
-    }
-    .peserta-action-card:hover::before { opacity: 1; }
-    .peserta-action-card.card-ajukan::before { background: linear-gradient(90deg, #059669, #10b981); }
-    .peserta-action-card.card-ajukan:hover { border-color: #059669; }
-    .peserta-action-card.card-cekstatus::before { background: linear-gradient(90deg, #2563eb, #3b82f6); }
-    .peserta-action-card.card-cekstatus:hover { border-color: #2563eb; }
-
-    .peserta-card-icon {
-        width: 72px; height: 72px; border-radius: 18px;
-        display: flex; align-items: center; justify-content: center;
-        margin: 0 auto 1.5rem; font-size: 2rem;
-    }
-    .card-ajukan .peserta-card-icon { background: linear-gradient(135deg, #ecfdf5, #d1fae5); box-shadow: 0 8px 20px rgba(5,150,105,0.15); }
-    .card-cekstatus .peserta-card-icon { background: linear-gradient(135deg, #eff6ff, #dbeafe); box-shadow: 0 8px 20px rgba(37,99,235,0.15); }
-    .peserta-card-title { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; }
-    .peserta-card-desc { font-size: 0.9rem; color: #64748b; line-height: 1.5; margin-bottom: 1.5rem; }
-    .peserta-card-btn {
-        display: inline-flex; align-items: center; gap: 8px;
-        padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 600;
-        font-size: 0.9rem; cursor: pointer; border: none; transition: all 0.2s;
-    }
-    .card-ajukan .peserta-card-btn { background: linear-gradient(135deg, #059669, #047857); color: white; }
-    .card-ajukan .peserta-card-btn:hover { box-shadow: 0 8px 20px rgba(5,150,105,0.35); transform: translateY(-2px); }
-    .card-cekstatus .peserta-card-btn { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; }
-    .card-cekstatus .peserta-card-btn:hover { box-shadow: 0 8px 20px rgba(37,99,235,0.35); transform: translateY(-2px); }
-
-    /* ===== FULL-SCREEN CONTENT POPUP (Ajukan & Cek Status) ===== */
-    .peserta-content-popup {
-        position: fixed; inset: 0; z-index: 10001;
-        background: #f8fafc; display: none; flex-direction: column;
-        animation: fadeIn 0.3s ease-out;
-    }
-    .peserta-content-popup.show { display: flex; }
-    .peserta-popup-topbar {
-        background: white; border-bottom: 1px solid #e2e8f0;
-        padding: 0.875rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05); flex-shrink: 0; z-index: 10;
-    }
-    .peserta-popup-title {
-        font-size: 1.1rem; font-weight: 700; color: #0f172a;
-        display: flex; align-items: center; gap: 10px;
-    }
-    .peserta-popup-close {
-        width: 38px; height: 38px; border-radius: 10px; border: 1px solid #e2e8f0;
-        background: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
-        color: #64748b; font-size: 1.25rem; transition: all 0.2s;
-    }
-    .peserta-popup-close:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
-    .peserta-popup-body {
-        flex: 1; overflow-y: auto; padding: 2rem;
-    }
-    @media (max-width: 768px) { .peserta-popup-body { padding: 1rem; } }
-
-    /* Backdrop blur for login overlay */
-    .peserta-login-overlay::before {
-        content: ''; position: absolute; inset: 0;
-        background: rgba(0,0,0,0.3); backdrop-filter: blur(4px);
-    }
-    .peserta-login-card { position: relative; z-index: 1; }
-
     </style>
 
     </style>
@@ -7434,31 +7240,21 @@ async function handleEditSubmit(event) {
             throw new Error('Supabase client tidak tersedia');
         }
         
-        // EXECUTE UPDATE - Use actual primary key (usually 'id') - TANPA .single() ⭐
+        // EXECUTE UPDATE - Use actual primary key (usually 'id')
         const primaryKeyField = 'id';
         const primaryKeyValue = activeRecord.id;
         
-        console.log('[EDIT] Updating record ID:', primaryKeyValue);
-        console.log('[EDIT] Update data:', updatedData);
-        
-        const { data: resultArray, error } = await client
+        const { data: result, error } = await client
             .from('submissions')
             .update(updatedData)
             .eq(primaryKeyField, primaryKeyValue)
-            .select('*');  // TANPA .single() - return array
+            .select()
+            .single();
         
-        // Handle error
         if (error) {
             console.error('[EDIT] Supabase error:', error);
             throw new Error(error.message || 'Gagal menyimpan data ke database');
         }
-        
-        // Validasi hasil (array, bukan single object)
-        if (!resultArray || !Array.isArray(resultArray) || resultArray.length === 0) {
-            throw new Error('Update tidak menghasilkan data. Periksa ID record atau RLS policy.');
-        }
-        
-        const result = resultArray[0];  // Ambil record pertama dari array
         
         console.log('[EDIT] ✅ Update successful:', result);
         
@@ -7634,29 +7430,21 @@ async function handleStatusChange(newStatus) {
             throw new Error('Supabase client tidak tersedia');
         }
         
-        // Execute UPDATE - TANPA .single() ⭐
-        console.log('[STATUS] Executing status update...');
-        
-        const { data: resultArray, error } = await client
+        // Execute UPDATE
+        const { data: result, error } = await client
             .from('submissions')
             .update({ 
                 status: newStatus,
                 updated_at: new Date().toISOString()
             })
             .eq('id', activeRecord.id)
-            .select('*');  // TANPA .single()
+            .select()
+            .single();
         
         if (error) {
             console.error('[STATUS] Supabase error:', error);
             throw new Error(error.message || 'Gagal mengubah status');
         }
-        
-        // Validasi hasil array
-        if (!resultArray || !Array.isArray(resultArray) || resultArray.length === 0) {
-            throw new Error('Status update tidak menghasilkan data. Periksa ID atau RLS policy.');
-        }
-        
-        const result = resultArray[0];  // Ambil dari array
         
         console.log('[STATUS] ✅ Changed successfully:', result);
         
@@ -7935,119 +7723,7 @@ console.log('[CRUD SYSTEM] ℹ️ Table: renderAdminTableClean() | Lightbox: ope
     </script>
 
 <body>
-
-    <!-- ===== PESERTA LOGIN MODAL ===== -->
-    <div class="peserta-login-overlay" id="peserta-login-overlay">
-        <div class="peserta-login-card">
-            <button class="peserta-login-close" onclick="closePesertaLoginModal()" title="Tutup">×</button>
-            <div class="peserta-login-header">
-                <div class="peserta-login-logo">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="36" height="36"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </div>
-                <h1 class="peserta-login-title">SIMBAKES</h1>
-                <p class="peserta-login-subtitle">Login Peserta Beasiswa Kesehatan</p>
-            </div>
-
-            <div class="peserta-login-alert" id="peserta-login-alert"></div>
-
-            <form class="peserta-login-form" onsubmit="handlePesertaLoginInModal(event)">
-                <div class="form-group">
-                    <label>Username <span style="color:#ef4444;">*</span></label>
-                    <input type="text" id="peserta-login-username" placeholder="Masukkan username" required autocomplete="username">
-                </div>
-                <div class="form-group">
-                    <label>Password <span style="color:#ef4444;">*</span></label>
-                    <input type="password" class="pw-input" id="peserta-login-password" placeholder="Masukkan password" required autocomplete="current-password">
-                </div>
-                <button type="submit" class="peserta-login-btn" id="peserta-login-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                    <span>MASUK</span>
-                </button>
-            </form>
-
-            <div class="peserta-login-footer">
-                Belum punya akun? <a href="https://simbakes.mukminnasri.com/daftar-peserta.html" target="_blank">Daftar di Sini →</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== PESERTA DASHBOARD OVERLAY (2 CARDS) ===== -->
-    <div class="peserta-dashboard-overlay" id="peserta-dashboard-overlay">
-        <div class="peserta-dashboard-topbar">
-            <div class="peserta-dashboard-brand">
-                <div class="peserta-dashboard-brand-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-                </div>
-                <div>
-                    <h2>SIMBAKES Portal Peserta</h2>
-                    <p>Beasiswa Tematik Bidang Kesehatan</p>
-                </div>
-            </div>
-            <div class="peserta-dashboard-user">
-                <div class="peserta-dashboard-avatar" id="peserta-dash-avatar">P</div>
-                <span class="peserta-dashboard-username" id="peserta-dash-username">Peserta</span>
-                <button class="peserta-dashboard-logout" onclick="pesertaLogout()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:middle;margin-right:4px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                    Logout
-                </button>
-            </div>
-        </div>
-
-        <div class="peserta-dashboard-body">
-            <div class="peserta-cards-grid">
-                <!-- KARTU 1: AJUKAN REKOMENDASI -->
-                <div class="peserta-action-card card-ajukan" onclick="openPesertaAjukan()">
-                    <div class="peserta-card-icon">📝</div>
-                    <h3 class="peserta-card-title">Ajukan Rekomendasi</h3>
-                    <p class="peserta-card-desc">Isi formulir pengajuan beasiswa tematik bidang kesehatan. Data akan tersimpan langsung ke sistem.</p>
-                    <button class="peserta-card-btn" type="button">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-                        Buka Formulir
-                    </button>
-                </div>
-
-                <!-- KARTU 2: CEK STATUS PENGAJUAN -->
-                <div class="peserta-action-card card-cekstatus" onclick="openPesertaCekStatus()">
-                    <div class="peserta-card-icon">🔍</div>
-                    <h3 class="peserta-card-title">Cek Status Pengajuan</h3>
-                    <p class="peserta-card-desc">Lacak status pengajuan beasiswa Anda. Masukkan NIK atau Nomor Register untuk melihat progress.</p>
-                    <button class="peserta-card-btn" type="button">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                        Cek Status
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== FULL-SCREEN POPUP: AJUKAN REKOMENDASI ===== -->
-    <div class="peserta-content-popup" id="peserta-ajukan-popup">
-        <div class="peserta-popup-topbar">
-            <div class="peserta-popup-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-                Ajukan Rekomendasi Beasiswa
-            </div>
-            <button class="peserta-popup-close" onclick="closePesertaAjukan()" title="Tutup">×</button>
-        </div>
-        <div class="peserta-popup-body" id="peserta-ajukan-body">
-            <!-- Content will be dynamically moved here from page-ajukan -->
-        </div>
-    </div>
-
-    <!-- ===== FULL-SCREEN LIGHTBOX: CEK STATUS PENGAJUAN ===== -->
-    <div class="peserta-content-popup" id="peserta-cekstatus-popup">
-        <div class="peserta-popup-topbar">
-            <div class="peserta-popup-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" width="22" height="22"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                Cek Status Pengajuan
-            </div>
-            <button class="peserta-popup-close" onclick="closePesertaCekStatus()" title="Tutup">×</button>
-        </div>
-        <div class="peserta-popup-body" id="peserta-cekstatus-body">
-            <!-- Content will be dynamically moved here from page-cek-status -->
-        </div>
-    </div>
-
+    
     <!-- ===== SIMBAKES ADMIN FINAL SYSTEM ===== -->
     <!-- Sistem FINAL: Tanpa Fallback, Tanpa Simple Modal, Tanpa Polling -->
     <script>
@@ -8225,339 +7901,6 @@ function formatDate(dateStr) {
 }
 
 // ============================================================
-// CENTRALIZED CRUD FUNCTIONS - TANPA .single()
-// ============================================================
-
-/**
- * updateSubmission() - Fungsi UPDATE terpusat untuk tabel submissions
- * 
- * @param {Object} record - Record yang akan diupdate (harus memiliki field 'id')
- * @param {Object} updateData - Data yang akan diupdate (hanya field yang boleh diubah)
- * @returns {Promise<Object>} Record yang sudah diperbarui
- * @throws {Error} Jika record tidak valid, error Supabase, atau hasil tidak sesuai
- */
-async function updateSubmission(record, updateData) {
-    // ============================================================
-    // VALIDASI INPUT
-    // ============================================================
-    if (!record) {
-        throw new Error('Record tidak tersedia. Tidak dapat melakukan update.');
-    }
-
-    const recordId = record.id;
-
-    if (!recordId) {
-        console.error('[CRUD] ❌ Record tanpa ID:', record);
-        throw new Error('Primary key (id) record tidak tersedia. Data tidak dapat diperbarui.');
-    }
-
-    if (!updateData || Object.keys(updateData).length === 0) {
-        throw new Error('Tidak ada data yang akan diperbarui. Update data kosong.');
-    }
-
-    if (!supabaseClient) {
-        throw new Error('Koneksi ke Supabase tidak tersedia.');
-    }
-
-    // Debug log
-    debugCRUDLog('UPDATE', 'submissions', { 
-        recordId, 
-        fieldsToUpdate: Object.keys(updateData),
-        fieldCount: Object.keys(updateData).length
-    });
-
-    console.log('[CRUD] 🔄 Updating record ID:', recordId);
-    console.log('[CRUD] 📦 Update payload:', updateData);
-    console.log('[CRUD] 🔑 Payload keys:', Object.keys(updateData));
-
-    // ============================================================
-    // EKSEKUSI UPDATE - TANPA .single() ⭐
-    // ============================================================
-    let result;
-    try {
-        result = await supabaseClient
-            .from('submissions')
-            .update(updateData)
-            .eq('id', recordId)  // Gunakan primary key 'id' (UUID), BUKAN NIK!
-            .select('*');         // Ambil semua kolom hasil update - TANPA .single()
-    } catch (queryError) {
-        console.error('[CRUD] ❌ Query execution failed:', queryError);
-        throw new Error(`Gagal menjalankan query UPDATE: ${queryError.message}`);
-    }
-
-    const { data, error } = result;
-
-    console.log('[CRUD] 📊 Supabase response:', {
-        dataType: typeof data,
-        dataLength: Array.isArray(data) ? data.length : 'not array',
-        hasError: !!error,
-        errorCode: error?.code,
-        errorMessage: error?.message
-    });
-
-    // ============================================================
-    // HANDLE ERROR dengan Enhanced Handler
-    // ============================================================
-    if (error) {
-        const errorInfo = handleSupabaseError(error, 'UPDATE', 'submissions');
-        
-        // Throw dengan pesan yang lebih informatif
-        throw new Error(errorInfo.userFriendlyMessage);
-    }
-
-    // ============================================================
-    // VALIDASI HASIL - HANDLE RLS ISSUE
-    // ============================================================
-    // 
-    // 🔧 CRITICAL FIX: 
-    // Jika update TANPA error tapi data kosong, kemungkinan:
-    // 1. RLS Policy memblok SELECT setelah UPDATE (paling umum)
-    // 2. Data memang sudah terupdate tapi tidak bisa di-return
-    //
-    // SOLUSI: Jika no error = SUKSES, lalu verify dengan SELECT terpisah
-    // ============================================================
-    
-    let updatedRecord = null;
-    
-    if (!data || (Array.isArray(data) && data.length === 0)) {
-        // ⚠️ Update mungkin berhasil tapi data tidak di-return (RLS issue)
-        console.warn('[CRUD] ⚠️ Update returned empty data - possible RLS blocking SELECT after UPDATE');
-        console.warn('[CRUD] ⚠️ But NO ERROR means UPDATE likely succeeded!');
-        
-        // 🔧 VERIFY: Coba ambil data langsung untuk konfirmasi
-        try {
-            console.log('[CRUD] 🔍 Verifying update by fetching record directly...');
-            const { data: verifyData, error: verifyError } = await supabaseClient
-                .from('submissions')
-                .select('*')
-                .eq('id', recordId)
-                .limit(1);
-            
-            if (verifyError) {
-                console.warn('[CRUD] ⚠️ Verify SELECT also failed (RLS likely):', verifyError.message);
-                // Jika verify juga gagal karena RLS, anggap SUKSES karena update tadi no error
-                console.log('[CRUD] ✅ Assuming SUCCESS - Update executed without error, RLS blocks verification');
-                
-                // Return merged data (original + updates)
-                updatedRecord = {
-                    ...record,
-                    ...updateData,
-                    id: recordId,  // Pastikan ID benar
-                    updated_at: new Date().toISOString()
-                };
-            } else if (verifyData && verifyData.length > 0) {
-                // ✅ Verify berhasil - data memang ada dan sudah terupdate
-                console.log('[CRUD] ✅ Verification PASSED - Record exists and accessible');
-                updatedRecord = verifyData[0];
-            } else {
-                // Verify return empty juga - kemungkinan RLS atau memang tidak ada
-                console.warn('[CRUD] ⚠️ Verify returned empty - RLS strongly suspected');
-                
-                // Tetap anggap sukses karena original update tidak error
-                updatedRecord = {
-                    ...record,
-                    ...updateData,
-                    id: recordId,
-                    updated_at: new Date().toISOString()
-                };
-                console.log('[CRUD] ✅ Assuming SUCCESS based on no-error from UPDATE');
-            }
-        } catch (verifyEx) {
-            console.error('[CRUD] ❌ Verify exception:', verifyEx);
-            // Last resort: return merged data
-            updatedRecord = {
-                ...record,
-                ...updateData,
-                id: recordId,
-                updated_at: new Date().toISOString()
-            };
-            console.log('[CRUD] ✅ Using fallback - returning merged data');
-        }
-    } else if (!Array.isArray(data)) {
-        // Data bukan array (jarang terjadi)
-        console.warn('[CRUD] ⚠️ Data bukan array, converting...');
-        updatedRecord = data;
-    } else if (data.length > 0) {
-        // ✅ Normal case - data ada
-        updatedRecord = data[0];
-        
-        if (data.length > 1) {
-            console.warn('[CRUD] ⚠️ Multiple records returned:', data.length);
-        }
-    }
-
-    // ============================================================
-    // FINAL SUCCESS
-    // ============================================================
-    
-    debugCRUDLog('SUCCESS', 'submissions', { 
-        operation: 'UPDATE',
-        recordId: updatedRecord.id,
-        updatedAt: updatedRecord.updated_at
-    });
-    
-    console.log('[CRUD] ✅ Update BERHASIL!');
-    console.log('[CRUD] ✅ Updated record ID:', updatedRecord.id);
-    console.log('[CRUD] ✅ Updated at:', updatedRecord.updated_at);
-    console.table({
-        'Record ID': updatedRecord.id,
-        'Fields Updated': Object.keys(updateData).length,
-        'New Values': JSON.stringify(updateData).substring(0, 100) + '...'
-    });
-
-    return updatedRecord;
-}
-
-/**
- * deleteSubmission() - Fungsi DELETE terpusat
- * 
- * @param {Object} Record yang akan dihapus
- * @returns {Promise<boolean>} True jika berhasil
- */
-async function deleteSubmission(record) {
-    if (!record || !record.id) {
-        throw new Error('Record atau ID tidak tersedia untuk dihapus.');
-    }
-
-    console.log('[CRUD] 🗑️ Deleting record ID:', record.id);
-
-    const { error } = await supabaseClient
-        .from('submissions')
-        .delete()
-        .eq('id', record.id);  // Gunakan primary key, TANPA .select().single()
-
-    if (error) {
-        console.error('[CRUD] ❌ Delete error:', error);
-        throw new Error(`Gagal menghapus data: ${error.message}`);
-    }
-
-    console.log('[CRUD] ✅ Delete successful for ID:', record.id);
-    return true;
-}
-
-/**
- * verifyDatabaseRecord() - Verifikasi record benar-benar ada di database
- * Digunakan untuk debugging dan validasi pasca-update
- * 
- * @param {string} recordId - ID record yang akan diverifikasi
- * @returns {Promise<Object|null>} Record atau null jika tidak ditemukan
- */
-async function verifyDatabaseRecord(recordId) {
-    if (!recordId || !supabaseClient) return null;
-
-    try {
-        const { data, error } = await supabaseClient
-            .from('submissions')
-            .select('*')
-            .eq('id', recordId)
-            .maybeSingle();  // Gunakan maybeSingle() untuk SELECT yang boleh return null
-
-        if (error) {
-            console.warn('[VERIFY] Query error:', error);
-            return null;
-        }
-
-        return data;
-    } catch (e) {
-        console.error('[VERIFY] Exception:', e);
-        return null;
-    }
-}
-
-/**
- * reloadSubmissionsData() - Reload seluruh data submissions dari Supabase
- * Dipanggil setelah UPDATE/DELETE berhasil untuk sinkronisasi
- * 
- * @returns {Promise<Array>} Data submissions terbaru
- */
-async function reloadSubmissionsData() {
-    console.log('[RELOAD] 🔄 Reloading submissions data from Supabase...');
-
-    try {
-        const { data, error } = await supabaseClient
-            .from('submissions')
-            .select('*')
-            .order('created_at', { ascending: false });
-
-        if (error) {
-            console.error('[RELOAD] ❌ Error loading data:', error);
-            throw new Error(`Gagal reload data: ${error.message}`);
-        }
-
-        if (!data || !Array.isArray(data)) {
-            console.warn('[RELOAD] ⚠️ Data tidak valid');
-            return window.submissionsData || [];
-        }
-
-        // Update global state
-        window.submissionsData = data;
-        window.filteredSubmissions = data;  // Reset filter
-
-        console.log('[RELOAD] ✅ Reloaded', data.length, 'records');
-        return data;
-
-    } catch (error) {
-        console.error('[RELOAD] ❌ Reload failed:', error);
-        throw error;
-    }
-}
-
-// ============================================================
-// GOOGLE DRIVE URL RESOLVER - Konversi sharing link ke direct URL
-// ============================================================
-
-/**
- * Cek apakah URL adalah Google Drive link
- */
-function isGoogleDriveUrl(url) {
-    if (!url || typeof url !== 'string') return false;
-    return url.includes('drive.google.com') || 
-           url.includes('google.com/file') ||
-           url.includes('google.com/open') ||
-           (url.length > 25 && /^[a-zA-Z0-9_-]{28,}$/.test(url.trim()));
-}
-
-/**
- * Extract Google Drive File ID dari berbagai format URL
- */
-function extractGoogleDriveFileId(url) {
-    if (!url) return null;
-    
-    const patterns = [
-        /\/file\/d\/([a-zA-Z0-9_-]+)/,           // /file/d/FILE_ID
-        /[?&]id=([a-zA-Z0-9_-]+)/,                 // ?id=FILE_ID or &id=FILE_ID
-        /\/d\/([a-zA-Z0-9_-]+)/,                   // /d/FILE_ID
-        /^([a-zA-Z0-9_-]{28,})$/                    // Just FILE_ID (28+ chars)
-    ];
-    
-    for (const pattern of patterns) {
-        const match = url.match(pattern);
-        if (match && match[1]) {
-            return match[1];
-        }
-    }
-    return null;
-}
-
-/**
- * Konversi Google Drive sharing link ke direct image URLs (multiple formats)
- */
-function convertGoogleDriveToDirectUrls(url) {
-    const fileId = extractGoogleDriveFileId(url);
-    if (!fileId) return null;
-    
-    console.log(`[GDRIVE] Extracted File ID: ${fileId}`);
-    
-    // Multiple URL formats untuk mencoba (urutan: paling reliable dulu)
-    return [
-        `https://lh3.googleusercontent.com/d/${fileId}`,      // Thumbnail (paling cepat)
-        `https://drive.google.com/thumbnail?id=${fileId}`,    // Thumbnail resmi
-        `https://drive.google.com/uc?export=view&id=${fileId}`, // Direct view
-        `https://drive.google.com/uc?export=download&id=${fileId}` // Download
-    ];
-}
-
-// ============================================================
 // SUPABASE PHOTO RESOLVER - Multi-method URL detection
 // ============================================================
 
@@ -8614,35 +7957,13 @@ async function resolveSupabaseImage(record) {
     for (const candidate of candidates) {
         console.log(`Testing: ${candidate.source}`);
         
-        let testUrl = candidate.url;
-        
-        // ⭐ GOOGLE DRIVE URL CONVERSION - Konversi sharing link ke direct image URL
-        if (isGoogleDriveUrl(candidate.url)) {
-            console.log('🔗 Detected Google Drive URL, converting...');
-            const driveUrls = convertGoogleDriveToDirectUrls(candidate.url);
-            if (driveUrls && driveUrls.length > 0) {
-                // Test setiap format URL Google Drive
-                for (const driveUrl of driveUrls) {
-                    const isValid = await testImageUrl(driveUrl);
-                    if (isValid) {
-                        console.log(`✅ Valid Google Drive URL found: ${candidate.source}`);
-                        console.groupEnd();
-                        return { url: driveUrl, source: `${candidate.source}-gdrive` };
-                    }
-                }
-                // Jika semua format gagal, coba yang pertama saja
-                testUrl = driveUrls[0];
-                console.log('⚠️ Using first Google Drive URL as fallback');
-            }
-        }
-        
         // Jika sudah full URL dan bisa diakses langsung
-        if (testUrl.startsWith('http://') || testUrl.startsWith('https://')) {
-            const isValid = await testImageUrl(testUrl);
+        if (candidate.url.startsWith('http://') || candidate.url.startsWith('https://')) {
+            const isValid = await testImageUrl(candidate.url);
             if (isValid) {
                 console.log(`✅ Valid URL found: ${candidate.source}`);
                 console.groupEnd();
-                return { url: testUrl, source: candidate.source };
+                return { url: candidate.url, source: candidate.source };
             }
         }
         
@@ -9838,235 +9159,86 @@ function closeEditMode() {
 }
 
 /**
- * handleEditSubmit() - Simpan perubahan edit ke Supabase (PERBAIKAN TOTAL)
- * 
- * Alur:
- * 1. Validasi input & collect form data
- * 2. Panggil updateSubmission() (fungsi terpusat TANPA .single())
- * 3. Reload data dari Supabase
- * 4. Verify database record
- * 5. Refresh semua views (lightbox, table)
+ * handleEditSubmit() - Simpan perubahan edit ke Supabase
  */
 async function handleEditSubmit(event) {
     event.preventDefault();
     
-    // ============================================================
-    // VALIDASI AWAL
-    // ============================================================
-    console.log('[EDIT] 🚀 Starting edit submission...');
-    
-    if (!window.activeRecord) {
-        console.error('[EDIT] ❌ No active record');
-        ToastManager.error('Tidak ada record aktif yang sedang diedit.');
+    if (!window.activeRecord || !supabaseClient) {
+        ToastManager.error('Gagal menyimpan: data atau koneksi tidak tersedia');
         return;
     }
     
-    if (!supabaseClient) {
-        console.error('[EDIT] ❌ No Supabase client');
-        ToastManager.error('Koneksi database tidak tersedia.');
-        return;
-    }
-
-    const record = window.activeRecord;
-    
-    console.log('[EDIT] 📋 Active Record:');
-    console.log('[EDIT]    - ID:', record.id);
-    console.log('[EDIT]    - Keys:', Object.keys(record));
-    console.log('[EDIT]    - Nama:', record.nama_lengkap || record.nama || 'N/A');
-    
-    if (!record.id) {
-        console.error('[EDIT] ❌ Record has no ID field!');
-        ToastManager.error('Record tidak memiliki ID. Data tidak dapat diperbarui.');
+    const primaryKeyValue = window.activeRecord[window.PRIMARY_KEY_FIELD];
+    if (!primaryKeyValue) {
+        ToastManager.error('Identifier record tidak ditemukan');
         return;
     }
     
-    // ============================================================
-    // COLLECT FORM DATA
-    // ============================================================
+    // Collect form data
     const formData = new FormData(event.target);
     const updatedData = {};
     
-    // Fields yang TIDAK BOLEH diupdate (system fields)
-    const excludedFields = ['id', 'created_at', 'updated_at', 'uuid', 'row_num'];
-    
     for (const [key, value] of formData.entries()) {
-        // Skip system fields
-        if (excludedFields.includes(key)) {
-            console.log(`[EDIT] ⏭️ Skipping excluded field: ${key}`);
-            continue;
-        }
-        
-        const originalValue = record[key];
-        
-        // Handle different value types
-        if (value === '' || value === null || value === undefined) {
-            // Empty values → set to null (untuk mengosongkan field)
-            updatedData[key] = null;
-            console.log(`[EDIT] 📝 ${key}: null (empty)`);
-        } 
-        else if (typeof originalValue === 'number' && !isNaN(value)) {
-            // Number fields
-            updatedData[key] = parseFloat(value);
-            console.log(`[EDIT] 📝 ${key}: ${updatedData[key]} (number)`);
-        } 
-        else if (value === 'true' || value === 'false') {
-            // Boolean conversion
-            updatedData[key] = value === 'true';
-            console.log(`[EDIT] 📝 ${key}: ${updatedData[key]} (boolean)`);
-        }
-        else {
-            // String values - trim whitespace
-            updatedData[key] = value.trim();
-            console.log(`[EDIT] 📝 ${key}: "${updatedData[key]}" (string)`);
+        if (value !== '') {
+            // Convert number fields
+            const originalValue = window.activeRecord[key];
+            if (typeof originalValue === 'number' && !isNaN(value)) {
+                updatedData[key] = parseFloat(value);
+            } else {
+                updatedData[key] = value;
+            }
         }
     }
     
-    // Tambahkan timestamp
-    updatedData.updated_at = new Date().toISOString();
+    console.log('[EDIT] Updating record:', primaryKeyValue);
+    console.log('[EDIT] Updated data:', updatedData);
     
-    console.log('[EDIT] 📦 Final Update Payload:', updatedData);
-    console.log('[EDIT] 🔑 Payload keys:', Object.keys(updatedData));
-    
-    // ============================================================
-    // EKSEKUSI UPDATE via fungsi terpusat
-    // ============================================================
     try {
-        // Disable save button & show loading state
+        // Disable save button
         const saveBtn = event.target.querySelector('.fs-btn-save');
         if (saveBtn) {
             saveBtn.disabled = true;
             saveBtn.textContent = '⏳ MENYIMPAN...';
-            saveBtn.style.opacity = '0.7';
         }
         
-        console.log('[EDIT] 🔄 Calling updateSubmission()...');
+        // UPDATE ke Supabase
+        const { data, error } = await supabaseClient
+            .from('submissions')
+            .update(updatedData)
+            .eq(window.PRIMARY_KEY_FIELD, primaryKeyValue)
+            .select()
+            .single();
         
-        // ⭐ PANGGIL FUNGSI TERPUSAT (tanpa .single())
-        const updatedRecord = await updateSubmission(record, updatedData);
+        if (error) throw error;
         
-        console.log('[EDIT] ✅ updateSubmission() returned successfully!');
-        console.log('[EDIT] ✅ Updated Record:', updatedRecord);
+        // Update active record
+        window.activeRecord = data;
         
-        // ============================================================
-        // VERIFY DATABASE RECORD (opsional, untuk debugging)
-        // ============================================================
-        console.log('[EDIT] 🔍 Verifying database record...');
-        const verifiedRecord = await verifyDatabaseRecord(updatedRecord.id);
-        
-        if (verifiedRecord) {
-            console.log('[EDIT] ✅ Database verification PASSED');
-            console.table({
-                'ID': verifiedRecord.id,
-                'Updated At': verifiedRecord.updated_at,
-                'Nama': verifiedRecord.nama_lengkap || verifiedRecord.nama
-            });
-        } else {
-            console.warn('[EDIT] ⚠️ Database verification FAILED (record not found or error)');
+        // Update local array
+        const localIndex = window.submissionsData.findIndex(item => item.id === primaryKeyValue);
+        if (localIndex >= 0) {
+            window.submissionsData[localIndex] = data;
         }
         
-        // ============================================================
-        // RELOAD DATA DARI SUPABASE (WAJIB!)
-        // ============================================================
-        console.log('[EDIT] 🔄 Reloading submissions data...');
-        
-        try {
-            await reloadSubmissionsData();
-            console.log('[EDIT] ✅ Data reloaded from Supabase');
-        } catch (reloadError) {
-            console.warn('[EDIT] ⚠️ Reload failed (non-critical):', reloadError.message);
-            // Lanjutkan meski reload gagal, kita masih punya updatedRecord
-        }
-        
-        // ============================================================
-        // UPDATE LOCAL STATE
-        // ============================================================
-        
-        // Update active record dengan data dari Supabase (bukan dari response update)
-        // Ini memastikan data konsisten dengan database
-        const refreshedRecord = window.submissionsData.find(item => item.id === updatedRecord.id);
-        
-        if (refreshedRecord) {
-            window.activeRecord = refreshedRecord;
-            console.log('[EDIT] ✅ Active record updated from reloaded data');
-        } else {
-            // Fallback: gunakan hasil update jika tidak ada di reloaded data
-            window.activeRecord = updatedRecord;
-            console.log('[EDIT] ⚠️ Using update result as active record (not found in reloaded data)');
-        }
-        
-        // ============================================================
-        // REFRESH VIEWS
-        // ============================================================
-        
-        // Close edit mode
+        // Close edit mode and refresh view
         closeEditMode();
-        console.log('[EDIT] ✅ Edit mode closed');
+        populateLightboxContent(document.getElementById('fullscreen-lightbox'), data);
         
-        // Re-populate lightbox dengan data TERBARU
-        const lightbox = document.getElementById('fullscreen-lightbox');
-        if (lightbox && typeof populateLightboxContent === 'function') {
-            populateLightboxContent(lightbox, window.activeRecord);
-            console.log('[EDIT] ✅ Lightbox content refreshed');
-        }
+        // Re-render table
+        renderAdminTableFinal(window.submissionsData);
         
-        // Re-render table dengan data TERBARU
-        if (typeof renderAdminTableFinal === 'function') {
-            renderAdminTableFinal(window.submissionsData || []);
-            console.log('[EDIT] ✅ Table re-rendered with', (window.submissionsData || []).length, 'records');
-        }
-        
-        // Apply current filters jika ada
-        if (typeof applyCurrentFilters === 'function') {
-            applyCurrentFilters();
-        }
-        
-        // ============================================================
-        // SUKSES!
-        // ============================================================
-        ToastManager.success('✅ Data berhasil diperbarui dan tersimpan ke database!');
-        
-        console.log('[EDIT] ========================================');
-        console.log('[EDIT] ✅ EDIT OPERATION COMPLETED SUCCESSFULLY!');
-        console.log('[EDIT] ========================================');
-        console.log('[EDIT] 📊 Summary:');
-        console.log('[EDIT]    • Record ID:', window.activeRecord.id);
-        console.log('[EDIT]    • Fields Updated:', Object.keys(updatedData).length);
-        console.log('[EDIT]    • Total Records in Table:', (window.submissionsData || []).length);
-        console.log('[EDIT] ========================================');
+        ToastManager.success('✅ Data berhasil diperbarui!');
+        console.log('[EDIT] ✅ Update successful');
         
     } catch (error) {
-        // ============================================================
-        // ERROR HANDLING
-        // ============================================================
-        console.error('[EDIT] ========================================');
-        console.error('[EDIT] ❌ EDIT OPERATION FAILED!');
-        console.error('[EDIT] ========================================');
-        console.error('[EDIT] Error:', error);
-        console.error('[EDIT] Message:', error.message);
-        console.error('[EDIT] Stack:', error.stack);
-        console.error('[EDIT] ========================================');
-        
-        // Tampilkan error yang jelas ke user
-        let userMessage = error.message || 'Gagal menyimpan perubahan.';
-        
-        // Simplify technical messages untuk user
-        if (userMessage.includes('406')) {
-            userMessage = 'Format data tidak valid. Periksa kembali isian form.';
-        } else if (userMessage.includes('RLS') || userMessage.includes('permission')) {
-            userMessage = 'Tidak memiliki izin untuk menyimpan. Hubungi admin.';
-        } else if (userMessage.includes('unique') || userMessage.includes('duplikat')) {
-            userMessage = 'Data duplikat terdeteksi. Gunakan nilai yang berbeda.';
-        }
-        
-        ToastManager.error(`❌ ${userMessage}`);
-        
+        console.error('[EDIT] ❌ Update failed:', error);
+        ToastManager.error(`Gagal menyimpan: ${error.message}`);
     } finally {
-        // Reset button state
         const saveBtn = event.target.querySelector('.fs-btn-save');
         if (saveBtn) {
             saveBtn.disabled = false;
             saveBtn.textContent = '💾 SIMPAN PERUBAHAN';
-            saveBtn.style.opacity = '1';
         }
     }
 }
@@ -10120,20 +9292,11 @@ function closeStatusMode() {
 }
 
 /**
- * confirmStatusChange() - Konfirmasi ubah status (PERBAIKAN - TANPA .single())
+ * confirmStatusChange() - Konfirmasi ubah status
  */
 async function confirmStatusChange() {
-    console.log('[STATUS] 🚀 Starting status change...');
-    
-    if (!window.activeRecord) {
-        console.error('[STATUS] ❌ No active record');
-        ToastManager.error('Tidak ada record aktif.');
-        return;
-    }
-    
-    if (!supabaseClient) {
-        console.error('[STATUS] ❌ No Supabase client');
-        ToastManager.error('Koneksi database tidak tersedia.');
+    if (!window.activeRecord || !supabaseClient) {
+        ToastManager.error('Gagal mengubah status');
         return;
     }
     
@@ -10144,63 +9307,35 @@ async function confirmStatusChange() {
     }
     
     const newStatus = selectedBtn.dataset.status;
-    const record = window.activeRecord;
-    
-    console.log('[STATUS] 📋 Status Change Info:');
-    console.log('[STATUS]    • Record ID:', record.id);
-    console.log('[STATUS]    • Current Status:', record.status || 'N/A');
-    console.log('[STATUS]    • New Status:', newStatus);
+    const primaryKeyValue = window.activeRecord[window.PRIMARY_KEY_FIELD];
     
     try {
-        // ⭐ Gunakan fungsi updateSubmission() terpusat
-        const updatedRecord = await updateSubmission(record, { 
-            status: newStatus,
-            updated_at: new Date().toISOString()
-        });
+        const { data, error } = await supabaseClient
+            .from('submissions')
+            .update({ status: newStatus })
+            .eq(window.PRIMARY_KEY_FIELD, primaryKeyValue)
+            .select()
+            .single();
         
-        console.log('[STATUS] ✅ Status updated successfully!');
-        console.log('[STATUS] ✅ New Record:', updatedRecord);
+        if (error) throw error;
         
-        // Reload data dari Supabase
-        try {
-            await reloadSubmissionsData();
-            console.log('[STATUS] ✅ Data reloaded');
-        } catch (reloadError) {
-            console.warn('[STATUS] ⚠️ Reload failed (non-critical):', reloadError.message);
+        // Update state
+        window.activeRecord = data;
+        
+        const localIndex = window.submissionsData.findIndex(item => item.id === primaryKeyValue);
+        if (localIndex >= 0) {
+            window.submissionsData[localIndex] = data;
         }
         
-        // Update active record dari data terbaru
-        const refreshedRecord = window.submissionsData.find(item => item.id === updatedRecord.id);
-        window.activeRecord = refreshedRecord || updatedRecord;
-        
-        // Close status mode & refresh views
         closeStatusMode();
+        populateLightboxContent(document.getElementById('fullscreen-lightbox'), data);
+        renderAdminTableFinal(window.submissionsData);
         
-        // Refresh lightbox
-        const lightbox = document.getElementById('fullscreen-lightbox');
-        if (lightbox && typeof populateLightboxContent === 'function') {
-            populateLightboxContent(lightbox, window.activeRecord);
-        }
-        
-        // Refresh table
-        if (typeof renderAdminTableFinal === 'function') {
-            renderAdminTableFinal(window.submissionsData || []);
-        }
-        
-        ToastManager.success(`✅ Status berhasil diubah menjadi "${newStatus}"`);
-        
-        console.log('[STATUS] ========================================');
-        console.log('[STATUS] ✅ STATUS CHANGE COMPLETED SUCCESSFULLY!');
-        console.log('[STATUS] ========================================');
+        ToastManager.success(`✅ Status diubah menjadi "${newStatus}"`);
         
     } catch (error) {
-        console.error('[STATUS] ========================================');
-        console.error('[STATUS] ❌ STATUS CHANGE FAILED!');
         console.error('[STATUS] Error:', error);
-        console.error('[STATUS] Message:', error.message);
-        console.error('[STATUS] ========================================');
-        
-        ToastManager.error(`❌ Gagal mengubah status: ${error.message}`);
+        ToastManager.error(`Gagal mengubah status: ${error.message}`);
     }
 }
 
@@ -10425,7 +9560,7 @@ console.log('🚀 NO FALLBACKS - NO SIMPLE MODAL - NO POLLING');
     
     <h1 class="landing-title">SIMBAKES</h1>
     <p class="landing-subtitle">Beasiswa Tematik Bidang Kesehatan</p>
-    <p class="landing-desc">Sistem Informasi Manajemen Beasiswa Tematik Bidang Kesehatan Pemkab Kutai Kartanegara untuk Mendukung Pengembangan SDM Kesehatan di Kabupaten Kutai Kartanegara</p>
+    <p class="landing-desc">Sistem Informasi Manajemen Beasiswa Tematik Kesehatan untuk Mendukung Pengembangan SDM Kesehatan Indonesia</p>
     
     <div class="progress-bar-container">
         <div class="progress-bar" id="progress-bar"></div>
@@ -11047,7 +10182,7 @@ console.log('🚀 NO FALLBACKS - NO SIMPLE MODAL - NO POLLING');
                         📊 Statistik Pengunjung Real-Time
                     </h3>
                     <span style="font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 4px 10px; border-radius: 12px;">
-                        Live
+                        Lib
                     </span>
                 </div>
 
@@ -12221,19 +11356,19 @@ console.log('🚀 NO FALLBACKS - NO SIMPLE MODAL - NO POLLING');
                     <div class="card-header">
                         <div class="petunjuk-title">
                             <div class="petunjuk-icon" style="background:#fae8ff;color:#a21caf;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
-                            3. Mendaftar Akun Peserta
+                            3. Mengecek Status
                         </div>
                     </div>
-                    <div class="card-body"><p class="petunjuk_content">Tekan tombol Daftar Akun Peserta <strong>dan isi data dengan lengkap dan benar lalu Daftarkan. Setelah berhasil, silahkan menunggu pengajuan akun diverfikasi dan disetujui admin Dinas Kesehatan.</strong>.</p></div>
+                    <div class="card-body"><p class="petunjuk_content">Gunakan nomor register yang didapatkan setelah pengajuan untuk mengecek status di menu <strong>Cek Status Pengajuan</strong>.</p></div>
                 </div>
                 <div class="card petunjuk-card">
                     <div class="card-header">
                         <div class="petunjuk-title">
                             <div class="petunjuk-icon icon-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div>
-                            4. Cek Status atau Proses Pengusulan
+                            4. Mengkonfirmasi PIC
                         </div>
                     </div>
-                    <div class="card-body"><p class="petunjuk-content">Usulan yang telah diajukan dapat dipantau melalui menu cek status Pengajuan atau Penetapan. Pengusul dapat mengkonfirmasi PIC Kesra dan Dinkes. Nomor Kontak Dinkes: 0821-3027-5800 (Mukmin Nasri), 0821-5758-0022 (Syarifah Putri). <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">Sesuai Formasi yang diajukan</code> untuk memonitoring perkembangannya setiap waktu.</p></div>
+                    <div class="card-body"><p class="petunjuk-content">Pengusul secara rutin mengkonfirmasi PIC Kesra dan Dinkes perkembangan seleksi masuk Perguruan Tinggi <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">Sesuai Formasi yang diajukan</code> untuk memonitoring perkembangannya setiap waktu.</p></div>
                 </div>
             </div>
         </div>
@@ -13908,26 +13043,12 @@ function initAuthState() {
             // Validate session is not expired
             if (sessionData.timestamp && (Date.now() - sessionData.timestamp) < SESSION_DURATION) {
                 // Restore session
-                let restoredUser = sessionData.user;
-                
-                // 🔧 FIX: Normalisasi role dari session lama
-                if (restoredUser) {
-                    const originalRole = restoredUser.role;
-                    restoredUser.role = mapLegacyRole(restoredUser.role);
-                    restoredUser.userRole = restoredUser.userRole || restoredUser.role;
-                    
-                    // Log jika role berubah (untuk debugging)
-                    if (originalRole !== restoredUser.role) {
-                        console.log('[SESSION] Role normalized:', originalRole, '→', restoredUser.role);
-                    }
-                }
-                
-                currentAdminUser = restoredUser;
+                currentAdminUser = sessionData.user;
                 
                 // Update UI for logged-in state (sidebar admin menu)
                 showLoggedInUI(currentAdminUser);
                 
-                console.log('✅ Session restored for:', currentAdminUser.name, '| Role:', currentAdminUser.role);
+                console.log('✅ Session restored for:', currentAdminUser.name);
                 return true;
             } else {
                 // Session expired - tapi jangan tampilkan login page
@@ -14176,13 +13297,8 @@ async function verifyPassword(inputPassword, storedHash) {
 async function handleAuthSuccess(profile, source) {
     const errorEl = document.getElementById('login-error-msg');
     
-    // 🔧 FIX: Format & normalisasi role dari database
-    let rawRole = profile.role || 'user';
-    console.log('[AUTH] Raw role from DB:', rawRole, '| Profile:', profile.username);
-    
-    // Normalisasi role untuk konsistensi
-    const role = mapLegacyRole(rawRole);
-    console.log('[AUTH] Normalized role:', role, '(from:', rawRole, ')');
+    // Format role dari database
+    const role = profile.role || 'user'; // Use role directly from DB
     
     // Build user object untuk session (TANPA PASSWORD!)
     const userData = {
@@ -14191,14 +13307,12 @@ async function handleAuthSuccess(profile, source) {
         username: profile.username,
         email: profile.email,
         name: profile.nama_lengkap || profile.username,
-        role: role,  // Gunakan role yang sudah dinormalisasi
+        role: role,
         avatar: getAvatarForRole(role),
         institusi: profile.institusi || '',
         nik: profile.nik,
         source: 'multiusers_custom',
-        loginTime: new Date().toISOString(),
-        // Tambahkan userRole untuk kompatibilitas dengan sistem baru
-        userRole: role
+        loginTime: new Date().toISOString()
     };
     
     // Update last_login di database
@@ -14332,15 +13446,12 @@ function showLoggedInUI(user) {
     // Update status badge in nav with role-specific text
     const statusBadge = document.getElementById('admin-status-badge');
     if (statusBadge) {
-        // 🔧 FIX: Lengkapi mapping untuk semua role termasuk superadmin
         const roleLabels = {
             superadmin: '👑 Superadmin',
-            admin: '👑 Administrator',
             operator: '⚙️ Operator',
-            viewer: '👁️ Viewer',
-            peserta: '📋 Peserta'
+            viewer: '👁️ Viewer'
         };
-        statusBadge.textContent = roleLabels[user.role] || user.role?.toUpperCase() || 'User';
+        statusBadge.textContent = roleLabels[user.role] || user.role.toUpperCase();
         statusBadge.className = 'badge-online';
         statusBadge.style.background = roleConfig.gradient;
     }
@@ -15280,7 +14391,7 @@ function renderPesertaCards(data) {
         const jurusan = getField(peserta, 'jurusan_tujuan', 'jurusanTujuan', 'jurusan');
         const jenjang = getField(peserta, 'jenjang_pendidikan', 'jenjangPendidikan', 'jenjang');
         const perguruanTinggi = getField(peserta, 'perguruan_tinggi', 'perguruanTinggi', 'pt');
-        const unitPendayaguna = getField(peserta, 'unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayaguna', 'unit_pendayagunaan');
+        const unitKerja = getField(peserta, 'unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayagunaan');
         const linkFoto = getField(peserta, 'link_foto', 'linkFoto', 'foto', 'photo');
         const statusPenetapan = getField(peserta, 'status_penetapan', 'statusPenetapan', 'status', 'Lulus');
 
@@ -15327,8 +14438,8 @@ function renderPesertaCards(data) {
                     <div class="peserta-card-info-item">
                         <span class="peserta-card-info-icon">🏢</span>
                         <span class="peserta-card-info-text">
-                            <strong>Unit Pendayaguna</strong>
-                            ${escapeHtml(unitPendayaguna)}
+                            <strong>Unit Kerja</strong>
+                            ${escapeHtml(unitKerja)}
                         </span>
                     </div>
                 </div>
@@ -15440,10 +14551,10 @@ function showPesertaDetailModal(peserta) {
                         </div>
                     </div>
                     <div class="peserta-modal-field">
-                        <span class="peserta-modal-field-label">Unit Pendayaguna</span>
+                        <span class="peserta-modal-field-label">Unit Pendayagunaan / Kerja</span>
                         <div class="peserta-modal-field-value">
                             <span class="peserta-modal-field-icon">🏢</span>
-                            ${escapeHtml(unitPendayaguna)}
+                            ${escapeHtml(unitKerja)}
                         </div>
                     </div>
                     ${noSK && noSK !== '-' ? `
@@ -15523,25 +14634,14 @@ function initPenetapanAdmin() {
  * Mencegah operator mengakses via console/URL langsung
  */
 function checkPenetapanPermission() {
-    console.log('=== PENETAPAN PERMISSION CHECK ===');
-    
     // Jika tidak login, tolak
     if (!isAdminAuthenticated()) {
-        console.warn('[PENETAPAN] ❌ Not authenticated');
         showToast('🔐 Silakan login terlebih dahulu', 'error', 3000);
         return false;
     }
     
     // Jika role operator, tolak akses penetapan
     const userRole = getCurrentUserRole();
-    console.log('[PENETAPAN] Current role:', userRole, '| Type:', typeof userRole);
-    
-    // 🔧 FIX: Superadmin SELALU diizinkan!
-    if (userRole === 'superadmin' || userRole === 'admin') {
-        console.log('[PENETAPAN] ✅ GRANTED - Superadmin/Admin access');
-        return true;
-    }
-    
     if (userRole === 'operator') {
         showToast('🚫 Akses ditolak. Operator tidak memiliki izin untuk mengakses Data Penetapan.', 'error', 4000);
         console.error('[SECURITY] 🔒 Operator attempted Penetapan access - BLOCKED');
@@ -15549,15 +14649,11 @@ function checkPenetapanPermission() {
     }
     
     // Cek permission tambahan
-    const hasPerm = hasPermission('penetapan');
-    console.log('[PENETAPAN] hasPermission("penetapan"):', hasPerm);
-    
-    if (!hasPerm) {
+    if (typeof hasPermission === 'function' && !hasPermission('penetapan')) {
         showToast('🚫 Anda tidak memiliki izin untuk mengakses Data Penetapan.', 'error', 4000);
         return false;
     }
     
-    console.log('[PENETAPAN] ✅ ACCESS GRANTED');
     return true;
 }
 
@@ -16274,28 +15370,19 @@ async function savePenetapanChanges() {
         saveBtn.innerHTML = '⏳ Menyimpan...';
         saveBtn.disabled = true;
         
-        // Update via Supabase - TANPA .single() ⭐
-        console.log('[PENETAPAN] Updating record ID:', penetapanEditingId);
-        
-        const { data: updatedRecordArray, error: updateError } = await supabaseClient
+        // Update via Supabase
+        const { data: updatedRecord, error: updateError } = await supabaseClient
             .from('penetapan')
             .update(updateData)
             .eq('id', penetapanEditingId)
-            .select('*');  // TANPA .single()
+            .select()
+            .single();
         
         if (updateError) {
-            console.error('[PENETAPAN] Update error:', updateError);
             throw new Error(updateError.message || 'Gagal menyimpan perubahan');
         }
         
-        // Validasi hasil array
-        if (!updatedRecordArray || !Array.isArray(updatedRecordArray) || updatedRecordArray.length === 0) {
-            throw new Error('Update penetapan tidak menghasilkan data. Periksa ID atau RLS policy.');
-        }
-        
-        const updatedRecord = updatedRecordArray[0];  // Ambil dari array
-        
-        console.log('[PENETAPAN] ✅ Successfully updated record:', updatedRecord);
+        console.log('✅ Successfully updated record:', updatedRecord);
         
         // Close modal
         closeEditPenetapanModal();
@@ -18623,11 +17710,6 @@ async function trackVisitor(visitorData) {
 /**
  * Get Visitor Stats - Enhanced version with complete data for dashboard
  * Returns data structure expected by fetchVisitorStats()
- * 
- * PERBAIKAN:
- * - Negara diambil dari data asli (bukan hardcoded)
- * - Online estimate lebih realistis
- * - Data per hari lengkap 30 hari
  */
 async function getVisitorStats() {
     // Default response structure
@@ -18675,133 +17757,44 @@ async function getVisitorStats() {
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         const { data: chartData, error: chartError } = await supabaseClient
             .from('visitors')
-            .select('visited_at, country, language')
+            .select('visited_at')
             .gte('visited_at', thirtyDaysAgo.toISOString())
             .order('visited_at', { ascending: true });
         
-        // ==========================================
-        // PROCESS COUNTRY DATA (dari database!)
-        // ==========================================
-        const countryCounts = {};
-        if (chartData && chartData.length > 0) {
-            chartData.forEach(v => {
-                // Prioritas: country field → extract dari language → Unknown
-                let countryName = v.country;
-                
-                if (!countryName || countryName === 'Unknown' || countryName === '-') {
-                    // Coba extract dari language (id-ID → Indonesia)
-                    if (v.language) {
-                        const langParts = v.language.split('-');
-                        if (langParts.length > 1) {
-                            countryName = langParts[1];
-                        } else {
-                            countryName = v.language;
-                        }
-                    }
-                }
-                
-                // Default ke Indonesia jika masih unknown dan language id
-                if ((!countryName || countryName === 'Unknown') && 
-                    (v.language?.startsWith('id') || v.language === 'id')) {
-                    countryName = 'Indonesia';
-                }
-                
-                // Final fallback
-                if (!countryName || countryName === '-' || countryName === 'Unknown') {
-                    countryName = 'Other';
-                }
-                
-                countryCounts[countryName] = (countryCounts[countryName] || 0) + 1;
-            });
-        }
-        
-        // Jika tetap kosong, set default
-        if (Object.keys(countryCounts).length === 0) {
-            countryCounts['Indonesia'] = total || 1;
-        }
-        
-        // ==========================================
-        // PROCESS CHART DATA - Group by date
-        // ==========================================
+        // Process chart data - group by date
         const dailyVisits = {};
-        
-        // Initialize last 30 days dengan 0
-        for (let i = 29; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            const dateStr = date.toISOString().split('T')[0];
-            dailyVisits[dateStr] = 0;
-        }
-        
-        // Fill dengan data aktual
         if (chartData && chartData.length > 0) {
             chartData.forEach(v => {
                 const date = v.visited_at ? v.visited_at.split('T')[0] : new Date().toISOString().split('T')[0];
-                if (dailyVisits.hasOwnProperty(date)) {
-                    dailyVisits[date]++;
-                } else {
-                    dailyVisits[date] = 1;
-                }
+                dailyVisits[date] = (dailyVisits[date] || 0) + 1;
             });
         }
         
-        // Convert to array format for chart (sorted by date)
-        const dataPerHari = Object.entries(dailyVisits)
-            .map(([tanggal, jumlah]) => ({
-                tanggal,
-                jumlah
-            }))
-            .sort((a, b) => a.tanggal.localeCompare(b.tanggal));
-        
-        // ==========================================
-        // PROCESS RECENT VISITORS FOR TABLE
-        // ==========================================
-        const kunjunganTerakhir = (recentVisitors || []).map((v, idx) => ({
-            no: idx + 1,
-            waktu: v.visited_at ? new Date(v.visited_at).toLocaleString('id-ID', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            }) : '-',
-            halaman: v.page || '/',
-            browser: v.user_agent ? extractBrowserName(v.user_agent) : 'Unknown',
-            referrer: v.referrer === 'direct' ? '🏠 Langsung' : 
-                     (v.referrer?.includes('google') ? '🔍 Google' :
-                      v.referrer?.includes('facebook') ? '📘 Facebook' :
-                      v.referrer?.includes('instagram') ? '📷 Instagram' :
-                      v.referrer?.includes('twitter') || v.referrer?.includes('t.co') ? '🐦 Twitter' :
-                      v.referrer || '-')
+        // Convert to array format for chart
+        const dataPerHari = Object.entries(dailyVisits).map(([tanggal, jumlah]) => ({
+            tanggal,
+            jumlah
         }));
         
-        // ==========================================
-        // ONLINE ESTIMATE (lebih realistis)
-        // ==========================================
-        // Hitung pengunjung dalam 5 menit terakhir sebagai "online"
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-        const { count: onlineCount } = await supabaseClient
-            .from('visitors')
-            .select('*', { count: 'exact', head: true })
-            .gte('visited_at', fiveMinutesAgo);
+        // Process recent visitors for table
+        const kunjunganTerakhir = (recentVisitors || []).map((v, idx) => ({
+            no: idx + 1,
+            waktu: v.visited_at ? new Date(v.visited_at).toLocaleString('id-ID') : '-',
+            halaman: v.page || '/',
+            browser: v.user_agent ? extractBrowserName(v.user_agent) : 'Unknown',
+            referrer: v.referrer === 'direct' ? 'Langsung' : (v.referrer || '-')
+        }));
         
-        const onlineEstimate = Math.max(onlineCount || 1, 1); // Minimal current user
-        
-        console.log('[VISITOR STATS] 📊 Data:', {
-            total,
-            today: todayCount,
-            online: onlineEstimate,
-            countries: Object.keys(countryCounts).length,
-            chartPoints: dataPerHari.length
-        });
+        // Extract countries from language/navigator data (simplified)
+        const negara = { 'Indonesia': total || 1 }; // Default to Indonesia
         
         return {
             status: 'success',
             data: {
                 totalKunjungan: total || 0,
                 hariIni: todayCount || 0,
-                onlineEstimate: onlineEstimate,
-                negara: countryCounts,
+                onlineEstimate: Math.max(1, Math.floor(Math.random() * 5) + 1), // Simulated
+                negara,
                 dataPerHari,
                 kunjunganTerakhir
             }
@@ -19959,21 +18952,13 @@ async function renderDashboard() {
         fetchVisitorStats()
     ]);
     
-    // Log hasil (tanpa menghentukan dashboard)
+    // Log hasil (tanpa menghentikan dashboard)
     results.forEach((result, index) => {
         const names = ['fetchDashboardStats', 'fetchRecentSubmissions', 'fetchVisitorStats'];
         if (result.status === 'rejected') {
             console.warn(`⚠️ ${names[index]} failed:`, result.reason);
         }
     });
-    
-    // 🆕 Inisialisasi Real-time Visitor Stats System (setelah data pertama load)
-    if (typeof initVisitorRealtimeSystem === 'function') {
-        // Delay sedikit untuk memastikan DOM siap
-        setTimeout(() => {
-            initVisitorRealtimeSystem();
-        }, 1000);
-    }
     
     // Update timestamp
     updateLastUpdateTime();
@@ -20378,191 +19363,19 @@ function renderStatusDetailPaginated() {
 
 /**
  * Track visitor ke Supabase (opsional - non-critical)
- * VERSI ENHANCED: Mengisi SEMUA kolom dengan data lengkap
- * 
- * Kolom yang diisi:
- * - user_agent ✅
- * - page ✅
- * - referrer ✅
- * - language ✅
- * - screen_resolution ✅
- * - ip_address ✅ (jika bisa didapat)
- * - country ✅ (dari language/timezone)
- * - city ✅ (default Unknown)
- * - visited_at ✅
+ * Tidak menggunakan API eksternal untuk menghindari CORS/rate limit
  */
 async function trackVisitorSimple() {
     try {
-        // ==========================================
-        // DETEKSI PERANGKAT & BROWSER (LENGKAP)
-        // ==========================================
-        const ua = navigator.userAgent;
-        
-        // Deteksi Browser
-        let browser = 'Unknown';
-        let browserVersion = '';
-        
-        if (ua.includes('Firefox/')) {
-            browser = 'Firefox';
-            browserVersion = ua.split('Firefox/')[1]?.split(' ')[0] || '';
-        } else if (ua.includes('Edg/')) {
-            browser = 'Edge';
-            browserVersion = ua.split('Edg/')[1]?.split(' ')[0] || '';
-        } else if (ua.includes('Chrome/')) {
-            browser = 'Chrome';
-            browserVersion = ua.split('Chrome/')[1]?.split(' ')[0] || '';
-        } else if (ua.includes('Safari/') && !ua.includes('Chrome')) {
-            browser = 'Safari';
-            browserVersion = ua.split('Version/')[1]?.split(' ')[0] || '';
-        } else if (ua.includes('Opera') || ua.includes('OPR/')) {
-            browser = 'Opera';
-            browserVersion = ua.split('OPR/')[1]?.split(' ')[0] || ua.split('Version/')[1]?.split(' ')[0] || '';
-        }
-        
-        // Deteksi OS
-        let os = 'Unknown';
-        if (ua.includes('Windows NT 10')) os = 'Windows 10/11';
-        else if (ua.includes('Windows NT 6.3')) os = 'Windows 8.1';
-        else if (ua.includes('Windows NT 6.2')) os = 'Windows 8';
-        else if (ua.includes('Windows NT 6.1')) os = 'Windows 7';
-        else if (ua.includes('Mac OS X')) {
-            const macVersion = ua.match(/Mac OS X (\d+[._]\d+)/);
-            os = 'macOS ' + (macVersion ? macVersion[1].replace('_', '.') : '');
-        }
-        else if (ua.includes('Android')) {
-            const androidVersion = ua.match(/Android (\d+\.?\d*)/);
-            os = 'Android ' + (androidVersion ? androidVersion[1] : '');
-        }
-        else if (ua.includes('iOS') || ua.includes('iPhone OS')) {
-            const iosVersion = ua.match(/OS (\d+_?\d*)/);
-            os = 'iOS ' + (iosVersion ? iosVersion[1].replace('_', '.') : '');
-        }
-        else if (ua.includes('Linux') && !ua.includes('Android')) os = 'Linux';
-        
-        // Deteksi Device Type
-        let deviceType = 'Desktop';
-        if (/Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)) {
-            deviceType = /iPad|Tablet/i.test(ua) ? 'Tablet' : 'Mobile';
-        }
-        
-        // Deteksi Screen Info
-        const screenWidth = screen.width;
-        const screenHeight = screen.height;
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
-        const pixelRatio = window.devicePixelRatio || 1;
-        const colorDepth = screen.colorDepth;
-        const orientation = screen.orientation?.type || (windowWidth > windowHeight ? 'landscape' : 'portrait');
-        
-        // ==========================================
-        // DETEKSI LOKASI (dari language/timezone)
-        // ==========================================
-        const language = navigator.language || navigator.userLanguage || 'id-ID';
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unknown';
-        
-        // Extract country dari language atau timezone
-        let country = 'Unknown';
-        let city = 'Unknown';
-        
-        // Dari language code (en-US → US)
-        if (language && language.includes('-')) {
-            country = language.split('-')[1].toUpperCase();
-        } else if (language) {
-            country = language.toUpperCase();
-        }
-        
-        // Mapping timezone ke negara (simplified)
-        const timezoneCountryMap = {
-            'Asia/Jakarta': 'Indonesia',
-            'Asia/Makassar': 'Indonesia',
-            'Asia/Jayapura': 'Indonesia',
-            'Asia/Singapore': 'Singapore',
-            'Asia/Kuala_Lumpur': 'Malaysia',
-            'Asia/Manila': 'Philippines',
-            'Asia/Bangkok': 'Thailand',
-            'Asia/Ho_Chi_Minh': 'Vietnam',
-            'Asia/Yangon': 'Myanmar',
-            'Asia/Rangoon': 'Myanmar',
-            'Asia/Phnom_Penh': 'Cambodia',
-            'Asia/Vientiane': 'Laos',
-            'Asia/Bandar_Seri_Begawan': 'Brunei',
-            'Asia/Dili': 'Timor-Leste',
-            'Australia/Sydney': 'Australia',
-            'America/New_York': 'United States',
-            'America/Los_Angeles': 'United States',
-            'America/Chicago': 'United States',
-            'Europe/London': 'United Kingdom',
-            'Europe/Paris': 'France',
-            'Europe/Berlin': 'Germany',
-            'Europe/Madrid': 'Spain',
-            'Europe/Rome': 'Italy',
-            'Europe/Amsterdam': 'Netherlands',
-            'Asia/Tokyo': 'Japan',
-            'Asia/Seoul': 'South Korea',
-            'Asia/Shanghai': 'China',
-            'Asia/Hong_Kong': 'Hong Kong',
-            'Asia/Taipei': 'Taiwan'
-        };
-        
-        if (timezoneCountryMap[timezone]) {
-            country = timezoneCountryMap[timezone];
-        }
-        
-        // City estimation (very basic)
-        if (timezone === 'Asia/Jakarta') city = 'Jakarta (est.)';
-        else if (timezone === 'Asia/Makassar') city = 'Makassar (est.)';
-        else if (timezone === 'Asia/Jayapura') city = 'Jayapura (est.)';
-        else city = 'Unknown';
-        
-        // ==========================================
-        // KOMPILASI DATA VISITOR (LENGKAP!)
-        // ==========================================
+        // Data dasar yang bisa dikumpulkan tanpa API eksternal
         const visitorData = {
-            // Data dasar (wajib)
-            user_agent: `${browser} ${browserVersion} (${os}) [${deviceType}]`,
-            page: window.location.pathname + window.location.search,
+            user_agent: navigator.userAgent.substring(0, 200),
+            page: window.location.pathname,
             referrer: document.referrer || 'direct',
-            language: language,
-            
-            // Device & Screen info
-            screen_resolution: `${screenWidth}x${screenHeight}`,
-            
-            // Lokasi (estimated)
-            ip_address: '-',  // IP tidak bisa didapat client-side tanpa API eksternal
-            country: country,
-            city: city,
-            
-            // Timestamp
-            visited_at: new Date().toISOString(),
-            
-            // Metadata tambahan (untuk analisis)
-            _meta: JSON.stringify({
-                browser: browser,
-                browserVersion: browserVersion,
-                os: os,
-                deviceType: deviceType,
-                screenWidth,
-                screenHeight,
-                windowWidth,
-                windowHeight,
-                pixelRatio,
-                colorDepth,
-                orientation,
-                timezone,
-                platform: navigator.platform,
-                cookiesEnabled: navigator.cookieEnabled,
-                doNotTrack: navigator.doNotTrack,
-                connection: navigator.connection?.effectiveType || 'unknown'
-            })
+            language: navigator.language,
+            screen_resolution: `${screen.width}x${screen.height}`,
+            visited_at: new Date().toISOString()
         };
-        
-        console.log('[VISITOR] 📊 Tracking data:', {
-            browser: `${browser} ${browserVersion}`,
-            os,
-            deviceType,
-            resolution: `${screenWidth}x${screenHeight}`,
-            location: `${city}, ${country}`
-        });
         
         // Simpan ke Supabase (jika tabel visitors ada dan RLS mengizinkan)
         if (typeof supabaseClient !== 'undefined' && supabaseClient) {
@@ -20571,61 +19384,15 @@ async function trackVisitorSimple() {
                 .insert([visitorData]);
             
             if (error) {
-                console.warn('[VISITOR] ⚠️ Tracking skipped:', error.message, error.code);
-                
-                // Coba insert tanpa field _meta jika error (kolom mungkin tidak ada)
-                if (error.code === '42703' || error.message?.includes('_meta')) {
-                    console.log('[VISITOR] 🔄 Retrying without _meta field...');
-                    const { error: retryError } = await supabaseClient
-                        .from('visitors')
-                        .insert([{
-                            user_agent: visitorData.user_agent,
-                            page: visitorData.page,
-                            referrer: visitorData.referrer,
-                            language: visitorData.language,
-                            screen_resolution: visitorData.screen_resolution,
-                            ip_address: visitorData.ip_address,
-                            country: visitorData.country,
-                            city: visitorData.city,
-                            visited_at: visitorData.visited_at
-                        }]);
-                    
-                    if (retryError) {
-                        console.warn('[VISITOR] ❌ Retry also failed:', retryError.message);
-                    } else {
-                        console.log('[VISITOR] ✅ Tracked successfully (without metadata)');
-                    }
-                }
+                console.warn('[SIMBAKES] Visitor tracking skipped (table may not exist):', error.message);
             } else {
-                console.log('[VISITOR] ✅ Visitor tracked successfully');
+                console.log('[SIMBAKES] 🌐 Visitor tracked');
             }
-        } else {
-            console.log('[VISITOR] ℹ️ Supabase client not available');
         }
     } catch (error) {
         // Silent fail - visitor tracking tidak kritis
-        console.log('[VISITOR] ⚠️ Tracking skipped:', error.message);
+        console.log('[SIMBAKES] Visitor tracking skipped:', error.message);
     }
-}
-
-/**
- * Extract browser name from user agent string (ENHANCED VERSION)
- */
-function extractBrowserName(userAgent) {
-    if (!userAgent) return 'Unknown';
-    
-    // Prioritas tinggi → rendah
-    if (userAgent.includes('Edg/')) return '🌐 Edge';
-    if (userAgent.includes('OPR/')) return '🎭 Opera';
-    if (userAgent.includes('Firefox/')) return '🦊 Firefox';
-    if (userAgent.includes('Chrome/')) return '⭕ Chrome';
-    if (userAgent.includes('Safari/') && !userAgent.includes('Chrome')) return '🧭 Safari';
-    
-    // Mobile browsers
-    if (userAgent.includes('SamsungBrowser')) return '📱 Samsung Browser';
-    if (userAgent.includes('UCBrowser')) return '📱 UC Browser';
-    
-    return '🌐 Browser';
 }
 
 /**
@@ -20675,296 +19442,6 @@ async function fetchVisitorStats() {
         if (vCountries) vCountries.textContent = '0';
     }
 }
-
-// ============================================================
-// REAL-TIME VISITOR STATS UPDATE SYSTEM
-// ============================================================
-// Fitur: Update statistik pengunjung secara realtime
-//       TANPA BLINK / FLICKER!
-// ============================================================
-
-/**
- * Global state untuk visitor stats real-time
- */
-const VisitorStatsRealtime = {
-    lastUpdate: null,
-    intervalId: null,
-    isUpdating: false,
-    updateInterval: 30000, // 30 detik
-    currentData: null,
-    
-    // Cache elemen DOM untuk performa
-    elements: {
-        total: null,
-        today: null,
-        online: null,
-        countries: null
-    }
-};
-
-/**
- * Inisialisasi Real-time Visitor Stats System
- * Panggil sekali saat page load
- */
-function initVisitorRealtimeSystem() {
-    console.log('[VISITOR RT] 🚀 Initializing real-time stats system...');
-    
-    // Cache DOM elements
-    VisitorStatsRealtime.elements.total = document.getElementById('visitor-total');
-    VisitorStatsRealtime.elements.today = document.getElementById('visitor-today');
-    VisitorStatsRealtime.elements.online = document.getElementById('visitor-online');
-    VisitorStatsRealtime.elements.countries = document.getElementById('visitor-countries');
-    
-    // Add CSS transitions untuk smooth updates
-    addVisitorStatsTransitions();
-    
-    // Start auto-update interval
-    startVisitorAutoRefresh();
-    
-    console.log('[VISITOR RT] ✅ Real-time system initialized (refresh every', VisitorStatsRealtime.updateInterval/1000, 'seconds)');
-}
-
-/**
- * Add CSS transitions untuk smooth number changes (tanpa blink!)
- */
-function addVisitorStatsTransitions() {
-    const styleId = 'visitor-stats-transitions';
-    if (document.getElementById(styleId)) return; // Sudah ada
-    
-    const style = document.createElement('style');
-    style.id = styleId;
-    style.textContent = `
-        /* Smooth transitions untuk visitor stat values */
-        #visitor-total,
-        #visitor-today,
-        #visitor-online,
-        #visitor-countries {
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            display: inline-block;
-        }
-        
-        /* Pulse animation saat nilai berubah */
-        .visitor-value-updated {
-            animation: visitorPulse 0.5s ease-out;
-        }
-        
-        @keyframes visitorPulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; color: #16a34a; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        
-        /* Live indicator pulse */
-        .live-indicator-pulse {
-            animation: livePulse 2s infinite;
-        }
-        
-        @keyframes livePulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-    `;
-    document.head.appendChild(style);
-}
-
-/**
- * Update visitor stats dengan SMOOTH TRANSITION (tanpa blink!)
- * 
- * @param {Object} newData - Data baru dari getVisitorStats()
- */
-async function updateVisitorStatsSmooth(newData) {
-    // Prevent concurrent updates
-    if (VisitorStatsRealtime.isUpdating) {
-        console.log('[VISITOR RT] ⏳ Update in progress, skipping...');
-        return;
-    }
-    
-    VisitorStatsRealtime.isUpdating = true;
-    
-    try {
-        const data = newData.data || newData;
-        const prevData = VisitorStatsRealtime.currentData || {};
-        
-        // Update each stat dengan smooth transition
-        await animateValueChange(
-            VisitorStatsRealtime.elements.total, 
-            prevData.totalKunjungan || 0, 
-            data.totalKunjungan || 0
-        );
-        
-        await animateValueChange(
-            VisitorStatsRealtime.elements.today, 
-            prevData.hariIni || 0, 
-            data.hariIni || 0
-        );
-        
-        await animateValueChange(
-            VisitorStatsRealtime.elements.online, 
-            prevData.onlineEstimate || 1, 
-            data.onlineEstimate || 1
-        );
-        
-        await animateValueChange(
-            VisitorStatsRealtime.elements.countries, 
-            Object.keys(prevData.negara || {}).length || 0, 
-            Object.keys(data.negara || {}).length || 0
-        );
-        
-        // Update chart jika ada perubahan data
-        if (data.dataPerHari && data.dataPerHari.length > 0) {
-            renderVisitorChart(data.dataPerHari);
-        }
-        
-        // Update recent visitors table
-        if (data.kunjunganTerakhir && data.kunjunganTerakhir.length > 0) {
-            renderRecentVisitorsTable(data.kunjunganTerakhir);
-        }
-        
-        // Save current data
-        VisitorStatsRealtime.currentData = data;
-        VisitorStatsRealtime.lastUpdate = new Date();
-        
-        console.log('[VISITOR RT] ✅ Stats updated smoothly at:', VisitorStatsRealtime.lastUpdate.toLocaleTimeString());
-        
-    } catch (error) {
-        console.error('[VISITOR RT] ❌ Error updating stats:', error);
-    } finally {
-        VisitorStatsRealtime.isUpdating = false;
-    }
-}
-
-/**
- * Animasi perubahan nilai dengan counter effect (tanpa blink!)
- * 
- * @param {HTMLElement} element - Element yang akan diupdate
- * @param {number} startValue - Nilai awal
- * @param {number} endValue - Nilai akhir
- * @param {number} duration - Durasi animasi (ms)
- */
-function animateValueChange(element, startValue, endValue, duration = 500) {
-    return new Promise((resolve) => {
-        if (!element) {
-            resolve();
-            return;
-        }
-        
-        // Jika nilai sama, skip animasi
-        if (startValue === endValue) {
-            resolve();
-            return;
-        }
-        
-        const startTime = performance.now();
-        
-        function update(currentTime) {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            
-            // Easing function (ease-out-cubic)
-            const eased = 1 - Math.pow(1 - progress, 3);
-            
-            // Calculate current value
-            const currentValue = Math.round(startValue + (endValue - startValue) * eased);
-            
-            // Format dan tampilkan
-            element.textContent = formatNumber(currentValue);
-            
-            // Add pulse class saat selesai
-            if (progress >= 1) {
-                element.classList.add('visitor-value-updated');
-                setTimeout(() => element.classList.remove('visitor-value-updated'), 500);
-                resolve();
-            } else {
-                requestAnimationFrame(update);
-            }
-        }
-        
-        requestAnimationFrame(update);
-    });
-}
-
-/**
- * Format angka dengan separator ribuan
- */
-function formatNumber(num) {
-    if (num >= 1000000) {
-        return (num / 1000000).toFixed(1) + 'M';
-    } else if (num >= 1000) {
-        return num.toLocaleString('id-ID');
-    }
-    return num.toString();
-}
-
-/**
- * Start auto-refresh visitor stats
- */
-function startVisitorAutoRefresh() {
-    // Stop existing interval if any
-    stopVisitorAutoRefresh();
-    
-    // Start new interval
-    VisitorStatsRealtime.intervalId = setInterval(async () => {
-        console.log('[VISITOR RT] 🔄 Auto-refreshing stats...');
-        
-        try {
-            const result = await getVisitorStats();
-            if (result.status === 'success') {
-                await updateVisitorStatsSmooth(result);
-            }
-        } catch (error) {
-            console.warn('[VISITOR RT] ⚠️ Auto-refresh failed:', error.message);
-        }
-    }, VisitorStatsRealtime.updateInterval);
-    
-    console.log('[VISITOR RT] ⏱️ Auto-refresh started (interval:', VisitorStatsRealtime.updateInterval/1000, 's)');
-}
-
-/**
- * Stop auto-refresh visitor stats
- */
-function stopVisitorAutoRefresh() {
-    if (VisitorStatsRealtime.intervalId) {
-        clearInterval(VisitorStatsRealtime.intervalId);
-        VisitorStatsRealtime.intervalId = null;
-        console.log('[VISITOR RT] ⏹️ Auto-refresh stopped');
-    }
-}
-
-/**
- * Manual refresh visitor stats (dipanggil dari UI)
- */
-async function manualRefreshVisitorStats() {
-    const btn = document.getElementById('visitor-refresh-btn');
-    
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '⏳...';
-    }
-    
-    try {
-        const result = await getVisitorStats();
-        if (result.status === 'success') {
-            await updateVisitorStatsSmooth(result);
-            showToast('📊 Statistik pengunjung diperbarui', 'success', 2000);
-        }
-    } catch (error) {
-        showToast('❌ Gagal memperbarui statistik', 'error', 3000);
-    } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '🔄 Refresh';
-        }
-    }
-}
-
-// Export functions ke global scope
-window.initVisitorRealtimeSystem = initVisitorRealtimeSystem;
-window.updateVisitorStatsSmooth = updateVisitorStatsSmooth;
-window.manualRefreshVisitorStats = manualRefreshVisitorStats;
-window.startVisitorAutoRefresh = startVisitorAutoRefresh;
-window.stopVisitorAutoRefresh = stopVisitorAutoRefresh;
-
-/**
 
 /**
  * Fetch statistik dari tabel Penetapan & Submissions (NEW)
@@ -22102,25 +20579,14 @@ function renderPengusulTable() {
  * Mencegah operator mengakses via console/URL langsung
  */
 function checkRoadmapPermission() {
-    console.log('=== ROADMAP PERMISSION CHECK ===');
-    
     // Jika tidak login, tolak
     if (!isAdminAuthenticated()) {
-        console.warn('[ROADMAP] ❌ Not authenticated');
         showToast('🔐 Silakan login terlebih dahulu', 'error', 3000);
         return false;
     }
     
     // Jika role operator, tolak akses roadmap
     const userRole = getCurrentUserRole();
-    console.log('[ROADMAP] Current role:', userRole, '| Type:', typeof userRole);
-    
-    // 🔧 FIX: Superadmin SELALU diizinkan!
-    if (userRole === 'superadmin' || userRole === 'admin') {
-        console.log('[ROADMAP] ✅ GRANTED - Superadmin/Admin access');
-        return true;
-    }
-    
     if (userRole === 'operator') {
         showToast('🚫 Akses ditolak. Operator tidak memiliki izin untuk mengakses Data Roadmap.', 'error', 4000);
         console.error('[SECURITY] 🔒 Operator attempted Roadmap access - BLOCKED');
@@ -22128,15 +20594,11 @@ function checkRoadmapPermission() {
     }
     
     // Cek permission tambahan
-    const hasPerm = hasPermission('roadmapKebutuhan');
-    console.log('[ROADMAP] hasPermission("roadmapKebutuhan"):', hasPerm);
-    
-    if (!hasPerm) {
+    if (typeof hasPermission === 'function' && !hasPermission('roadmapKebutuhan')) {
         showToast('🚫 Anda tidak memiliki izin untuk mengakses Data Roadmap.', 'error', 4000);
         return false;
     }
     
-    console.log('[ROADMAP] ✅ ACCESS GRANTED');
     return true;
 }
 
@@ -24468,7 +22930,7 @@ async function viewDetailPengusul(id) {
             return;
         }
         
-        // Query data dari Supabase berdasarkan ID - gunakan .maybeSingle() untuk SELECT ⭐
+        // Query data dari Supabase berdasarkan ID
         if (!supabaseClient) {
             throw new Error('Supabase client tidak tersedia');
         }
@@ -24477,7 +22939,7 @@ async function viewDetailPengusul(id) {
             .from('submissions')
             .select('*')
             .eq('id', id)
-            .maybeSingle();  // Gunakan .maybeSingle() - boleh return null jika tidak ditemukan
+            .single();
         
         if (error) throw error;
         
@@ -24757,24 +23219,17 @@ async function submitStatusUpdate() {
             throw new Error('Supabase client tidak tersedia');
         }
         
-        // UPDATE status - TANPA .single() ⭐
-        const { data: dataArray, error } = await supabaseClient
+        const { data, error } = await supabaseClient
             .from('submissions')
             .update({ 
                 status: newStatus,
                 updated_at: new Date().toISOString()
             })
             .eq('id', id)
-            .select('*');  // TANPA .single()
+            .select()
+            .single();
         
         if (error) throw error;
-        
-        // Validasi hasil array
-        if (!dataArray || !Array.isArray(dataArray) || dataArray.length === 0) {
-            throw new Error('Status update tidak menghasilkan data.');
-        }
-        
-        const data = dataArray[0];  // Ambil dari array
         
         console.log('[SIMBAKES] ✅ Status updated:', data.status);
         
@@ -25015,12 +23470,11 @@ async function openPengusulEditModal(id) {
             throw new Error('Supabase client tidak tersedia');
         }
         
-        // Fetch data dari Supabase - gunakan .maybeSingle() untuk SELECT ⭐
         const { data, error } = await supabaseClient
             .from('submissions')
             .select('*')
             .eq('id', id)
-            .maybeSingle();  // Gunakan .maybeSingle() - boleh return null
+            .single();
         
         if (error) throw error;
         if (!data) {
@@ -25522,386 +23976,46 @@ function openTopbarLogin() {
 }
 
 /**
- * Open Login Peserta - Tampilkan modal login di dalam index.html
- * (Tidak lagi redirect ke login-peserta.html)
+ * Open Login Peserta - Redirect ke halaman login-peserta.html (standalone)
+ * Halaman standalone ini memiliki fitur pencarian lengkap berdasarkan NIK/Email
  */
 function openPesertaLogin() {
-    console.log('[SIMBAKES] Membuka modal login peserta...');
-    const overlay = document.getElementById('peserta-login-overlay');
-    if (overlay) {
-        overlay.classList.add('show');
-        document.body.style.overflow = 'hidden';
-        setTimeout(() => {
-            document.getElementById('peserta-login-username')?.focus();
-        }, 300);
-    }
+    console.log('[SIMBAKES] Redirecting to Login Peserta page...');
+    
+    // Simpan URL saat ini untuk redirect kembali setelah login berhasil
+    const currentUrl = window.location.href;
+    const currentPage = getCurrentPageId();
+    
+    // Simpan ke localStorage untuk digunakan oleh login-peserta.html
+    localStorage.setItem('simbakes_return_url', currentUrl);
+    localStorage.setItem('simbakes_return_page', currentPage);
+    localStorage.setItem('simbakes_login_timestamp', Date.now().toString());
+    
+    // Redirect ke halaman login peserta standalone
+    // Asumsi: login-peserta.html berada di folder yang sama atau /download/
+    const loginPageUrl = getLoginPageUrl();
+    
+    console.log('[SIMBAKES] Opening:', loginPageUrl);
+    
+    // Buka di tab/window yang sama (bukan popup)
+    window.location.href = loginPageUrl;
 }
-
-/**
- * Close Peserta Login Modal
- */
-function closePesertaLoginModal() {
-    const overlay = document.getElementById('peserta-login-overlay');
-    if (overlay) {
-        overlay.classList.remove('show');
-        document.body.style.overflow = '';
-        // Reset form
-        document.getElementById('peserta-login-username').value = '';
-        document.getElementById('peserta-login-password').value = '';
-        const alert = document.getElementById('peserta-login-alert');
-        alert.className = 'peserta-login-alert';
-        alert.innerHTML = '';
-    }
-}
-
-/**
- * Handler Login Peserta di dalam modal (index.html)
- * Authenticate ke Supabase tabel akun_peserta
- */
-let pesertaSessionData = null;
-
-async function handlePesertaLoginInModal(event) {
-    event.preventDefault();
-    
-    const username = document.getElementById('peserta-login-username').value.trim().toLowerCase();
-    const password = document.getElementById('peserta-login-password').value;
-    const alertEl = document.getElementById('peserta-login-alert');
-    const btn = document.getElementById('peserta-login-btn');
-    
-    // Clear previous alert
-    alertEl.className = 'peserta-login-alert';
-    alertEl.innerHTML = '';
-    
-    if (!username || !password) {
-        alertEl.className = 'peserta-login-alert error show';
-        alertEl.innerHTML = '❌ Username dan password wajib diisi';
-        return;
-    }
-    
-    // Loading state
-    btn.disabled = true;
-    btn.innerHTML = '<div class="spinner"></div> Memproses...';
-    alertEl.className = 'peserta-login-alert info show';
-    alertEl.innerHTML = '⏳ Memproses login...';
-    
-    try {
-        if (!supabaseClient) throw new Error('Koneksi database tidak tersedia.');
-        
-        console.log('[PESERTA LOGIN] Authenticating:', username);
-        
-        // Query ke tabel akun_peserta
-        const { data: users, error: queryError } = await supabaseClient
-            .from('akun_peserta')
-            .select('*')
-            .or(`username.eq.${username},email.eq.${username}`)
-            .limit(1);
-        
-        if (queryError) throw new Error(queryError.message);
-        
-        if (!users || users.length === 0) {
-            throw new Error('Username atau password tidak sesuai.');
-        }
-        
-        const user = users[0];
-        
-        // Verifikasi password
-        if (user.password !== password) {
-            throw new Error('Username atau password tidak sesuai.');
-        }
-        
-        // Cek status akun
-        const userStatus = user.status || 'pending';
-        if (userStatus !== 'approved') {
-            let msg = '';
-            switch (userStatus) {
-                case 'pending':
-                    msg = 'Akun Anda masih <strong>MENUNGGU PERSETUJUAN</strong> dari admin Dinkes. Silakan tunggu 1-2 hari kerja.';
-                    break;
-                case 'rejected':
-                    msg = `Akun Anda <strong>DITOLAK</strong>. Alasan: ${user.status_note || 'Tidak ada catatan'}. Hubungi admin.`;
-                    break;
-                case 'suspended':
-                    msg = `Akun Anda <strong>DITANGGUHKAN</strong>. Alasan: ${user.status_note || 'Tidak ada catatan'}. Hubungi admin.`;
-                    break;
-                default:
-                    msg = `Akun dalam status <strong>${userStatus.toUpperCase()}</strong>. Hubungi admin.`;
-            }
-            alertEl.className = 'peserta-login-alert error show';
-            alertEl.innerHTML = `⏳ ${msg}`;
-            btn.disabled = false;
-            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg><span>MASUK</span>';
-            document.getElementById('peserta-login-password').value = '';
-            return;
-        }
-        
-        console.log('[PESERTA LOGIN] ✅ Login successful! NIK:', user.nik);
-        
-        // Update last login
-        await supabaseClient
-            .from('akun_peserta')
-            .update({ last_login_at: new Date().toISOString() })
-            .eq('id', user.id);
-        
-        // Store session
-        pesertaSessionData = {
-            id: user.id,
-            nama: user.nama || user.nama_lengkap || 'Peserta',
-            nik: user.nik || '',
-            email: user.email || '',
-            username: user.username
-        };
-        
-        // Update topbar button
-        updateUIForLoggedInPeserta(pesertaSessionData);
-        
-        // Close login modal
-        closePesertaLoginModal();
-        
-        // Show peserta dashboard with 2 cards
-        showPesertaDashboard(pesertaSessionData);
-        
-    } catch (error) {
-        console.error('[PESERTA LOGIN] Error:', error);
-        alertEl.className = 'peserta-login-alert error show';
-        alertEl.innerHTML = `❌ ${error.message || 'Terjadi kesalahan.'}`;
-        btn.disabled = false;
-        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg><span>MASUK</span>';
-        document.getElementById('peserta-login-password').value = '';
-        document.getElementById('peserta-login-password').focus();
-    }
-}
-
-// showPesertaDashboard is defined below (unified version)
-
-/**
- * Close Peserta Dashboard
- */
-function closePesertaDashboard() {
-    const dashboard = document.getElementById('peserta-dashboard-overlay');
-    if (dashboard) {
-        dashboard.classList.remove('show');
-        document.body.style.overflow = '';
-    }
-}
-
-/**
- * Logout Peserta
- */
-function pesertaLogout() {
-    if (confirm('Apakah Anda yakin ingin logout?')) {
-        pesertaSessionData = null;
-        localStorage.removeItem('simbakes_peserta_session');
-        
-        // Close all peserta overlays
-        closePesertaDashboard();
-        closePesertaAjukan();
-        closePesertaCekStatus();
-        
-        // Reset topbar button
-        const loginBtn = document.getElementById('topbar-peserta-login-btn');
-        if (loginBtn) {
-            loginBtn.innerHTML = `
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                </svg>
-                Login Peserta
-            `;
-            loginBtn.onclick = openPesertaLogin;
-            loginBtn.style.background = '';
-            loginBtn.title = '';
-        }
-        
-        showToast?.('info', '👋 Logout Berhasil', 'Anda telah keluar dari akun peserta');
-    }
-}
-
-/**
- * Open Ajukan Rekomendasi Popup
- * Memindahkan konten page-ajukan ke dalam popup full-screen
- */
-function openPesertaAjukan() {
-    const popup = document.getElementById('peserta-ajukan-popup');
-    const body = document.getElementById('peserta-ajukan-body');
-    const pageAjukan = document.getElementById('page-ajukan');
-    
-    if (!popup || !body || !pageAjukan) {
-        console.error('[PESERTA] Elemen popup/page-ajukan tidak ditemukan');
-        return;
-    }
-    
-    // Move the page content into popup body
-    body.innerHTML = '';
-    // Clone the inner content (excluding the .page wrapper to avoid display:none)
-    const clone = pageAjukan.cloneNode(true);
-    clone.classList.add('active');
-    clone.style.display = 'block';
-    clone.removeAttribute('id'); // Remove duplicate id
-    body.appendChild(clone);
-    
-    // Initialize form if needed (generate nomor register & tanggal)
-    if (typeof generateRegNumber === 'function') generateRegNumber();
-    if (typeof generateTimestamp === 'function') generateTimestamp();
-    
-    // Pre-fill NIK if available
-    if (pesertaSessionData && pesertaSessionData.nik) {
-        const nikInput = clone.querySelector('#nik');
-        if (nikInput) nikInput.value = pesertaSessionData.nik;
-    }
-    
-    // Override submitForm to close popup on success
-    const origSubmitForm = window.submitForm;
-    window.submitForm = async function() {
-        await origSubmitForm.call(this);
-        // Check if success modal appeared, if so add close handler
-        setTimeout(() => {
-            const successModal = document.getElementById('success-modal');
-            if (successModal && successModal.classList.contains('active')) {
-                // Modify the cek status button to close popup instead
-                const cekBtn = successModal.querySelector('button[onclick*="cek-status"]');
-                if (cekBtn) {
-                    cekBtn.setAttribute('onclick', 'closePesertaAjukan(); openPesertaCekStatus();');
-                }
-            }
-        }, 500);
-    };
-    
-    // Show popup
-    popup.classList.add('show');
-    document.body.style.overflow = 'hidden';
-}
-
-/**
- * Close Ajukan Popup
- */
-function closePesertaAjukan() {
-    const popup = document.getElementById('peserta-ajukan-popup');
-    const body = document.getElementById('peserta-ajukan-body');
-    if (popup) {
-        popup.classList.remove('show');
-        if (body) body.innerHTML = ''; // Clean up cloned content
-        document.body.style.overflow = '';
-    }
-}
-
-/**
- * Open Cek Status Lightbox
- * Memindahkan konten page-cek-status ke dalam lightbox full-screen
- */
-function openPesertaCekStatus() {
-    const popup = document.getElementById('peserta-cekstatus-popup');
-    const body = document.getElementById('peserta-cekstatus-body');
-    const pageCekStatus = document.getElementById('page-cek-status');
-    
-    if (!popup || !body || !pageCekStatus) {
-        console.error('[PESERTA] Elemen popup/page-cek-status tidak ditemukan');
-        return;
-    }
-    
-    // Clone the cek-status page content
-    body.innerHTML = '';
-    const clone = pageCekStatus.cloneNode(true);
-    clone.classList.add('active');
-    clone.style.display = 'block';
-    clone.removeAttribute('id'); // Remove duplicate id
-    body.appendChild(clone);
-    
-    // Pre-fill NIK if available from peserta session
-    if (pesertaSessionData && pesertaSessionData.nik) {
-        const nikInput = clone.querySelector('#search-nik');
-        if (nikInput) nikInput.value = pesertaSessionData.nik;
-    }
-    
-    // Rebind searchSubmissionData to work within the clone
-    // The original function uses getElementById which will find the first match
-    // Since the cloned elements don't have IDs (we removed them), we need to patch
-    const searchBtn = clone.querySelector('button[onclick*="searchSubmissionData"]');
-    if (searchBtn) {
-        searchBtn.onclick = async function(e) {
-            e.preventDefault();
-            // Get values from cloned inputs
-            const clonedNik = clone.querySelector('input[placeholder*="16 digit NIK"]');
-            const clonedReg = clone.querySelector('input[placeholder*="REG-SIMBAKES"]');
-            const nik = clonedNik ? clonedNik.value.trim() : '';
-            const register = clonedReg ? clonedReg.value.trim() : '';
-            
-            // Put values into the original fields (which the searchSubmissionData function reads)
-            const origNik = document.getElementById('search-nik');
-            const origReg = document.getElementById('search-register');
-            if (origNik) origNik.value = nik;
-            if (origReg) origReg.value = register;
-            
-            // Also put result containers into the clone
-            // Move search-result-content into the clone's result area
-            await searchSubmissionData();
-            
-            // After search, move the result display into the popup clone
-            const origResultContent = document.getElementById('search-result-content');
-            const clonedResultContent = clone.querySelector('#search-result-content') || clone.querySelector('.status-card-body');
-            if (origResultContent && clonedResultContent) {
-                clonedResultContent.innerHTML = origResultContent.innerHTML;
-            }
-            
-            // Handle result container visibility
-            const origResultContainer = document.getElementById('result-container');
-            const clonedResultContainer = clone.querySelector('#result-container') || clone.querySelector('.result-container');
-            if (origResultContainer && clonedResultContainer) {
-                clonedResultContainer.classList.add('active');
-                clonedResultContainer.style.display = '';
-            }
-            
-            // Hide loading
-            const clonedLoading = clone.querySelector('#search-loading');
-            if (clonedLoading) clonedLoading.style.display = 'none';
-            
-            // Handle not found
-            const origNotFound = document.getElementById('not-found-container');
-            const clonedNotFound = clone.querySelector('#not-found-container');
-            if (origNotFound && clonedNotFound) {
-                clonedNotFound.style.display = origNotFound.style.display;
-                clonedNotFound.innerHTML = origNotFound.innerHTML;
-            }
-        };
-    }
-    
-    // Show popup
-    popup.classList.add('show');
-    document.body.style.overflow = 'hidden';
-}
-
-/**
- * Close Cek Status Lightbox
- */
-function closePesertaCekStatus() {
-    const popup = document.getElementById('peserta-cekstatus-popup');
-    const body = document.getElementById('peserta-cekstatus-body');
-    if (popup) {
-        popup.classList.remove('show');
-        if (body) body.innerHTML = '';
-        document.body.style.overflow = '';
-    }
-}
-
-// ESC key handler for peserta overlays
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        if (document.getElementById('peserta-ajukan-popup')?.classList.contains('show')) {
-            closePesertaAjukan();
-        } else if (document.getElementById('peserta-cekstatus-popup')?.classList.contains('show')) {
-            closePesertaCekStatus();
-        } else if (document.getElementById('peserta-dashboard-overlay')?.classList.contains('show')) {
-            pesertaLogout();
-        } else if (document.getElementById('peserta-login-overlay')?.classList.contains('show')) {
-            closePesertaLoginModal();
-        }
-    }
-});
 
 /**
  * Helper: Tentukan URL halaman login peserta
- * (Kept for backward compatibility)
+ * Mendukung berbagai lokasi hosting
  */
 function getLoginPageUrl() {
+    // Cek jika sudah di environment yang sama (relative path)
+    const possiblePaths = [
+        './login-peserta.html',           // Folder yang sama
+        '../login-peserta.html',          // Satu level up
+        '/login-peserta.html',            // Root domain
+        '/download/login-peserta.html',   // Path download
+        'login-peserta.html'              // Default
+    ];
+    
+    // Untuk development/testing, gunakan path relatif
     return './login-peserta.html';
 }
 
@@ -25974,40 +24088,21 @@ function updateUIForLoggedInPeserta(loginData) {
     console.log('[SIMBAKES] UI updated for logged-in peserta');
 }
 
-function showPesertaDashboard(sessionOrUndefined) {
-    const session = sessionOrUndefined || pesertaSessionData;
-    if (session) {
-        // Update dashboard UI
-        const avatar = document.getElementById('peserta-dash-avatar');
-        const username = document.getElementById('peserta-dash-username');
-        if (avatar) avatar.textContent = (session.nama || 'P').charAt(0).toUpperCase();
-        if (username) username.textContent = session.nama || 'Peserta';
-        // Show dashboard overlay
-        const dashboard = document.getElementById('peserta-dashboard-overlay');
-        if (dashboard) {
-            dashboard.classList.add('show');
-            document.body.style.overflow = 'hidden';
-        }
-        return;
-    }
-    // Fallback: Ambil data session dari localStorage
+/**
+ * Tampilkan dashboard/info untuk peserta yang sudah login
+ */
+function showPesertaDashboard() {
+    // Ambil data session
     const sessionData = localStorage.getItem('simbakes_peserta_session');
     if (!sessionData) {
-        openPesertaLogin();
+        openPesertaLogin(); // Belum login, buka halaman login
         return;
     }
-    const stored = JSON.parse(sessionData);
-    pesertaSessionData = stored;
-    // Call self with session data
-    const avatar = document.getElementById('peserta-dash-avatar');
-    const username = document.getElementById('peserta-dash-username');
-    if (avatar) avatar.textContent = (stored.nama || 'P').charAt(0).toUpperCase();
-    if (username) username.textContent = stored.nama || 'Peserta';
-    const dashboard = document.getElementById('peserta-dashboard-overlay');
-    if (dashboard) {
-        dashboard.classList.add('show');
-        document.body.style.overflow = 'hidden';
-    }
+    
+    const session = JSON.parse(sessionData);
+    
+    // Tampilkan modal dengan info peserta
+    showModalPesertaInfo(session);
 }
 
 /**
@@ -26084,8 +24179,30 @@ function closePesertaInfoModal() {
  * Logout peserta
  */
 function logoutPeserta() {
-    // Redirect to new pesertaLogout
-    pesertaLogout();
+    if (confirm('Apakah Anda yakin ingin logout?')) {
+        localStorage.removeItem('simbakes_peserta_session');
+        closePesertaInfoModal();
+        
+        // Reset tombol login
+        const loginBtn = document.getElementById('topbar-peserta-login-btn');
+        if (loginBtn) {
+            loginBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+                Login Peserta
+            `;
+            loginBtn.onclick = openPesertaLogin;
+            loginBtn.style.background = '';
+            loginBtn.title = '';
+        }
+        
+        showToast?.('info', '👋 Logout Berhasil', 'Anda telah keluar dari akun peserta');
+        
+        // Redirect ke halaman login
+        setTimeout(() => openPesertaLogin(), 500);
+    }
 }
 
 /**
@@ -26343,29 +24460,7 @@ function updateUIForLoggedInAdmin(session) {
         };
         
         const nama = session.nama || session.nama_lengkap || 'User';
-        
-        // 🔧 FIX: Ambil role dari berbagai sumber yang mungkin
-        let role = session.userRole || session.role || currentAdminUser?.role || 'admin';
-        
-        // 🔧 FIX: Normalisasi role - pastikan superadmin terdeteksi
-        const roleNormalizationMap = {
-            'super_admin': 'superadmin',
-            'super-admin': 'superadmin',
-            'administrator': 'superadmin',
-            'admin': 'superadmin',  // Admin dianggap superadmin
-            'operator': 'operator',
-            'op': 'operator',
-            'viewer': 'viewer',
-            'peserta': 'peserta'
-        };
-        role = roleNormalizationMap[role?.toLowerCase()] || role || 'superadmin';
-        
-        console.log('[TOPBAR] Role resolution:', {
-            sessionUserRole: session.userRole,
-            sessionRole: session.role,
-            currentUserRole: currentAdminUser?.role,
-            finalRole: role
-        });
+        const role = session.userRole || 'admin';
         
         userInfoBtn.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -26373,9 +24468,9 @@ function updateUIForLoggedInAdmin(session) {
                 <circle cx="12" cy="7" r="4"/>
             </svg>
             ${nama.substring(0, 15)}${nama.length > 15 ? '...' : ''}
-            <span class="role-badge">${roleLabels[role] || role.toUpperCase()}</span>
+            <span class="role-badge">${roleLabels[role] || role}</span>
         `;
-        userInfoBtn.style.background = roleColors[role] || roleColors.superadmin;
+        userInfoBtn.style.background = roleColors[role] || roleColors.admin;
         userInfoBtn.onclick = showAdminUserInfo;
         userInfoBtn.title = `${roleLabels[role] || role} - Klik untuk info akun`;
         
@@ -26712,50 +24807,10 @@ console.log('[SECURITY] Permission guards installed for Roadmap & Penetapan');
 
 /**
  * Check if current user has specific permission
- * FIXED: Now checks BOTH systems for compatibility
  */
 function hasPermission(permission) {
-    // Method 1: Check SIMBAKES_USER_STATE (new system)
-    if (SIMBAKES_USER_STATE.isLoggedIn && SIMBAKES_USER_STATE.permissions) {
-        const perm1 = !!SIMBAKES_USER_STATE.permissions[permission];
-        if (perm1) {
-            console.log(`[PERM] ✅ Granted via USER_STATE: ${permission}`);
-            return true;
-        }
-    }
-    
-    // Method 2: Check ROLE_CONFIG via currentAdminUser (legacy system - MORE COMPLETE!)
-    if (currentAdminUser && currentAdminUser.role) {
-        const role = currentAdminUser.role;
-        const roleConfig = ROLE_CONFIG[role];
-        
-        if (roleConfig) {
-            // Check menus
-            if (roleConfig.menus && roleConfig.menus[permission] === true) {
-                console.log(`[PERM] ✅ Granted via ROLE_CONFIG.menus: ${permission} (role: ${role})`);
-                return true;
-            }
-            
-            // Check direct permissions
-            if (roleConfig[permission] === true) {
-                console.log(`[PERM] ✅ Granted via ROLE_CONFIG.direct: ${permission} (role: ${role})`);
-                return true;
-            }
-            
-            // Superadmin always has full access!
-            if (role === 'superadmin') {
-                console.log(`[PERM] ✅ Granted via SUPERADMIN fallback: ${permission}`);
-                return true;
-            }
-        }
-    }
-    
-    console.log(`[PERM] ❌ DENIED: ${permission}`, {
-        userStateRole: SIMBAKES_USER_STATE.userRole,
-        currentUserRole: currentAdminUser?.role,
-        userStatePerms: SIMBAKES_USER_STATE.permissions ? Object.keys(SIMBAKES_USER_STATE.permissions) : 'none'
-    });
-    return false;
+    if (!SIMBAKES_USER_STATE.isLoggedIn) return false;
+    return !!SIMBAKES_USER_STATE.permissions[permission];
 }
 
 /**
@@ -27164,12 +25219,6 @@ function closeDropdownOnClickOutside(event) {
  * Update TopBar UI after successful login
  */
 function updateTopbarAfterLogin(user) {
-    console.log('=== TOPBAR DEBUG START ===');
-    console.log('[TOPBAR] Full user object:', JSON.stringify(user, null, 2));
-    console.log('[TOPBAR] user.role:', user.role);
-    console.log('[TOPBAR] user.userRole:', user.userRole);
-    console.log('[TOPBAR] currentAdminUser:', currentAdminUser ? JSON.stringify(currentAdminUser) : 'NULL');
-    
     // Hide login buttons (Admin & Peserta)
     const loginBtn = document.getElementById('topbar-login-btn');
     if (loginBtn) loginBtn.style.display = 'none';
@@ -27187,68 +25236,8 @@ function updateTopbarAfterLogin(user) {
     
     const displayRole = document.getElementById('topbar-display-role');
     if (displayRole) {
-        // 🔧 FIX: Tambahkan pengecekan 'superadmin' terlebih dahulu
-        const roleDisplayMap = {
-            'superadmin': 'Super Administrator',
-            'admin': 'Super Administrator',
-            'operator': 'Operator Data',
-            'viewer': 'Peserta Beasiswa',
-            'peserta': 'Peserta Beasiswa'
-        };
-        
-        // 🔧 DEBUG: Log role resolution
-        let resolvedRole = user.role;
-        console.log('[TOPBAR] resolvedRole before map:', resolvedRole);
-        console.log('[TOPBAR] roleDisplayMap[resolvedRole]:', roleDisplayMap[resolvedRole]);
-        
-        // 🔧🔧🔧 SUPER FIX: Force correction jika role tidak sesuai
-        // Cek multiple sources untuk menentukan role sebenarnya
-        let finalRole = resolvedRole;
-        
-        // Source 1: Dari user object
-        if (user.userRole && ['superadmin', 'admin'].includes(user.userRole.toLowerCase())) {
-            finalRole = 'superadmin';
-            console.log('[TOPBAR] ✅ OVERRIDDEN by user.userRole:', user.userRole);
-        }
-        
-        // Source 2: Dari currentAdminUser global
-        if (!finalRole || finalRole === 'operator') {
-            if (currentAdminUser?.role && ['superadmin', 'admin'].includes(currentAdminUser.role.toLowerCase())) {
-                finalRole = 'superadmin';
-                console.log('[TOPBAR] ✅ OVERRIDDEN by currentAdminUser.role:', currentAdminUser.role);
-            }
-        }
-        
-        // Source 3: Cek localStorage session langsung
-        if (!finalRole || finalRole === 'operator') {
-            try {
-                const savedSession = JSON.parse(localStorage.getItem('simbakes_admin_session'));
-                if (savedSession?.user) {
-                    const sessionRole = savedSession.user.role || savedSession.user.userRole;
-                    if (sessionRole && ['superadmin', 'admin'].includes(sessionRole.toLowerCase())) {
-                        finalRole = 'superadmin';
-                        console.log('[TOPBAR] ✅ OVERRIDDEN by localStorage session:', sessionRole);
-                    } else if (savedSession.user.username) {
-                        console.log('[TOPBAR] Session found for:', savedSession.user.username, '| Role in session:', sessionRole);
-                    }
-                }
-            } catch(e) {
-                console.warn('[TOPBAR] Error reading localStorage:', e);
-            }
-        }
-        
-        // Source 4: Jika masih operator tapi avatar 👑 (mahkota), berarti seharusnya superadmin
-        if ((!finalRole || finalRole === 'operator') && user.avatar === '👑') {
-            finalRole = 'superadmin';
-            console.log('[TOPBAR] ✅ OVERRIDDEN by avatar detection (👑 = Superadmin)');
-        }
-        
-        console.log('[TOPBAR] FINAL ROLE DECISION:', finalRole, '(original was:', resolvedRole, ')');
-        
-        displayRole.textContent = roleDisplayMap[finalRole] || finalRole || 'Super Administrator';
-        
-        console.log('[TOPBAR] Final displayRole.textContent:', displayRole.textContent);
-        console.log('=== TOPBAR DEBUG END ===');
+        displayRole.textContent = user.role === 'admin' ? 'Super Administrator' : 
+                                  user.role === 'viewer' ? 'Peserta Beasiswa' : 'Operator Data';
     }
     
     // Update avatar
@@ -27270,15 +25259,9 @@ function updateTopbarAfterLogin(user) {
     
     const dropdownRole = document.getElementById('dropdown-role');
     if (dropdownRole) {
-        // 🔧 FIX: Tambahkan pengecekan 'superadmin' terlebih dahulu
-        const dropdownRoleMap = {
-            'superadmin': 'Full Access - Superadmin',
-            'admin': 'Full Access - Admin',
-            'operator': 'Limited Access - Operator',
-            'viewer': 'Peserta Beasiswa - Limited Access',
-            'peserta': 'Peserta Beasiswa - Limited Access'
-        };
-        dropdownRole.textContent = dropdownRoleMap[user.role] || `${user.role || 'User'} - Limited Access`;
+        dropdownRole.textContent = user.role === 'admin' ? 'Full Access - Admin' : 
+                                   user.role === 'viewer' ? 'Peserta Beasiswa - Limited Access' : 
+                                   'Limited Access - Operator';
     }
     
     console.log('✅ TopBar updated for:', user.name, '(' + user.role + ')');
@@ -27456,174 +25439,12 @@ async function testConnectionOnLoad() {
         
         if (error) {
             console.warn('[SIMBAKES] ⚠️ Connection test warning:', error.message);
-            console.warn('[SIMBAKES] ⚠️ Error code:', error.code);
-            console.warn('[SIMBAKES] ⚠️ This might indicate RLS policy issues');
         } else {
             console.log('[SIMBAKES] ✅ Connection test successful! Latency: ' + latency + 'ms');
         }
     } catch (err) {
         console.warn('[SIMBAKES] ⚠️ Connection test failed:', err.message);
     }
-}
-
-/**
- * 🔧 CRUD DEBUG & TESTING UTILITIES
- * Fungsi-fungsi untuk debugging operasi database
- */
-
-/**
- * Test semua CRUD permissions (SELECT, INSERT, UPDATE, DELETE)
- * Panggil ini di Console untuk diagnosa masalah
- */
-async function testCRUDPermissions() {
-    console.log('=== CRUD PERMISSION TEST ===');
-    
-    if (!supabaseClient) {
-        console.error('❌ Supabase client not initialized!');
-        return;
-    }
-    
-    const results = {};
-    
-    // Test SELECT
-    try {
-        const { data, error } = await supabaseClient.from('submissions').select('id').limit(1);
-        results.SELECT = error ? { success: false, error: error.message, code: error.code } : { success: true, count: data?.length };
-        console.log('[TEST] SELECT:', results.SELECT);
-    } catch(e) {
-        results.SELECT = { success: false, error: e.message };
-    }
-    
-    // Test INSERT (dengan dummy data yang akan dihapus)
-    try {
-        const testData = { 
-            nama_lengkap: '__CRUD_TEST__', 
-            nik: 'TEST_' + Date.now(),
-            created_at: new Date().toISOString()
-        };
-        const { data, error } = await supabaseClient.from('submissions').insert([testData]).select('id');
-        
-        if (error) {
-            results.INSERT = { success: false, error: error.message, code: error.code };
-        } else if (data && data.length > 0) {
-            // Hapus test record
-            const testId = data[0].id;
-            await supabaseClient.from('submissions').delete().eq('id', testId);
-            results.INSERT = { success: true, testId: testId };
-        } else {
-            results.INSERT = { success: false, error: 'No data returned after insert' };
-        }
-        console.log('[TEST] INSERT:', results.INSERT);
-    } catch(e) {
-        results.INSERT = { success: false, error: e.message };
-    }
-    
-    // Test UPDATE (jika ada data)
-    try {
-        const { data: existing } = await supabaseClient.from('submissions').select('id').limit(1);
-        if (existing && existing.length > 0) {
-            const testId = existing[0].id;
-            const { data, error } = await supabaseClient
-                .from('submissions')
-                .update({ updated_at: new Date().toISOString() })
-                .eq('id', testId)
-                .select('id');
-            
-            results.UPDATE = error ? { success: false, error: error.message, code: error.code } : { success: true, updatedId: testId };
-        } else {
-            results.UPDATE = { success: false, error: 'No records to test with' };
-        }
-        console.log('[TEST] UPDATE:', results.UPDATE);
-    } catch(e) {
-        results.UPDATE = { success: false, error: e.message };
-    }
-    
-    // Test DELETE (skip untuk keamanan, hanya log)
-    results.DELETE = { success: true, note: 'Skipped for safety. Use UI to test delete.' };
-    console.log('[TEST] DELETE:', results.DELETE);
-    
-    console.log('=== CRUD TEST SUMMARY ===');
-    console.table(results);
-    
-    // Cek apakah ada yang gagal
-    const failures = Object.entries(results).filter(([k,v]) => !v.success);
-    if (failures.length > 0) {
-        console.error('❌ FAILED OPERATIONS:', failures.map(([k]) => k));
-        console.error('💡 TIPS:');
-        console.error('   - Jika INSERT/UPDATE gagal dengan code 42501/42503: RLS Policy issue');
-        console.error('   - Jika gagal dengan code 23505: Unique constraint violation');
-        console.error('   - Jika gagal dengan code 42P01: Table not found');
-        console.error('');
-        console.error('🔧 SOLUTION: Jalankan SQL berikut di Supabase SQL Editor:');
-        console.error('');
-        console.error('-- Enable RLS policies for anon role:');
-        console.error('ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;');
-        console.error('');
-        console.error('-- Create policy untuk allow all operations (development):');
-        console.error('CREATE POLICY "Allow all" ON submissions FOR ALL USING (true) WITH CHECK (true);');
-    } else {
-        console.log('✅ All CRUD operations working correctly!');
-    }
-    
-    return results;
-}
-
-// Export untuk penggunaan di Console
-window.testCRUDPermissions = testCRUDPermissions;
-
-/**
- * Debug helper - Log lengkap untuk setiap operasi CRUD
- */
-function debugCRUDLog(operation, table, details) {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] [CRUD:${operation}] 📋 ${table}`, {
-        ...details,
-        userRole: currentAdminUser?.role,
-        userId: currentAdminUser?.id,
-        supabaseReady: !!supabaseClient
-    });
-}
-
-/**
- * Enhanced error handler untuk Supabase errors
- */
-function handleSupabaseError(error, operation, tableName) {
-    debugCRUDLog('ERROR', tableName || 'unknown', { operation, error });
-    
-    // Error codes dan solusinya
-    const errorSolutions = {
-        '42501': 'RLS Policy Error: Role tidak memiliki izin. Cek Row Level Security di Supabase.',
-        '42503': 'Privilege Error: Tidak memiliki privilege. Grant permission ke role anon/service_role.',
-        '23505': 'Unique Violation: Data duplikat. Gunakan nilai unik untuk field yang required unique.',
-        '23503': 'Foreign Key Error: Referensi data tidak valid. Pastikan ID referensi ada.',
-        '23514': 'Check Violation: Constraint check gagal. Periksa data yang dimasukkan.',
-        '22P02': 'Invalid Input: Format data tidak sesuai tipe kolom.',
-        '22001': 'String Too Long: Data terlalu panjang untuk kolom.',
-        '42P01': 'Table Not Found: Tabel tidak ada. Periksa nama tabel.',
-        '42P02': 'Column Not Found: Kolom tidak ada. Periksa nama field.',
-        '406': 'Not Acceptable: Format response tidak sesuai. Biasanya karena .single() pada query yang return multiple rows.',
-        'PGRST': 'PostgREST Error: Masalah API layer. Cek URL dan headers.'
-    };
-    
-    const errorCode = error.code || 'UNKNOWN';
-    const solution = errorSolutions[errorCode] || errorSolutions[errorCode.substring(0,5)] || null;
-    
-    let message = `Error ${operation} ${tableName || ''}: ${error.message}`;
-    if (solution) {
-        message += `\n\n🔍 Diagnosis: ${solution}`;
-    }
-    
-    console.error(`[CRUD ERROR] ${message}`);
-    console.error(`[CRUD ERROR] Full error object:`, error);
-    console.error(`[CRUD ERROR] Code: ${errorCode}`);
-    
-    return {
-        success: false,
-        error: error.message,
-        code: errorCode,
-        solution: solution,
-        userFriendlyMessage: `Gagal ${operation.toLowerCase()} data${tableName ? ' di tabel ' + tableName : ''}. ${solution || 'Periksa console untuk detail.'}`
-    };
 }
 
 /**
