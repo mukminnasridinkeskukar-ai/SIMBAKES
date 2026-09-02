@@ -1,0 +1,1294 @@
+
+/* ============================================================
+   SIMBAKES PANEL ADMIN - UI OVERHAUL STYLES
+   Font: Tahoma | Design: Glassmorphism Modern
+   ============================================================ */
+
+/* ===== BASE FONT CHANGE TO TAHOMA ===== */
+body {
+    font-family: Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+/* ===== ROW COLOR VARIATION GRADIENTS ===== */
+/* Cycling colors: Blue -> Green -> Purple -> Orange -> Cyan */
+
+/* Gradient 1: BLUE - Fresh & Professional */
+.tr-color-0 {
+    background: linear-gradient(90deg, 
+        rgba(59, 130, 246, 0.08) 0%, 
+        rgba(147, 197, 253, 0.12) 50%, 
+        rgba(59, 130, 246, 0.08) 100%) !important;
+}
+.tr-color-0:hover {
+    background: linear-gradient(90deg, 
+        rgba(59, 130, 246, 0.15) 0%, 
+        rgba(147, 197, 253, 0.2) 50%, 
+        rgba(59, 130, 246, 0.15) 100%) !important;
+}
+
+/* Gradient 2: GREEN - Natural & Growth */
+.tr-color-1 {
+    background: linear-gradient(90deg, 
+        rgba(34, 197, 94, 0.08) 0%, 
+        rgba(134, 239, 172, 0.12) 50%, 
+        rgba(34, 197, 94, 0.08) 100%) !important;
+}
+.tr-color-1:hover {
+    background: linear-gradient(90deg, 
+        rgba(34, 197, 94, 0.15) 0%, 
+        rgba(134, 239, 172, 0.2) 50%, 
+        rgba(34, 197, 94, 0.15) 100%) !important;
+}
+
+/* Gradient 3: PURPLE - Royal & Elegant */
+.tr-color-2 {
+    background: linear-gradient(90deg, 
+        rgba(168, 85, 247, 0.08) 0%, 
+        rgba(216, 180, 254, 0.12) 50%, 
+        rgba(168, 85, 247, 0.08) 100%) !important;
+}
+.tr-color-2:hover {
+    background: linear-gradient(90deg, 
+        rgba(168, 85, 247, 0.15) 0%, 
+        rgba(216, 180, 254, 0.2) 50%, 
+        rgba(168, 85, 247, 0.15) 100%) !important;
+}
+
+/* Gradient 4: ORANGE - Warm & Energetic */
+.tr-color-3 {
+    background: linear-gradient(90deg, 
+        rgba(249, 115, 22, 0.08) 0%, 
+        rgba(253, 186, 116, 0.12) 50%, 
+        rgba(249, 115, 22, 0.08) 100%) !important;
+}
+.tr-color-3:hover {
+    background: linear-gradient(90deg, 
+        rgba(249, 115, 22, 0.15) 0%, 
+        rgba(253, 186, 116, 0.2) 50%, 
+        rgba(249, 115, 22, 0.15) 100%) !important;
+}
+
+/* Gradient 5: CYAN - Cool & Modern */
+.tr-color-4 {
+    background: linear-gradient(90deg, 
+        rgba(6, 182, 212, 0.08) 0%, 
+        rgba(103, 232, 249, 0.12) 50%, 
+        rgba(6, 182, 212, 0.08) 100%) !important;
+}
+.tr-color-4:hover {
+    background: linear-gradient(90deg, 
+        rgba(6, 182, 212, 0.15) 0%, 
+        rgba(103, 232, 249, 0.2) 50%, 
+        rgba(6, 182, 212, 0.15) 100%) !important;
+}
+
+/* ===== COMPACT TABLE HEADER FOR 5 COLUMNS ===== */
+.admin-table-thead-new {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+    border-radius: 12px 12px 0 0 !important;
+}
+
+.admin-table-thead-new th {
+    padding: 1rem 1.25rem !important;
+    font-weight: 700 !important;
+    font-size: 0.8rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* Column-specific widths for 5-column layout */
+.col-nik { min-width: 140px; max-width: 160px; }
+.col-nama { min-width: 220px; }
+.col-jurusan { min-width: 200px; }
+.col-tahun { text-align: center; min-width: 150px; }
+.col-unit { min-width: 220px; }
+.col-aksi { min-width: 160px; text-align: center; }
+
+/* ===== FULL-SCREEN LIGHTBOX MODAL ===== */
+.lightbox-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 99999 !important;
+    background: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: all 0.3s ease !important;
+}
+
+.lightbox-overlay.active {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.lightbox-container {
+    display: flex !important;
+    width: 95% !important;
+    height: 92% !important;
+    max-width: 1500px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-radius: 20px !important;
+    box-shadow: 
+        0 25px 60px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+    overflow: hidden !important;
+    transform: scale(0.9) translateY(20px) !important;
+    transition: transform 0.3s ease !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+}
+
+.lightbox-overlay.active .lightbox-container {
+    transform: scale(1) translateY(0) !important;
+}
+
+/* ===== LIGHTBOX LEFT SECTION - PHOTO ===== */
+.lightbox-photo-section {
+    flex: 0 0 380px !important;
+    background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 2rem !important;
+    border-right: 1px solid rgba(226, 232, 240, 0.5) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+/* Decorative circle behind photo */
+.lightbox-photo-section::before {
+    content: '' !important;
+    position: absolute !important;
+    width: 300px !important;
+    height: 300px !important;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%) !important;
+    border-radius: 50% !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    pointer-events: none !important;
+}
+
+.lightbox-photo-wrapper {
+    position: relative !important;
+    z-index: 1 !important;
+    width: 280px !important;
+    height: 340px !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    box-shadow: 
+        0 10px 40px rgba(0, 0, 0, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.8),
+        inset 0 0 0 4px white !important;
+    background: white !important;
+}
+
+.lightbox-photo {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center top !important;
+    transition: transform 0.3s ease !important;
+}
+
+.lightbox-photo-wrapper:hover .lightbox-photo {
+    transform: scale(1.02) !important;
+}
+
+.lightbox-photo-placeholder {
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%) !important;
+    color: #64748b !important;
+}
+
+.lightbox-photo-placeholder svg {
+    width: 80px !important;
+    height: 80px !important;
+    margin-bottom: 1rem !important;
+    opacity: 0.5 !important;
+}
+
+.lightbox-photo-label {
+    margin-top: 1rem !important;
+    font-size: 0.85rem !important;
+    color: #64748b !important;
+    text-align: center !important;
+    font-weight: 600 !important;
+}
+
+/* Photo loading spinner */
+.photo-loading-spinner {
+    width: 50px !important;
+    height: 50px !important;
+    border: 4px solid #e2e8f0 !important;
+    border-top-color: #3b82f6 !important;
+    border-radius: 50% !important;
+    animation: spin 0.8s linear infinite !important;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ===== LIGHTBOX RIGHT SECTION - DATA ===== */
+.lightbox-data-section {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    background: white !important;
+}
+
+.lightbox-header {
+    flex-shrink: 0 !important;
+    padding: 1.25rem 1.75rem !important;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+    color: white !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.lightbox-title {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+.lightbox-title h2 {
+    font-size: 1.35rem !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    color: white !important;
+}
+
+.lightbox-title-badge {
+    background: rgba(59, 130, 246, 0.2) !important;
+    color: #93c5fd !important;
+    padding: 0.35rem 0.85rem !important;
+    border-radius: 20px !important;
+    font-size: 0.78rem !important;
+    font-weight: 600 !important;
+}
+
+.lightbox-close-btn {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease !important;
+    font-size: 1.4rem !important;
+}
+
+.lightbox-close-btn:hover {
+    background: rgba(239, 68, 68, 0.8) !important;
+    transform: rotate(90deg) !important;
+}
+
+/* Data Grid */
+.lightbox-data-scroll {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 1.5rem 1.75rem !important;
+}
+
+.lightbox-data-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem 2rem !important;
+}
+
+.lightbox-field {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.35rem !important;
+    padding: 0.85rem 1rem !important;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+    border-radius: 10px !important;
+    border: 1px solid #e2e8f0 !important;
+    transition: all 0.2s ease !important;
+}
+
+.lightbox-field:hover {
+    border-color: #93c5fd !important;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1) !important;
+}
+
+.lightbox-field.full-width {
+    grid-column: span 2 !important;
+}
+
+.lightbox-field-label {
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    color: #64748b !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+}
+
+.lightbox-field-value {
+    font-size: 0.95rem !important;
+    color: #1e293b !important;
+    font-weight: 500 !important;
+    line-height: 1.45 !important;
+    word-break: break-word !important;
+}
+
+.lightbox-field-value.highlight {
+    color: #2563eb !important;
+    font-weight: 700 !important;
+    font-size: 1.05rem !important;
+}
+
+.lightbox-field-value.status-value {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+    padding: 0.35rem 0.85rem !important;
+    border-radius: 20px !important;
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+}
+
+/* Status badges in lightbox */
+.status-pending-lightbox {
+    background: linear-gradient(135deg, #fef3c7, #fde68a) !important;
+    color: #92400e !important;
+}
+.status-ditinjau-lightbox {
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important;
+    color: #1e40af !important;
+}
+.status-diterima-lightbox {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0) !important;
+    color: #065f46 !important;
+}
+.status-ditolak-lightbox {
+    background: linear-gradient(135deg, #fee2e2, #fecaca) !important;
+    color: #991b1b !important;
+}
+
+/* ===== LIGHTBOX FOOTER WITH ACTION BUTTONS ===== */
+.lightbox-footer {
+    flex-shrink: 0 !important;
+    padding: 1rem 1.75rem !important;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important;
+    border-top: 1px solid #e2e8f0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 1rem !important;
+}
+
+.lightbox-actions {
+    display: flex !important;
+    gap: 0.75rem !important;
+}
+
+.btn-lightbox-action {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 0.7rem 1.4rem !important;
+    border-radius: 10px !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    border: 2px solid transparent !important;
+    font-family: Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+.btn-lightbox-edit {
+    background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+    color: white !important;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35) !important;
+}
+
+.btn-lightbox-edit:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45) !important;
+}
+
+.btn-lightbox-delete {
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    color: white !important;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35) !important;
+}
+
+.btn-lightbox-delete:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.45) !important;
+}
+
+.btn-lightbox-status {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: white !important;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35) !important;
+}
+
+.btn-lightbox-status:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45) !important;
+}
+
+/* Navigation info */
+.lightbox-nav-info {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    font-size: 0.82rem !important;
+    color: #64748b !important;
+}
+
+.lightbox-nav-btn {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 8px !important;
+    background: white !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease !important;
+}
+
+.lightbox-nav-btn:hover:not(:disabled) {
+    background: #3b82f6 !important;
+    color: white !important;
+    border-color: #3b82f6 !important;
+}
+
+.lightbox-nav-btn:disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media screen and (max-width: 1024px) {
+    .lightbox-container {
+        flex-direction: column !important;
+        height: 95% !important;
+        width: 98% !important;
+    }
+    
+    .lightbox-photo-section {
+        flex: 0 0 auto !important;
+        padding: 1.5rem !important;
+        border-right: none !important;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.5) !important;
+    }
+    
+    .lightbox-photo-wrapper {
+        width: 200px !important;
+        height: 250px !important;
+    }
+    
+    .lightbox-data-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .lightbox-field.full-width {
+        grid-column: span 1 !important;
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .lightbox-header {
+        padding: 1rem !important;
+    }
+    
+    .lightbox-title h2 {
+        font-size: 1.1rem !important;
+    }
+    
+    .lightbox-data-scroll {
+        padding: 1rem !important;
+    }
+    
+    .lightbox-footer {
+        flex-direction: column !important;
+        padding: 1rem !important;
+    }
+    
+    .lightbox-actions {
+        width: 100% !important;
+        justify-content: stretch !important;
+    }
+    
+    .btn-lightbox-action {
+        flex: 1 !important;
+        justify-content: center !important;
+        padding: 0.65rem 1rem !important;
+        font-size: 0.82rem !important;
+    }
+    
+    .col-nik, .col-jurusan, .col-tahun, .col-unit {
+        min-width: 120px !important;
+    }
+    
+    .col-nama {
+        min-width: 150px !important;
+    }
+}
+
+/* ===== GLASSMORPHISM ENHANCEMENTS ===== */
+.glass-card {
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Table container glass effect */
+.admin-table-wrapper {
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.06),
+        0 0 0 1px rgba(255, 255, 255, 0.5) !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(8px) !important;
+}
+
+/* Action buttons enhancement */
+.crud-actions {
+    display: flex !important;
+    gap: 0.4rem !important;
+    justify-content: center !important;
+    flex-wrap: nowrap !important;
+}
+
+.btn-crud {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 10px !important;
+    border: 2px solid transparent !important;
+    font-size: 1.1rem !important;
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+.btn-crud:hover {
+    transform: translateY(-2px) scale(1.08) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.btn-view {
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7) !important;
+    border-color: #86efac !important;
+}
+
+.btn-edit {
+    background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
+    border-color: #93c5fd !important;
+}
+
+.btn-status {
+    background: linear-gradient(135deg, #fffbeb, #fef3c7) !important;
+    border-color: #fcd34d !important;
+}
+
+.btn-delete {
+    background: linear-gradient(135deg, #fef2f2, #fee2e2) !important;
+    border-color: #fca5a5 !important;
+}
+
+/* Smooth row transitions */
+#pengusul-table-body tr {
+    transition: all 0.2s ease !important;
+}
+
+/* Scrollbar styling for lightbox */
+.lightbox-data-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+.lightbox-data-scroll::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.lightbox-data-scroll::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #cbd5e1, #94a3b8);
+    border-radius: 4px;
+}
+
+.lightbox-data-scroll::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #94a3b8, #64748b);
+}
+
+    
+    
+    <!-- ===== CRUD LIGHTBOX STYLES (Auto-injected) ===== -->
+    <style id="crud-lightbox-styles">
+
+/* ============================================================
+   CRUD LIGHTBOX ADDITIONAL STYLES
+   ============================================================ */
+
+/* ===== CRUD FOOTER (Bottom of Lightbox) ===== */
+.lightbox-crud-footer {
+    flex-shrink: 0;
+    padding: 1.25rem 1.75rem;
+    background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+    border-top: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+}
+
+.crud-footer-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.crud-footer-buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* ===== CRUD FOOTER BUTTONS - Distinct Visual Design ===== */
+.btn-crud-footer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1.5rem;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    font-family: Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 0.88rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-crud-footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-crud-footer:hover::before {
+    left: 100%;
+}
+
+.btn-crud-footer:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.btn-crud-footer:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+.btn-crud-footer:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* EDIT DATA Button - Most Prominent (Blue Gradient) */
+.btn-edit-data {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
+    color: white;
+    box-shadow: 
+        0 4px 15px rgba(37, 99, 235, 0.4),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    border-color: #60a5fa;
+}
+
+.btn-edit-data:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 50%, #1e3a8a 100%);
+    box-shadow: 
+        0 6px 20px rgba(37, 99, 235, 0.5),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+/* UBAH STATUS Button (Amber/Orange) */
+.btn-status-data {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+    color: white;
+    box-shadow: 
+        0 4px 15px rgba(245, 158, 11, 0.4),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    border-color: #fcd34d;
+}
+
+.btn-status-data:hover {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 50%, #92400e 100%);
+    box-shadow: 
+        0 6px 20px rgba(245, 158, 11, 0.5),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+/* HAPUS DATA Button - Destructive (Red) */
+.btn-delete-data {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
+    color: white;
+    box-shadow: 
+        0 4px 15px rgba(220, 38, 38, 0.4),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    border-color: #fca5a5;
+}
+
+.btn-delete-data:hover {
+    background: linear-gradient(135deg, #b91c1c 0%, #991b1b 50%, #7f1d1d 100%);
+    box-shadow: 
+        0 6px 20px rgba(220, 38, 38, 0.5),
+        inset 0 1px 0 rgba(255,255,255,0.3);
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-4px); }
+    40% { transform: translateX(4px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(3px); }
+}
+
+/* TUTUP Button - Neutral (Gray) */
+.btn-close-data {
+    background: linear-gradient(135deg, #64748b 0%, #475569 50%, #334155 100%);
+    color: white;
+    box-shadow: 
+        0 4px 15px rgba(100, 116, 139, 0.3),
+        inset 0 1px 0 rgba(255,255,255,0.15);
+    border-color: #94a3b8;
+}
+
+.btn-close-data:hover {
+    background: linear-gradient(135deg, #475569 0%, #334155 50%, #1e293b 100%);
+    box-shadow: 
+        0 6px 20px rgba(100, 116, 139, 0.4),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+/* ===== EDIT FORM OVERLAY ===== */
+.lightbox-edit-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(248, 250, 252, 0.98);
+    z-index: 100;
+    overflow-y: auto;
+    backdrop-filter: blur(10px);
+}
+
+.lightbox-edit-content {
+    padding: 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.lightbox-edit-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.lightbox-edit-header h3 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0 0 0.5rem 0;
+    font-family: Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.edit-hint {
+    font-size: 0.88rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.lightbox-edit-form {
+    /* Form container */
+}
+
+.edit-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem 1.5rem;
+}
+
+.edit-form-group.full-width {
+    grid-column: span 2;
+}
+
+.edit-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #e2e8f0;
+}
+
+.btn-cancel-edit {
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+    color: #475569;
+    border-color: #cbd5e1;
+}
+
+.btn-save-edit {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: white;
+    border-color: #34d399;
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+}
+
+.btn-save-edit:hover:not(:disabled) {
+    background: linear-gradient(135deg, #047857, #065f46);
+    box-shadow: 0 6px 18px rgba(5, 150, 105, 0.45);
+}
+
+.btn-save-edit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ===== STATUS CHANGE OVERLAY ===== */
+.lightbox-status-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(248, 250, 252, 0.98);
+    z-index: 100;
+    overflow-y: auto;
+    backdrop-filter: blur(10px);
+}
+
+.lightbox-status-content {
+    padding: 2rem;
+    max-width: 700px;
+    margin: 2rem auto;
+}
+
+.lightbox-status-header {
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.lightbox-status-header h3 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0;
+    font-family: Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.status-options {
+    margin-bottom: 1.5rem;
+}
+
+.status-option-btn.active {
+    ring: 2px solid currentColor;
+}
+
+.status-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 2px solid #e2e8f0;
+}
+
+.btn-cancel-status {
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+    color: #475569;
+    border-color: #cbd5e1;
+}
+
+/* ===== DELETE CONFIRMATION OVERLAY ===== */
+.lightbox-delete-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(248, 250, 252, 0.95);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+.lightbox-delete-content {
+    text-align: center;
+    padding: 3rem;
+    max-width: 450px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    border: 2px solid #fecaca;
+}
+
+.delete-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: pulse-delete 1.5s infinite;
+}
+
+@keyframes pulse-delete {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.lightbox-delete-content h3 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #991b1b;
+    margin: 0 0 1rem 0;
+    font-family: Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.lightbox-delete-content p {
+    font-size: 0.95rem;
+    color: #475569;
+    line-height: 1.6;
+    margin: 0.5rem 0;
+}
+
+.delete-warning {
+    color: #dc2626 !important;
+    font-weight: 700;
+    font-size: 0.88rem !important;
+    background: #fee2e2;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-top: 1rem !important;
+}
+
+.delete-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn-cancel-delete {
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+    color: #475569;
+    border-color: #cbd5e1;
+}
+
+.btn-confirm-delete {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+    border-color: #fca5a5;
+    box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+    animation: shake 2s infinite;
+}
+
+.btn-confirm-delete:hover:not(:disabled) {
+    background: linear-gradient(135deg, #b91c1c, #991b1b);
+    box-shadow: 0 6px 18px rgba(220, 38, 38, 0.45);
+}
+
+.btn-confirm-delete:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    animation: none;
+}
+
+/* ===== RESPONSIVE ADJUSTMENTS FOR CRUD ===== */
+@media screen and (max-width: 1024px) {
+    .lightbox-crud-footer {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .crud-footer-info,
+    .crud-footer-buttons {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .btn-crud-footer {
+        padding: 0.75rem 1rem;
+        font-size: 0.82rem;
+    }
+    
+    .edit-form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .edit-form-group.full-width {
+        grid-column: span 1;
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .crud-footer-buttons {
+        flex-direction: column;
+    }
+    
+    .btn-crud-footer {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .delete-actions {
+        flex-direction: column;
+    }
+    
+    .btn-confirm-delete,
+    .btn-cancel-delete {
+        width: 100%;
+    }
+}
+
+    /* ===== PESERTA LOGIN MODAL & DASHBOARD ===== */
+    .peserta-login-overlay {
+        position: fixed; inset: 0; z-index: 10000;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #1e3a5f 100%);
+        display: none; align-items: center; justify-content: center;
+        padding: 20px;
+        animation: fadeIn 0.3s ease-out;
+    }
+    .peserta-login-overlay.show { display: flex; }
+
+    .peserta-login-card {
+        background: white; border-radius: 24px; padding: 2.5rem;
+        width: 100%; max-width: 440px;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+        animation: slideUp 0.4s ease-out;
+        position: relative;
+    }
+    .peserta-login-header {
+        text-align: center; margin-bottom: 2rem;
+    }
+    .peserta-login-logo {
+        width: 72px; height: 72px;
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        border-radius: 18px; display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1rem; font-size: 2rem; color: white;
+        box-shadow: 0 10px 25px rgba(5,150,105,0.3);
+    }
+    .peserta-login-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin-bottom: 0.25rem; }
+    .peserta-login-subtitle { color: #64748b; font-size: 0.9rem; }
+
+    .peserta-login-form .form-group { margin-bottom: 1.1rem; }
+    .peserta-login-form label { display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin-bottom: 0.4rem; }
+    .peserta-login-form input {
+        width: 100%; height: 46px; padding: 0 14px 0 42px; border: 2px solid #e2e8f0;
+        border-radius: 10px; font-size: 0.95rem; outline: none; transition: all 0.2s;
+        background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") 14px center no-repeat;
+    }
+    .peserta-login-form input.pw-input {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E");
+    }
+    .peserta-login-form input:focus { border-color: #059669; box-shadow: 0 0 0 4px rgba(5,150,105,0.1); }
+    .peserta-login-btn {
+        width: 100%; height: 48px; border: none; border-radius: 12px;
+        background: linear-gradient(135deg, #059669, #047857); color: white;
+        font-size: 1rem; font-weight: 700; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        margin-top: 0.5rem; transition: all 0.2s;
+    }
+    .peserta-login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(5,150,105,0.35); }
+    .peserta-login-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+    .peserta-login-btn .spinner { width: 18px; height: 18px; border-width: 2px; }
+    .peserta-login-alert {
+        padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem;
+        margin-top: 1rem; display: none; align-items: center; gap: 0.5rem;
+    }
+    .peserta-login-alert.show { display: flex; }
+    .peserta-login-alert.error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .peserta-login-alert.success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    .peserta-login-alert.info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    .peserta-login-close {
+        position: absolute; top: 16px; right: 16px; width: 36px; height: 36px;
+        border-radius: 50%; border: none; background: #f1f5f9; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        color: #64748b; font-size: 1.25rem; transition: all 0.2s; z-index: 2;
+    }
+    .peserta-login-close:hover { background: #e2e8f0; transform: rotate(90deg); }
+    .peserta-login-footer {
+        text-align: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;
+        font-size: 0.8rem; color: #94a3b8;
+    }
+    .peserta-login-footer a { color: #059669; text-decoration: none; font-weight: 600; }
+    .peserta-login-footer a:hover { text-decoration: underline; }
+
+    /* ===== PESERTA DASHBOARD OVERLAY (2 CARDS) ===== */
+    .peserta-dashboard-overlay {
+        position: fixed; inset: 0; z-index: 9998;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f0fdf4 100%);
+        display: none; flex-direction: column;
+        animation: fadeIn 0.4s ease-out;
+    }
+    .peserta-dashboard-overlay.show { display: flex; }
+
+    .peserta-dashboard-topbar {
+        background: white; border-bottom: 1px solid #e2e8f0;
+        padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05); flex-shrink: 0; z-index: 10;
+    }
+    .peserta-dashboard-brand { display: flex; align-items: center; gap: 12px; }
+    .peserta-dashboard-brand-icon {
+        width: 40px; height: 40px; background: linear-gradient(135deg, #059669, #0d9488);
+        border-radius: 10px; display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 1.25rem;
+    }
+    .peserta-dashboard-brand h2 { font-size: 1.1rem; font-weight: 700; color: #0f172a; }
+    .peserta-dashboard-brand p { font-size: 0.75rem; color: #64748b; }
+    .peserta-dashboard-user { display: flex; align-items: center; gap: 12px; }
+    .peserta-dashboard-avatar {
+        width: 38px; height: 38px; border-radius: 10px;
+        background: linear-gradient(135deg, #059669, #047857);
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-weight: 700; font-size: 1rem;
+    }
+    .peserta-dashboard-username { font-weight: 600; color: #1e293b; font-size: 0.9rem; }
+    .peserta-dashboard-logout {
+        padding: 0.4rem 0.8rem; background: #fef2f2; color: #dc2626;
+        border: 1px solid #fecaca; border-radius: 8px; font-size: 0.8rem;
+        font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .peserta-dashboard-logout:hover { background: #fee2e2; }
+
+    .peserta-dashboard-body {
+        flex: 1; overflow-y: auto; padding: 2rem;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .peserta-cards-grid {
+        display: grid; grid-template-columns: repeat(2, 1fr);
+        gap: 2rem; max-width: 800px; width: 100%;
+    }
+    @media (max-width: 640px) { .peserta-cards-grid { grid-template-columns: 1fr; gap: 1.5rem; } }
+
+    .peserta-action-card {
+        background: white; border-radius: 20px; padding: 2.5rem 2rem;
+        border: 2px solid #e2e8f0; cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+        text-align: center; position: relative; overflow: hidden;
+    }
+    .peserta-action-card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px;
+        transition: opacity 0.3s; opacity: 0;
+    }
+    .peserta-action-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+        border-color: transparent;
+    }
+    .peserta-action-card:hover::before { opacity: 1; }
+    .peserta-action-card.card-ajukan::before { background: linear-gradient(90deg, #059669, #10b981); }
+    .peserta-action-card.card-ajukan:hover { border-color: #059669; }
+    .peserta-action-card.card-cekstatus::before { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+    .peserta-action-card.card-cekstatus:hover { border-color: #2563eb; }
+
+    .peserta-card-icon {
+        width: 72px; height: 72px; border-radius: 18px;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1.5rem; font-size: 2rem;
+    }
+    .card-ajukan .peserta-card-icon { background: linear-gradient(135deg, #ecfdf5, #d1fae5); box-shadow: 0 8px 20px rgba(5,150,105,0.15); }
+    .card-cekstatus .peserta-card-icon { background: linear-gradient(135deg, #eff6ff, #dbeafe); box-shadow: 0 8px 20px rgba(37,99,235,0.15); }
+    .peserta-card-title { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; }
+    .peserta-card-desc { font-size: 0.9rem; color: #64748b; line-height: 1.5; margin-bottom: 1.5rem; }
+    .peserta-card-btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 600;
+        font-size: 0.9rem; cursor: pointer; border: none; transition: all 0.2s;
+    }
+    .card-ajukan .peserta-card-btn { background: linear-gradient(135deg, #059669, #047857); color: white; }
+    .card-ajukan .peserta-card-btn:hover { box-shadow: 0 8px 20px rgba(5,150,105,0.35); transform: translateY(-2px); }
+    .card-cekstatus .peserta-card-btn { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; }
+    .card-cekstatus .peserta-card-btn:hover { box-shadow: 0 8px 20px rgba(37,99,235,0.35); transform: translateY(-2px); }
+
+    /* ===== FULL-SCREEN CONTENT POPUP (Ajukan & Cek Status) ===== */
+    .peserta-content-popup {
+        position: fixed; inset: 0; z-index: 10001;
+        background: #f8fafc; display: none; flex-direction: column;
+        animation: fadeIn 0.3s ease-out;
+    }
+    .peserta-content-popup.show { display: flex; }
+    .peserta-popup-topbar {
+        background: white; border-bottom: 1px solid #e2e8f0;
+        padding: 0.875rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05); flex-shrink: 0; z-index: 10;
+    }
+    .peserta-popup-title {
+        font-size: 1.1rem; font-weight: 700; color: #0f172a;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .peserta-popup-close {
+        width: 38px; height: 38px; border-radius: 10px; border: 1px solid #e2e8f0;
+        background: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        color: #64748b; font-size: 1.25rem; transition: all 0.2s;
+    }
+    .peserta-popup-close:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+    .peserta-popup-body {
+        flex: 1; overflow-y: auto; padding: 2rem;
+    }
+    @media (max-width: 768px) { .peserta-popup-body { padding: 1rem; } }
+
+    /* Backdrop blur for login overlay */
+    .peserta-login-overlay::before {
+        content: ''; position: absolute; inset: 0;
+        background: rgba(0,0,0,0.3); backdrop-filter: blur(4px);
+    }
+    .peserta-login-card { position: relative; z-index: 1; }
+

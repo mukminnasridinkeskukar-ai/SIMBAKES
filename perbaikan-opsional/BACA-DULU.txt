@@ -1,0 +1,27 @@
+PERBAIKAN OPSIONAL — BACA DULU
+==============================
+
+Isi folder:
+- crud-lightbox.js  : perbaikan typo baris 660  ( `)`;  ->  `)}`; )
+- ui-overhaul.js    : perbaikan typo baris 26   ( `)`   ->  `)}` )
+
+Kedua typo ini ada di file asli "index (35).html" sejak awal dan membuat
+seluruh isi kedua skrip tersebut TIDAK PERNAH DIJALANKAN browser (gagal parse).
+
+Cara pakai (jika benar-benar ingin):
+1. Salin crud-lightbox.js ke js/crud-lightbox.js (timpa)
+2. Salin ui-overhaul.js   ke js/ui-overhaul.js   (timpa)
+3. Buka situs, tekan F12 -> Console, periksa perilakunya.
+
+SARAN KAMI: JANGAN DIPASANG DULU.
+- Situs saat ini bekerja normal justru KARENA kedua modul ini mati
+  (fungsinya sudah digantikan js/admin-crud.js "SISTEM FINAL").
+- Hasil uji: setelah dipasang, 2 error syntax memang hilang dan Supabase
+  tetap terhubung, TAPI ui-overhaul.js tetap mati karena menabrak
+  `const SUPABASE_CONFIG` yang sudah dideklarasikan js/supabase-config.js
+  ("Identifier 'SUPABASE_CONFIG' has already been declared").
+- Modul CRUD lama yang ikut aktif berpotensi bentrok dengan sistem admin
+  yang sekarang normal (event klik baris, render tabel, dll).
+
+Kalau ingin kedua modul lama ini benar-benar hidup tanpa bentrok,
+itu perlu refactor terpisah (rename const + uji integrasi).
