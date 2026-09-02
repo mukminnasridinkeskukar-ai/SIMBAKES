@@ -77,9 +77,6 @@ function showToast(message, type = '') {
 let currentSearchResult = null;
 
 // Variables for revision form file uploads
-let revisionPhoto = null;
-let revisionPDFBase64 = null;
-let revisionFileInfo = null;
 
 /**
  * Main function: Search submission by NIK or Register Number
@@ -546,44 +543,42 @@ function openRevisionForm() {
     
     const data = currentSearchResult;
     
-    // Fill form fields with existing data
-    document.getElementById('revision-row-number').value = data.rowNumber;
-    document.getElementById('rev-reg-nomor').value = data.noRegister || '';
-    document.getElementById('rev-tanggal').value = data.tanggalPengajuan ? formatDate(data.tanggalPengajuan) : '';
+    // Fill form fields with existing data (baris Supabase = snake_case)
+    document.getElementById('revision-row-number').value = data.id || '';
+    document.getElementById('rev-reg-nomor').value = data.no_register || '';
+    document.getElementById('rev-tanggal').value = data.tanggal_pengajuan ? formatDate(data.tanggal_pengajuan) : '';
     
     // Data Pribadi
     document.getElementById('rev-nik').value = data.nik || '';
-    document.getElementById('rev-nama-lengkap').value = data.namaLengkap || '';
-    document.getElementById('rev-tempat-lahir').value = data.tempatLahir || '';
-    document.getElementById('rev-tanggal-lahir').value = data.tanggalLahir || '';
-    document.getElementById('rev-alamat-ktp').value = data.alamatKTP || '';
-    document.getElementById('rev-alamat-domisili').value = data.alamatDomisili || '';
-    document.getElementById('rev-lama-domisili').value = data.lamaDomisili || '';
+    document.getElementById('rev-nama-lengkap').value = data.nama_lengkap || '';
+    document.getElementById('rev-tempat-lahir').value = data.tempat_lahir || '';
+    document.getElementById('rev-tanggal-lahir').value = data.tanggal_lahir || '';
+    document.getElementById('rev-alamat-ktp').value = data.alamat_ktp || '';
+    document.getElementById('rev-alamat-domisili').value = data.alamat_domisili || '';
+    document.getElementById('rev-lama-domisili').value = data.lama_domisili || '';
     
     // Data Pekerjaan
     document.getElementById('rev-pekerjaan').value = data.pekerjaan || '';
     document.getElementById('rev-posisi').value = data.posisi || '';
-    document.getElementById('rev-unit-kerja').value = data.unitKerja || '';
+    document.getElementById('rev-unit-kerja').value = data.unit_kerja || '';
     document.getElementById('rev-penjelasan').value = data.penjelasan || '';
     
     // Rencana Studi
-    document.getElementById('rev-jurusan-tujuan').value = data.jurusanTujuan || '';
-    document.getElementById('rev-jenjang-pendidikan').value = data.jenjangPendidikan || '';
-    document.getElementById('rev-unit-tujuan').value = data.unitTujuan || '';
-    document.getElementById('rev-rencana-tahun').value = data.rencanaTahun || '';
+    document.getElementById('rev-jurusan-tujuan').value = data.jurusan_tujuan || '';
+    document.getElementById('rev-jenjang-pendidikan').value = data.jenjang_pendidikan || '';
+    document.getElementById('rev-unit-tujuan').value = data.unit_tujuan || '';
+    document.getElementById('rev-rencana-tahun').value = data.rencana_tahun || '';
     
     // Kontak
-    document.getElementById('rev-no-hp').value = data.noHP || '';
-    document.getElementById('rev-no-wa').value = data.noWA || '';
+    document.getElementById('rev-no-hp').value = data.no_hp || '';
+    document.getElementById('rev-no-wa').value = data.no_wa || '';
     document.getElementById('rev-email').value = data.email || '';
     
-    // Show photo preview if exists
-    if (data.linkFoto && data.linkFoto !== '-') {
-        const preview = document.getElementById('rev-photo-preview');
-        preview.src = data.linkFoto;
-        preview.style.display = 'block';
-        document.getElementById('rev-photo-placeholder').style.display = 'none';
-    }
+    // Link Drive saat ini (kolom aktual foto_peserta & dokumen_kelengkapan)
+    const revFotoLink = document.getElementById('rev-foto-link');
+    const revDokLink = document.getElementById('rev-dokumen-link');
+    if (revFotoLink) revFotoLink.value = data.foto_peserta || '';
+    if (revDokLink) revDokLink.value = (data.dokumen_kelengkapan || '').split(/\s+/)[0] || '';
     
     // Show revision form container
     document.getElementById('revision-form-container').classList.add('active');
@@ -598,108 +593,11 @@ function openRevisionForm() {
 function closeRevisionForm() {
     document.getElementById('revision-form-container').classList.remove('active');
     
-    // Reset file upload variables
-    revisionPhoto = null;
-    revisionPDFBase64 = null;
-    revisionFileInfo = null;
-    
-    // Reset file displays
-    document.getElementById('rev-photo-preview').style.display = 'none';
-    document.getElementById('rev-photo-placeholder').style.display = 'flex';
-    document.getElementById('rev-file-name-display').classList.add('hidden');
-}
-
-/**
- * Handle revision photo upload
- */
-function handleRevisionPhotoUpload(input) {
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-        
-        // Validate file size (max 2MB)
-        if (file.size > 2 * 1024 * 1024) {
-            showToast('❌ Ukuran foto maksimal 2MB!', 'error');
-            input.value = '';
-            return;
-        }
-        
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-            showToast('❌ Format file harus gambar!', 'error');
-            input.value = '';
-            return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            revisionPhoto = e.target.result;
-            
-            const preview = document.getElementById('rev-photo-preview');
-            preview.src = e.target.result;
-            preview.style.display = 'block';
-            document.getElementById('rev-photo-placeholder').style.display = 'none';
-            
-            showPhotoSuccessIndicatorRev();
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-/**
- * Handle revision PDF upload
- */
-function handleRevisionFileUpload(input) {
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-        
-        // Validate file size (max 2MB)
-        if (file.size > 2 * 1024 * 1024) {
-            showToast('❌ Ukuran file maksimal 2MB!', 'error');
-            input.value = '';
-            return;
-        }
-        
-        // Validate file type
-        if (file.type !== 'application/pdf') {
-            showToast('❌ Format file harus PDF!', 'error');
-            input.value = '';
-            return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            revisionPDFBase64 = e.target.result;
-            revisionFileInfo = { name: file.name, size: file.size };
-            
-            // Show file name
-            document.getElementById('rev-file-name-text').textContent = file.name;
-            document.getElementById('rev-file-name-display').classList.remove('hidden');
-            
-            showToast('✅ Dokumen berhasil dipilih', 'success');
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-/**
- * Remove revision file
- */
-function removeRevisionFile() {
-    revisionPDFBase64 = null;
-    revisionFileInfo = null;
-    document.getElementById('rev-file-dokumen').value = '';
-    document.getElementById('rev-file-name-display').classList.add('hidden');
-}
-
-/**
- * Show success indicator for photo upload (revision)
- */
-function showPhotoSuccessIndicatorRev() {
-    const uploadArea = document.getElementById('rev-photo-upload');
-    uploadArea.classList.add('has-image');
-    setTimeout(() => {
-        uploadArea.classList.remove('has-image');
-    }, 2000);
+    // Kosongkan input link Drive revisi
+    const revFotoLink = document.getElementById('rev-foto-link');
+    const revDokLink = document.getElementById('rev-dokumen-link');
+    if (revFotoLink) revFotoLink.value = '';
+    if (revDokLink) revDokLink.value = '';
 }
 
 /**
@@ -729,37 +627,62 @@ async function saveRevisionData() {
         noHP: document.getElementById('rev-no-hp').value,
         noWA: document.getElementById('rev-no-wa').value,
         email: document.getElementById('rev-email').value,
-        namaFile: revisionFileInfo ? revisionFileInfo.name : '',
-        foto: revisionPhoto || '',
-        dokumenPDF: revisionPDFBase64 || ''
+        fotoPeserta: document.getElementById('rev-foto-link')?.value?.trim() || '',
+        dokumenKelengkapan: document.getElementById('rev-dokumen-link')?.value?.trim() || ''
     };
-    
+
     // Basic validation
     if (!formData.namaLengkap || !formData.nik) {
         showToast('❌ NIK dan Nama Lengkap wajib diisi!', 'error');
         return;
     }
-    
+    if (!formData.rowNumber) {
+        showToast('❌ ID data tidak ditemukan. Muat ulang halaman lalu cari ulang.', 'error');
+        return;
+    }
+
     // Confirm before save
     const confirmSave = confirm('Apakah Anda yakin ingin menyimpan perbaikan data?\n\nStatus akan kembali ke "Proses Verifikasi".');
     if (!confirmSave) return;
-    
+
     // Disable button and show loading
     const btn = event.target;
     const originalText = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px;"></div> Menyimpan...';
-    
+
     try {
+        // Map ke kolom aktual tabel submissions (snake_case)
+        const updates = {
+            nik: formData.nik,
+            nama_lengkap: formData.namaLengkap,
+            tempat_lahir: formData.tempatLahir,
+            tanggal_lahir: formData.tanggalLahir || null,
+            alamat_ktp: formData.alamatKTP,
+            alamat_domisili: formData.alamatDomisili,
+            lama_domisili: formData.lamaDomisili,
+            pekerjaan: formData.pekerjaan,
+            posisi: formData.posisi,
+            unit_kerja: formData.unitKerja,
+            penjelasan: formData.penjelasan,
+            jurusan_tujuan: formData.jurusanTujuan,
+            jenjang_pendidikan: formData.jenjangPendidikan,
+            unit_tujuan: formData.unitTujuan,
+            rencana_tahun: formData.rencanaTahun,
+            no_hp: formData.noHP,
+            no_wa: formData.noWA,
+            email: formData.email,
+            foto_peserta: formData.fotoPeserta || null,
+            dokumen_kelengkapan: formData.dokumenKelengkapan || null,
+            status: 'Proses Verifikasi',
+            updated_at: new Date().toISOString()
+        };
+
         // Update via Supabase
         const { data: result, error } = await supabaseClient
             .from('submissions')
-            .update({
-                ...formData,
-                status: 'Proses Verifikasi',
-                updated_at: new Date().toISOString()
-            })
-            .eq('id', formData.id)
+            .update(updates)
+            .eq('id', formData.rowNumber)
             .select();
         
         if (error) throw error;

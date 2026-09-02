@@ -1632,23 +1632,35 @@ function generateFieldsHTML(record) {
     const fieldIcons = {
         nik: '🆔', nama_lengkap: '👤', nama: '👤', tempat_lahir: '📍', tanggal_lahir: '🎂',
         jenis_kelamin: '⚧', agama: '🙏', golongan_darah: '🩸',
-        email: '📧', no_telepon: '📱', no_hp: '📱',
-        alamat: '🏠', provinsi: '🗺️', kabupaten_kota: '🏙️', kecamatan: '🏘️', kelurahan: '🏡',
-        jurusan_tujuan: '🎓', jurusan: '🎓', rencana_tahun_studi: '📅', rencana_tahun: '📅',
-        unit_tujuan: '🏥', unit_kerja: '🏥', unit_penempatan: '🏥',
+        email: '📧', no_telepon: '📱', no_hp: '📱', no_wa: '💬',
+        alamat: '🏠', alamat_ktp: '🏠', alamat_domisili: '🏘️', lama_domisili: '⏱️',
+        provinsi: '🗺️', kabupaten_kota: '🏙️', kecamatan: '🏘️', kelurahan: '🏡',
+        jurusan_tujuan: '🎓', jurusan: '🎓', jenjang_pendidikan: '📚',
+        rencana_tahun_studi: '📅', rencana_tahun: '📅',
+        unit_tujuan: '🏥', unit_kerja: '🏥', unit_penempatan: '🏥', posisi: '💼',
+        penjelasan: '📝', pekerjaan: '💼',
+        foto_peserta: '🖼️', dokumen_kelengkapan: '📄', rekomendasi_dinkes: '📜',
+        catatan_admin: '🗒️',
         status: '📊', no_register: '📋', tanggal_pengajuan: '📝',
         created_at: '➕', updated_at: '✏️', id: '🔢'
     };
-    
+
+    // Label mapping khusus (jika formatFieldName belum memadai)
+    const fieldLabels = {
+        foto_peserta: 'Foto Peserta',
+        dokumen_kelengkapan: 'Dokumen Kelengkapan',
+        rekomendasi_dinkes: 'Rekomendasi Dinkes'
+    };
+
     let html = '';
-    
+
     Object.entries(record).forEach(([key, value]) => {
         // Skip internal fields
         if (key.startsWith('_') || key === 'row_num') return;
-        
-        const label = formatFieldName(key);
+
+        const label = fieldLabels[key] || formatFieldName(key);
         const icon = fieldIcons[key] || '📌';
-        
+
         // Format nilai
         let displayValue;
         if (value === null || value === undefined || value === '') {
@@ -1658,20 +1670,55 @@ function generateFieldsHTML(record) {
         } else if (key.toLowerCase().includes('tanggal') || key.toLowerCase().includes('created_at') || key.toLowerCase().includes('updated_at')) {
             displayValue = formatDate(value);
         } else {
-            displayValue = escapeHtml(String(value));
+            const strValue = String(value);
+            // Nilai berisi URL (mis. link Google Drive) -> render tombol aktif
+            if (/https?:\/\//.test(strValue)) {
+                displayValue = renderRecordLinkButtons(strValue);
+            } else {
+                displayValue = escapeHtml(strValue);
+            }
         }
-        
+
         html += `
             <div class="fs-field-item">
-                <div class="fs-field-label">${icon} ${label}</div>
+                <div class="fs-field-label">${icon} ${escapeHtml(label)}</div>
                 <div class="fs-field-value">${displayValue}</div>
             </div>
         `;
     });
-    
+
     grid.innerHTML = html;
     console.log(`[FIELDS] ✅ Generated ${Object.keys(record).length} fields`);
 }
+
+/**
+ * renderRecordLinkButtons(value) - Ubah nilai berisi URL menjadi tombol
+ * yang bisa diklik (terbuka di tab baru). Mendukung beberapa URL dalam
+ * satu nilai (dipisah spasi/baris baru, mis. dokumen + surat pernyataan).
+ * Aman XSS: URL dan label di-escape.
+ */
+function renderRecordLinkButtons(value) {
+    const urls = String(value).split(/\s+/).filter(v => /^https?:\/\//.test(v));
+    if (urls.length === 0) return escapeHtml(String(value));
+
+    const labelFor = (u) => {
+        const lower = u.toLowerCase();
+        if (lower.includes('/folders/') || lower.includes('folderview')) return '📂 Buka Folder';
+        if (lower.includes('drive.google') || lower.includes('docs.google')) return '📄 Buka File';
+        return '🔗 Buka Link';
+    };
+
+    return urls.map((u, i) => {
+        const n = urls.length > 1 ? ' ' + (i + 1) : '';
+        return `<a href="${escapeHtml(u)}" target="_blank" rel="noopener" ` +
+            `style="display:inline-flex;align-items:center;gap:0.3rem;background:#eff6ff;color:#1d4ed8;` +
+            `padding:0.4rem 0.8rem;border-radius:8px;font-size:0.75rem;font-weight:700;` +
+            `text-decoration:none;border:1px solid #bfdbfe;margin:0.15rem 0.25rem 0.15rem 0;` +
+            `transition:all 0.2s;" onmouseover="this.style.background='#dbeafe'" ` +
+            `onmouseout="this.style.background='#eff6ff'">${labelFor(u)}${n} ↗</a>`;
+    }).join('');
+}
+window.renderRecordLinkButtons = renderRecordLinkButtons;
 
 // ============================================================
 // LIGHTBOX NAVIGATION

@@ -624,11 +624,10 @@ async function submitForm() {
         noWA: document.getElementById('no-wa').value,
         email: document.getElementById('email').value,
         
-        // GOOGLE DRIVE LINKS (NEW! - replacing base64 files)
+        // GOOGLE DRIVE LINKS (disimpan ke kolom foto_peserta & dokumen_kelengkapan)
         fotoDriveLink: document.getElementById('foto-drive-link')?.value?.trim(),           // Link foto pasfoto
-        dokumenDriveLink: document.getElementById('dokumen-drive-link')?.value?.trim(),     // Link dokumen PDF
-        suratPernyataanLink: document.getElementById('surat-pernyataan-link')?.value?.trim(), // Link surat pernyataan
-        templateDriveLink: document.getElementById('template-drive-link')?.value?.trim(),     // Link template (optional)
+        dokumenDriveLink: document.getElementById('dokumen-drive-link')?.value?.trim(),     // Link dokumen/folder
+        suratPernyataanLink: document.getElementById('surat-pernyataan-link')?.value?.trim(),  // Link surat pernyataan
         
         status: 'Proses Verifikasi',
         timestamp: new Date().toISOString(),
@@ -1241,10 +1240,10 @@ function displayStatusResult(found) {
         no_wa: getField(found, 'no_wa', 'noWA'),
         email: getField(found, 'email', 'email'),
         
-        // Dokumen/Files (support both old base64 and new drive links)
-        foto: getField(found, 'foto', 'foto_drive_link', 'fotoDriveLink', '-'),
-        dokumen_pdf: getField(found, 'dokumen_pdf', 'dokumen_drive_link', 'dokumenDriveLink', '-'),
-        nama_file: getField(found, 'nama_file', 'namaFile', '-'),
+        // Dokumen/Files - kolom aktual: foto_peserta & dokumen_kelengkapan
+        foto: getField(found, 'foto_peserta', 'foto', '-'),
+        dokumen_pdf: getField(found, 'dokumen_kelengkapan', 'dokumen_pdf', '-'),
+        rekomendasi: getField(found, 'rekomendasi_dinkes', 'rekomendasi', '-'),
         
         // Status & Catatan
         status: getField(found, 'status', 'status', 'Proses Verifikasi'),
@@ -1383,19 +1382,19 @@ function displayStatusResult(found) {
                 
                 <!-- SECTION 6: DOKUMEN/FILES -->
                 <div style="font-size:0.7rem;font-weight:700;color:#ea580c;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.65rem;padding-bottom:0.35rem;border-bottom:2px dashed #fed7aa;">Dokumen & File</div>
-                
+
                 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.65rem;margin-bottom:1rem;">
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">foto</span>
-                        <strong style="color:#334155;font-size:0.8rem;word-break:break-all;">${data.foto && data.foto !== '-' && data.foto.length > 10 ? '<a href="' + data.foto + '" target="_blank" style="color:#3b82f6;">📷 Link Tersedia</a>' : (data.foto || '-')}</strong>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">foto_peserta</span>
+                        <strong style="color:#334155;font-size:0.8rem;word-break:break-all;">${renderDriveLinks(data.foto, '📷 Buka Foto')}</strong>
                     </div>
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">dokumen_pdf</span>
-                        <strong style="color:#334155;font-size:0.8rem;word-break:break-all;">${data.dokumen_pdf && data.dokumen_pdf !== '-' && data.dokumen_pdf.length > 10 ? '<a href="' + data.dokumen_pdf + '" target="_blank" style="color:#10b981;">📄 Link Tersedia</a>' : (data.dokumen_pdf || '-')}</strong>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">dokumen_kelengkapan</span>
+                        <strong style="color:#334155;font-size:0.8rem;word-break:break-all;">${renderDriveLinks(data.dokumen_pdf, '📄 Buka Dokumen')}</strong>
                     </div>
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">nama_file</span>
-                        <strong style="color:#334155;font-size:0.8rem;">${data.nama_file || '-'}</strong>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">rekomendasi_dinkes</span>
+                        <strong style="color:#334155;font-size:0.8rem;word-break:break-all;">${renderDriveLinks(data.rekomendasi, '📜 Buka Rekomendasi')}</strong>
                     </div>
                 </div>
                 
@@ -1458,6 +1457,38 @@ function displayStatusNotFound(searchValue, searchType) {
  * @param {string} camelCaseKey - Column name in camelCase format (optional)
  * @param {*} defaultValue - Default value if not found
  */
+/**
+ * Render nilai kolom link menjadi tombol/tautan yang aktif (bisa dibuka).
+ * Mendukung satu nilai berisi beberapa URL (dipisah spasi/baris baru).
+ * Semua teks non-URL ditampilkan apa adanya (aman dari XSS).
+ * @param {*} value - nilai kolom (mis. foto_peserta / dokumen_kelengkapan)
+ * @param {string} label - label tombol (mis. "📄 Buka Dokumen")
+ */
+function renderDriveLinks(value, label) {
+    if (!value || value === '-' || String(value).trim().length < 10) {
+        return '<span style="color:#94a3b8;">—</span>';
+    }
+    const urls = String(value).split(/\s+/).filter(function (v) { return /^https?:\/\//.test(v); });
+    if (urls.length === 0) {
+        return escapeHtmlValue(String(value));
+    }
+    return urls.map(function (u, i) {
+        const suffix = urls.length > 1 ? ' ' + (i + 1) : '';
+        return '<a href="' + escapeHtmlValue(u) + '" target="_blank" rel="noopener" ' +
+            'style="display:inline-flex;align-items:center;gap:0.3rem;background:#eff6ff;color:#1d4ed8;' +
+            'padding:0.35rem 0.7rem;border-radius:8px;font-size:0.75rem;font-weight:600;' +
+            'text-decoration:none;border:1px solid #bfdbfe;margin:0.15rem 0.25rem 0.15rem 0;">' +
+            escapeHtmlValue(label) + suffix + ' ↗</a>';
+    }).join('');
+}
+
+/** Escape karakter HTML untuk atribut/teks (helper lokal). */
+function escapeHtmlValue(str) {
+    return String(str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function getField(data, snakeCaseKey, camelCaseKey, defaultValue = '-') {
     // Try snake_case first (standard Supabase convention)
     if (data && data[snakeCaseKey] !== undefined && data[snakeCaseKey] !== null) {

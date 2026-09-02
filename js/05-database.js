@@ -235,22 +235,22 @@ function mapFormDataToDB(formData) {
         // Informasi Registrasi
         no_register: formData.noRegister,
         tanggal_pengajuan: convertToISODate(formData.tanggalPengajuan),
-        
+
         // Data Pribadi
         nik: formData.nik,
         nama_lengkap: formData.namaLengkap,
         tempat_lahir: formData.tempatLahir,
         tanggal_lahir: convertToISODate(formData.tanggalLahir),
-        
+
         // Alamat
         alamat_ktp: formData.alamatKTP,
         alamat_domisili: formData.alamatDomisili,
         lama_domisili: formData.lamaDomisili,
-        
+
         // Pekerjaan
         pekerjaan: formData.pekerjaan,
         posisi: formData.posisi,
-        
+
         // Unit & Jurusan
         unit_kerja: formData.unitKerja,
         penjelasan: formData.penjelasan,
@@ -258,27 +258,22 @@ function mapFormDataToDB(formData) {
         jenjang_pendidikan: formData.jenjangPendidikan,
         unit_tujuan: formData.unitTujuan,
         rencana_tahun: formData.rencanaTahun,
-        
+
         // Kontak
         no_hp: formData.noHP,
         no_wa: formData.noWA,
         email: formData.email,
-        
-        // GOOGLE DRIVE LINKS (NEW! - replacing base64 files)
-        foto_drive_link: formData.fotoDriveLink || null,           // Link Google Drive foto pasfoto
-        dokumen_drive_link: formData.dokumenDriveLink || null,     // Link Google Drive dokumen PDF
-        surat_pernyataan_link: formData.suratPernyataanLink || null, // Link Google Drive surat pernyataan
-        template_drive_link: formData.templateDriveLink || null,     // Link template (optional)
-        
-        // File Upload - TIDAK DISIMPAN (set null untuk hemat storage)
-        foto: null,
-        dokumen_pdf: null,
-        nama_file: null,
-        
+
+        // GOOGLE DRIVE LINKS - kolom aktual tabel submissions
+        foto_peserta: formData.fotoDriveLink || null,
+        // dokumen_kelengkapan dapat berisi 1 link dokumen + 1 link surat
+        // pernyataan (dipisah baris baru) - admin panel merender keduanya
+        dokumen_kelengkapan: [formData.dokumenDriveLink, formData.suratPernyataanLink]
+            .filter(function (v) { return v && String(v).trim(); })
+            .join('\n') || null,
+
         // Metadata
-        status: formData.status || 'Proses Verifikasi',
-        submission_method: formData.submissionMethod || 'google_drive_links',
-        timestamp: new Date().toISOString()
+        status: formData.status || 'Proses Verifikasi'
     };
 }
 
