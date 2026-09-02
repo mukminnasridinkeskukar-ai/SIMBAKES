@@ -460,6 +460,9 @@
         try {
             let result;
             if (isEdit) {
+                if (payload.status === 'approved') {
+                    payload.approved_at = new Date().toISOString();
+                }
                 result = await client.from('akun_peserta').update(payload).eq('id', id).select();
             } else {
                 if (payload.status === 'approved') {
@@ -620,6 +623,12 @@
     const akunOriginalShowPage = window.showPage;
     window.showPage = function (pageId) {
         if (pageId === AKUN_PAGE_ID) {
+            // Pastikan sesi sudah direstorasi dari localStorage dulu.
+            // (initAuthState milik modul auth baru berjalan di ujung showPage lama,
+            //  sehingga cek auth sebelum pemanggilan pertama bisa false negative.)
+            if (typeof initAuthState === 'function') {
+                try { initAuthState(); } catch (e) { /* abaikan */ }
+            }
             if (typeof isAdminAuthenticated === 'function' && !isAdminAuthenticated()) {
                 if (typeof showToast === 'function') {
                     showToast('🔐 Silakan login untuk mengakses Panel Admin', 'error', 3000);
