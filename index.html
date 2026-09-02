@@ -287,6 +287,11 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                             Data Penetapan
                         </button>
+                        <!-- ===== DATA AKUN PESERTA (Menu Baru) ===== -->
+                        <button class="nav-item cyan" onclick="showPage('data-akun-peserta')" id="nav-data-akun-peserta">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            Data Akun Peserta
+                        </button>
                         <button class="btn-logout" onclick="adminLogout()">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                             Logout
@@ -2576,6 +2581,131 @@
             </div>
         </div>
 
+        <!-- ===== DATA AKUN PESERTA PAGE (Admin Only - Fitur Baru) ===== -->
+        <div class="page" id="page-data-akun-peserta">
+            <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+                <div>
+                    <h2>👤 Data Akun Peserta</h2>
+                    <p>Kelola akun peserta beasiswa (tabel akun_peserta): tambah, ubah, setujui, tangguhkan, dan hapus</p>
+                </div>
+                <div style="display:flex;gap:0.5rem;">
+                    <button class="btn btn-sm" style="background:#f1f5f9;color:#475569;" onclick="refreshAkunPeserta()">
+                        🔄 Refresh
+                    </button>
+                    <button class="btn btn-primary btn-sm" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);" onclick="openAkunModal('add')">
+                        ➕ Tambah Akun
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="admin-stats-bar" id="akun-stats-bar">
+                <div class="admin-stat-item">
+                    <div class="admin-stat-icon" style="background:#eff6ff;">👥</div>
+                    <div class="admin-stat-info">
+                        <span class="admin-stat-value" id="akun-stat-total">0</span>
+                        <span class="admin-stat-label">Total Akun</span>
+                    </div>
+                </div>
+                <div class="admin-stat-item">
+                    <div class="admin-stat-icon" style="background:#dcfce7;">✅</div>
+                    <div class="admin-stat-info">
+                        <span class="admin-stat-value" id="akun-stat-approved">0</span>
+                        <span class="admin-stat-label">Disetujui</span>
+                    </div>
+                </div>
+                <div class="admin-stat-item">
+                    <div class="admin-stat-icon" style="background:#fef3c7;">⏳</div>
+                    <div class="admin-stat-info">
+                        <span class="admin-stat-value" id="akun-stat-pending">0</span>
+                        <span class="admin-stat-label">Menunggu</span>
+                    </div>
+                </div>
+                <div class="admin-stat-item">
+                    <div class="admin-stat-icon" style="background:#fee2e2;">🚫</div>
+                    <div class="admin-stat-info">
+                        <span class="admin-stat-value" id="akun-stat-blocked">0</span>
+                        <span class="admin-stat-label">Ditolak / Ditangguhkan</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toolbar: Search & Filter -->
+            <div class="admin-toolbar">
+                <div class="admin-search-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <input type="text" id="akun-search-input" placeholder="Cari Nama, Username, Email, atau NIK..." oninput="akunDebounceSearch()">
+                </div>
+                <select class="admin-filter-select" id="akun-status-filter" onchange="applyAkunFilters()">
+                    <option value="">Semua Status</option>
+                    <option value="approved">✅ Disetujui</option>
+                    <option value="pending">⏳ Menunggu Persetujuan</option>
+                    <option value="rejected">❌ Ditolak</option>
+                    <option value="suspended">🚫 Ditangguhkan</option>
+                </select>
+                <select class="admin-filter-select" id="akun-sort-order" onchange="applyAkunFilters()">
+                    <option value="desc">Terbaru</option>
+                    <option value="asc">Terlama</option>
+                    <option value="nama">Nama A-Z</option>
+                </select>
+                <button class="btn btn-connection-test" onclick="loadAkunPesertaData()" title="Muat ulang data dari server">
+                    🔗 Ambil Data Terbaru
+                </button>
+            </div>
+
+            <!-- Table Container with Scroll -->
+            <div class="admin-table-wrapper">
+                <div class="admin-table-scroll">
+                    <table class="admin-table" id="akun-peserta-table">
+                        <thead>
+                            <tr>
+                                <th style="width:50px;">#</th>
+                                <th>Nama Lengkap</th>
+                                <th>Akun Login</th>
+                                <th>Jurusan Tujuan</th>
+                                <th>Status</th>
+                                <th>Login Terakhir</th>
+                                <th style="border-radius:0 12px 0 0;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="akun-peserta-table-body">
+                            <tr>
+                                <td colspan="7" style="text-align:center;padding:3rem;color:#64748b;">
+                                    <div class="spinner"></div>
+                                    <p style="margin-top:1rem;">Memuat data akun peserta...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Controls -->
+                <div class="pagination-container" id="akun-pagination-container">
+                    <div class="pagination-info">
+                        Menampilkan <strong id="akun-page-showing">0-0</strong> dari <strong id="akun-page-total">0</strong> akun
+                    </div>
+                    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                        <div class="page-size-selector">
+                            <label>Tampilkan:</label>
+                            <select id="akun-page-size" onchange="akunChangePageSize()">
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        <div class="pagination-controls">
+                            <button class="btn-pagination" onclick="akunGoToPage(1)" id="akun-btn-first" disabled>⏮️</button>
+                            <button class="btn-pagination" onclick="akunGoPrevPage()" id="akun-btn-prev" disabled>◀️</button>
+                            <button class="btn-pagination active" id="akun-btn-current">1</button>
+                            <button class="btn-pagination" onclick="akunGoNextPage()" id="akun-btn-next" disabled>▶️</button>
+                            <button class="btn-pagination" onclick="akunGoLastPage()" id="akun-btn-last" disabled>⏭️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 </div>
 
@@ -2715,6 +2845,8 @@
     <script src="js/10-admin-pengusul.js"></script>
     <script src="js/11-topbar-session.js"></script>
     <script src="js/12-multiuser-init.js"></script>
+    <!-- ===== DATA AKUN PESERTA (Fitur Baru - CRUD tabel akun_peserta) ===== -->
+    <script src="js/13-akun-peserta.js"></script>
 
 <!-- 
 ======================================================

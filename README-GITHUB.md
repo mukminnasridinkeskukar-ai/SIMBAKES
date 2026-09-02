@@ -28,10 +28,13 @@ simbakes-split/
 │   ├── 08-roadmap.js           ← Roadmap kebutuhan (publik + admin)
 │   ├── 09-cek-status.js        ← Cek status pengajuan & penetapan
 │   ├── 10-admin-pengusul.js    ← Admin panel data pengusul v3.0
-│   ├── 11-topbar-session.js    ← Topbar login + proteksi halaman
+│   ├── 11-topbar-session.js    ← Topbar login + login peserta + proteksi halaman
 │   ├── 12-multiuser-init.js    ← Multi-user session + registrasi user + inisialisasi
+│   ├── 13-akun-peserta.js      ← 🆕 Data Akun Peserta (CRUD tabel akun_peserta)
 │   ├── supabase-config.js      ← ⚙️ KONFIGURASI SUPABASE (URL + anon key + init)
 │   └── ui-overhaul.js          ← Skrip UI overhaul (lihat catatan di bawah)
+├── sql/
+│   └── RLS-akun-peserta-CRUD.sql ← 🆕 Skrip policy DELETE (jalankan 1x di Supabase)
 ├── perbaikan-opsional/         ← (opsional) 2 file hasil perbaikan typo lama
 └── README-GITHUB.md            ← file ini
 ```
@@ -72,8 +75,34 @@ Cara mengunggah ke GitHub Pages:
       anonKey: 'eyJ...',
   };
   ```
-- Tabel yang dipakai: `submissions`, `roadmap`, `multiusers` + storage bucket
-  `simbakes` (folder `photos`).
+- Tabel yang dipakai: `submissions`, `roadmap`, `multiusers`, `akun_peserta` 🆕
+  + storage bucket `simbakes` (folder `photos`).
+
+## 🆕 Fitur Baru: Data Akun Peserta (Panel Admin)
+
+Menu **Data Akun Peserta** di Panel Admin (muncul setelah login admin) untuk
+mengelola tabel `akun_peserta` — tabel yang dipakai login & registrasi peserta.
+
+**Fitur CRUD lengkap:**
+- 📋 **Lihat** — daftar akun dengan statistik (Total/Disetujui/Menunggu/Blok),
+  pencarian (nama, username, email, NIK), filter status, urutan, pagination
+- ➕ **Tambah** — modal akun baru: nama, NIK (16 digit), email, username,
+  password, jurusan tujuan, status, catatan
+- ✏️ **Edit** — ubah semua field akun (klik tombol ✏️ di baris tabel)
+- ✅/🚫 **Set Status cepat** — setujui / tangguhkan langsung dari tabel
+- 🗑️ **Hapus** — konfirmasi lalu hapus permanen
+
+**PENTING — satu langkah setup di Supabase (wajib agar tombol Hapus berfungsi):**
+Kebijakan keamanan tabel `akun_peserta` (RLS) saat ini sudah mengizinkan
+baca/tambah/ubah, tetapi **belum mengizinkan hapus**. Buka **Supabase Dashboard
+→ SQL Editor**, tempel isi `sql/RLS-akun-peserta-CRUD.sql`, lalu **Run**.
+Setelah itu semua fungsi CRUD aktif 100%. Sebelum skrip dijalankan, tombol Hapus
+akan menampilkan pesan peringatan yang jelas (bukan crash).
+
+> Verifikasi yang sudah dilakukan: tambah akun lewat UI ✅ (tersimpan ke
+> Supabase), edit akun lewat UI ✅ (tersimpan + updated_at otomatis), proteksi
+> halaman tanpa login ✅, pencarian/filter/pagination ✅, error console tidak
+> bertambah (tetap 3 error bawaan template).
 
 ## ⚠️ Temuan Audit: 2 Modul Lama Sudah Rusak Sejak File Asli
 
