@@ -32,13 +32,87 @@ simbakes-split/
 │   ├── 12-multiuser-init.js    ← Multi-user session + registrasi user + inisialisasi
 │   ├── 13-akun-peserta.js      ← 🆕 Data Akun Peserta (CRUD tabel akun_peserta)
 │   ├── 14-panel-admin-fix.js   ← 🆕 Panel Admin Fix (sesi tahan refresh + pulihkan menu admin)
+│   ├── 15-bukti-pendaftaran.js ← 🆕🆕 BUKTI PENDAFTARAN (terbitkan/cetak ulang setelah kirim)
 │   ├── supabase-config.js      ← ⚙️ KONFIGURASI SUPABASE (URL + anon key + init)
 │   └── ui-overhaul.js          ← Skrip UI overhaul (lihat catatan di bawah)
 ├── sql/
 │   └── RLS-akun-peserta-CRUD.sql ← 🆕 Skrip policy DELETE (jalankan 1x di Supabase)
+├── daftar-peserta.html         ← 🆕🆕 HALAMAN PENDAFTARAN AKUN PESERTA (wajib di-upload!)
 ├── perbaikan-opsional/         ← (opsional) 2 file hasil perbaikan typo lama
 └── README-GITHUB.md            ← file ini
 ```
+
+## 🆕🆕 Halaman Daftar Akun Peserta (`daftar-peserta.html`)
+**Latar:** tombol **"Daftar Akun Peserta"** di kanan-atas (dan link "Daftar di Sini"
+di modal Login Peserta) menunjuk ke `daftar-peserta.html` — file ini **belum pernah
+ada** di hosting sehingga klik tombolnya menghasilkan **404** di console.
+
+**Solusi:** halaman pendaftaran mandiri dibuat lengkap dan terintegrasi penuh:
+- Koneksi Supabase memakai **file config yang sama** (`js/supabase-config.js`) — satu
+  sumber untuk seluruh aplikasi; tidak ada kredensial dobel.
+- Insert ke tabel **`akun_peserta`** dengan kolom persis skema: `nama, nik, email,
+  username, password, jurusan_tujuan, status='pending'` — kolom lain tidak dikirim
+  (hindari error PGRST204).
+- Validasi konsisten dengan Panel Admin (modul 13): NIK tepat 16 digit, email,
+  username huruf kecil 4-30 karakter, password min. 8 karakter + konfirmasi.
+- **Cek duplikat dulu** (username / email / NIK) → pesan ramah sebelum insert;
+  error unik `23505` juga ditangani.
+- Daftar **Jurusan Tujuan sama persis** dengan dropdown admin (13 pilihan).
+- Setelah sukses: panel ringkasan akun + instruksi menunggu verifikasi 1-2 hari
+  kerja + tombol ke halaman **Login Peserta**.
+- Alur lengkap: **Daftar → muncul di Panel Admin "Data Akun Peserta" (Menunggu) →
+  admin setujui → peserta login via tombol "Login Peserta"** (sudah teruji ujung
+  ke ujung).
+- Link di `index.html` (topbar + modal login peserta) diubah dari URL absolut ke
+  **relatif** (`daftar-peserta.html`) agar bekerja di domain mana pun (hosting
+  sendiri, GitHub Pages, maupun preview lokal).
+
+> 📤 **PENTING:** upload `daftar-peserta.html` + `index.html` ke root hosting
+> (sejajar index.html). Tanpa file ini, tombol Daftar Akun Peserta akan 404 lagi.
+
+## 🆕🆕 Bukti Pendaftaran (`js/15-bukti-pendaftaran.js`) — Perbaikan Menu Ajukan
+**Latar:** Formulir "Ajukan Rekomendasi" TIDAK PERNAH bisa dikirim dari popup peserta.
+Akar masalah: popup meng-CLONE `page-ajukan` sehingga semua `id` input ganda
+(`nik`, `form-ajukan`, dst). Pengguna mengetik di clone, tetapi
+`validateForm()/submitForm()` membaca form asli yang tersembunyi & kosong via
+`getElementById` → selalu muncul "Mohon lengkapi field berikut" meski form terisi penuh.
+
+**Perbaikan (file berubah):**
+1. **`js/11-topbar-session.js`** — popup Ajukan & Cek Status kini **MEMINDAHKAN**
+   (move, bukan clone) node halaman asli ke popup; saat ditutup node dikembalikan
+   ke posisi semula. Tidak ada lagi id ganda; semua fungsi form bekerja normal.
+2. **`js/04-form.js`** — `submitForm()` kini memvalidasi ulang seluruh form
+   (defense-in-depth); setelah sukses, record disimpan ke `window.__buktiLastRecord`.
+   `displayStatusResult()` kini memanggil `setActionButtons()` (sebelumnya fungsi
+   mati — tombol aksi tidak pernah muncul di hasil Cek Status).
+3. **`js/09-cek-status.js`** — tombol **🧾 Bukti Pendaftaran** ditambahkan untuk
+   semua status + guard container.
+4. **`index.html`** — tombol **"🧾 Unduh Bukti Pendaftaran"** di modal sukses,
+   container `#status-actions` baru di kartu hasil Cek Status, dan include
+   `js/15-bukti-pendaftaran.js`.
+5. **`js/15-bukti-pendaftaran.js` (BARU)** — menerbitkan bukti pendaftaran resmi:
+   - Layar bukti siap-cetak A4 (kop SIMBAKES, nomor register, data lengkap,
+     status, lampiran, catatan) — otomatis membuka dialog **Cetak/Simpan PDF**.
+   - Setelah submit sukses: klik tombol di modal sukses → bukti langsung terbit.
+   - Kapan pun setelahnya: menu **Cek Status** (NIK / No. Register) → tombol
+     🧾 Bukti Pendaftaran → cetak ulang. Data diambil langsung dari Supabase
+     (tabel `submissions`) — satu sumber kebenaran.
+   - Fallback bila popup diblokir browser: cetak via iframe tersembunyi.
+
+**File yang wajib di-upload ke hosting (Task 9):**
+- `index.html`
+- `js/04-form.js`
+- `js/09-cek-status.js`
+- `js/11-topbar-session.js`
+- `js/15-bukti-pendaftaran.js` ← **FILE BARU**
+Lalu hard refresh (Ctrl+Shift+R).
+
+**Verifikasi E2E (browser + Supabase live):** isi form lengkap → modal konfirmasi
+muncul → kirim → data tersimpan di `submissions` (REST diverifikasi) → modal sukses
+→ Bukti Pendaftaran terbit (tab cetak) → Cek Status menampilkan tombol Bukti
+Pendaftaran → cetak ulang OK. Data uji dihapus setelah pengujian; console 0 error.
+
+---
 
 ## Frontend: HTML + GitHub Pages
 

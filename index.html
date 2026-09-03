@@ -1396,6 +1396,10 @@
                             <p>Menunggu pencarian...</p>
                         </div>
                     </div>
+                    
+                    <!-- Action Buttons: Bukti Pendaftaran / Lihat Dokumen / Perbaikan
+                         (diisi otomatis oleh setActionButtons() dari 09-cek-status.js) -->
+                    <div id="status-actions" style="display:none;gap:0.6rem;flex-wrap:wrap;justify-content:center;padding:0.75rem 1.25rem 1.25rem;"></div>
                 </div>
                 
                 <!-- Revision Form Container (Hidden by default) -->
@@ -2738,7 +2742,10 @@
             <p class="success-message">Data pengajuan beasiswa Anda telah berhasil dikirim dan sedang diproses.</p>
             <div class="reg-number-display" id="success-reg-number">REG-SIMBAKES-XXXXXXXXXX</div>
             <p style="color:#64748b;font-size:0.875rem;margin-bottom:1.5rem;">Simpan nomor register ini untuk mengecek status pengajuan Anda.</p>
-            <button class="btn btn-primary" onclick="closeModal('success-modal');resetForm();showPage('cek-status');">Cek Status Pengajuan</button>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="printBuktiFromSuccess()">🧾 Unduh Bukti Pendaftaran</button>
+                <button class="btn btn-secondary" onclick="closeModal('success-modal');resetForm();showPage('cek-status');">Cek Status Pengajuan</button>
+            </div>
         </div>
     </div>
 </div>
@@ -2827,6 +2834,7 @@
     <script src="js/14-panel-admin-fix.js"></script>
     <!-- ===== DATA AKUN PESERTA (Fitur Baru - CRUD tabel akun_peserta) ===== -->
     <script src="js/13-akun-peserta.js"></script>
+    <script src="js/15-bukti-pendaftaran.js"></script>
 
 <!-- 
 ======================================================

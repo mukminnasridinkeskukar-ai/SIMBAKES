@@ -198,9 +198,17 @@ function setStatusBadge(status) {
  */
 function setActionButtons(status) {
     const actionsContainer = document.getElementById('status-actions');
+    if (!actionsContainer) return; // container belum ada di halaman
     const statusLower = String(status).toLowerCase().trim();
     
     let buttonsHTML = '';
+    
+    // Common button: BUKTI PENDAFTARAN (tersedia utk semua status)
+    buttonsHTML += `
+        <button class="btn-secondary-action" onclick="printBuktiFromStatus()" style="background:#ecfdf5;color:#065f46;border-color:#a7f3d0;">
+            🧾 Bukti Pendaftaran
+        </button>
+    `;
     
     // Common button: View Document Link
     if (currentSearchResult && currentSearchResult.linkDokumen && currentSearchResult.linkDokumen !== '-') {
@@ -251,6 +259,7 @@ function setActionButtons(status) {
     }
     
     actionsContainer.innerHTML = buttonsHTML;
+    actionsContainer.style.display = buttonsHTML.trim() ? 'flex' : 'none';
 }
 
 /**

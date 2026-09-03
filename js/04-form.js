@@ -583,6 +583,14 @@ async function submitForm() {
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<div class="spinner"></div> Mengirim...';
     
+    // DEFENSE-IN-DEPTH: validasi ulang seluruh form sebelum kirim
+    // (mencegah data tidak lengkap tersimpan bila modal konfirmasi dilewati)
+    if (typeof validateForm === 'function' && !validateForm()) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Ya, Kirim Sekarang';
+        return;
+    }
+    
     // Validate Google Drive links are provided (NEW! - replacing file upload checks)
     const fotoLink = document.getElementById('foto-drive-link')?.value?.trim();
     const dokumenLink = document.getElementById('dokumen-drive-link')?.value?.trim();
@@ -649,6 +657,11 @@ async function submitForm() {
             const result = await submitToSupabase(formData);
             
             console.log('✅ Berhasil disimpan ke Supabase!', result);
+            
+            // Simpan record utk penerbitan Bukti Pendaftaran (module 15)
+            if (result && result[0]) {
+                window.__buktiLastRecord = result[0];
+            }
             
             // Show success modal
             closeModal('confirm-modal');
@@ -1415,6 +1428,13 @@ function displayStatusResult(found) {
             </div>
         </div>
     `;
+    
+    // Render tombol aksi status (Bukti Pendaftaran, Lihat Dokumen, Perbaikan, dst.)
+    // FIX: setActionButtons sebelumnya tidak pernah dipanggil -> tombol aksi
+    // tidak pernah muncul di hasil Cek Status.
+    if (typeof setActionButtons === 'function') {
+        setActionButtons(data.status);
+    }
     
     console.log('[SIMBAKES] ✅ Displayed submission data (23 fields):', data);
 }

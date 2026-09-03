@@ -321,41 +321,46 @@ function openPesertaAjukan() {
         return;
     }
     
-    // Move the page content into popup body
+    // FIX: MOVE (bukan clone) node asli ke popup.
+    // Clone menduplikasi semua id anak (nik, form-ajukan, dst) sehingga
+    // validateForm/submitForm (getElementById) membaca form asli yg tersembunyi
+    // -> pengajuan TIDAK PERNAH bisa dikirim dari popup.
+    window.__ajukanOrigParent = pageAjukan.parentNode;
+    window.__ajukanOrigNext = pageAjukan.nextSibling;
+    
     body.innerHTML = '';
-    // Clone the inner content (excluding the .page wrapper to avoid display:none)
-    const clone = pageAjukan.cloneNode(true);
-    clone.classList.add('active');
-    clone.style.display = 'block';
-    clone.removeAttribute('id'); // Remove duplicate id
-    body.appendChild(clone);
+    pageAjukan.classList.add('active');
+    pageAjukan.style.display = 'block';
+    body.appendChild(pageAjukan); // pindahkan node asli
     
     // Initialize form if needed (generate nomor register & tanggal)
-    if (typeof generateRegNumber === 'function') generateRegNumber();
-    if (typeof generateTimestamp === 'function') generateTimestamp();
+    if (typeof initializeForm === 'function') initializeForm();
     
     // Pre-fill NIK if available
     if (pesertaSessionData && pesertaSessionData.nik) {
-        const nikInput = clone.querySelector('#nik');
+        const nikInput = document.getElementById('nik');
         if (nikInput) nikInput.value = pesertaSessionData.nik;
     }
     
-    // Override submitForm to close popup on success
-    const origSubmitForm = window.submitForm;
-    window.submitForm = async function() {
-        await origSubmitForm.call(this);
-        // Check if success modal appeared, if so add close handler
-        setTimeout(() => {
-            const successModal = document.getElementById('success-modal');
-            if (successModal && successModal.classList.contains('active')) {
-                // Modify the cek status button to close popup instead
-                const cekBtn = successModal.querySelector('button[onclick*="cek-status"]');
-                if (cekBtn) {
-                    cekBtn.setAttribute('onclick', 'closePesertaAjukan(); openPesertaCekStatus();');
+    // Override submitForm to close popup on success (hanya sekali, cegah nesting)
+    if (!window.__ajukanSubmitWrapped) {
+        window.__ajukanSubmitWrapped = true;
+        const origSubmitForm = window.submitForm;
+        window.submitForm = async function() {
+            await origSubmitForm.call(this);
+            // Check if success modal appeared, if so add close handler
+            setTimeout(() => {
+                const successModal = document.getElementById('success-modal');
+                if (successModal && successModal.classList.contains('active')) {
+                    // Modify the cek status button to close popup instead
+                    const cekBtn = successModal.querySelector('button[onclick*="cek-status"]');
+                    if (cekBtn) {
+                        cekBtn.setAttribute('onclick', 'closePesertaAjukan(); openPesertaCekStatus();');
+                    }
                 }
-            }
-        }, 500);
-    };
+            }, 500);
+        };
+    }
     
     // Show popup
     popup.classList.add('show');
@@ -370,7 +375,21 @@ function closePesertaAjukan() {
     const body = document.getElementById('peserta-ajukan-body');
     if (popup) {
         popup.classList.remove('show');
-        if (body) body.innerHTML = ''; // Clean up cloned content
+        
+        // Kembalikan node page-ajukan ke posisi aslinya di main content
+        const pageAjukan = document.getElementById('page-ajukan');
+        if (pageAjukan && window.__ajukanOrigParent) {
+            pageAjukan.classList.remove('active');
+            pageAjukan.style.display = '';
+            try {
+                window.__ajukanOrigParent.insertBefore(pageAjukan, window.__ajukanOrigNext || null);
+            } catch (e) {
+                window.__ajukanOrigParent.appendChild(pageAjukan);
+            }
+            window.__ajukanOrigParent = null;
+            window.__ajukanOrigNext = null;
+        }
+        if (body) body.innerHTML = ''; // bersihkan sisa konten
         document.body.style.overflow = '';
     }
 }
@@ -389,70 +408,28 @@ function openPesertaCekStatus() {
         return;
     }
     
-    // Clone the cek-status page content
+    // FIX: MOVE (bukan clone) node asli - sama dgn openPesertaAjukan.
+    // Clone membuat id ganda (search-nik, result-container, dst) sehingga
+    // searchSubmissionData (getElementById) membaca field asli yg tersembunyi
+    // -> pencarian dari popup tidak pernah berfungsi.
+    window.__cekstatusOrigParent = pageCekStatus.parentNode;
+    window.__cekstatusOrigNext = pageCekStatus.nextSibling;
+    
     body.innerHTML = '';
-    const clone = pageCekStatus.cloneNode(true);
-    clone.classList.add('active');
-    clone.style.display = 'block';
-    clone.removeAttribute('id'); // Remove duplicate id
-    body.appendChild(clone);
+    pageCekStatus.classList.add('active');
+    pageCekStatus.style.display = 'block';
+    body.appendChild(pageCekStatus); // pindahkan node asli
+    
+    // Reset tampilan hasil sebelumnya
+    const rc = document.getElementById('result-container');
+    if (rc) rc.classList.remove('active');
+    const nf = document.getElementById('not-found-container');
+    if (nf) nf.style.display = 'none';
     
     // Pre-fill NIK if available from peserta session
     if (pesertaSessionData && pesertaSessionData.nik) {
-        const nikInput = clone.querySelector('#search-nik');
+        const nikInput = document.getElementById('search-nik');
         if (nikInput) nikInput.value = pesertaSessionData.nik;
-    }
-    
-    // Rebind searchSubmissionData to work within the clone
-    // The original function uses getElementById which will find the first match
-    // Since the cloned elements don't have IDs (we removed them), we need to patch
-    const searchBtn = clone.querySelector('button[onclick*="searchSubmissionData"]');
-    if (searchBtn) {
-        searchBtn.onclick = async function(e) {
-            e.preventDefault();
-            // Get values from cloned inputs
-            const clonedNik = clone.querySelector('input[placeholder*="16 digit NIK"]');
-            const clonedReg = clone.querySelector('input[placeholder*="REG-SIMBAKES"]');
-            const nik = clonedNik ? clonedNik.value.trim() : '';
-            const register = clonedReg ? clonedReg.value.trim() : '';
-            
-            // Put values into the original fields (which the searchSubmissionData function reads)
-            const origNik = document.getElementById('search-nik');
-            const origReg = document.getElementById('search-register');
-            if (origNik) origNik.value = nik;
-            if (origReg) origReg.value = register;
-            
-            // Also put result containers into the clone
-            // Move search-result-content into the clone's result area
-            await searchSubmissionData();
-            
-            // After search, move the result display into the popup clone
-            const origResultContent = document.getElementById('search-result-content');
-            const clonedResultContent = clone.querySelector('#search-result-content') || clone.querySelector('.status-card-body');
-            if (origResultContent && clonedResultContent) {
-                clonedResultContent.innerHTML = origResultContent.innerHTML;
-            }
-            
-            // Handle result container visibility
-            const origResultContainer = document.getElementById('result-container');
-            const clonedResultContainer = clone.querySelector('#result-container') || clone.querySelector('.result-container');
-            if (origResultContainer && clonedResultContainer) {
-                clonedResultContainer.classList.add('active');
-                clonedResultContainer.style.display = '';
-            }
-            
-            // Hide loading
-            const clonedLoading = clone.querySelector('#search-loading');
-            if (clonedLoading) clonedLoading.style.display = 'none';
-            
-            // Handle not found
-            const origNotFound = document.getElementById('not-found-container');
-            const clonedNotFound = clone.querySelector('#not-found-container');
-            if (origNotFound && clonedNotFound) {
-                clonedNotFound.style.display = origNotFound.style.display;
-                clonedNotFound.innerHTML = origNotFound.innerHTML;
-            }
-        };
     }
     
     // Show popup
@@ -468,6 +445,20 @@ function closePesertaCekStatus() {
     const body = document.getElementById('peserta-cekstatus-body');
     if (popup) {
         popup.classList.remove('show');
+        
+        // Kembalikan node page-cek-status ke posisi aslinya di main content
+        const pageCekStatus = document.getElementById('page-cek-status');
+        if (pageCekStatus && window.__cekstatusOrigParent) {
+            pageCekStatus.classList.remove('active');
+            pageCekStatus.style.display = '';
+            try {
+                window.__cekstatusOrigParent.insertBefore(pageCekStatus, window.__cekstatusOrigNext || null);
+            } catch (e) {
+                window.__cekstatusOrigParent.appendChild(pageCekStatus);
+            }
+            window.__cekstatusOrigParent = null;
+            window.__cekstatusOrigNext = null;
+        }
         if (body) body.innerHTML = '';
         document.body.style.overflow = '';
     }
