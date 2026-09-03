@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Akun Peserta - SIMBAKES</title>
+    <meta name="description" content="Pendaftaran akun peserta Beasiswa Tematik Bidang Kesehatan Dinas Kesehatan Kab. Kutai Kartanegara">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(160deg, #ecfdf5 0%, #f0fdfa 45%, #eff6ff 100%);
+            min-height: 100vh;
+            color: #1e293b;
+            padding: 24px 16px 48px;
+        }
+
+        .page-wrap { max-width: 720px; margin: 0 auto; }
+
+        /* ===== Header brand ===== */
+        .brand-header {
+            background: linear-gradient(135deg, #059669 0%, #0d9488 50%, #0891b2 100%);
+            border-radius: 18px;
+            padding: 26px 28px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            box-shadow: 0 10px 30px rgba(13, 148, 136, 0.25);
+            margin-bottom: 22px;
+        }
+        .brand-logo {
+            width: 58px; height: 58px; flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.16);
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px;
+        }
+        .brand-header h1 { font-size: 1.35rem; font-weight: 800; letter-spacing: 0.3px; }
+        .brand-header p { font-size: 0.82rem; opacity: 0.92; margin-top: 4px; line-height: 1.45; }
+
+        /* ===== Card form ===== */
+        .form-card {
+            background: #fff;
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: 0 6px 24px rgba(15, 118, 110, 0.10);
+            border: 1px solid #e2e8f0;
+        }
+        .form-card h2 {
+            font-size: 1.05rem; color: #0f766e; margin-bottom: 4px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .form-card .sub { font-size: 0.85rem; color: #64748b; margin-bottom: 22px; line-height: 1.5; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
+        .field { display: flex; flex-direction: column; gap: 6px; }
+        .field.full { grid-column: 1 / -1; }
+        .field label { font-size: 0.82rem; font-weight: 600; color: #334155; }
+        .field label .req { color: #dc2626; }
+        .field .hint { font-size: 0.72rem; color: #94a3b8; }
+
+        .field input, .field select {
+            height: 44px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0 13px;
+            font-size: 0.92rem;
+            font-family: inherit;
+            color: #1e293b;
+            background: #f8fafc;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            width: 100%;
+        }
+        .field input:focus, .field select:focus {
+            outline: none;
+            border-color: #0d9488;
+            box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.14);
+            background: #fff;
+        }
+        .field input.invalid { border-color: #ef4444; background: #fef2f2; }
+        .field input:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .nik-counter { font-size: 0.7rem; color: #94a3b8; text-align: right; }
+        .nik-counter.ok { color: #059669; font-weight: 700; }
+
+        /* ===== Alert ===== */
+        .alert {
+            display: none;
+            border-radius: 12px;
+            padding: 13px 16px;
+            font-size: 0.86rem;
+            line-height: 1.55;
+            margin-bottom: 18px;
+            border: 1px solid transparent;
+        }
+        .alert.show { display: block; }
+        .alert.error { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+        .alert.info { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+        .alert.success { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+
+        /* ===== Submit ===== */
+        .btn-submit {
+            width: 100%;
+            height: 50px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
+            color: #fff;
+            font-size: 0.98rem;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 9px;
+            box-shadow: 0 6px 18px rgba(13, 148, 136, 0.30);
+            transition: transform 0.12s, box-shadow 0.12s, opacity 0.12s;
+            margin-top: 22px;
+            font-family: inherit;
+        }
+        .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 9px 22px rgba(13, 148, 136, 0.38); }
+        .btn-submit:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+
+        .spinner {
+            width: 17px; height: 17px;
+            border: 2.5px solid rgba(255, 255, 255, 0.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== Footer links ===== */
+        .form-footer {
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px dashed #e2e8f0;
+            font-size: 0.85rem;
+            color: #64748b;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .form-footer a { color: #0d9488; font-weight: 700; text-decoration: none; }
+        .form-footer a:hover { text-decoration: underline; }
+
+        /* ===== Success panel ===== */
+        .success-panel { display: none; text-align: center; padding: 26px 10px 10px; }
+        .success-panel.show { display: block; }
+        .success-icon {
+            width: 84px; height: 84px;
+            margin: 0 auto 18px;
+            border-radius: 50%;
+            background: #f0fdf4;
+            border: 2.5px solid #86efac;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 40px;
+        }
+        .success-panel h2 { color: #15803d; margin-bottom: 10px; font-size: 1.25rem; }
+        .success-panel p { font-size: 0.92rem; color: #475569; line-height: 1.7; max-width: 460px; margin: 0 auto 8px; }
+        .success-panel .ringkasan {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin: 18px auto;
+            max-width: 400px;
+            text-align: left;
+            font-size: 0.85rem;
+            line-height: 1.9;
+            color: #334155;
+        }
+        .success-panel .ringkasan b { color: #0f766e; }
+        .btn-home {
+            display: inline-flex; align-items: center; gap: 8px;
+            height: 46px; padding: 0 22px;
+            margin-top: 12px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
+            color: #fff; font-weight: 700; font-size: 0.9rem;
+            text-decoration: none;
+            box-shadow: 0 6px 18px rgba(13, 148, 136, 0.30);
+        }
+
+        .info-banner {
+            margin-top: 18px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+            border-radius: 12px;
+            padding: 13px 16px;
+            font-size: 0.82rem;
+            line-height: 1.6;
+        }
+
+        .page-footer { text-align: center; margin-top: 22px; font-size: 0.75rem; color: #94a3b8; line-height: 1.6; }
+
+        @media (max-width: 560px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .brand-header { flex-direction: column; text-align: center; padding: 22px 18px; }
+            .form-card { padding: 20px 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-wrap">
+        <!-- Header -->
+        <header class="brand-header">
+            <div class="brand-logo">🎓</div>
+            <div>
+                <h1>SIMBAKES</h1>
+                <p>Beasiswa Tematik Bidang Kesehatan<br>Dinas Kesehatan Kab. Kutai Kartanegara</p>
+            </div>
+        </header>
+
+        <div class="form-card">
+            <!-- ===== FORM PENDAFTARAN ===== -->
+            <div id="form-section">
+                <h2>📋 Formulir Pendaftaran Akun Peserta</h2>
+                <p class="sub">Lengkapi data di bawah ini untuk membuat akun peserta. Setelah mendaftar, akun Anda akan <b>diverifikasi admin Dinas Kesehatan</b> terlebih dahulu sebelum dapat digunakan login.</p>
+
+                <div class="alert" id="form-alert" role="alert"></div>
+
+                <form id="daftar-form" novalidate>
+                    <div class="form-grid">
+                        <div class="field full">
+                            <label for="f-nama">Nama Lengkap <span class="req">*</span></label>
+                            <input type="text" id="f-nama" maxlength="150" placeholder="Sesuai identitas/KTP" autocomplete="name">
+                        </div>
+
+                        <div class="field">
+                            <label for="f-nik">NIK <span class="req">*</span></label>
+                            <input type="text" id="f-nik" inputmode="numeric" maxlength="16" placeholder="16 digit sesuai KTP" autocomplete="off">
+                            <div class="nik-counter" id="nik-counter">0 / 16 digit</div>
+                        </div>
+
+                        <div class="field">
+                            <label for="f-email">Email <span class="req">*</span></label>
+                            <input type="email" id="f-email" maxlength="150" placeholder="nama@email.com" autocomplete="email">
+                            <span class="hint">Digunakan sebagai alternatif login</span>
+                        </div>
+
+                        <div class="field">
+                            <label for="f-username">Username <span class="req">*</span></label>
+                            <input type="text" id="f-username" maxlength="30" placeholder="huruf kecil / angka (min. 4)" autocomplete="username">
+                            <span class="hint">Otomatis diubah ke huruf kecil</span>
+                        </div>
+
+                        <div class="field">
+                            <label for="f-jurusan">Jurusan Tujuan <span class="req">*</span></label>
+                            <select id="f-jurusan">
+                                <option value="">-- Pilih Jurusan --</option>
+                            </select>
+                            <span class="hint">Sesuai roadmap kebutuhan Dinas Kesehatan</span>
+                        </div>
+
+                        <div class="field">
+                            <label for="f-password">Password <span class="req">*</span></label>
+                            <input type="password" id="f-password" maxlength="72" placeholder="Minimal 8 karakter" autocomplete="new-password">
+                        </div>
+
+                        <div class="field">
+                            <label for="f-password2">Ulangi Password <span class="req">*</span></label>
+                            <input type="password" id="f-password2" maxlength="72" placeholder="Ketik ulang password" autocomplete="new-password">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="btn-daftar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="19" height="19"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                        <span id="btn-daftar-text">DAFTARKAN AKUN</span>
+                    </button>
+                </form>
+
+                <div class="info-banner">
+                    💡 Setelah akun <b>disetujui admin</b> (1-2 hari kerja), Anda bisa login melalui tombol
+                    <b>"Login Peserta"</b> di halaman utama SIMBAKES untuk mengajukan rekomendasi beasiswa.
+                </div>
+            </div>
+
+            <!-- ===== SUKSES ===== -->
+            <div class="success-panel" id="success-section">
+                <div class="success-icon">✅</div>
+                <h2>Pendaftaran Berhasil!</h2>
+                <p>Akun peserta Anda sudah masuk ke sistem dan sedang <b>menunggu verifikasi admin Dinas Kesehatan</b>. Silakan cek secara berkala melalui tombol <b>Login Peserta</b> di halaman utama.</p>
+                <div class="ringkasan" id="ringkasan-akun"></div>
+                <p style="font-size:0.8rem;color:#94a3b8;">Simpan username &amp; password Anda dengan baik. Jangan bagikan kepada siapa pun.</p>
+                <a class="btn-home" href="index.html">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="17" height="17"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                    Ke Halaman Login Peserta
+                </a>
+            </div>
+
+            <!-- ===== Footer ===== -->
+            <div class="form-footer" id="form-footer">
+                <span>Sudah punya akun? <a href="index.html">Login Peserta di Sini</a></span>
+                <span><a href="index.html">← Beranda SIMBAKES</a></span>
+            </div>
+        </div>
+
+        <p class="page-footer">© 2026 SIMBAKES v2.0 — Dinas Kesehatan Kab. Kutai Kartanegara</p>
+    </div>
+
+    <!-- Supabase (config diambil dari file yang sama dengan aplikasi utama) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script>
+    (function () {
+        'use strict';
+
+        // ===== Daftar jurusan: SAMA dengan Panel Admin (modul 13 - Data Akun Peserta) =====
+        var JURUSAN_OPTIONS = [
+            'Ners', 'Keperawatan', 'Kebidanan', 'Kesehatan Masyarakat', 'Gizi',
+            'Farmasi', 'Kedokteran', 'Dokter Spesialis Penyakit Dalam',
+            'Dokter Spesialis Anak', 'Dokter Spesialis Obstetri & Ginekologi',
+            'Dokter Gigi', 'Fisioterapi', 'Sanitasi Lingkungan'
+        ];
+
+        var el = function (id) { return document.getElementById(id); };
+        var alertBox = el('form-alert');
+        var btn = el('btn-daftar');
+        var btnText = el('btn-daftar-text');
+        var form = el('daftar-form');
+
+        // ===== Util =====
+        function showAlert(type, messageHtml) {
+            alertBox.className = 'alert ' + type + ' show';
+            alertBox.innerHTML = messageHtml;
+            alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        function hideAlert() { alertBox.className = 'alert'; alertBox.innerHTML = ''; }
+        function escapeHtml(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        }
+
+        // Tunggu client Supabase siap (diinisialisasi oleh js/supabase-config.js)
+        function waitForClient(timeoutMs) {
+            return new Promise(function (resolve) {
+                var started = Date.now();
+                (function poll() {
+                    if (typeof supabaseClient !== 'undefined' && supabaseClient) return resolve(supabaseClient);
+                    if (Date.now() - started > (timeoutMs || 12000)) return resolve(null);
+                    setTimeout(poll, 350);
+                })();
+            });
+        }
+
+        // ===== Isi dropdown jurusan =====
+        (function fillJurusan() {
+            var sel = el('f-jurusan');
+            JURUSAN_OPTIONS.forEach(function (j) {
+                var opt = document.createElement('option');
+                opt.value = j;
+                opt.textContent = j;
+                sel.appendChild(opt);
+            });
+        })();
+
+        // ===== NIK: hanya angka + counter =====
+        el('f-nik').addEventListener('input', function () {
+            var v = this.value.replace(/\D/g, '').slice(0, 16);
+            this.value = v;
+            var c = el('nik-counter');
+            c.textContent = v.length + ' / 16 digit';
+            c.className = 'nik-counter' + (v.length === 16 ? ' ok' : '');
+            this.classList.remove('invalid');
+        });
+
+        // ===== Username: huruf kecil otomatis =====
+        el('f-username').addEventListener('input', function () {
+            this.value = this.value.toLowerCase().replace(/\s+/g, '');
+            this.classList.remove('invalid');
+        });
+        ['f-nama', 'f-email', 'f-password', 'f-password2', 'f-jurusan'].forEach(function (id) {
+            el(id).addEventListener('input', function () { this.classList.remove('invalid'); });
+            el(id).addEventListener('change', function () { this.classList.remove('invalid'); });
+        });
+
+        // ===== Validasi (konsisten dengan aturan Panel Admin modul 13) =====
+        function validate() {
+            var nama = el('f-nama').value.trim();
+            var nik = el('f-nik').value.trim();
+            var email = el('f-email').value.trim();
+            var username = el('f-username').value.trim();
+            var jurusan = el('f-jurusan').value;
+            var pass = el('f-password').value;
+            var pass2 = el('f-password2').value;
+
+            if (nama.length < 3) { el('f-nama').classList.add('invalid'); return 'Nama lengkap wajib diisi (minimal 3 huruf).'; }
+            if (!/^\d{16}$/.test(nik)) { el('f-nik').classList.add('invalid'); return 'NIK harus tepat <b>16 digit angka</b> sesuai KTP.'; }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { el('f-email').classList.add('invalid'); return 'Format email tidak valid.'; }
+            if (!/^[a-z0-9._]{4,30}$/.test(username)) {
+                el('f-username').classList.add('invalid');
+                return 'Username minimal 4 karakter, hanya huruf kecil/angka/titik/underscore (tanpa spasi).';
+            }
+            if (!jurusan) { el('f-jurusan').classList.add('invalid'); return 'Jurusan tujuan wajib dipilih.'; }
+            if (pass.length < 8) { el('f-password').classList.add('invalid'); return 'Password minimal <b>8 karakter</b>.'; }
+            if (pass !== pass2) { el('f-password2').classList.add('invalid'); return 'Ulangi password tidak sama dengan password.'; }
+            return null;
+        }
+
+        // ===== Submit =====
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            hideAlert();
+
+            var err = validate();
+            if (err) { showAlert('error', '❌ ' + err); return; }
+
+            var payload = {
+                nama: el('f-nama').value.trim(),
+                nik: el('f-nik').value.trim(),
+                email: el('f-email').value.trim().toLowerCase(),
+                username: el('f-username').value.trim().toLowerCase(),
+                jurusan_tujuan: el('f-jurusan').value,
+                password: el('f-password').value,
+                status: 'pending'
+            };
+
+            btn.disabled = true;
+            btnText.textContent = 'MEMPROSES...';
+            btn.innerHTML = '<div class="spinner"></div><span>MEMPROSES...</span>';
+
+            (async function () {
+                try {
+                    var client = await waitForClient();
+                    if (!client) throw new Error('Koneksi database belum siap. Periksa internet lalu muat ulang halaman (F5).');
+
+                    // 1) Cek duplikat (username / email / NIK) supaya pesan error ramah
+                    var orFilter = 'username.eq.' + payload.username + ',email.eq.' + payload.email + ',nik.eq.' + payload.nik;
+                    var dup = await client.from('akun_peserta').select('username,email,nik').or(orFilter).limit(3);
+                    if (dup.error) throw new Error(dup.error.message);
+                    if (dup.data && dup.data.length) {
+                        var msgs = dup.data.map(function (r) {
+                            if (r.username && r.username.toLowerCase() === payload.username) return 'Username <b>' + escapeHtml(payload.username) + '</b> sudah terdaftar';
+                            if (r.email && r.email.toLowerCase() === payload.email) return 'Email <b>' + escapeHtml(payload.email) + '</b> sudah terdaftar';
+                            if (r.nik === payload.nik) return 'NIK <b>' + escapeHtml(payload.nik) + '</b> sudah pernah mendaftar';
+                            return null;
+                        }).filter(Boolean);
+                        throw new Error((msgs[0] || 'Data sudah terdaftar') + '. Gunakan data yang lain atau login bila akun sudah aktif.');
+                    }
+
+                    // 2) INSERT akun baru (status pending -> diverifikasi admin)
+                    var res = await client.from('akun_peserta').insert([payload]).select('id');
+                    if (res.error) {
+                        if (res.error.code === '23505') {
+                            throw new Error('Username atau email sudah terdaftar di sistem. Silakan gunakan yang lain.');
+                        }
+                        throw new Error(res.error.message);
+                    }
+                    if (!res.data || !res.data.length) throw new Error('Pendaftaran tidak tersimpan. Coba lagi.');
+
+                    // 3) Sukses -> tampilkan panel sukses
+                    el('form-section').style.display = 'none';
+                    el('form-footer').style.display = 'none';
+                    el('success-section').classList.add('show');
+                    el('ringkasan-akun').innerHTML =
+                        '<div><b>Nama</b> : ' + escapeHtml(payload.nama) + '</div>' +
+                        '<div><b>NIK</b> : ' + escapeHtml(payload.nik) + '</div>' +
+                        '<div><b>Username</b> : ' + escapeHtml(payload.username) + '</div>' +
+                        '<div><b>Jurusan Tujuan</b> : ' + escapeHtml(payload.jurusan_tujuan) + '</div>' +
+                        '<div><b>Status</b> : ⏳ Menunggu persetujuan admin</div>';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                } catch (e2) {
+                    showAlert('error', '❌ ' + (e2 && e2.message ? e2.message : 'Terjadi kesalahan. Coba lagi.'));
+                    btn.disabled = false;
+                    btnText.textContent = 'DAFTARKAN AKUN';
+                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="19" height="19"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg><span>DAFTARKAN AKUN</span>';
+                }
+            })();
+        });
+    })();
+    </script>
+</body>
+</html>
