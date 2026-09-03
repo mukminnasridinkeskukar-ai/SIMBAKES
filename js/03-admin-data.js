@@ -107,7 +107,7 @@ function renderPesertaCards(data) {
         const jurusan = getField(peserta, 'jurusan_tujuan', 'jurusanTujuan', 'jurusan');
         const jenjang = getField(peserta, 'jenjang_pendidikan', 'jenjangPendidikan', 'jenjang');
         const perguruanTinggi = getField(peserta, 'perguruan_tinggi', 'perguruanTinggi', 'pt');
-        const unitPendayaguna = getField(peserta, 'unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayaguna', 'unit_pendayagunaan');
+        const unitPendayaguna = getField(peserta, 'unit_pendayaguna', 'unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayagunaan');
         const linkFoto = getField(peserta, 'link_foto', 'linkFoto', 'foto', 'photo');
         const statusPenetapan = getField(peserta, 'status_penetapan', 'statusPenetapan', 'status', 'Lulus');
 
@@ -196,9 +196,9 @@ function showPesertaDetailModal(peserta) {
     const jurusan = getField(peserta, 'jurusan_tujuan', 'jurusanTujuan', 'jurusan');
     const jenjang = getField(peserta, 'jenjang_pendidikan', 'jenjangPendidikan', 'jenjang');
     const perguruanTinggi = getField(peserta, 'perguruan_tinggi', 'perguruanTinggi', 'pt');
-    const unitKerja = getField(peserta, 'unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayagunaan');
+    const unitKerja = getField(peserta, 'unit_pendayaguna', 'unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayagunaan');
     const linkFoto = getField(peserta, 'link_foto', 'linkFoto', 'foto', 'photo');
-    const noSK = getField(peserta, 'no_sk_penetapan', 'noSKPenetapan', 'no_sk');
+    const noSK = getField(peserta, 'link_sk', 'no_sk_penetapan', 'noSKPenetapan', 'no_sk');
     const tanggalPenetapan = getField(peserta, 'tanggal_penetapan', 'tanggalPenetapan', 'tanggal');
     const statusPenetapan = getField(peserta, 'status_penetapan', 'statusPenetapan', 'status', 'Lulus');
 
@@ -270,12 +270,12 @@ function showPesertaDetailModal(peserta) {
                         <span class="peserta-modal-field-label">Unit Pendayaguna</span>
                         <div class="peserta-modal-field-value">
                             <span class="peserta-modal-field-icon">🏢</span>
-                            ${escapeHtml(unitPendayaguna)}
+                            ${escapeHtml(unitKerja)}
                         </div>
                     </div>
                     ${noSK && noSK !== '-' ? `
                     <div class="peserta-modal-field">
-                        <span class="peserta-modal-field-label">No SK Penetapan</span>
+                        <span class="peserta-modal-field-label">Link SK</span>
                         <div class="peserta-modal-field-value">
                             <span class="peserta-modal-field-icon">📄</span>
                             ${escapeHtml(noSK)}
@@ -467,7 +467,7 @@ function updatePenetapanStats() {
     // Count by status
     const lulusCount = penetapanAllData.filter(item => {
         const status = (item.status_penetapan || item.statusPenetapan || item.status || '').toLowerCase();
-        return status.includes('lulus') || status.includes('approve') || status.includes('diterima');
+        return status.includes('lulus') || status.includes('approve') || status.includes('diterima') || status.includes('aktif');
     }).length;
     
     const pendingCount = penetapanAllData.filter(item => {
@@ -622,6 +622,12 @@ function renderPenetapanTable() {
         });
     }
     
+    // Re-attach event delegation for action buttons (Lihat/Edit/Hapus)
+    // PENTING: tanpa ini tombol CRUD tidak berfungsi (listener tidak pernah terpasang)
+    if (typeof setupPenetapanTableEvents === 'function') {
+        setupPenetapanTableEvents(tbody);
+    }
+    
     // Update pagination info
     updatePenetPaginationInfo(totalRecords, startIndex, endIndex, totalPages);
 }
@@ -647,7 +653,7 @@ function createPenetapanRow(item, rowNum) {
     const jurusan = getField(item, 'jurusan_tujuan', 'jurusanTujuan', 'jurusan');
     const jenjang = getField(item, 'jenjang_pendidikan', 'jenjangPendidikan', 'jenjang');
     const perguruanTinggi = getField(item, 'perguruan_tinggi', 'perguruanTinggi', 'pt');
-    const unitKerja = getField(item, 'unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayagunaan');
+    const unitKerja = getField(item, 'unit_pendayaguna', 'unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayagunaan');
     const linkFoto = getField(item, 'link_foto', 'linkFoto', 'foto', 'photo');
     const statusPenetapan = getField(item, 'status_penetapan', 'statusPenetapan', 'status', 'Pending');
     
@@ -660,7 +666,7 @@ function createPenetapanRow(item, rowNum) {
     let statusClass = 'status-pending';
     let statusIcon = '⏳';
     
-    if (statusLower.includes('lulus') || statusLower.includes('approve')) {
+    if (statusLower.includes('lulus') || statusLower.includes('approve') || statusLower.includes('aktif')) {
         statusClass = 'status-lulus';
         statusIcon = '✅';
     } else if (statusLower.includes('tolak') || statusLower.includes('reject')) {
@@ -973,21 +979,24 @@ async function openEditPenetapanModal(recordId) {
                         
                         <div class="form-group-edit">
                             <label class="form-label-edit">Jurusan Tujuan *</label>
-                            <input type="text" name="jurusan_tujuan" class="form-input-edit" 
-                                   value="${escapeHtml(getField(record, 'jurusan_tujuan', 'jurusanTujuan', 'jurusan'))}" required>
+                            <input type="text" name="jurusan" class="form-input-edit" 
+                                   value="${escapeHtml(getField(record, 'jurusan', 'jurusan_tujuan', 'jurusanTujuan'))}" required>
                         </div>
                         
                         <div class="form-group-edit">
                             <label class="form-label-edit">Jenjang Pendidikan *</label>
-                            <select name="jenjang_pendidikan" class="form-input-edit" required>
-                                <option value="">Pilih Jenjang</option>
-                                <option value="D3" ${getField(record, 'jenjang_pendidikan', 'jenjangPendidikan') === 'D3' ? 'selected' : ''}>D3 (Diploma)</option>
-                                <option value="D4" ${getField(record, 'jenjang_pendidikan', 'jenjangPendidikan') === 'D4' ? 'selected' : ''}>D4 (Diploma Terapan)</option>
-                                <option value "S1" ${getField(record, 'jenjang_pendidikan', 'jenjangPendidikan') === 'S1' ? 'selected' : ''}>S1 (Sarjana)</option>
-                                <option value="S2" ${getField(record, 'jenjang_pendidikan', 'jenjangPendidikan') === 'S2' ? 'selected' : ''}>S2 (Magister)</option>
-                                <option value="S3" ${getField(record, 'jenjang_pendidikan', 'jenjangPendidikan') === 'S3' ? 'selected' : ''}>S3 (Doktor)</option>
-                                <option value="Spesialis" ${getField(record, 'jenjang_pendidikan', 'jenjangPendidikan').includes('Spesialis') ? 'selected' : ''}>Spesialis</option>
-                            </select>
+                            <input type="text" name="jenjang" class="form-input-edit" list="jenjang-datalist"
+                                   value="${escapeHtml(getField(record, 'jenjang', 'jenjang_pendidikan', 'jenjangPendidikan'))}" required>
+                            <datalist id="jenjang-datalist">
+                                <option value="D-3"></option>
+                                <option value="D-4 Kebidanan + Profesi Bidan"></option>
+                                <option value="S-1"></option>
+                                <option value="S-1 Kedokteran + Profesi Dokter"></option>
+                                <option value="S-2"></option>
+                                <option value="Sp-1"></option>
+                                <option value="Sp-2"></option>
+                                <option value="Sp.Kep"></option>
+                            </datalist>
                         </div>
                         
                         <div class="form-group-edit">
@@ -998,14 +1007,15 @@ async function openEditPenetapanModal(recordId) {
                         
                         <div class="form-group-edit">
                             <label class="form-label-edit">Unit Kerja / Pendayagunaan *</label>
-                            <input type="text" name="unit_kerja" class="form-input-edit" 
-                                   value="${escapeHtml(getField(record, 'unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayagunaan'))}" required>
+                            <input type="text" name="unit_pendayaguna" class="form-input-edit" 
+                                   value="${escapeHtml(getField(record, 'unit_pendayaguna', 'unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayagunaan'))}" required>
                         </div>
                         
                         <div class="form-group-edit">
-                            <label class="form-label-edit">No SK Penetapan</label>
-                            <input type="text" name="no_sk_penetapan" class="form-input-edit" 
-                                   value="${escapeHtml(getField(record, 'no_sk_penetapan', 'noSKPenetapan', 'no_sk'))}">
+                            <label class="form-label-edit">Link SK (URL)</label>
+                            <input type="url" name="link_sk" class="form-input-edit" 
+                                   value="${escapeHtml(getField(record, 'link_sk'))}"
+                                   placeholder="https://drive.google.com/...">
                         </div>
                         
                         <div class="form-group-edit">
@@ -1019,6 +1029,7 @@ async function openEditPenetapanModal(recordId) {
                             <label class="form-label-edit">Status Penetapan *</label>
                             <select name="status_penetapan" class="form-input-edit" required>
                                 <option value="Pending" ${(getField(record, 'status_penetapan', 'statusPenetapan', 'status') || 'Pending').includes('Pending') || (getField(record, 'status_penetapan', 'statusPenetapan', 'status') || '') === '-' ? 'selected' : ''}>Pending</option>
+                                <option value="Aktif" ${getField(record, 'status_penetapan', 'statusPenetapan', 'status').includes('Aktif') || getField(record, 'status_penetapan', 'statusPenetapan', 'status').includes('aktif') ? 'selected' : ''}>Aktif</option>
                                 <option value="Dalam Proses" ${getField(record, 'status_penetapan', 'statusPenetapan', 'status').includes('Proses') ? 'selected' : ''}>Dalam Proses</option>
                                 <option value="Lulus" ${getField(record, 'status_penetapan', 'statusPenetapan', 'status').includes('Lulus') ? 'selected' : ''}>Lulus</option>
                                 <option value="Ditolak" ${getField(record, 'status_penetapan', 'statusPenetapan', 'status').includes('Tolak') ? 'selected' : ''}>Ditolak</option>
@@ -1033,9 +1044,10 @@ async function openEditPenetapanModal(recordId) {
                         </div>
                         
                         <div class="form-group-edit" style="grid-column: span 2;">
-                            <label class="form-label-edit">Catatan Penetapan</label>
-                            <textarea name="catatan_penetapan" class="form-input-edit" rows="3"
-                                      placeholder="Tambahkan catatan jika diperlukan...">${escapeHtml(getField(record, 'catatan_penetapan', 'catatanPenetapan'))}</textarea>
+                            <label class="form-label-edit">Catatan (tidak tersimpan ke server — hanya tampilan)</label>
+                            <div class="form-input-edit" style="background:#f8fafc;color:#64748b;border:1px dashed #cbd5e1;border-radius:8px;padding:0.7rem;font-size:0.85rem;">
+                                Kolom catatan belum tersedia pada tabel penetapan. Gunakan kolom lain atau tambahkan kolom 'catatan_penetapan' di Supabase jika diperlukan.
+                            </div>
                         </div>
                     </div>
                     
@@ -1081,15 +1093,14 @@ async function savePenetapanChanges() {
         const updateData = {
             nama_lengkap: formData.get('nama_lengkap'),
             nik: formData.get('nik'),
-            jurusan_tujuan: formData.get('jurusan_tujuan'),
-            jenjang_pendidikan: formData.get('jenjang_pendidikan'),
+            jurusan: formData.get('jurusan'),
+            jenjang: formData.get('jenjang'),
             perguruan_tinggi: formData.get('perguruan_tinggi'),
-            unit_kerja: formData.get('unit_kerja'),
-            no_sk_penetapan: formData.get('no_sk_penetapan') || null,
+            unit_pendayaguna: formData.get('unit_pendayaguna'),
+            link_sk: formData.get('link_sk') || null,
             tanggal_penetapan: formData.get('tanggal_penetapan') || null,
             status_penetapan: formData.get('status_penetapan'),
             link_foto: formData.get('link_foto') || null,
-            catatan_penetapan: formData.get('catatan_penetapan') || null,
             updated_at: new Date().toISOString()
         };
         
@@ -1350,7 +1361,7 @@ function confirmDeletePenetapan(recordId, nama) {
                 <button class="btn-cancel-delete" onclick="closeDeleteConfirmModal()">
                     ✕ Batal
                 </button>
-                <button class="btn-confirm-delete" onclick="executeDeletePenetapan(${recordId})">
+                <button class="btn-confirm-delete" onclick="executeDeletePenetapan('${String(recordId).replace(/'/g, "")}')">
                     🗑️ Ya, Hapus
                 </button>
             </div>
@@ -1432,7 +1443,7 @@ function exportDataPenetapan() {
             { key: 'jurusan_tujuan', altKeys: ['jurusanTujuan', 'jurusan'], header: 'Jurusan Tujuan' },
             { key: 'jenjang_pendidikan', altKeys: ['jenjangPendidikan', 'jenjang'], header: 'Jenjang Pendidikan' },
             { key: 'perguruan_tinggi', altKeys: ['perguruanTinggi', 'pt'], header: 'Perguruan Tinggi' },
-            { key: 'unit_kerja', altKeys: ['unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayagunaan'], header: 'Unit Kerja' },
+            { key: 'unit_pendayaguna', altKeys: ['unit_kerja', 'unitKerja', 'unit_tujuan', 'unitTujuan', 'unit_pendayagunaan'], header: 'Unit Pendayaguna' },
             { key: 'no_sk_penetapan', altKeys: ['noSKPenetapan', 'no_sk'], header: 'No SK Penetapan' },
             { key: 'tanggal_penetapan', altKeys: ['tanggalPenetapan', 'tanggal'], header: 'Tanggal Penetapan' },
             { key: 'status_penetapan', altKeys: ['statusPenetapan', 'status'], header: 'Status' },
