@@ -657,7 +657,7 @@ async function loadPhotoToLightbox(record) {
                 <ellipse cx="50" cy="85" rx="30" ry="25" fill="#94a3b8"/>
                 <text y="95" font-size="10" text-anchor="middle" fill="#64748b">No Photo</text>
             </svg>
-        `)`;
+        `)}`;
         placeholder.style.display = 'flex';
     } finally {
         loader.style.display = 'none';

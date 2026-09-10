@@ -3,17 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>SIMBAKES - Beasiswa Tematik Bidang Kesehatan</title>
-    <link rel="stylesheet" href="css/styles-base.css">
+    <link rel="stylesheet" href="css/styles-base.css?v=20260910b">
     
     <!-- ===== ADDITIONAL CSS FOR DATA PENETAPAN ADMIN TABLE ===== -->
-    <link rel="stylesheet" href="css/styles-tables.css">
+    <link rel="stylesheet" href="css/styles-tables.css?v=20260910b">
 <!-- ===== UI OVERHAUL STYLES (Auto-injected) ===== -->
-    <link rel="stylesheet" href="css/ui-overhaul.css">
+    <link rel="stylesheet" href="css/ui-overhaul.css?v=20260910b">
 
     </style>
     </head>
-    <script src="js/crud-lightbox.js"></script>
+    <script src="js/crud-lightbox.js?v=20260910b"></script>
 
     </script>
 
@@ -133,8 +136,8 @@
 
     <!-- ===== SIMBAKES ADMIN FINAL SYSTEM ===== -->
     <!-- Sistem FINAL: Tanpa Fallback, Tanpa Simple Modal, Tanpa Polling -->
-    <script src="js/admin-crud.js"></script>
-    <script src="js/system-check.js"></script>
+    <script src="js/admin-crud.js?v=20260910b"></script>
+    <script src="js/system-check.js?v=20260910b"></script>
 
 
 <!-- ===== LANDING PAGE ===== -->
@@ -1392,7 +1395,7 @@
                     </div>
                     
                     <!-- Dynamic Content Container - Will be filled by displayStatusResult() -->
-                    <div id="search-result-content" class="status-card-body">
+                    <div id="search-result-inline-content" class="status-card-body">
                         <!-- Content will be injected here by JavaScript -->
                         <div style="text-align:center;padding:2rem;color:#94a3b8;">
                             <p>Menunggu pencarian...</p>
@@ -1660,22 +1663,6 @@
                                 </optgroup>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label>Jenjang Pendidikan <span class="required">*</span></label>
-                            <select class="form-select" id="jenjang-pendidikan">
-                                <option value="">-- Pilih Jenjang --</option>
-                                <option value="Diploma 3">Diploma 3</option>
-<option value="Diploma 4">Diploma 4</option>
-<option value="Diploma 4 + Pendidikan Profesi">Diploma 4 + Pendidikan Profesi</option>
-<option value="S-1 + Pendidikan Profesi">S-1 + Pendidikan Profesi</option>
-                                <option value="Dokter Spesialis (Sp-1)">Dokter Spesialis (Sp-1)</option>
-                                <option value="Dokter Spesialis (Sp-2)">Dokter Spesialis (Sp-2)</option>
-                                <option value="Magister (S2)">Magister (S2)</option>
-                                <option value="Doktor (S3)">Doktor (S3)</option>
-                                <option value="Dokter Subspesialis">Dokter Subspesialis</option>
-                                            </optgroup>
-                                        </select>
-                                    </div>
                                     <div class="form-group">
                                         <label>Jenjang Pendidikan</label>
                                         <select class="form-select" id="rev-jenjang-pendidikan">
@@ -2414,7 +2401,7 @@
 
             <!-- Table Container with Scroll -->
             <div class="admin-table-wrapper">
-                <div class="admin-table-scroll" id="roadmap-table-scroll">
+                <div class="admin-table-scroll" id="roadmap-admin-table-scroll">
                     <table class="admin-table" id="roadmap-admin-table">
                         <thead>
                             <tr>
@@ -2879,23 +2866,23 @@
 
 
 
-    <script src="js/01-core.js"></script>
-    <script src="js/02-auth-navigation.js"></script>
-    <script src="js/03-admin-data.js"></script>
-    <script src="js/04-form.js"></script>
-    <script src="js/05-database.js"></script>
-    <script src="js/06-image-handler.js"></script>
-    <script src="js/07-dashboard.js"></script>
-    <script src="js/08-roadmap.js"></script>
-    <script src="js/09-cek-status.js"></script>
-    <script src="js/10-admin-pengusul.js"></script>
-    <script src="js/11-topbar-session.js"></script>
-    <script src="js/12-multiuser-init.js"></script>
+    <script src="js/01-core.js?v=20260910b"></script>
+    <script src="js/02-auth-navigation.js?v=20260910b"></script>
+    <script src="js/03-admin-data.js?v=20260910b"></script>
+    <script src="js/04-form.js?v=20260910b"></script>
+    <script src="js/05-database.js?v=20260910b"></script>
+    <script src="js/06-image-handler.js?v=20260910b"></script>
+    <script src="js/07-dashboard.js?v=20260910b"></script>
+    <script src="js/08-roadmap.js?v=20260910b"></script>
+    <script src="js/09-cek-status.js?v=20260910b"></script>
+    <script src="js/10-admin-pengusul.js?v=20260910b"></script>
+    <script src="js/11-topbar-session.js?v=20260910b"></script>
+    <script src="js/12-multiuser-init.js?v=20260910b"></script>
     <!-- ===== PANEL ADMIN FIX (sesi tahan refresh + pulihkan menu admin) ===== -->
-    <script src="js/14-panel-admin-fix.js"></script>
+    <script src="js/14-panel-admin-fix.js?v=20260910b"></script>
     <!-- ===== DATA AKUN PESERTA (Fitur Baru - CRUD tabel akun_peserta) ===== -->
-    <script src="js/13-akun-peserta.js"></script>
-    <script src="js/15-bukti-pendaftaran.js"></script>
+    <script src="js/13-akun-peserta.js?v=20260910b"></script>
+    <script src="js/15-bukti-pendaftaran.js?v=20260910b"></script>
 
 <!-- 
 ======================================================
@@ -2906,16 +2893,39 @@ SIMBAKES SUPABASE INTEGRATION
 -->
 
 <!-- Supabase JS Client CDN -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// [Task9] Loader supabase-js multi-CDN — tahan blokir CDN/operator seluler
+(function () {
+    var cds = [
+        'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+        'https://unpkg.com/@supabase/supabase-js@2',
+        'https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.45.4/supabase.min.js'
+    ];
+    var i = 0;
+    function tryNext() {
+        if (i >= cds.length) {
+            console.error('[SIMBAKES] ❌ Semua CDN supabase-js gagal dimuat. Cek koneksi/VPN lalu muat ulang.');
+            window.__supabaseLoadFailed = true;
+            return;
+        }
+        var s = document.createElement('script');
+        s.src = cds[i++];
+        s.onload = function () { console.log('[SIMBAKES] ✅ supabase-js dimuat dari: ' + s.src); };
+        s.onerror = function () { console.warn('[SIMBAKES] ⚠️ CDN gagal, beralih ke cadangan: ' + s.src); tryNext(); };
+        document.head.appendChild(s);
+    }
+    tryNext();
+})();
+</script>
 
 <!-- Supabase Configuration & Client Initialization -->
-    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-config.js?v=20260910b"></script>
 
 
     
     <!-- ===== UI OVERHAUL SCRIPTS (Auto-injected) ===== -->
     <!-- Font: Tahoma | Design: Glassmorphism | Lightbox: Full-screen -->
-    <script src="js/ui-overhaul.js"></script>
+    <script src="js/ui-overhaul.js?v=20260910b"></script>
 
     
     <!-- ===== CRUD LIGHTBOX SYSTEM (Auto-injected) ===== -->

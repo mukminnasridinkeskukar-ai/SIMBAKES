@@ -9,6 +9,11 @@
  * - generateAllFieldsHTML() - Semua field dalam urutan asli
  */
 
+// [Task9b] IIFE: seluruh modul berada di scope privat sehingga const/let/function
+// top-level (mis. SUPABASE_CONFIG) tidak menabrak modul lain (supabase-config.js,
+// admin-crud.js). API publik tetap tersedia lewat window.* di akhir file.
+(function () {
+
 // ============================================================
 // CONFIGURATION - Supabase Storage Settings
 // ============================================================
@@ -23,7 +28,7 @@ const SUPABASE_CONFIG = {
             <ellipse cx="50" cy="85" rx="30" ry="25" fill="#94a3b8"/>
             <text y="95" font-size="10" text-anchor="middle" fill="#64748b">No Photo</text>
         </svg>
-    `)`
+    `)}`
 };
 
 // ============================================================
@@ -849,4 +854,6 @@ window.initializeUIOverhaul = initializeUIOverhaul;
 window.injectUIOverhaulCSS = injectUIOverhaulCSS;
 
 console.log('[UI OVERHAUL] 📦 Module loaded successfully');
+
+})(); // akhir IIFE [Task9b]
 
