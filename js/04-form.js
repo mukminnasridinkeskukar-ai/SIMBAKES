@@ -489,7 +489,14 @@ function validateForm() {
     let errors = [];
     
     requiredFields.forEach(field => {
-        const value = document.getElementById(field.id).value.trim();
+        const el = document.getElementById(field.id);
+        if (!el) {
+            // [Task9] Elemen hilang (HTML versi lama ter-cache / parser beda)
+            // tidak boleh membuat TypeError — laporkan sebagai isian bermasalah
+            errors.push(field.name + ' (elemen tidak ditemukan — muat ulang halaman)');
+            return;
+        }
+        const value = el.value.trim();
         if (!value) {
             errors.push(field.name);
         }
@@ -525,12 +532,61 @@ function validateForm() {
     }
     
     if (errors.length > 0) {
-        alert('Mohon lengkapi field berikut:\n\n• ' + errors.join('\n• '));
+        showFormErrors(errors);
         return false;
     }
     
+    clearFormErrors();
     return true;
 }
+
+// ============================================================
+// [Task9] Panel error dalam halaman — pengganti alert() yang
+// sering DIBLOKIR/DITEKAN di webview in-app (WhatsApp/IG/FB)
+// dan sebagian browser mobile, sehingga tombol Kirim terlihat
+// "mati" tanpa pesan. Panel ini tampil di SEMUA browser/platform.
+// ============================================================
+function showFormErrors(errors, title) {
+    const host = document.getElementById('form-ajukan');
+    if (!host) {
+        showToast('❌ ' + (errors.join('; ') || 'Form belum lengkap'), 'error', 6000);
+        return;
+    }
+    let panel = document.getElementById('form-error-panel');
+    if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'form-error-panel';
+        panel.setAttribute('role', 'alert');
+        panel.style.cssText = 'margin:0 0 1.25rem;padding:1rem 1.25rem;border-radius:12px;' +
+            'background:#fef2f2;border:2px solid #ef4444;color:#7f1d1d;';
+        host.insertBefore(panel, host.firstChild);
+    }
+    const judul = title || 'Mohon periksa kembali:';
+    panel.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">' +
+        '<strong style="font-size:1rem;">⚠️ ' + judul + '</strong>' +
+        '<button type="button" onclick="clearFormErrors()" title="Tutup" ' +
+        'style="border:none;background:#fecaca;color:#7f1d1d;border-radius:8px;padding:4px 10px;cursor:pointer;font-weight:bold;">×</button>' +
+        '</div>' +
+        '<ul style="margin:0.5rem 0 0 1.25rem;padding:0;">' +
+        errors.map(e => '<li style="margin:3px 0;white-space:pre-line;">' + String(e).replace(/</g, '&lt;') + '</li>').join('') +
+        '</ul>' +
+        '<p style="margin:0.6rem 0 0;font-size:0.85rem;color:#991b1b;">Perbaiki isian di atas, lalu klik <b>Kirim Pengajuan</b> sekali lagi.</p>';
+    try { panel.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+    showToast('⚠️ ' + errors.length + ' isian perlu diperbaiki', 'error', 5000);
+}
+
+function clearFormErrors() {
+    const panel = document.getElementById('form-error-panel');
+    if (panel) panel.remove();
+}
+
+function showSubmitError(title, detail) {
+    showFormErrors([detail], title);
+}
+window.showFormErrors = showFormErrors;
+window.clearFormErrors = clearFormErrors;
+window.showSubmitError = showSubmitError;
 
 function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -539,6 +595,13 @@ function isValidEmail(email) {
 function showConfirmation() {
     if (!validateForm()) return;
     
+    // [Task9] Pembaca aman — elemen yang hilang tidak lagi melempar
+    // TypeError (penyebab klik Kirim terasa mati di browser tertentu)
+    const gv = (id) => {
+        const e = document.getElementById(id);
+        return e && typeof e.value === 'string' ? e.value : '';
+    };
+    
     // Get Drive links for confirmation
     const fotoLink = document.getElementById('foto-drive-link')?.value?.trim();
     const dokumenLink = document.getElementById('dokumen-drive-link')?.value?.trim();
@@ -546,19 +609,23 @@ function showConfirmation() {
     
     // Build confirmation list
     const confirmList = document.getElementById('confirm-list');
+    if (!confirmList) {
+        showToast('❌ Elemen konfirmasi tidak ditemukan — muat ulang halaman', 'error', 6000);
+        return;
+    }
     confirmList.innerHTML = `
-        <div class="confirm-item"><span class="confirm-label">No. Register</span><span class="confirm-value">${document.getElementById('reg-nomor').value}</span></div>
-        <div class="confirm-item"><span class="confirm-label">Waktu Pengajuan</span><span class="confirm-value">${document.getElementById('reg-tanggal').value}</span></div>
-        <div class="confirm-item"><span class="confirm-label">NIK</span><span class="confirm-value">${document.getElementById('nik').value}</span></div>
-        <div class="confirm-item"><span class="confirm-label">Nama Lengkap</span><span class="confirm-value">${document.getElementById('nama-lengkap').value}</span></div>
-        <div class="confirm-item"><span class="confirm-label">Tempat, Tgl Lahir</span><span class="confirm-value">${document.getElementById('tempat-lahir').value}, ${formatDate(document.getElementById('tanggal-lahir').value)}</span></div>
-        <div class="confirm-item"><span class="confirm-label">Pekerjaan</span><span class="confirm-value">${document.getElementById('pekerjaan').value}</span></div>
-        <div class="confirm-item"><span class="confirm-label">Unit Kerja</span><span class="confirm-value">${document.getElementById('unit-kerja').value}</span></div>
-        <div class="confirm-item"><span class="confirm-label">Jurusan Tujuan</span><span class="confirm-value">${document.getElementById('jurusan-tujuan').value}</span></div>
-        <div class="confirm-item"><span class="confirm-label">Jenjang</span><span class="confirm-value">${document.getElementById('jenjang-pendidikan').value}</span></div>
-        <div class="confirm-item"><span class="confirm-label">Durasi Studi</span><span class="confirm-value">${document.getElementById('rencana-tahun').value}</span></div>
-        <div class="confirm-item"><span class="confirm-label">No. HP/WA</span><span class="confirm-value">${document.getElementById('no-hp').value} / ${document.getElementById('no-wa').value}</span></div>
-        <div class="confirm-item"><span class="confirm-label">Email</span><span class="confirm-value">${document.getElementById('email').value}</span></div>
+        <div class="confirm-item"><span class="confirm-label">No. Register</span><span class="confirm-value">${gv('reg-nomor')}</span></div>
+        <div class="confirm-item"><span class="confirm-label">Waktu Pengajuan</span><span class="confirm-value">${gv('reg-tanggal')}</span></div>
+        <div class="confirm-item"><span class="confirm-label">NIK</span><span class="confirm-value">${gv('nik')}</span></div>
+        <div class="confirm-item"><span class="confirm-label">Nama Lengkap</span><span class="confirm-value">${gv('nama-lengkap')}</span></div>
+        <div class="confirm-item"><span class="confirm-label">Tempat, Tgl Lahir</span><span class="confirm-value">${gv('tempat-lahir')}, ${formatDate(gv('tanggal-lahir'))}</span></div>
+        <div class="confirm-item"><span class="confirm-label">Pekerjaan</span><span class="confirm-value">${gv('pekerjaan')}</span></div>
+        <div class="confirm-item"><span class="confirm-label">Unit Kerja</span><span class="confirm-value">${gv('unit-kerja')}</span></div>
+        <div class="confirm-item"><span class="confirm-label">Jurusan Tujuan</span><span class="confirm-value">${gv('jurusan-tujuan')}</span></div>
+        <div class="confirm-item"><span class="confirm-label">Jenjang</span><span class="confirm-value">${gv('jenjang-pendidikan')}</span></div>
+        <div class="confirm-item"><span class="confirm-label">Durasi Studi</span><span class="confirm-value">${gv('rencana-tahun')}</span></div>
+        <div class="confirm-item"><span class="confirm-label">No. HP/WA</span><span class="confirm-value">${gv('no-hp')} / ${gv('no-wa')}</span></div>
+        <div class="confirm-item"><span class="confirm-label">Email</span><span class="confirm-value">${gv('email')}</span></div>
         
         <!-- Google Drive Links (NEW!) -->
         <div class="confirm-item" style="background:#f0fdf4;border-radius:8px;padding:10px;margin:8px 0;">
@@ -580,6 +647,12 @@ function showConfirmation() {
 
 async function submitForm() {
     const submitBtn = document.getElementById('btn-submit-final');
+    if (!submitBtn) {
+        // [Task9] Jangan biarkan klik mati total bila elemen tombol tidak ada
+        showToast('❌ Tombol kirim tidak ditemukan — muat ulang halaman (Ctrl+R)', 'error', 6000);
+        return;
+    }
+    clearFormErrors();
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<div class="spinner"></div> Mengirim...';
     
@@ -677,7 +750,7 @@ async function submitForm() {
             closeModal('confirm-modal');
             document.getElementById('success-reg-number').textContent = formData.noRegister;
             document.getElementById('success-modal').classList.add('active');
-            showToast('📝 Data tersimpan locally (Supabase belum terkonfigurasi)', 'success');
+            showToast('⚠️ Koneksi Supabase belum siap — data disimpan sementara di perangkat ini. Pastikan internet stabil lalu coba kirim ulang.', 'warning', 7000);
         }
         
     } catch (error) {
@@ -699,9 +772,12 @@ async function submitForm() {
             
             showToast('💾 Penyimpanan browser penuh! Data tidak tersimpan. Silakan hapus cache browser.', 'error');
             
-            // Show user-friendly solution
+            // [Task9] Panel in-page (pengganti alert yang diblokir webview)
             setTimeout(() => {
-                alert('⚠️ PENYIMPANAN PENUH\n\nBrowser Anda kehabisan ruang penyimpanan.\n\n🔧 SOLUSI:\n\n1. Buka Developer Tools (F12)\n2. Pilih tab "Application"\n3. Di sidebar, pilih "Local Storage"\n4. Klik kanan > Clear\n\nAtau:\n• Gunakan mode Incognito/Private\n• Clear cache browser untuk site ini');
+                showSubmitError('Penyimpanan browser penuh',
+                    'Browser kehabisan ruang penyimpanan sehingga data tidak dapat disimpan.\n' +
+                    'Solusi: hapus data situs ini melalui pengaturan browser (Clear browsing data/storage), ' +
+                    'atau gunakan mode Incognito/Private, lalu ulangi pengiriman.');
             }, 500);
             
             return;  // Stop here, don't try to save
@@ -771,7 +847,9 @@ async function submitForm() {
             errorMessage += `\n• Cari log: [SIMBAKES] ❌ Supabase Insert Error`;
             errorMessage += `\n• Lihat detail error lengkap di sana`;
             
-            alert(errorMessage);
+            // [Task9] Tampilkan sebagai panel in-page, bukan alert
+            showSubmitError('Gagal menyimpan ke database',
+                errorMessage.replace('❌ GAGAL MENYIMPAN KE DATABASE!\n\n', ''));
             
             // Reset button state
             submitBtn.disabled = false;
@@ -795,8 +873,11 @@ async function submitForm() {
             
             closeModal('confirm-modal');
             
-            // Show detailed error to user
-            alert(`❌ GAGAL MENYIMPAN DATA!\n\nError: ${error.message}\n\nDetail Error Local:\n${localError.message}\n\nSolusi:\n1. Refresh halaman dan coba lagi\n2. Hapus cache browser (Ctrl+Shift+Delete)\n3. Gunakan mode Incognito\n4. Hubungi admin jika masalah berlanjut`);
+            // [Task9] Panel in-page (pengganti alert yang diblokir webview)
+            showSubmitError('Gagal menyimpan data',
+                `Error: ${error.message}\nDetail penyimpanan lokal: ${localError.message}\n\n` +
+                `Solusi: 1) Muat ulang halaman (Ctrl+R). 2) Hapus cache browser. ` +
+                `3) Coba mode Incognito. 4) Hubungi admin jika berlanjut.`);
         }
         
         console.error('Detail Error:', {
