@@ -784,7 +784,15 @@ function injectUIOverhaulCSS() {
         console.log('[UI OVERHAUL] CSS already injected');
         return;
     }
-    
+
+    // [Task9c] Guard: variabel uiOverhaulCSS tidak pernah didefinisikan di
+    // file manapun (bug bawaan template). Seluruh CSS sudah dimuat via
+    // css/ui-overhaul.css, jadi cukup lewati injeksi ini.
+    if (typeof uiOverhaulCSS === 'undefined') {
+        console.warn('[UI OVERHAUL] ℹ️ Injeksi CSS dilewati — styles dimuat dari css/ui-overhaul.css');
+        return;
+    }
+
     const styleEl = document.createElement('style');
     styleEl.id = 'ui-overhaul-styles';
     styleEl.textContent = uiOverhaulCSS;
