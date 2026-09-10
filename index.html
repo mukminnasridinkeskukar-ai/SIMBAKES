@@ -7,12 +7,12 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>SIMBAKES - Beasiswa Tematik Bidang Kesehatan</title>
-    <link rel="stylesheet" href="css/styles-base.css?v=20260911a">
+    <link rel="stylesheet" href="css/styles-base.css?v=20260911b">
 
     <!-- ===== ADDITIONAL CSS FOR DATA PENETAPAN ADMIN TABLE ===== -->
-    <link rel="stylesheet" href="css/styles-tables.css?v=20260911a">
+    <link rel="stylesheet" href="css/styles-tables.css?v=20260911b">
     <!-- ===== UI OVERHAUL STYLES (Auto-injected) ===== -->
-    <link rel="stylesheet" href="css/ui-overhaul.css?v=20260911a">
+    <link rel="stylesheet" href="css/ui-overhaul.css?v=20260911b">
 
     <!-- [Task9c] Stub awal: cegah "handlePreviewError is not defined" bila
          preview gambar/iframe error sebelum modul JS (01-core.js) termuat.
@@ -22,7 +22,7 @@
         try { if (el && el.style) el.style.display = 'none'; } catch (e) {}
     };
     </script>
-    <script src="js/crud-lightbox.js?v=20260911a"></script>
+    <script src="js/crud-lightbox.js?v=20260911b"></script>
     </head>
 
 <body>
@@ -141,8 +141,8 @@
 
     <!-- ===== SIMBAKES ADMIN FINAL SYSTEM ===== -->
     <!-- Sistem FINAL: Tanpa Fallback, Tanpa Simple Modal, Tanpa Polling -->
-    <script src="js/admin-crud.js?v=20260911a"></script>
-    <script src="js/system-check.js?v=20260911a"></script>
+    <script src="js/admin-crud.js?v=20260911b"></script>
+    <script src="js/system-check.js?v=20260911b"></script>
 
 
 <!-- ===== LANDING PAGE ===== -->
@@ -912,39 +912,27 @@
                         </div>
                     </div>
                     
-                    <!-- Foto Pasfoto - Ganti Upload dengan Link Google Drive -->
+                    <!-- [Task9f] Foto Pasfoto - Upload Langsung ke Supabase -->
                     <div class="form-group">
                         <label>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align:middle;margin-right:4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>
-                            Foto Pasfoto (Link Google Drive) <span class="required">*</span>
+                            Foto Pasfoto (Upload File) <span class="required">*</span>
                         </label>
-                        <div class="drive-link-wrapper">
-                            <div class="drive-link-input-container">
-                                <svg class="drive-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                                <input type="url" 
-                                       class="form-input drive-link-input" 
-                                       id="foto-drive-link" 
-                                       placeholder="Paste link Google Drive foto pasfoto di sini..." 
-                                       oninput="validateDriveLink(this, 'foto-preview-container')"
-                                       onblur="previewDriveContent(this, 'image', 'foto-preview-container')">
-                                <button type="button" class="btn-preview-drive" onclick="openDrivePreview(document.getElementById('foto-drive-link').value, 'image')" title="Preview Foto">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                </button>
+                        <input type="file"
+                               class="form-input file-input"
+                               id="foto-file"
+                               accept="image/jpeg,image/png,image/webp"
+                               onchange="handleFileSelected(this, 'foto')">
+                        <div id="foto-file-info" class="file-info-box hidden">
+                            <img id="foto-file-thumb" class="file-thumb" src="" alt="Preview">
+                            <div class="file-meta">
+                                <span id="foto-file-name" class="file-name"></span>
+                                <span id="foto-file-size" class="file-size"></span>
                             </div>
-                            <!-- Preview Container for Image -->
-                            <div id="foto-preview-container" class="drive-preview-container hidden">
-                                <div class="drive-preview-header">
-                                    <span class="preview-label">📷 Preview Foto</span>
-                                    <button type="button" class="btn-remove-link" onclick="clearDriveLink('foto-drive-link', 'foto-preview-container')" title="Hapus Link">×</button>
-                                </div>
-                                <div class="drive-preview-content">
-                                    <img id="foto-preview-img" src="" alt="Preview Foto" onload="this.parentElement.classList.add('loaded')" onerror="handlePreviewError(this)">
-                                </div>
-                                <p class="drive-link-hint">✓ Link valid - Foto akan ditampilkan di atas</p>
-                            </div>
+                            <button type="button" class="btn-remove-file" onclick="clearSelectedFile('foto')" title="Hapus file">×</button>
                         </div>
-                        <p class="field-hint">💡 Upload foto ke Google Drive → Share → Copy link → Paste di sini</p>
-                        <p class="field-hint" style="color:#059669;">Format: JPG/PNG | Ukuran: Pasfoto 4x6 cm | Latar: MERAH</p>
+                        <p class="field-hint">💡 Klik kotak di atas lalu pilih file foto dari perangkat Anda — tersimpan otomatis di server SIMBAKES</p>
+                        <p class="field-hint" style="color:#059669;">Format: JPG/PNG | Ukuran: Pasfoto 4x6 cm | Latar: MERAH | Maks 5 MB</p>
                     </div>
                 </div>
 
@@ -1216,52 +1204,37 @@
                     </div>
                 </div>
 
-                <!-- Section 6: Dokumen Pendukung (Google Drive Links) -->
+                <!-- Section 6: Dokumen Pendukung (Upload Langsung ke Supabase) [Task9f] -->
                 <div class="form-section">
                     <div class="form-section-title">
                         <div class="section-icon icon-red">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
                         </div>
-                        <h3>Dokumen Pendukung (Link Google Drive)</h3>
+                        <h3>Dokumen Pendukung (Upload File)</h3>
                     </div>
                     
-                    <!-- Dokumen PDF Link -->
+                    <!-- [Task9f] Dokumen PDF Upload Langsung -->
                     <div class="form-group">
                         <label>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align:middle;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                            Dokumen Kelengkapan (Link Google Drive) <span class="required">*</span>
+                            Dokumen Kelengkapan (Upload PDF) <span class="required">*</span>
                         </label>
-                        <div class="drive-link-wrapper">
-                            <div class="drive-link-input-container">
-                                <svg class="drive-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                                <input type="url" 
-                                       class="form-input drive-link-input" 
-                                       id="dokumen-drive-link" 
-                                       placeholder="Paste link Google Drive: 1 file PDF gabungan ATAU folder berisi semua dokumen..." 
-                                       oninput="validateDriveLink(this, 'dokumen-preview-container')"
-                                       onblur="previewDriveContent(this, 'pdf', 'dokumen-preview-container')">
-                                <button type="button" class="btn-preview-drive" onclick="openDrivePreview(document.getElementById('dokumen-drive-link').value, 'pdf')" title="Buka Dokumen">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
-                                </button>
+                        <input type="file"
+                               class="form-input file-input"
+                               id="dokumen-file"
+                               accept="application/pdf"
+                               onchange="handleFileSelected(this, 'dokumen')">
+                        <div id="dokumen-file-info" class="file-info-box hidden">
+                            <div class="file-thumb file-thumb-pdf">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="26" height="26"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg>
                             </div>
-                            <!-- Preview Container for PDF -->
-                            <div id="dokumen-preview-container" class="drive-preview-container hidden">
-                                <div class="drive-preview-header">
-                                    <span class="preview-label">📄 Preview Dokumen</span>
-                                    <button type="button" class="btn-remove-link" onclick="clearDriveLink('dokumen-drive-link', 'dokumen-preview-container')" title="Hapus Link">×</button>
-                                </div>
-                                <div class="drive-preview-content pdf-preview">
-                                    <iframe id="dokumen-preview-frame" src="" onload="this.parentElement.classList.add('loaded')" onerror="handlePreviewError(this)"></iframe>
-                                    <div class="pdf-fallback">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg>
-                                        <p>Dokumen PDF terdeteksi</p>
-                                        <a href="#" onclick="window.open(document.getElementById('dokumen-drive-link').value, '_blank'); return false;" class="btn-open-drive">Buka di Tab Baru</a>
-                                    </div>
-                                </div>
-                                <p class="drive-link-hint">✓ Link valid - Klik tombol preview untuk membuka</p>
+                            <div class="file-meta">
+                                <span id="dokumen-file-name" class="file-name"></span>
+                                <span id="dokumen-file-size" class="file-size"></span>
                             </div>
+                            <button type="button" class="btn-remove-file" onclick="clearSelectedFile('dokumen')" title="Hapus file">×</button>
                         </div>
-                        
+
                         <!-- Document Requirements Info -->
                         <div class="doc-requirements-box">
                             <p style="font-weight:600;color:#dc2626;margin-bottom:0.5rem;">📋 Urutan Dokumen dalam PDF:</p>
@@ -1274,7 +1247,7 @@
                                 <li>Surat Permohonan & Surat Kesediaan Pendayagunaan</li>
                             </ol>
                             <p style="font-size:0.78rem;color:#6b7280;margin-top:0.5rem;margin-bottom:0;">
-                                💡 Boleh 1 file PDF gabungan ATAU link folder Drive berisi semua dokumen (Surat Pernyataan wajib ikut di dalamnya)
+                                💡 1 file PDF gabungan berisi semua dokumen di atas (maks 10 MB)
                             </p>
                         </div>
                     </div>
@@ -1287,7 +1260,7 @@
                             </div>
                             <div class="template-info">
                                 <h4>📝 Template Surat Pernyataan</h4>
-                                <p>Download template surat pernyataan, isi data, lalu upload ke Google Drive</p>
+                                <p>Download template surat pernyataan, isi data & tandatangani, lalu upload langsung di kolom bawah</p>
                             </div>
                         </div>
                         
@@ -1300,42 +1273,28 @@
                         </div>
                         
 
-                        <!-- Uploaded Template Link Field -->
+                        <!-- Uploaded Template File Field [Task9f] -->
                         <div class="template-upload-section">
                             <label>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align:middle;margin-right:4px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
-                                Link Surat Pernyataan yang Sudah Diisi (Google Drive) <span class="required">*</span>
+                                Surat Pernyataan yang Sudah Diisi & Ditandatangani (Upload PDF) <span class="required">*</span>
                             </label>
-                            <div class="drive-link-wrapper">
-                                <div class="drive-link-input-container">
-                                    <svg class="drive-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                                    <input type="url" 
-                                           class="form-input drive-link-input" 
-                                           id="surat-pernyataan-link" 
-                                           placeholder="Paste link Google Drive surat pernyataan yang sudah diisi..." 
-                                           oninput="validateDriveLink(this, 'surat-preview-container')"
-                                           onblur="previewDriveContent(this, 'pdf', 'surat-preview-container')">
-                                    <button type="button" class="btn-preview-drive" onclick="openDrivePreview(document.getElementById('surat-pernyataan-link').value, 'pdf')" title="Buka Surat Pernyataan">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
-                                    </button>
+                            <input type="file"
+                                   class="form-input file-input"
+                                   id="surat-file"
+                                   accept="application/pdf"
+                                   onchange="handleFileSelected(this, 'surat')">
+                            <div id="surat-file-info" class="file-info-box hidden">
+                                <div class="file-thumb file-thumb-pdf">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="26" height="26"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>
                                 </div>
-                                <div id="surat-preview-container" class="drive-preview-container hidden">
-                                    <div class="drive-preview-header">
-                                        <span class="preview-label">📄 Preview Surat Pernyataan</span>
-                                        <button type="button" class="btn-remove-link" onclick="clearDriveLink('surat-pernyataan-link', 'surat-preview-container')" title="Hapus Link">×</button>
-                                    </div>
-                                    <div class="drive-preview-content pdf-preview">
-                                        <iframe src="" onload="this.parentElement.classList.add('loaded')" onerror="handlePreviewError(this)"></iframe>
-                                        <div class="pdf-fallback">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="40" height="40"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>
-                                            <p>Surat Pernyataan PDF</p>
-                                            <a href="#" onclick="event.preventDefault(); window.open(document.getElementById('surat-pernyataan-link').value, '_blank');" class="btn-open-drive">Buka di Tab Baru</a>
-                                        </div>
-                                    </div>
-                                    <p class="drive-link-hint">✓ Link surat pernyataan valid</p>
+                                <div class="file-meta">
+                                    <span id="surat-file-name" class="file-name"></span>
+                                    <span id="surat-file-size" class="file-size"></span>
                                 </div>
+                                <button type="button" class="btn-remove-file" onclick="clearSelectedFile('surat')" title="Hapus file">×</button>
                             </div>
-                            <p class="field-hint">⚠️ Wajib mengupload surat pernyataan yang sudah ditandatangani</p>
+                            <p class="field-hint">⚠️ Wajib mengupload surat pernyataan yang sudah ditandatangani (PDF, maks 10 MB)</p>
                         </div>
                     </div>
                 </div>
@@ -2876,23 +2835,23 @@
 
 
 
-    <script src="js/01-core.js?v=20260911a"></script>
-    <script src="js/02-auth-navigation.js?v=20260911a"></script>
-    <script src="js/03-admin-data.js?v=20260911a"></script>
-    <script src="js/04-form.js?v=20260911a"></script>
-    <script src="js/05-database.js?v=20260911a"></script>
-    <script src="js/06-image-handler.js?v=20260911a"></script>
-    <script src="js/07-dashboard.js?v=20260911a"></script>
-    <script src="js/08-roadmap.js?v=20260911a"></script>
-    <script src="js/09-cek-status.js?v=20260911a"></script>
-    <script src="js/10-admin-pengusul.js?v=20260911a"></script>
-    <script src="js/11-topbar-session.js?v=20260911a"></script>
-    <script src="js/12-multiuser-init.js?v=20260911a"></script>
+    <script src="js/01-core.js?v=20260911b"></script>
+    <script src="js/02-auth-navigation.js?v=20260911b"></script>
+    <script src="js/03-admin-data.js?v=20260911b"></script>
+    <script src="js/04-form.js?v=20260911b"></script>
+    <script src="js/05-database.js?v=20260911b"></script>
+    <script src="js/06-image-handler.js?v=20260911b"></script>
+    <script src="js/07-dashboard.js?v=20260911b"></script>
+    <script src="js/08-roadmap.js?v=20260911b"></script>
+    <script src="js/09-cek-status.js?v=20260911b"></script>
+    <script src="js/10-admin-pengusul.js?v=20260911b"></script>
+    <script src="js/11-topbar-session.js?v=20260911b"></script>
+    <script src="js/12-multiuser-init.js?v=20260911b"></script>
     <!-- ===== PANEL ADMIN FIX (sesi tahan refresh + pulihkan menu admin) ===== -->
-    <script src="js/14-panel-admin-fix.js?v=20260911a"></script>
+    <script src="js/14-panel-admin-fix.js?v=20260911b"></script>
     <!-- ===== DATA AKUN PESERTA (Fitur Baru - CRUD tabel akun_peserta) ===== -->
-    <script src="js/13-akun-peserta.js?v=20260911a"></script>
-    <script src="js/15-bukti-pendaftaran.js?v=20260911a"></script>
+    <script src="js/13-akun-peserta.js?v=20260911b"></script>
+    <script src="js/15-bukti-pendaftaran.js?v=20260911b"></script>
 
 <!-- 
 ======================================================
@@ -2929,13 +2888,13 @@ SIMBAKES SUPABASE INTEGRATION
 </script>
 
 <!-- Supabase Configuration & Client Initialization -->
-    <script src="js/supabase-config.js?v=20260911a"></script>
+    <script src="js/supabase-config.js?v=20260911b"></script>
 
 
     
     <!-- ===== UI OVERHAUL SCRIPTS (Auto-injected) ===== -->
     <!-- Font: Tahoma | Design: Glassmorphism | Lightbox: Full-screen -->
-    <script src="js/ui-overhaul.js?v=20260911a"></script>
+    <script src="js/ui-overhaul.js?v=20260911b"></script>
 
     
     <!-- ===== CRUD LIGHTBOX SYSTEM (Auto-injected) ===== -->

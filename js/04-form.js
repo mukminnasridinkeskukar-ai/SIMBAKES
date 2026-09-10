@@ -455,13 +455,8 @@ window.convertToDirectDownloadLink = convertToDirectDownloadLink;
 
 console.log('[DRIVE LINK] ✅ Google Drive link handler functions initialized');
 
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
+// [Task9f] formatFileSize() lama dihapus — digabung ke modul upload di atas
+// (satu definisi, tanpa duplikasi deklarasi fungsi)
 
 // ===== FORM VALIDATION & SUBMISSION =====
 // ============================================================
@@ -509,6 +504,179 @@ function getFieldEl(id) {
 function isDriveHost(hostname) {
     var h = String(hostname || '').replace(/^www\./, '').toLowerCase();
     return h === 'drive.google.com' || h === 'docs.google.com' || h === 'drive.usercontent.google.com';
+}
+
+// ============================================================
+// [Task9f] UPLOAD FILE LANGSUNG KE SUPABASE STORAGE
+// Tidak lagi memakai link Google Drive — pemohon memilih file,
+// file diupload ke bucket 'pengajuan-files', URL publiknya yang
+// disimpan ke kolom foto_peserta / dokumen_kelengkapan.
+// ============================================================
+var STORAGE_BUCKET = 'pengajuan-files';
+var MAX_FOTO_BYTES = 5 * 1024 * 1024;   // 5 MB
+var MAX_PDF_BYTES  = 10 * 1024 * 1024;  // 10 MB
+
+function getSelectedFile(kind) {
+    var input = document.getElementById(kind + '-file');
+    if (!input || !input.files || !input.files.length) return null;
+    return input.files[0];
+}
+
+function formatFileSize(bytes) {
+    if (bytes === null || bytes === undefined) return '';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+/**
+ * [Task9f] Validasi file lokal: wajib ada, tipe benar, ukuran dalam batas.
+ * @returns null jika valid, atau pesan error (string)
+ */
+function validateLocalFile(file, label, kind) {
+    if (!file) {
+        return label + ' wajib diupload — klik kotak pemilih file lalu pilih file-nya';
+    }
+    var name = String(file.name || '').toLowerCase();
+    if (kind === 'image') {
+        var okImg = /image\/(jpeg|jpg|png|webp)/.test(file.type) || /\.(jpe?g|png|webp)$/.test(name);
+        if (!okImg) return label + ' harus berupa file gambar JPG/PNG/WEBP (terpilih: "' + file.name + '")';
+        if (file.size > MAX_FOTO_BYTES) return label + ' terlalu besar (' + formatFileSize(file.size) + ') — maksimal 5 MB';
+    } else {
+        var okPdf = file.type === 'application/pdf' || /\.pdf$/.test(name);
+        if (!okPdf) return label + ' harus berupa file PDF (terpilih: "' + file.name + '")';
+        if (file.size > MAX_PDF_BYTES) return label + ' terlalu besar (' + formatFileSize(file.size) + ') — maksimal 10 MB';
+    }
+    if (file.size === 0) return label + ' kosong (0 byte) — file rusak, pilih ulang file-nya';
+    return null;
+}
+
+/**
+ * [Task9f] Validasi 3 dokumen wajib (file lokal terpilih).
+ * @returns array problems (kosong = semua valid)
+ */
+function validateDocumentFiles() {
+    var problems = [];
+    [['foto', 'Foto Pasfoto', 'image'],
+     ['dokumen', 'Dokumen Kelengkapan (PDF)', 'pdf'],
+     ['surat', 'Surat Pernyataan (PDF)', 'pdf']
+    ].forEach(function (d) {
+        var msg = validateLocalFile(getSelectedFile(d[0]), d[1], d[2]);
+        if (msg) problems.push({ id: d[0] + '-file', label: d[1], message: msg, group: 'Dokumen Persyaratan' });
+    });
+    return problems;
+}
+
+/**
+ * [Task9f] Handler onchange input file: validasi instan + tampilkan info file
+ * (+ thumbnail utk foto). File tidak sesuai → input dibersihkan + pesan jelas.
+ */
+function handleFileSelected(input, kind) {
+    try {
+        var infoBox = document.getElementById(kind + '-file-info');
+        var file = (input && input.files && input.files.length) ? input.files[0] : null;
+        var labelMap = { foto: 'Foto Pasfoto', dokumen: 'Dokumen Kelengkapan (PDF)', surat: 'Surat Pernyataan (PDF)' };
+        var kindMap = { foto: 'image', dokumen: 'pdf', surat: 'pdf' };
+        var err = validateLocalFile(file, labelMap[kind] || 'File', kindMap[kind] || 'pdf');
+        if (err) {
+            if (input) input.value = '';
+            if (infoBox) infoBox.classList.add('hidden');
+            showFormErrors([{ id: kind + '-file', label: labelMap[kind] || 'File', message: err, group: 'Dokumen Persyaratan' }], 'File tidak sesuai:');
+            return;
+        }
+        clearFormErrors();
+        var nameEl = document.getElementById(kind + '-file-name');
+        var sizeEl = document.getElementById(kind + '-file-size');
+        if (nameEl) nameEl.textContent = file.name;
+        if (sizeEl) sizeEl.textContent = formatFileSize(file.size);
+        if (kind === 'foto') {
+            var thumb = document.getElementById('foto-file-thumb');
+            if (thumb) {
+                if (thumb.dataset.objectUrl) { try { URL.revokeObjectURL(thumb.dataset.objectUrl); } catch (e) {} }
+                var objUrl = URL.createObjectURL(file);
+                thumb.src = objUrl;
+                thumb.dataset.objectUrl = objUrl;
+            }
+        }
+        if (infoBox) infoBox.classList.remove('hidden');
+        console.log('[FORM] 📎 File dipilih (' + kind + '):', file.name, formatFileSize(file.size));
+    } catch (e) {
+        console.error('[FORM] handleFileSelected error:', e);
+    }
+}
+
+/**
+ * [Task9f] Bersihkan pilihan file + info box + thumbnail.
+ */
+function clearSelectedFile(kind) {
+    try {
+        var input = document.getElementById(kind + '-file');
+        if (input) input.value = '';
+        var infoBox = document.getElementById(kind + '-file-info');
+        if (infoBox) infoBox.classList.add('hidden');
+        if (kind === 'foto') {
+            var thumb = document.getElementById('foto-file-thumb');
+            if (thumb && thumb.dataset.objectUrl) {
+                try { URL.revokeObjectURL(thumb.dataset.objectUrl); } catch (e) {}
+                thumb.src = '';
+                delete thumb.dataset.objectUrl;
+            }
+        }
+    } catch (e) {
+        console.error('[FORM] clearSelectedFile error:', e);
+    }
+}
+
+/**
+ * [Task9f] Path penyimpanan: pengajuan/<no_register>/<jenis>-<ts>.<ext>
+ * Folder per-pengajuan agar rapi & mudah dikelola admin.
+ */
+function buildStoragePath(regNumber, kind, file) {
+    var ext = 'bin';
+    var m = String(file.name || '').match(/\.([A-Za-z0-9]{2,5})$/);
+    if (m) ext = m[1].toLowerCase();
+    var safeReg = String(regNumber || 'tanpa-nomor').replace(/[^A-Za-z0-9_-]/g, '');
+    return 'pengajuan/' + safeReg + '/' + kind + '-' + Date.now() + '-' + Math.floor(Math.random() * 9000 + 1000) + '.' + ext;
+}
+
+/**
+ * [Task9f] Upload 1 file ke Supabase Storage → kembalikan URL publik.
+ * Error APAPUN dilempar (throw) — TIDAK ada sukses palsu.
+ */
+async function uploadFileToStorage(file, storagePath) {
+    if (!supabaseClient) {
+        throw new Error('Supabase tidak terhubung — periksa koneksi internet lalu coba lagi.');
+    }
+    if (!file) throw new Error('File tidak ditemukan untuk diupload.');
+    var result = await supabaseClient.storage
+        .from(STORAGE_BUCKET)
+        .upload(storagePath, file, {
+            contentType: file.type || 'application/octet-stream',
+            cacheControl: '3600',
+            upsert: false
+        });
+    if (result && result.error) {
+        console.error('[FORM] ❌ Upload gagal (' + storagePath + '):', {
+            message: result.error.message,
+            status: result.error.status || result.error.statusCode,
+            error: result.error
+        });
+        var msg = result.error.message || 'unknown';
+        if (/Bucket not found/i.test(msg)) {
+            throw new Error('Penyimpanan dokumen belum disiapkan (bucket "' + STORAGE_BUCKET + '" belum ada). Admin perlu menjalankan sekali file sql/setup-storage-pengajuan.sql di Supabase SQL Editor.');
+        }
+        if (/row-level security|Unauthorized|AccessDenied|Forbidden/i.test(msg)) {
+            throw new Error('Server menolak upload dokumen (kebijakan keamanan storage). Admin perlu menjalankan sql/setup-storage-pengajuan.sql di Supabase SQL Editor.');
+        }
+        throw new Error('Upload "' + file.name + '" gagal: ' + msg);
+    }
+    var pub = supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(storagePath);
+    var publicUrl = pub && pub.data && pub.data.publicUrl;
+    if (!publicUrl) {
+        throw new Error('URL publik file tidak diperoleh setelah upload "' + file.name + '".');
+    }
+    console.log('[FORM] ✅ Terupload:', storagePath, '→', publicUrl);
+    return publicUrl;
 }
 
 /**
@@ -650,16 +818,8 @@ function validateSubmission() {
         }
     });
 
-    // --- 3. Dokumen wajib: link harus benar-benar valid (bukan sekadar teks) ---
-    [['foto-drive-link', 'Link Foto Pasfoto', 'image'],
-     ['dokumen-drive-link', 'Link Dokumen Kelengkapan (PDF)', 'pdf'],
-     ['surat-pernyataan-link', 'Link Surat Pernyataan (PDF)', 'pdf']
-    ].forEach(function (d) {
-        var el = getFieldEl(d[0]);
-        var value = el ? String(el.value || '').trim() : '';
-        var msg = checkDocumentLink(value, d[1], d[2]);
-        if (msg) pushProblem(d[0], d[1], msg, 'Dokumen Persyaratan');
-    });
+    // --- 3. Dokumen wajib: file lokal harus terpilih & sesuai [Task9f] ---
+    validateDocumentFiles().forEach(function (p) { problems.push(p); });
 
     return { valid: problems.length === 0, problems: problems };
 }
@@ -900,20 +1060,10 @@ async function showConfirmationUnsafe() {
         }
     }
 
-    // [Task9e] Verifikasi foto benar-benar dapat diakses (bukan sekadar link terisi)
-    var fotoLink = document.getElementById('foto-drive-link')?.value?.trim();
-    if (fotoLink) {
-        var fotoOk = await verifyPhotoAccessible(fotoLink);
-        if (!fotoOk) {
-            showFormErrors([{
-                id: 'foto-drive-link',
-                label: 'Link Foto Pasfoto',
-                message: 'foto TIDAK dapat dimuat — pastikan file dibagikan di Drive dengan akses "Anyone with the link / Siapa saja yang memiliki link", lalu coba lagi',
-                group: 'Dokumen Persyaratan'
-            }], 'Dokumen belum dapat diakses:');
-            return;
-        }
-    }
+    // [Task9f] Info file terpilih utk daftar konfirmasi (file lokal, bukan link)
+    var fotoFile = getSelectedFile('foto');
+    var dokumenFile = getSelectedFile('dokumen');
+    var suratFile = getSelectedFile('surat');
 
     // [Task9] Pembaca aman — elemen yang hilang tidak lagi melempar
     // TypeError (penyebab klik Kirim terasa mati di browser tertentu)
@@ -922,9 +1072,7 @@ async function showConfirmationUnsafe() {
         return e && typeof e.value === 'string' ? e.value : '';
     };
     
-    // [Task9e] Link dokumen (fotoLink sudah dibaca di verifikasi atas)
-    const dokumenLink = document.getElementById('dokumen-drive-link')?.value?.trim();
-    const suratLink = document.getElementById('surat-pernyataan-link')?.value?.trim();
+    // [Task9f] File terpilih sudah dibaca di atas (fotoFile/dokumenFile/suratFile)
     
     // Build confirmation list
     const confirmList = document.getElementById('confirm-list');
@@ -946,18 +1094,18 @@ async function showConfirmationUnsafe() {
         <div class="confirm-item"><span class="confirm-label">No. HP/WA</span><span class="confirm-value">${gv('no-hp')} / ${gv('no-wa')}</span></div>
         <div class="confirm-item"><span class="confirm-label">Email</span><span class="confirm-value">${gv('email')}</span></div>
         
-        <!-- Google Drive Links (NEW!) -->
+        <!-- Upload Files (Supabase Storage) [Task9f] -->
         <div class="confirm-item" style="background:#f0fdf4;border-radius:8px;padding:10px;margin:8px 0;">
-            <span class="confirm-label" style="color:#059669;">📷 Foto Pasfoto (Drive)</span>
-            <span class="confirm-value" style="font-size:0.78rem;max-width:70%;">${fotoLink ? '✓ Link tersedia' : '❌ Belum diisi'}</span>
+            <span class="confirm-label" style="color:#059669;">📷 Foto Pasfoto</span>
+            <span class="confirm-value" style="font-size:0.78rem;max-width:70%;">${fotoFile ? '✓ ' + fotoFile.name + ' (' + formatFileSize(fotoFile.size) + ')' : '❌ Belum dipilih'}</span>
         </div>
         <div class="confirm-item" style="background:#eff6ff;border-radius:8px;padding:10px;margin:8px 0;">
-            <span class="confirm-label" style="color:#2563eb;">📄 Dokumen PDF (Drive)</span>
-            <span class="confirm-value" style="font-size:0.78rem;max-width:70%;">${dokumenLink ? '✓ Link tersedia' : '❌ Belum diisi'}</span>
+            <span class="confirm-label" style="color:#2563eb;">📄 Dokumen Kelengkapan</span>
+            <span class="confirm-value" style="font-size:0.78rem;max-width:70%;">${dokumenFile ? '✓ ' + dokumenFile.name + ' (' + formatFileSize(dokumenFile.size) + ')' : '❌ Belum dipilih'}</span>
         </div>
         <div class="confirm-item" style="background:#fefce8;border-radius:8px;padding:10px;margin:8px 0;">
-            <span class="confirm-label" style="color:#d97706;">📝 Surat Pernyataan (Drive)</span>
-            <span class="confirm-value" style="font-size:0.78rem;max-width:70%;">${suratLink ? '✓ Link tersedia' : '❌ Belum diisi'}</span>
+            <span class="confirm-label" style="color:#d97706;">📝 Surat Pernyataan</span>
+            <span class="confirm-value" style="font-size:0.78rem;max-width:70%;">${suratFile ? '✓ ' + suratFile.name + ' (' + formatFileSize(suratFile.size) + ')' : '❌ Belum dipilih'}</span>
         </div>
     `;
     
@@ -1019,21 +1167,22 @@ async function submitForm() {
         noWA: document.getElementById('no-wa').value,
         email: document.getElementById('email').value,
 
-        // GOOGLE DRIVE LINKS (disimpan ke kolom foto_peserta & dokumen_kelengkapan)
-        fotoDriveLink: document.getElementById('foto-drive-link')?.value?.trim(),           // Link foto pasfoto
-        dokumenDriveLink: document.getElementById('dokumen-drive-link')?.value?.trim(),     // Link dokumen/folder
-        suratPernyataanLink: document.getElementById('surat-pernyataan-link')?.value?.trim(),  // Link surat pernyataan
+        // [Task9f] File diupload ke Supabase Storage saat kirim; URL publiknya
+        // yang disimpan ke kolom foto_peserta & dokumen_kelengkapan
+        fotoUrl: null,
+        dokumenUrl: null,
+        suratUrl: null,
 
         status: 'Proses Verifikasi',
         timestamp: new Date().toISOString(),
-        submissionMethod: 'google_drive_links'  // Flag to indicate new method
+        submissionMethod: 'supabase_storage_upload'
     };
 
     console.log('📦 Data form siap dikirim:', {
-        hasFotoLink: !!formData.fotoDriveLink && formData.fotoDriveLink.length > 15,
-        hasDokumenLink: !!formData.dokumenDriveLink && formData.dokumenDriveLink.length > 15,
-        hasSuratPernyataan: !!formData.suratPernyataanLink && formData.suratPernyataanLink.length > 15,
-        submissionMethod: 'Google Drive Links'
+        hasFotoFile: !!getSelectedFile('foto'),
+        hasDokumenFile: !!getSelectedFile('dokumen'),
+        hasSuratFile: !!getSelectedFile('surat'),
+        submissionMethod: 'Supabase Storage Upload'
     });
 
     try {
@@ -1043,12 +1192,51 @@ async function submitForm() {
             throw new Error('Supabase tidak terhubung — periksa koneksi internet Anda lalu coba kirim kembali.');
         }
 
-        // [Task9e] Pastikan nomor register unik tepat sebelum insert (poin 9)
+        // [Task9e] Pastikan nomor register unik tepat sebelum insert (poin 9) —
+        // nomor ini juga dipakai sebagai folder penyimpanan file [Task9f]
         formData.noRegister = await ensureUniqueRegNumber(String(formData.noRegister || '').trim());
         const regInput = document.getElementById('reg-nomor');
         if (regInput) regInput.value = formData.noRegister;
 
-        console.log('🚀 Mengirim ke Supabase...');
+        // [Task9f] UPLOAD 3 FILE KE SUPABASE STORAGE — file & data semua ke Supabase
+        // Tidak ada sukses palsu: gagal upload = pengajuan dibatalkan + pesan jelas
+        const uploadJobs = [
+            { kind: 'foto', label: 'Foto Pasfoto', kindType: 'image' },
+            { kind: 'dokumen', label: 'Dokumen Kelengkapan', kindType: 'pdf' },
+            { kind: 'surat', label: 'Surat Pernyataan', kindType: 'pdf' }
+        ];
+        const uploadedPaths = [];
+        try {
+            for (let i = 0; i < uploadJobs.length; i++) {
+                const job = uploadJobs[i];
+                const file = getSelectedFile(job.kind);
+                // Defense-in-depth: validasi ulang file tepat sebelum upload
+                const fileErr = validateLocalFile(file, job.label, job.kindType);
+                if (fileErr) throw new Error(fileErr);
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<div class="spinner"></div> Mengunggah ' + job.label + ' (' + (i + 1) + '/3)...';
+                }
+                const path = buildStoragePath(formData.noRegister, job.kind, file);
+                const publicUrl = await uploadFileToStorage(file, path);
+                uploadedPaths.push(path);
+                formData[job.kind + 'Url'] = publicUrl;
+            }
+        } catch (upErr) {
+            // Bersihkan file yang sempat terupload (best-effort — kegagalan diabaikan)
+            if (uploadedPaths.length && supabaseClient) {
+                try {
+                    await supabaseClient.storage.from(STORAGE_BUCKET).remove(uploadedPaths);
+                    console.info('[FORM] ' + uploadedPaths.length + ' file sisa upload dibersihkan.');
+                } catch (rmErr) {
+                    console.warn('[FORM] Cleanup storage gagal (diabaikan):', rmErr);
+                }
+            }
+            throw upErr;
+        }
+
+        if (submitBtn) setSubmitBtnState(submitBtn, 'loading'); // "Mengirim Pengajuan..."
+        console.log('🚀 Semua file terupload — menyimpan data pengajuan ke Supabase...');
         const result = await submitToSupabase(formData);
 
         // [Task9e] Jangan anggap berhasil hanya karena fungsi selesai dijalankan —
@@ -1122,6 +1310,11 @@ function friendlySubmitErrorMessage(error) {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
         return 'Anda sedang tidak terhubung ke internet. Periksa koneksi lalu tekan "Coba Kirim Kembali".';
     }
+    // [Task9f] Pesan yang SUDAH spesifik & ramah (upload/storage) diteruskan
+    // apa adanya — jangan ditimpa pesan generik yang kehilangan instruksi.
+    if (/setup-storage-pengajuan\.sql|Penyimpanan dokumen belum disiapkan|^Upload "|Supabase tidak terhubung/.test(msg)) {
+        return msg;
+    }
     if (error && error.code === '23505') {
         return 'Nomor pengajuan bentrok dengan data yang sudah ada. Tekan "Coba Kirim Kembali" — nomor baru akan dibuat otomatis.';
     }
@@ -1153,6 +1346,9 @@ window.validateSubmission = validateSubmission;
 window.handleFormSubmit = handleFormSubmit;
 window.ensureUniqueRegNumber = ensureUniqueRegNumber;
 window.generateRegNumber = generateRegNumber;
+// [Task9f] Handler upload file — dipanggil inline dari index.html
+window.handleFileSelected = handleFileSelected;
+window.clearSelectedFile = clearSelectedFile;
 
 // Helper to get client IP (browser tidak bisa akses IP langsung)
 // Mengembalikan '-' karena browser memblokir akses IP untuk privacy
@@ -1297,6 +1493,9 @@ function resetForm() {
     if (finalBtn) setSubmitBtnState(finalBtn, 'normal');
 
     document.getElementById('form-ajukan').reset();
+    
+    // [Task9f] Reset input file upload Supabase Storage
+    ['foto', 'dokumen', 'surat'].forEach(function (k) { clearSelectedFile(k); });
     
     // Reset file variables
     uploadedPhoto = null;

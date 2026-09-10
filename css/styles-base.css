@@ -4306,3 +4306,103 @@
                 height: 180px;
             }
         }
+
+/* ============================================================
+   [Task9f] FILE UPLOAD (Supabase Storage) — form Ajukan
+   ============================================================ */
+.file-input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 2px dashed #94a3b8;
+    border-radius: 12px;
+    background: #f8fafc;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #475569;
+    transition: border-color 0.2s, background 0.2s;
+}
+.file-input:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+.file-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.file-input::file-selector-button {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.55rem 1.1rem;
+    margin-right: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+}
+.file-input::file-selector-button:hover {
+    background: #1d4ed8;
+}
+.file-info-box {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.6rem;
+    padding: 0.65rem 0.85rem;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 12px;
+}
+.file-info-box.hidden {
+    display: none;
+}
+.file-thumb {
+    width: 46px;
+    height: 46px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+    border: 1px solid #d1d5db;
+}
+.file-thumb-pdf {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fef2f2;
+    color: #dc2626;
+}
+.file-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+.file-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #065f46;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.file-size {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+.btn-remove-file {
+    border: none;
+    background: #fecaca;
+    color: #7f1d1d;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.btn-remove-file:hover {
+    background: #fca5a5;
+}

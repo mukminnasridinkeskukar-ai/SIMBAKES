@@ -264,11 +264,11 @@ function mapFormDataToDB(formData) {
         no_wa: formData.noWA,
         email: formData.email,
 
-        // GOOGLE DRIVE LINKS - kolom aktual tabel submissions
-        foto_peserta: formData.fotoDriveLink || null,
-        // dokumen_kelengkapan dapat berisi 1 link dokumen + 1 link surat
+        // [Task9f] URL Supabase Storage (file diupload langsung, bukan link Drive)
+        foto_peserta: formData.fotoUrl || null,
+        // dokumen_kelengkapan dapat berisi 1 URL dokumen + 1 URL surat
         // pernyataan (dipisah baris baru) - admin panel merender keduanya
-        dokumen_kelengkapan: [formData.dokumenDriveLink, formData.suratPernyataanLink]
+        dokumen_kelengkapan: [formData.dokumenUrl, formData.suratUrl]
             .filter(function (v) { return v && String(v).trim(); })
             .join('\n') || null,
 
