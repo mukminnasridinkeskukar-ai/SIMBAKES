@@ -593,6 +593,25 @@ function isValidEmail(email) {
 }
 
 function showConfirmation() {
+    // [Task9d] Wrapper pengaman: error tak terduga APAPUN harus menghasilkan
+    // umpan balik yang terlihat di layar — tombol Kirim tidak boleh mati
+    // diam-diam (keluhan user: klik tidak bereaksi sama sekali).
+    try {
+        showConfirmationUnsafe();
+    } catch (e) {
+        console.error('[FORM] showConfirmation error:', e);
+        try {
+            showFormErrors([
+                'Terjadi kesalahan teknis saat menyiapkan konfirmasi: ' + (e && e.message ? e.message : e) +
+                '. Muat ulang halaman (Ctrl+Shift+R) lalu coba lagi.'
+            ], 'Terjadi kendala:');
+        } catch (e2) {
+            try { showToast('❌ ' + (e && e.message ? e.message : 'Kesalahan tak terduga'), 'error', 8000); } catch (e3) {}
+        }
+    }
+}
+
+function showConfirmationUnsafe() {
     if (!validateForm()) return;
     
     // [Task9] Pembaca aman — elemen yang hilang tidak lagi melempar
