@@ -400,7 +400,7 @@ function displayPenetapanResult(data) {
         jurusan: getField(data, 'jurusan', 'jurusan_tujuan', 'jurusanTujuan'),
         jenjang: getField(data, 'jenjang', 'jenjang_pendidikan', 'jenjangPendidikan'),
         perguruan_tinggi: getField(data, 'perguruan_tinggi', 'perguruanTinggi'),
-        unit_pendayguna: getField(data, 'unit_pendayguna', 'unitPendayguna', 'unit_tujuan', 'unitTujuan'),
+        unit_pendayguna: getField(data, 'unit_pendayguna', 'unitPendayguna', 'unit_pendayaguna', 'unitPendayaguna', 'unit_tujuan', 'unitTujuan'),
         
         // Pekerjaan
         pekerjaan: getField(data, 'pekerjaan', 'pekerjaan'),

@@ -7,12 +7,12 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>SIMBAKES - Beasiswa Tematik Bidang Kesehatan</title>
-    <link rel="stylesheet" href="css/styles-base.css?v=20260911b">
+    <link rel="stylesheet" href="css/styles-base.css?v=20260911d">
 
     <!-- ===== ADDITIONAL CSS FOR DATA PENETAPAN ADMIN TABLE ===== -->
-    <link rel="stylesheet" href="css/styles-tables.css?v=20260911b">
+    <link rel="stylesheet" href="css/styles-tables.css?v=20260911d">
     <!-- ===== UI OVERHAUL STYLES (Auto-injected) ===== -->
-    <link rel="stylesheet" href="css/ui-overhaul.css?v=20260911b">
+    <link rel="stylesheet" href="css/ui-overhaul.css?v=20260911d">
 
     <!-- [Task9c] Stub awal: cegah "handlePreviewError is not defined" bila
          preview gambar/iframe error sebelum modul JS (01-core.js) termuat.
@@ -22,7 +22,7 @@
         try { if (el && el.style) el.style.display = 'none'; } catch (e) {}
     };
     </script>
-    <script src="js/crud-lightbox.js?v=20260911b"></script>
+    <script src="js/crud-lightbox.js?v=20260911d"></script>
     </head>
 
 <body>
@@ -107,6 +107,17 @@
                         Cek Status
                     </button>
                 </div>
+
+                <!-- KARTU 3: CEK STATUS PENETAPAN [Task9h] -->
+                <div class="peserta-action-card card-penetapan" onclick="openPesertaCekPenetapan()">
+                    <div class="peserta-card-icon">🎓</div>
+                    <h3 class="peserta-card-title">Cek Status Penetapan</h3>
+                    <p class="peserta-card-desc">Lihat hasil penetapan penerima beasiswa: status kelulusan, SK, dan data akademik Anda.</p>
+                    <button class="peserta-card-btn" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                        Lihat Penetapan
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -139,10 +150,24 @@
         </div>
     </div>
 
+    <!-- ===== FULL-SCREEN LIGHTBOX: CEK STATUS PENETAPAN [Task9h] ===== -->
+    <div class="peserta-content-popup" id="peserta-penetapan-popup">
+        <div class="peserta-popup-topbar">
+            <div class="peserta-popup-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" width="22" height="22"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+                Cek Status Penetapan
+            </div>
+            <button class="peserta-popup-close" onclick="closePesertaCekPenetapan()" title="Tutup">×</button>
+        </div>
+        <div class="peserta-popup-body" id="peserta-penetapan-body">
+            <!-- Content will be dynamically moved here from page-cek-penetapan -->
+        </div>
+    </div>
+
     <!-- ===== SIMBAKES ADMIN FINAL SYSTEM ===== -->
     <!-- Sistem FINAL: Tanpa Fallback, Tanpa Simple Modal, Tanpa Polling -->
-    <script src="js/admin-crud.js?v=20260911b"></script>
-    <script src="js/system-check.js?v=20260911b"></script>
+    <script src="js/admin-crud.js?v=20260911d"></script>
+    <script src="js/system-check.js?v=20260911d"></script>
 
 
 <!-- ===== LANDING PAGE ===== -->
@@ -230,15 +255,17 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" id="arrow-layanan"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
                 <div class="nav-items open" id="items-layanan">
-                    <button class="nav-item cyan active" onclick="showPage('ajukan')" id="nav-ajukan">
+                    <!-- [Task9h] Ketiga menu Layanan WAJIB login peserta: guardPesertaLayanan()
+                         memeriksa sesi; jika belum login, modal Login Peserta dibuka dulu -->
+                    <button class="nav-item cyan active" onclick="guardPesertaLayanan('ajukan')" id="nav-ajukan">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                         Ajukan Rekomendasi
                     </button>
-                    <button class="nav-item" onclick="showPage('cek-status')" id="nav-cek-status">
+                    <button class="nav-item" onclick="guardPesertaLayanan('cek-status')" id="nav-cek-status">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                         Cek Status Pengajuan
                     </button>
-                    <button class="nav-item purple" onclick="showPage('cek-penetapan')" id="nav-cek-penetapan">
+                    <button class="nav-item purple" onclick="guardPesertaLayanan('cek-penetapan')" id="nav-cek-penetapan">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                         Cek Status Penetapan
                     </button>
@@ -2835,23 +2862,23 @@
 
 
 
-    <script src="js/01-core.js?v=20260911b"></script>
-    <script src="js/02-auth-navigation.js?v=20260911b"></script>
-    <script src="js/03-admin-data.js?v=20260911b"></script>
-    <script src="js/04-form.js?v=20260911b"></script>
-    <script src="js/05-database.js?v=20260911b"></script>
-    <script src="js/06-image-handler.js?v=20260911b"></script>
-    <script src="js/07-dashboard.js?v=20260911b"></script>
-    <script src="js/08-roadmap.js?v=20260911b"></script>
-    <script src="js/09-cek-status.js?v=20260911b"></script>
-    <script src="js/10-admin-pengusul.js?v=20260911b"></script>
-    <script src="js/11-topbar-session.js?v=20260911b"></script>
-    <script src="js/12-multiuser-init.js?v=20260911b"></script>
+    <script src="js/01-core.js?v=20260911d"></script>
+    <script src="js/02-auth-navigation.js?v=20260911d"></script>
+    <script src="js/03-admin-data.js?v=20260911d"></script>
+    <script src="js/04-form.js?v=20260911d"></script>
+    <script src="js/05-database.js?v=20260911d"></script>
+    <script src="js/06-image-handler.js?v=20260911d"></script>
+    <script src="js/07-dashboard.js?v=20260911d"></script>
+    <script src="js/08-roadmap.js?v=20260911d"></script>
+    <script src="js/09-cek-status.js?v=20260911d"></script>
+    <script src="js/10-admin-pengusul.js?v=20260911d"></script>
+    <script src="js/11-topbar-session.js?v=20260911d"></script>
+    <script src="js/12-multiuser-init.js?v=20260911d"></script>
     <!-- ===== PANEL ADMIN FIX (sesi tahan refresh + pulihkan menu admin) ===== -->
-    <script src="js/14-panel-admin-fix.js?v=20260911b"></script>
+    <script src="js/14-panel-admin-fix.js?v=20260911d"></script>
     <!-- ===== DATA AKUN PESERTA (Fitur Baru - CRUD tabel akun_peserta) ===== -->
-    <script src="js/13-akun-peserta.js?v=20260911b"></script>
-    <script src="js/15-bukti-pendaftaran.js?v=20260911b"></script>
+    <script src="js/13-akun-peserta.js?v=20260911d"></script>
+    <script src="js/15-bukti-pendaftaran.js?v=20260911d"></script>
 
 <!-- 
 ======================================================
@@ -2888,13 +2915,13 @@ SIMBAKES SUPABASE INTEGRATION
 </script>
 
 <!-- Supabase Configuration & Client Initialization -->
-    <script src="js/supabase-config.js?v=20260911b"></script>
+    <script src="js/supabase-config.js?v=20260911d"></script>
 
 
     
     <!-- ===== UI OVERHAUL SCRIPTS (Auto-injected) ===== -->
     <!-- Font: Tahoma | Design: Glassmorphism | Lightbox: Full-screen -->
-    <script src="js/ui-overhaul.js?v=20260911b"></script>
+    <script src="js/ui-overhaul.js?v=20260911d"></script>
 
     
     <!-- ===== CRUD LIGHTBOX SYSTEM (Auto-injected) ===== -->

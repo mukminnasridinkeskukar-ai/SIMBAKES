@@ -2067,6 +2067,16 @@ function getField(data, snakeCaseKey, camelCaseKey, defaultValue = '-') {
         return data[camelCaseKey];
     }
     
+    // [Task9h] Variadic: kunci tambahan setelah camelCaseKey dipakai modul
+    // penetapan utk variasi nama kolom (unit_pendayguna vs unit_pendayaguna).
+    // Caller lama (getField(d,'a','b')) tidak terpengaruh.
+    for (let i = 3; i < arguments.length; i++) {
+        const extraKey = arguments[i];
+        if (typeof extraKey === 'string' && extraKey && data && data[extraKey] !== undefined && data[extraKey] !== null) {
+            return data[extraKey];
+        }
+    }
+    
     // Return default value
     return defaultValue;
 }

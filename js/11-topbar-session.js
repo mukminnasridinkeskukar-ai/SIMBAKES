@@ -251,6 +251,16 @@ async function handlePesertaLoginInModal(event) {
         // Show peserta dashboard with 2 cards
         showPesertaDashboard(pesertaSessionData);
         
+        // [Task9h] Jika login dipicu dari menu Layanan, langsung buka tujuan
+        const pendingLayanan = window.__pesertaPendingLayanan;
+        window.__pesertaPendingLayanan = null;
+        if (pendingLayanan) {
+            setTimeout(function () {
+                closePesertaDashboard();
+                openLayananTarget(pendingLayanan);
+            }, 350);
+        }
+        
     } catch (error) {
         console.error('[PESERTA LOGIN] Error:', error);
         alertEl.className = 'peserta-login-alert error show';
@@ -282,11 +292,13 @@ function pesertaLogout() {
     if (confirm('Apakah Anda yakin ingin logout?')) {
         pesertaSessionData = null;
         localStorage.removeItem('simbakes_peserta_session');
+        window.__pesertaPendingLayanan = null;
         
         // Close all peserta overlays
         closePesertaDashboard();
         closePesertaAjukan();
         closePesertaCekStatus();
+        closePesertaCekPenetapan();
         
         // Reset topbar button
         const loginBtn = document.getElementById('topbar-peserta-login-btn');
@@ -336,10 +348,20 @@ function openPesertaAjukan() {
     // Initialize form if needed (generate nomor register & tanggal)
     if (typeof initializeForm === 'function') initializeForm();
     
-    // Pre-fill NIK if available
-    if (pesertaSessionData && pesertaSessionData.nik) {
-        const nikInput = document.getElementById('nik');
-        if (nikInput) nikInput.value = pesertaSessionData.nik;
+    // [Task9g] Pre-fill NIK + nama + email dari sesi peserta (jika kosong).
+    // Form di popup adalah node yang SAMA dengan menu publik — sekarang data
+    // akun peserta otomatis terisi sehingga pengalaman kedua jalur setara.
+    if (pesertaSessionData) {
+        const prefillMap = [
+            ['nik', pesertaSessionData.nik],
+            ['nama-lengkap', pesertaSessionData.nama || pesertaSessionData.nama_lengkap],
+            ['email', pesertaSessionData.email]
+        ];
+        prefillMap.forEach(function (pair) {
+            if (!pair[1]) return;
+            const inp = document.getElementById(pair[0]);
+            if (inp && !String(inp.value || '').trim()) inp.value = pair[1];
+        });
     }
     
     // Override submitForm to close popup on success (hanya sekali, cegah nesting)
@@ -465,12 +487,19 @@ function closePesertaCekStatus() {
 }
 
 // ESC key handler for peserta overlays
+// [Task9g] Jika ada modal konfirmasi/sukses aktif, ESC harus menutup MODAL
+// dulu (bukan popup peserta di belakangnya) — konsisten dgn perilaku menu publik.
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
+        if (document.querySelector('.modal-overlay.active')) {
+            return; // biarkan handler modal (closeModal) yang menutup
+        }
         if (document.getElementById('peserta-ajukan-popup')?.classList.contains('show')) {
             closePesertaAjukan();
         } else if (document.getElementById('peserta-cekstatus-popup')?.classList.contains('show')) {
             closePesertaCekStatus();
+        } else if (document.getElementById('peserta-penetapan-popup')?.classList.contains('show')) {
+            closePesertaCekPenetapan();
         } else if (document.getElementById('peserta-dashboard-overlay')?.classList.contains('show')) {
             pesertaLogout();
         } else if (document.getElementById('peserta-login-overlay')?.classList.contains('show')) {
@@ -478,6 +507,138 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+
+// ============================================================
+// [Task9h] GERBANG LOGIN PESERTA UNTUK MENU LAYANAN
+// Ketiga menu di sidebar (Ajukan Rekomendasi, Cek Status Pengajuan,
+// Cek Status Penetapan) hanya bisa dibuka setelah login peserta.
+// Belum login -> modal Login Peserta dibuka + info; setelah login sukses,
+// halaman tujuan dibuka otomatis (window.__pesertaPendingLayanan).
+// ============================================================
+
+function openLayananTarget(target) {
+    if (target === 'ajukan') {
+        openPesertaAjukan();
+    } else if (target === 'cek-status') {
+        openPesertaCekStatus();
+    } else if (target === 'cek-penetapan') {
+        openPesertaCekPenetapan();
+    }
+}
+
+function guardPesertaLayanan(target) {
+    // 1) Sudah login (sesi modal yang sedang hidup)
+    if (pesertaSessionData && pesertaSessionData.nik !== undefined) {
+        openLayananTarget(target);
+        return;
+    }
+    // 2) Fallback: sesi tersimpan di localStorage (format lama)
+    const stored = localStorage.getItem('simbakes_peserta_session');
+    if (stored) {
+        try {
+            const s = JSON.parse(stored);
+            if (s && (s.isLoggedIn || s.nik)) {
+                pesertaSessionData = s;
+                updateUIForLoggedInPeserta(s);
+                openLayananTarget(target);
+                return;
+            }
+        } catch (e) { /* abaikan, anggap belum login */ }
+    }
+    // 3) Belum login -> catat tujuan, buka modal login + info
+    window.__pesertaPendingLayanan = target;
+    openPesertaLogin();
+    const alertEl = document.getElementById('peserta-login-alert');
+    if (alertEl) {
+        alertEl.className = 'peserta-login-alert info show';
+        alertEl.innerHTML = '🔐 Layanan ini hanya untuk <b>peserta yang sudah login</b>. Silakan masukkan username & password Anda' +
+            ' — atau <a href="daftar-peserta.html" target="_blank" style="color:#047857;font-weight:700;text-decoration:underline;">daftar akun baru</a> bila belum punya.';
+    }
+}
+
+/**
+ * Open Cek Status Penetapan Lightbox [Task9h]
+ * Memindahkan node asli page-cek-penetapan ke popup (MOVE, bukan clone —
+ * agar getElementById membaca field yang benar, pola sama dgn ajukan/cekstatus).
+ * NIK dari sesi peserta otomatis diisi dan pencarian langsung dijalankan.
+ */
+function openPesertaCekPenetapan() {
+    const popup = document.getElementById('peserta-penetapan-popup');
+    const body = document.getElementById('peserta-penetapan-body');
+    const pagePenetapan = document.getElementById('page-cek-penetapan');
+    
+    if (!popup || !body || !pagePenetapan) {
+        console.error('[PESERTA] Elemen popup/page-cek-penetapan tidak ditemukan');
+        return;
+    }
+    
+    window.__penetapanOrigParent = pagePenetapan.parentNode;
+    window.__penetapanOrigNext = pagePenetapan.nextSibling;
+    
+    body.innerHTML = '';
+    pagePenetapan.classList.add('active');
+    pagePenetapan.style.display = 'block';
+    body.appendChild(pagePenetapan); // pindahkan node asli
+    
+    // Reset hasil pencarian sebelumnya
+    const rc = document.getElementById('penetapan-result-container');
+    if (rc) rc.style.display = 'none';
+    const ld = document.getElementById('penetapan-loading');
+    if (ld) ld.style.display = 'none';
+    const nf = document.getElementById('penetapan-not-found');
+    if (nf) nf.style.display = 'none';
+    
+    // Pre-fill NIK dari sesi peserta lalu cari otomatis
+    let autoSearch = false;
+    if (pesertaSessionData && pesertaSessionData.nik) {
+        const nikInput = document.getElementById('penetapan-search-nik');
+        if (nikInput) {
+            nikInput.value = pesertaSessionData.nik;
+            autoSearch = true;
+        }
+    }
+    
+    // Show popup
+    popup.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    
+    if (autoSearch && typeof searchPenetapanData === 'function') {
+        setTimeout(function () { searchPenetapanData(); }, 250);
+    }
+}
+
+/**
+ * Close Cek Status Penetapan Lightbox [Task9h]
+ */
+function closePesertaCekPenetapan() {
+    const popup = document.getElementById('peserta-penetapan-popup');
+    const body = document.getElementById('peserta-penetapan-body');
+    if (popup) {
+        popup.classList.remove('show');
+        
+        // Kembalikan node page-cek-penetapan ke posisi aslinya di main content
+        const pagePenetapan = document.getElementById('page-cek-penetapan');
+        if (pagePenetapan && window.__penetapanOrigParent) {
+            pagePenetapan.classList.remove('active');
+            pagePenetapan.style.display = '';
+            try {
+                window.__penetapanOrigParent.insertBefore(pagePenetapan, window.__penetapanOrigNext || null);
+            } catch (e) {
+                window.__penetapanOrigParent.appendChild(pagePenetapan);
+            }
+            window.__penetapanOrigParent = null;
+            window.__penetapanOrigNext = null;
+        }
+        if (body) body.innerHTML = '';
+        document.body.style.overflow = '';
+    }
+}
+
+// Expose global untuk onclick inline [Task9h]
+window.guardPesertaLayanan = guardPesertaLayanan;
+window.openLayananTarget = openLayananTarget;
+window.openPesertaCekPenetapan = openPesertaCekPenetapan;
+window.closePesertaCekPenetapan = closePesertaCekPenetapan;
 
 /**
  * Helper: Tentukan URL halaman login peserta
