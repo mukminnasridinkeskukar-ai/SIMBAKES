@@ -303,6 +303,12 @@ async function submitToSupabase(formData) {
         cleanData.created_at = new Date().toISOString();
         cleanData.updated_at = new Date().toISOString();
         
+        // [Task9e] Payload WAJIB memiliki no_register sebelum insert (poin 4/6)
+        if (!cleanData.no_register || !String(cleanData.no_register).trim()) {
+            console.error('[SIMBAKES] ❌ Payload tanpa no_register — insert dibatalkan:', cleanData);
+            throw new Error('Nomor pengajuan (no_register) kosong — pengajuan tidak dapat disimpan');
+        }
+
         console.log('[SIMBAKES] 📤 Clean data for insert:', cleanData);
         
         const { data, error } = await supabaseClient
@@ -321,6 +327,13 @@ async function submitToSupabase(formData) {
             throw error;
         }
         
+        // [Task9e] Jangan anggap berhasil hanya karena fungsi selesai dijalankan —
+        // hasil insert WAJIB diverifikasi eksplisit (spesifikasi poin 6)
+        if (!data || data.length === 0) {
+            console.error('[SIMBAKES] ❌ INSERT tidak mengembalikan record — dianggap GAGAL');
+            throw new Error('INSERT tidak mengembalikan record pengajuan — data TIDAK tersimpan');
+        }
+
         console.log('[SIMBAKES] ✅ Data submitted successfully:', data);
         return data;
     } catch (error) {

@@ -464,95 +464,287 @@ function formatFileSize(bytes) {
 }
 
 // ===== FORM VALIDATION & SUBMISSION =====
-function validateForm() {
-    const requiredFields = [
-        { id: 'nik', name: 'NIK' },
-        { id: 'nama-lengkap', name: 'Nama Lengkap' },
-        { id: 'tempat-lahir', name: 'Tempat Lahir' },
-        { id: 'tanggal-lahir', name: 'Tanggal Lahir' },
-        { id: 'alamat-ktp', name: 'Alamat KTP' },
-        { id: 'alamat-domisili', name: 'Alamat Domisili' },
-        { id: 'lama-domisili', name: 'Lama Domisili' },
-        { id: 'pekerjaan', name: 'Pekerjaan' },
-        { id: 'posisi', name: 'Posisi' },
-        { id: 'unit-kerja', name: 'Unit Kerja' },
-        { id: 'penjelasan', name: 'Penjelasan' },
-        { id: 'jurusan-tujuan', name: 'Jurusan Tujuan' },
-        { id: 'jenjang-pendidikan', name: 'Jenjang Pendidikan' },
-        { id: 'unit-tujuan', name: 'Unit Tujuan' },
-        { id: 'rencana-tahun', name: 'Rencana Tahun Studi' },
-        { id: 'no-hp', name: 'Nomor HP' },
-        { id: 'no-wa', name: 'Nomor WhatsApp' },
-        { id: 'email', name: 'Email' }
-    ];
-    
-    let errors = [];
-    
-    requiredFields.forEach(field => {
-        const el = document.getElementById(field.id);
-        if (!el) {
-            // [Task9] Elemen hilang (HTML versi lama ter-cache / parser beda)
-            // tidak boleh membuat TypeError — laporkan sebagai isian bermasalah
-            errors.push(field.name + ' (elemen tidak ditemukan — muat ulang halaman)');
-            return;
+// ============================================================
+// [Task9e] VALIDASI TERPUSAT — spesifikasi perbaikan Kirim Pengajuan
+//  - validateSubmission() memeriksa SELURUH field wajib + dokumen
+//  - Link dokumen divalidasi KETAT (harus URL Drive/berkas valid,
+//    bukan sekadar teks/nama file yang tampil)
+//  - Foto diverifikasi benar-benar dapat dimuat (analog "validasi
+//    status upload storage")
+//  - Hasil validasi: daftar masalah terstruktur utk panel error
+// ============================================================
+
+// Daftar field teks wajib: [id, label, grup]
+var REQUIRED_TEXT_FIELDS = [
+    ['nik', 'NIK', 'Data Pribadi'],
+    ['nama-lengkap', 'Nama Lengkap', 'Data Pribadi'],
+    ['tempat-lahir', 'Tempat Lahir', 'Data Pribadi'],
+    ['tanggal-lahir', 'Tanggal Lahir', 'Data Pribadi'],
+    ['alamat-ktp', 'Alamat KTP', 'Data Pribadi'],
+    ['alamat-domisili', 'Alamat Domisili', 'Data Pribadi'],
+    ['lama-domisili', 'Lama Domisili', 'Data Pribadi'],
+    ['no-hp', 'Nomor HP', 'Data Pribadi'],
+    ['no-wa', 'Nomor WhatsApp', 'Data Pribadi'],
+    ['email', 'Email', 'Data Pribadi'],
+    ['pekerjaan', 'Pekerjaan', 'Data Pekerjaan'],
+    ['posisi', 'Posisi', 'Data Pekerjaan'],
+    ['unit-kerja', 'Unit Kerja', 'Data Pekerjaan'],
+    ['penjelasan', 'Penjelasan', 'Data Pekerjaan'],
+    ['jurusan-tujuan', 'Jurusan Tujuan', 'Data Pengusulan Beasiswa'],
+    ['jenjang-pendidikan', 'Jenjang Pendidikan', 'Data Pengusulan Beasiswa'],
+    ['unit-tujuan', 'Unit Tujuan', 'Data Pengusulan Beasiswa'],
+    ['rencana-tahun', 'Rencana Tahun Studi', 'Data Pengusulan Beasiswa']
+];
+
+// Elemen yang di-highlight merah (dibersihkan oleh clearFormErrors)
+var __invalidFieldEls = [];
+
+// [Task9e] Flag anti double-submit — klik ganda / klik beruntun diabaikan
+var __submitInProgress = false;
+
+function getFieldEl(id) {
+    return document.getElementById(id);
+}
+
+function isDriveHost(hostname) {
+    var h = String(hostname || '').replace(/^www\./, '').toLowerCase();
+    return h === 'drive.google.com' || h === 'docs.google.com' || h === 'drive.usercontent.google.com';
+}
+
+/**
+ * [Task9e] Validasi link dokumen secara KETAT.
+ * @returns null jika valid, atau pesan error (string)
+ */
+function checkDocumentLink(value, label, kind) {
+    if (!value) {
+        return label + ' wajib diisi — paste link Google Drive pada kolom ' + label;
+    }
+    var s = String(value).trim();
+    if (s.length < 20) {
+        return label + ' terlalu pendek — salin link lengkap dari Google Drive (diawali https://)';
+    }
+    if (/^(www\.)?(drive\.google\.com|docs\.google\.com)\//i.test(s)) {
+        s = 'https://' + s;
+    }
+    var u;
+    try {
+        u = new URL(s);
+    } catch (e) {
+        return label + ' bukan URL yang valid (harus diawali https://)';
+    }
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+        return label + ' harus berupa link http/https';
+    }
+    if (isDriveHost(u.hostname)) {
+        var p = u.pathname;
+        var hasId = /\/file\/d\/([A-Za-z0-9_-]{10,})/.test(p) ||
+                    /\/document\/d\/([A-Za-z0-9_-]{10,})/.test(p) ||
+                    /\/presentation\/d\/([A-Za-z0-9_-]{10,})/.test(p) ||
+                    /\/spreadsheets\/d\/([A-Za-z0-9_-]{10,})/.test(p) ||
+                    /\/folders\/([A-Za-z0-9_-]{10,})/.test(p) ||
+                    /\/d\/([A-Za-z0-9_-]{10,})/.test(p) ||
+                    (u.searchParams && u.searchParams.get('id'));
+        if (!hasId) {
+            return label + ' bukan link berbagi Google Drive yang valid — di Drive klik "Bagikan" → "Salin link" lalu paste kembali';
         }
-        const value = el.value.trim();
-        if (!value) {
-            errors.push(field.name);
+        return null; // Link Drive dengan ID file/folder valid
+    }
+    // Bukan host Drive → wajib tautan file langsung dengan ekstensi yang benar
+    var extOk = (kind === 'image') ? /\.(jpe?g|png|webp|gif|bmp)(\?|$)/i.test(u.pathname)
+                                   : /\.pdf(\?|$)/i.test(u.pathname);
+    if (!extOk) {
+        var harapan = (kind === 'image') ? 'gambar (JPG/PNG/WEBP)' : 'PDF (.pdf)';
+        return label + ' harus berupa link Google Drive atau tautan langsung file ' + harapan;
+    }
+    return null;
+}
+
+/**
+ * [Task9e] Verifikasi foto benar-benar dapat dimuat browser.
+ * Link Drive publik → thumbnail/direct URL berhasil dimuat.
+ * @returns Promise<boolean> true = dapat dimuat ATAU tidak dapat dipastikan
+ *          (jaringan lambat) — tidak boleh memblokir karena ketidakpastian
+ */
+function verifyPhotoAccessible(linkValue) {
+    return new Promise(function (resolve) {
+        try {
+            var candidates = [];
+            var direct = (typeof getDirectImageUrl === 'function') ? getDirectImageUrl(linkValue) : linkValue;
+            if (direct) candidates.push(direct);
+            var m = String(linkValue).match(/\/file\/d\/([A-Za-z0-9_-]{10,})/) ||
+                    String(linkValue).match(/[?&]id=([A-Za-z0-9_-]{10,})/);
+            if (m) candidates.push('https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w800');
+            if (!candidates.length) { resolve(true); return; }
+
+            var i = 0, settled = false, timeoutId = null;
+            function tryNext() {
+                if (settled) return;
+                if (i >= candidates.length) {
+                    if (timeoutId) clearTimeout(timeoutId);
+                    resolve(false); // Semua kandidat gagal dimuat → link tidak dapat diakses
+                    return;
+                }
+                var img = new Image();
+                img.onload = function () {
+                    if (settled) return;
+                    settled = true;
+                    if (timeoutId) clearTimeout(timeoutId);
+                    resolve(true);
+                };
+                img.onerror = function () { i++; tryNext(); };
+                img.src = candidates[i++];
+            }
+            tryNext();
+            // Batas waktu 10 dtk: koneksi lambat → jangan blokir pengguna
+            timeoutId = setTimeout(function () {
+                if (!settled) { settled = true; resolve(true); }
+            }, 10000);
+        } catch (e) {
+            console.warn('[FORM] verifyPhotoAccessible gagal dijalankan:', e);
+            resolve(true);
         }
     });
-    
-    // Check Google Drive links (NEW! - replacing file upload checks)
-    const fotoDriveLink = document.getElementById('foto-drive-link')?.value?.trim();
-    const dokumenDriveLink = document.getElementById('dokumen-drive-link')?.value?.trim();
-    const suratPernyataanLink = document.getElementById('surat-pernyataan-link')?.value?.trim();
-    
-    if (!fotoDriveLink || fotoDriveLink.length < 15) {
-        errors.push('Link Foto Pasfoto (Google Drive)');
+}
+
+/**
+ * [Task9e] VALIDASI TERPUSAT — dipanggil sebelum konfirmasi & sebelum insert.
+ * @returns {valid:boolean, problems:[{id,label,message,group}]}
+ */
+function validateSubmission() {
+    var problems = [];
+
+    function pushProblem(id, label, message, group) {
+        problems.push({ id: id, label: label, message: message, group: group || 'Lainnya' });
     }
-    
-    if (!dokumenDriveLink || dokumenDriveLink.length < 15) {
-        errors.push('Link Dokumen PDF (Google Drive)');
+
+    // --- 1. Nomor register & tanggal: pulihkan otomatis bila kosong ---
+    var regEl = getFieldEl('reg-nomor');
+    if (regEl && !String(regEl.value || '').trim()) {
+        regEl.value = generateRegNumber();
+        console.info('[FORM] Nomor register kosong — dibuat ulang otomatis:', regEl.value);
     }
-    
-    if (!suratPernyataanLink || suratPernyataanLink.length < 15) {
-        errors.push('Link Surat Pernyataan (Google Drive)');
+    var tglEl = getFieldEl('reg-tanggal');
+    if (tglEl && !String(tglEl.value || '').trim() && typeof initializeForm === 'function') {
+        initializeForm();
     }
-    
-    // Validate NIK length
-    const nik = document.getElementById('nik').value;
-    if (nik && nik.length !== 16) {
-        errors.push('NIK harus 16 digit');
-    }
-    
-    // Validate email format
-    const email = document.getElementById('email').value;
-    if (email && !isValidEmail(email)) {
-        errors.push('Format email tidak valid');
-    }
-    
-    if (errors.length > 0) {
-        showFormErrors(errors);
+
+    // --- 2. Field teks wajib + format khusus ---
+    REQUIRED_TEXT_FIELDS.forEach(function (f) {
+        var id = f[0], label = f[1], group = f[2];
+        var el = getFieldEl(id);
+        if (!el) {
+            pushProblem(id, label, label + ' (elemen tidak ditemukan — muat ulang halaman)', group);
+            return;
+        }
+        var value = String(el.value || '').trim();
+        if (!value) {
+            pushProblem(id, label, label + ' belum diisi', group);
+            return;
+        }
+        if (id === 'nik' && !/^\d{16}$/.test(value)) {
+            pushProblem(id, label, 'NIK harus tepat 16 digit angka (saat ini ' + value.length + ' digit)', group);
+        } else if (id === 'email' && !isValidEmail(value)) {
+            pushProblem(id, label, 'Format email tidak valid (contoh: nama@email.com)', group);
+        } else if ((id === 'no-hp' || id === 'no-wa') && value.replace(/\D/g, '').length < 9) {
+            pushProblem(id, label, label + ' minimal 9 digit angka', group);
+        }
+    });
+
+    // --- 3. Dokumen wajib: link harus benar-benar valid (bukan sekadar teks) ---
+    [['foto-drive-link', 'Link Foto Pasfoto', 'image'],
+     ['dokumen-drive-link', 'Link Dokumen Kelengkapan (PDF)', 'pdf'],
+     ['surat-pernyataan-link', 'Link Surat Pernyataan (PDF)', 'pdf']
+    ].forEach(function (d) {
+        var el = getFieldEl(d[0]);
+        var value = el ? String(el.value || '').trim() : '';
+        var msg = checkDocumentLink(value, d[1], d[2]);
+        if (msg) pushProblem(d[0], d[1], msg, 'Dokumen Persyaratan');
+    });
+
+    return { valid: problems.length === 0, problems: problems };
+}
+
+/**
+ * Wrapper kompatibilitas utk pemanggil lama — mengembalikan boolean.
+ */
+function validateForm() {
+    var result = validateSubmission();
+    if (!result.valid) {
+        showFormErrors(result.problems);
         return false;
     }
-    
     clearFormErrors();
     return true;
 }
 
 // ============================================================
-// [Task9] Panel error dalam halaman — pengganti alert() yang
+// [Task9e] NOMOR PENGAJUAN UNIK (anti duplikat)
+// ============================================================
+
+function generateRegNumber() {
+    var now = new Date();
+    var dateStr = now.getFullYear().toString() +
+                  String(now.getMonth() + 1).padStart(2, '0') +
+                  String(now.getDate()).padStart(2, '0');
+    var randomNum = String(Math.floor(Math.random() * 900000) + 100000);
+    return 'REG-SIMBAKES-' + dateStr + randomNum;
+}
+
+/**
+ * [Task9e] Pastikan no_register belum terpakai di database.
+ * Kolom no_register di Supabase TIDAK punya constraint unique (terverifikasi),
+ * sehingga pengecekan ini wajib dilakukan sebelum insert.
+ */
+async function ensureUniqueRegNumber(candidate, attempts) {
+    attempts = attempts || 0;
+    if (!candidate) candidate = generateRegNumber();
+    if (!supabaseClient) return candidate;
+    try {
+        var q = await supabaseClient.from('submissions')
+            .select('id')
+            .eq('no_register', candidate)
+            .limit(1);
+        if (q.error) {
+            console.warn('[FORM] Cek unik no_register gagal (dilanjutkan tanpa cek):', q.error.message);
+            return candidate;
+        }
+        if (q.data && q.data.length > 0) {
+            console.warn('[FORM] Nomor sudah terpakai, membuat nomor baru:', candidate);
+            if (attempts >= 6) return candidate + '-' + String(Date.now()).slice(-4);
+            return ensureUniqueRegNumber(generateRegNumber(), attempts + 1);
+        }
+        return candidate;
+    } catch (e) {
+        console.warn('[FORM] Cek unik no_register error (dilanjutkan):', e);
+        return candidate;
+    }
+}
+
+// ============================================================
+// [Task9e] Panel error dalam halaman — pengganti alert() yang
 // sering DIBLOKIR/DITEKAN di webview in-app (WhatsApp/IG/FB)
 // dan sebagian browser mobile, sehingga tombol Kirim terlihat
 // "mati" tanpa pesan. Panel ini tampil di SEMUA browser/platform.
+//
+// [Task9e] PENINGKATAN (spesifikasi poin 1):
+//  - Menerima array string ATAU array {id,label,message,group}
+//  - Field bermasalah di-HIGHLIGHT merah
+//  - Setiap item BISA DIKLIK → scroll otomatis ke field-nya
+//  - Scroll otomatis ke isian bermasalah PERTAMA
 // ============================================================
-function showFormErrors(errors, title) {
-    const host = document.getElementById('form-ajukan');
+function showFormErrors(problems, title) {
+    var items = (problems || []).map(function (p) {
+        return (typeof p === 'string') ? { id: null, label: p, message: '', group: '' } : p;
+    });
+    if (!items.length) return;
+
+    var host = document.getElementById('form-ajukan');
     if (!host) {
-        showToast('❌ ' + (errors.join('; ') || 'Form belum lengkap'), 'error', 6000);
+        var joined = items.map(function (p) { return p.message ? (p.label + ': ' + p.message) : p.label; }).join('; ');
+        showToast('❌ ' + (joined || 'Form belum lengkap'), 'error', 6000);
         return;
     }
-    let panel = document.getElementById('form-error-panel');
+    var panel = document.getElementById('form-error-panel');
     if (!panel) {
         panel = document.createElement('div');
         panel.id = 'form-error-panel';
@@ -561,24 +753,81 @@ function showFormErrors(errors, title) {
             'background:#fef2f2;border:2px solid #ef4444;color:#7f1d1d;';
         host.insertBefore(panel, host.firstChild);
     }
-    const judul = title || 'Mohon periksa kembali:';
+    var judul = title || ('Mohon lengkapi ' + items.length + ' isian berikut:');
+    var esc = function (s) { return String(s == null ? '' : s).replace(/</g, '&lt;'); };
+    var listHtml = items.map(function (p, idx) {
+        var teks = p.message ? (esc(p.label) + ' — ' + esc(p.message)) : esc(p.label);
+        var grp = p.group ? '<span style="color:#b91c1c;opacity:0.75;">[' + esc(p.group) + ']</span> ' : '';
+        if (p.id) {
+            return '<li style="margin:4px 0;white-space:pre-line;cursor:pointer;text-decoration:underline;" ' +
+                'onclick="focusProblemField(\'' + esc(p.id) + '\')" title="Klik untuk menuju isian ini">' +
+                grp + teks + '</li>';
+        }
+        return '<li style="margin:4px 0;white-space:pre-line;">' + grp + teks + '</li>';
+    }).join('');
     panel.innerHTML =
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">' +
-        '<strong style="font-size:1rem;">⚠️ ' + judul + '</strong>' +
+        '<strong style="font-size:1rem;">⚠️ ' + esc(judul) + '</strong>' +
         '<button type="button" onclick="clearFormErrors()" title="Tutup" ' +
         'style="border:none;background:#fecaca;color:#7f1d1d;border-radius:8px;padding:4px 10px;cursor:pointer;font-weight:bold;">×</button>' +
         '</div>' +
-        '<ul style="margin:0.5rem 0 0 1.25rem;padding:0;">' +
-        errors.map(e => '<li style="margin:3px 0;white-space:pre-line;">' + String(e).replace(/</g, '&lt;') + '</li>').join('') +
-        '</ul>' +
-        '<p style="margin:0.6rem 0 0;font-size:0.85rem;color:#991b1b;">Perbaiki isian di atas, lalu klik <b>Kirim Pengajuan</b> sekali lagi.</p>';
-    try { panel.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
-    showToast('⚠️ ' + errors.length + ' isian perlu diperbaiki', 'error', 5000);
+        '<ul style="margin:0.5rem 0 0 1.25rem;padding:0;">' + listHtml + '</ul>' +
+        '<p style="margin:0.6rem 0 0;font-size:0.85rem;color:#991b1b;">Klik pesan di atas untuk langsung menuju isian yang bermasalah, perbaiki, lalu klik <b>Kirim Pengajuan</b> sekali lagi.</p>';
+
+    // [Task9e] Highlight field yang bermasalah
+    clearInvalidHighlights();
+    items.forEach(function (p) {
+        if (!p.id) return;
+        var el = getFieldEl(p.id);
+        if (el) {
+            el.style.outline = '2px solid #ef4444';
+            el.style.outlineOffset = '1px';
+            el.setAttribute('aria-invalid', 'true');
+            __invalidFieldEls.push(el);
+        }
+    });
+
+    // [Task9e] Scroll otomatis ke isian bermasalah PERTAMA (fallback: panel)
+    var firstEl = null;
+    for (var i = 0; i < items.length; i++) {
+        if (items[i].id) { firstEl = getFieldEl(items[i].id); if (firstEl) break; }
+    }
+    try {
+        if (firstEl) {
+            firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (typeof firstEl.focus === 'function') firstEl.focus({ preventScroll: true });
+        } else {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    } catch (e) {}
+    showToast('⚠️ ' + items.length + ' isian perlu diperbaiki', 'error', 5000);
+}
+
+/**
+ * [Task9e] Menuju field bermasalah (dipanggil dari item panel yang diklik).
+ */
+function focusProblemField(id) {
+    var el = getFieldEl(id);
+    if (!el) return;
+    try {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (typeof el.focus === 'function') el.focus({ preventScroll: true });
+    } catch (e) {}
+}
+
+function clearInvalidHighlights() {
+    __invalidFieldEls.forEach(function (el) {
+        el.style.outline = '';
+        el.style.outlineOffset = '';
+        el.removeAttribute('aria-invalid');
+    });
+    __invalidFieldEls = [];
 }
 
 function clearFormErrors() {
-    const panel = document.getElementById('form-error-panel');
+    var panel = document.getElementById('form-error-panel');
     if (panel) panel.remove();
+    clearInvalidHighlights();
 }
 
 function showSubmitError(title, detail) {
@@ -587,17 +836,31 @@ function showSubmitError(title, detail) {
 window.showFormErrors = showFormErrors;
 window.clearFormErrors = clearFormErrors;
 window.showSubmitError = showSubmitError;
+window.focusProblemField = focusProblemField;
 
 function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function showConfirmation() {
-    // [Task9d] Wrapper pengaman: error tak terduga APAPUN harus menghasilkan
+    // [Task9d/e] Wrapper pengaman: error tak terduga APAPUN harus menghasilkan
     // umpan balik yang terlihat di layar — tombol Kirim tidak boleh mati
     // diam-diam (keluhan user: klik tidak bereaksi sama sekali).
     try {
-        showConfirmationUnsafe();
+        var r = showConfirmationUnsafe();
+        if (r && typeof r.catch === 'function') {
+            r.catch(function (e) {
+                console.error('[FORM] showConfirmation (async) error:', e);
+                try {
+                    showFormErrors([
+                        'Terjadi kesalahan teknis saat menyiapkan konfirmasi: ' + (e && e.message ? e.message : e) +
+                        '. Muat ulang halaman (Ctrl+Shift+R) lalu coba lagi.'
+                    ], 'Terjadi kendala:');
+                } catch (e2) {
+                    try { showToast('❌ ' + (e && e.message ? e.message : 'Kesalahan tak terduga'), 'error', 8000); } catch (e3) {}
+                }
+            });
+        }
     } catch (e) {
         console.error('[FORM] showConfirmation error:', e);
         try {
@@ -611,9 +874,47 @@ function showConfirmation() {
     }
 }
 
-function showConfirmationUnsafe() {
+async function showConfirmationUnsafe() {
+    clearFormErrors();
+
+    // [Task9e] Validasi terpusat: field wajib + dokumen ketat
     if (!validateForm()) return;
-    
+
+    // [Task9e] Pulihkan state tombol submit (bisa jadi sisa state gagal/sukses sebelumnya)
+    __submitInProgress = false;
+    var finalBtn = document.getElementById('btn-submit-final');
+    if (finalBtn) setSubmitBtnState(finalBtn, 'normal');
+
+    // [Task9e] Pastikan nomor register BENAR-BENAR UNIK di database
+    // sebelum ditampilkan di layar konfirmasi (anti duplikat)
+    var regEl = document.getElementById('reg-nomor');
+    if (regEl && supabaseClient) {
+        try {
+            var unique = await ensureUniqueRegNumber(String(regEl.value || '').trim());
+            if (unique && unique !== String(regEl.value || '').trim()) {
+                console.info('[FORM] Nomor register diganti agar unik:', regEl.value, '→', unique);
+                regEl.value = unique;
+            }
+        } catch (e) {
+            console.warn('[FORM] Cek unik nomor register gagal (dilanjutkan):', e);
+        }
+    }
+
+    // [Task9e] Verifikasi foto benar-benar dapat diakses (bukan sekadar link terisi)
+    var fotoLink = document.getElementById('foto-drive-link')?.value?.trim();
+    if (fotoLink) {
+        var fotoOk = await verifyPhotoAccessible(fotoLink);
+        if (!fotoOk) {
+            showFormErrors([{
+                id: 'foto-drive-link',
+                label: 'Link Foto Pasfoto',
+                message: 'foto TIDAK dapat dimuat — pastikan file dibagikan di Drive dengan akses "Anyone with the link / Siapa saja yang memiliki link", lalu coba lagi',
+                group: 'Dokumen Persyaratan'
+            }], 'Dokumen belum dapat diakses:');
+            return;
+        }
+    }
+
     // [Task9] Pembaca aman — elemen yang hilang tidak lagi melempar
     // TypeError (penyebab klik Kirim terasa mati di browser tertentu)
     const gv = (id) => {
@@ -621,8 +922,7 @@ function showConfirmationUnsafe() {
         return e && typeof e.value === 'string' ? e.value : '';
     };
     
-    // Get Drive links for confirmation
-    const fotoLink = document.getElementById('foto-drive-link')?.value?.trim();
+    // [Task9e] Link dokumen (fotoLink sudah dibaca di verifikasi atas)
     const dokumenLink = document.getElementById('dokumen-drive-link')?.value?.trim();
     const suratLink = document.getElementById('surat-pernyataan-link')?.value?.trim();
     
@@ -671,36 +971,31 @@ async function submitForm() {
         showToast('❌ Tombol kirim tidak ditemukan — muat ulang halaman (Ctrl+R)', 'error', 6000);
         return;
     }
+
+    // [Task9e] CEGAH DOUBLE SUBMIT (spesifikasi poin 3):
+    // klik ganda / klik saat proses berjalan diabaikan total
+    if (__submitInProgress) {
+        console.warn('[FORM] Pengiriman sedang berjalan — klik diabaikan (double-submit guard)');
+        return;
+    }
+
     clearFormErrors();
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<div class="spinner"></div> Mengirim...';
-    
-    // DEFENSE-IN-DEPTH: validasi ulang seluruh form sebelum kirim
+
+    // DEFENSE-IN-DEPTH [Task9e]: validasi ulang SELURUH form sebelum kirim
     // (mencegah data tidak lengkap tersimpan bila modal konfirmasi dilewati)
-    if (typeof validateForm === 'function' && !validateForm()) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = 'Ya, Kirim Sekarang';
+    const preValidation = validateSubmission();
+    if (!preValidation.valid) {
+        closeModal('confirm-modal');
+        showFormErrors(preValidation.problems);
+        setSubmitBtnState(submitBtn, 'normal');
         return;
     }
-    
-    // Validate Google Drive links are provided (NEW! - replacing file upload checks)
-    const fotoLink = document.getElementById('foto-drive-link')?.value?.trim();
-    const dokumenLink = document.getElementById('dokumen-drive-link')?.value?.trim();
-    
-    if (!fotoLink || fotoLink.length < 15) {
-        showToast('❌ Silakan isi link Google Drive foto pasfoto!', 'error');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = 'Ya, Kirim Sekarang';
-        return;
-    }
-    
-    if (!dokumenLink || dokumenLink.length < 15) {
-        showToast('❌ Silakan upload dokumen PDF terlebih dahulu!', 'error');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = 'Ya, Kirim Sekarang';
-        return;
-    }
-    
+
+    // [Task9e] Proses dimulai: tombol loading + terkunci
+    __submitInProgress = true;
+    setSubmitBtnState(submitBtn, 'loading');
+    console.log('[FORM] 🚀 Memulai proses pengiriman pengajuan...');
+
     // Collect form data with Google Drive links (NEW! - replacing base64 files)
     const formData = {
         noRegister: document.getElementById('reg-nomor').value,
@@ -723,193 +1018,141 @@ async function submitForm() {
         noHP: document.getElementById('no-hp').value,
         noWA: document.getElementById('no-wa').value,
         email: document.getElementById('email').value,
-        
+
         // GOOGLE DRIVE LINKS (disimpan ke kolom foto_peserta & dokumen_kelengkapan)
         fotoDriveLink: document.getElementById('foto-drive-link')?.value?.trim(),           // Link foto pasfoto
         dokumenDriveLink: document.getElementById('dokumen-drive-link')?.value?.trim(),     // Link dokumen/folder
         suratPernyataanLink: document.getElementById('surat-pernyataan-link')?.value?.trim(),  // Link surat pernyataan
-        
+
         status: 'Proses Verifikasi',
         timestamp: new Date().toISOString(),
         submissionMethod: 'google_drive_links'  // Flag to indicate new method
     };
-    
+
     console.log('📦 Data form siap dikirim:', {
         hasFotoLink: !!formData.fotoDriveLink && formData.fotoDriveLink.length > 15,
         hasDokumenLink: !!formData.dokumenDriveLink && formData.dokumenDriveLink.length > 15,
         hasSuratPernyataan: !!formData.suratPernyataanLink && formData.suratPernyataanLink.length > 15,
         submissionMethod: 'Google Drive Links'
     });
-    
+
     try {
-        // Send to Supabase
-        console.log('🚀 Mengirim ke Supabase...');
-        
-        if (supabaseClient) {
-            const result = await submitToSupabase(formData);
-            
-            console.log('✅ Berhasil disimpan ke Supabase!', result);
-            
-            // Simpan record utk penerbitan Bukti Pendaftaran (module 15)
-            if (result && result[0]) {
-                window.__buktiLastRecord = result[0];
-            }
-            
-            // Show success modal
-            closeModal('confirm-modal');
-            document.getElementById('success-reg-number').textContent = formData.noRegister;
-            document.getElementById('success-modal').classList.add('active');
-            showToast('✅ Pengajuan berhasil dikirim!', 'success');
-            
-        } else {
-            // Fallback to localStorage
-            console.log('💾 Menyimpan ke localStorage (Supabase tidak terhubung)...');
-            saveToLocal(formData);
-            
-            closeModal('confirm-modal');
-            document.getElementById('success-reg-number').textContent = formData.noRegister;
-            document.getElementById('success-modal').classList.add('active');
-            showToast('⚠️ Koneksi Supabase belum siap — data disimpan sementara di perangkat ini. Pastikan internet stabil lalu coba kirim ulang.', 'warning', 7000);
+        // [Task9e] Wajib Supabase — TANPA fallback localStorage palsu
+        // (spesifikasi poin 14: jangan tampilkan sukses palsu)
+        if (!supabaseClient) {
+            throw new Error('Supabase tidak terhubung — periksa koneksi internet Anda lalu coba kirim kembali.');
         }
-        
+
+        // [Task9e] Pastikan nomor register unik tepat sebelum insert (poin 9)
+        formData.noRegister = await ensureUniqueRegNumber(String(formData.noRegister || '').trim());
+        const regInput = document.getElementById('reg-nomor');
+        if (regInput) regInput.value = formData.noRegister;
+
+        console.log('🚀 Mengirim ke Supabase...');
+        const result = await submitToSupabase(formData);
+
+        // [Task9e] Jangan anggap berhasil hanya karena fungsi selesai dijalankan —
+        // hasil insert WAJIB diverifikasi eksplisit (spesifikasi poin 6)
+        if (!result || !result.length) {
+            throw new Error('Database tidak mengembalikan record — pengajuan TIDAK tersimpan.');
+        }
+        const savedRecord = result[0];
+        console.log('✅ Berhasil disimpan ke Supabase!', savedRecord);
+
+        // Simpan record utk penerbitan Bukti Pendaftaran (module 15)
+        window.__buktiLastRecord = savedRecord;
+
+        // [Task9e] SUKSES (poin 3, 8, 16): tombol state ✓ + modal sukses
+        // berisi Nomor Registrasi, tanggal pengajuan, dan status "Diajukan"
+        setSubmitBtnState(submitBtn, 'success');
+        closeModal('confirm-modal');
+        document.getElementById('success-reg-number').textContent = savedRecord.no_register || formData.noRegister;
+        const successTgl = document.getElementById('success-tanggal');
+        if (successTgl) successTgl.textContent = formData.tanggalPengajuan || '-';
+        const successStatus = document.getElementById('success-status');
+        if (successStatus) successStatus.textContent = 'Diajukan';
+        document.getElementById('success-modal').classList.add('active');
+        showToast('✅ Pengajuan berhasil dikirim!', 'success');
+        // [Task9e] __submitInProgress TETAP true — submit kedua setelah sukses
+        // tidak mungkin terjadi (dipulihkan oleh showConfirmation()/resetForm()
+        // bila pengguna benar-benar membuat pengajuan baru)
+
     } catch (error) {
+        // [Task9e] GAGAL (poin 11): error teknis dicatat di console,
+        // pengguna hanya melihat pesan ramah + tombol aktif kembali
         console.error('❌ Error submitting form:', error);
         console.error('❌ Error details:', {
-            message: error.message,
-            code: error.code,
-            hint: error.hint,
-            details: error.details
-        });
-        
-        // Handle QuotaExceededError specifically
-        if (error.name === 'QuotaExceededError' || error.message?.includes('quota') || error.message?.includes('penyimpanan terbatas')) {
-            console.error('[SIMBAKES] 💥 QUOTA EXCEEDED ERROR - LocalStorage penuh!');
-            
-            closeModal('confirm-modal');
-            document.getElementById('success-reg-number').textContent = formData.noRegister;
-            document.getElementById('success-modal').classList.add('active');
-            
-            showToast('💾 Penyimpanan browser penuh! Data tidak tersimpan. Silakan hapus cache browser.', 'error');
-            
-            // [Task9] Panel in-page (pengganti alert yang diblokir webview)
-            setTimeout(() => {
-                showSubmitError('Penyimpanan browser penuh',
-                    'Browser kehabisan ruang penyimpanan sehingga data tidak dapat disimpan.\n' +
-                    'Solusi: hapus data situs ini melalui pengaturan browser (Clear browsing data/storage), ' +
-                    'atau gunakan mode Incognito/Private, lalu ulangi pengiriman.');
-            }, 500);
-            
-            return;  // Stop here, don't try to save
-        }
-        
-        // Handle Supabase-specific errors
-        const isSupabaseError = error.code || error.message?.includes('Supabase') || 
-                                error.message?.includes('constraint') || error.message?.includes('column') ||
-                                error.message?.includes('relation') || error.message?.includes('null') ||
-                                error.message?.includes('400');
-        
-        if (isSupabaseError) {
-            console.error('[SIMBAKES] 💥 SUPABASE ERROR DETECTED:', error);
-            
-            let errorMessage = `❌ GAGAL MENYIMPAN KE DATABASE!\n\n`;
-            
-            // Error details
-            if (error.code) {
-                errorMessage += `🔴 Error Code: ${error.code}\n`;
-            }
-            errorMessage += `📝 Pesan: ${error.message || 'Unknown error'}\n`;
-            
-            if (error.hint) {
-                errorMessage += `\n💡 Hint: ${error.hint}\n`;
-            }
-            
-            if (error.details) {
-                errorMessage += `📋 Detail: ${error.details}\n`;
-            }
-            
-            // Specific error solutions
-            if (error.code === '23505') {
-                errorMessage += `\n\n⚠️ SOLUSI - Data Duplikat:`;
-                errorMessage += `\n→ Nomor register atau NIK sudah terdaftar`;
-                errorMessage += `\n→ Gunakan nomor register yang berbeda`;
-            } else if (error.code === '22007' || error.message?.includes('invalid input syntax for type date')) {
-                errorMessage += `\n\n⚠️ SOLUSI - Format Tanggal Tidak Valid (Error 22007):`;
-                errorMessage += `\n→ Format tanggal Indonesia tidak didukung oleh database`;
-                errorMessage += `\n→ Solusi 1: Jalankan script SQL untuk mengubah kolom ke TEXT:`;
-                errorMessage += `\n   /download/simbakes_fix_submissions_table.sql`;
-                errorMessage += `\n   (Lihat bagian "2b. FIX DATE COLUMNS")`;
-                errorMessage += `\n→ Solusi 2: Atau refresh halaman ini (sudah ada fix otomatis di JavaScript)`;
-            } else if (error.code === '42703' || error.message?.includes('column') || error.message?.includes('does not exist')) {
-                errorMessage += `\n\n⚠️ SOLUSI - Kolom Tidak Ditemukan:`;
-                errorMessage += `\n→ Jalankan script SQL di Supabase Editor:`;
-                errorMessage += `\n   /download/simbakes_fix_submissions_table.sql`;
-                errorMessage += `\n→ Script ini akan membuat semua kolom yang diperlukan`;
-            } else if (error.code === '23502' || error.message?.includes('null')) {
-                errorMessage += `\n\n⚠️ SOLUSI - Field Wajib Kosong:`;
-                errorMessage += `\n→ Pastikan NIK dan nama_lengkap terisi`;
-                errorMessage += `\n→ Pastikan no_register tidak kosong`;
-            } else if (error.message?.includes('400') || error.status === 400) {
-                errorMessage += `\n\n⚠️ SOLUSI - Bad Request (Error 400):`;
-                errorMessage += `\n→ Struktur tabel mungkin tidak sesuai`;
-                errorMessage += `\n→ Jalankan script: simbakes_fix_submissions_table.sql`;
-                errorMessage += `\n→ Periksa RLS policies di Supabase Dashboard`;
-            } else {
-                errorMessage += `\n\n📋 LANGKAH PERBAIKAN:`;
-                errorMessage += `\n1. Buka Supabase Dashboard → SQL Editor`;
-                errorMessage += `\n2. Copy-paste isi file: simbakes_fix_submissions_table.sql`;
-                errorMessage += `\n3. Run script tersebut`;
-                errorMessage += `\n4. Coba submit form kembali`;
-            }
-            
-            errorMessage += `\n\n🔧 DEBUG INFO (untuk admin):`;
-            errorMessage += `\n• Buka F12 → Console tab`;
-            errorMessage += `\n• Cari log: [SIMBAKES] ❌ Supabase Insert Error`;
-            errorMessage += `\n• Lihat detail error lengkap di sana`;
-            
-            // [Task9] Tampilkan sebagai panel in-page, bukan alert
-            showSubmitError('Gagal menyimpan ke database',
-                errorMessage.replace('❌ GAGAL MENYIMPAN KE DATABASE!\n\n', ''));
-            
-            // Reset button state
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Ya, Kirim Sekarang';
-            return;
-        }
-        
-        // Fallback to local storage on other errors (with try-catch)
-        try {
-            console.log('🔄 Fallback: Menyimpan ke localStorage...');
-            saveToLocal(formData);
-            
-            closeModal('confirm-modal');
-            document.getElementById('success-reg-number').textContent = formData.noRegister;
-            document.getElementById('success-modal').classList.add('active');
-            
-            showToast(`⚠️ Gagal ke Supabase: ${error.message}. Data tersimpan locally.`, 'warning');
-            
-        } catch (localError) {
-            console.error('❌ Gagal menyimpan locally juga:', localError);
-            
-            closeModal('confirm-modal');
-            
-            // [Task9] Panel in-page (pengganti alert yang diblokir webview)
-            showSubmitError('Gagal menyimpan data',
-                `Error: ${error.message}\nDetail penyimpanan lokal: ${localError.message}\n\n` +
-                `Solusi: 1) Muat ulang halaman (Ctrl+R). 2) Hapus cache browser. ` +
-                `3) Coba mode Incognito. 4) Hubungi admin jika berlanjut.`);
-        }
-        
-        console.error('Detail Error:', {
-            message: error.message,
+            message: error && error.message,
+            code: error && error.code,
+            hint: error && error.hint,
+            details: error && error.details,
             supabaseConnected: !!supabaseClient,
-            timestamp: new Date().toISOString()
+            waktu: new Date().toISOString()
         });
-        
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = 'Ya, Kirim Sekarang';
+
+        setSubmitBtnState(submitBtn, 'error'); // "Coba Kirim Kembali" (aktif)
+        closeModal('confirm-modal');
+        showSubmitError('Pengajuan belum dapat dikirim', friendlySubmitErrorMessage(error));
+        __submitInProgress = false; // boleh mencoba lagi
     }
 }
+
+/**
+ * [Task9e] State tombol submit (spesifikasi poin 3 & 16):
+ * normal | loading | success | error
+ */
+function setSubmitBtnState(btn, state) {
+    if (!btn) return;
+    var labels = {
+        normal: 'Ya, Kirim Sekarang',
+        loading: '<div class="spinner"></div> Mengirim Pengajuan...',
+        success: '✓ Pengajuan Berhasil Dikirim',
+        error: 'Coba Kirim Kembali'
+    };
+    btn.innerHTML = labels[state] || labels.normal;
+    btn.disabled = (state === 'loading' || state === 'success');
+}
+
+/**
+ * [Task9e] Pesan gagal yang ramah untuk pengguna (poin 11).
+ * Detail teknis tetap dicatat di console oleh pemanggil.
+ */
+function friendlySubmitErrorMessage(error) {
+    var msg = (error && error.message) ? String(error.message) : '';
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        return 'Anda sedang tidak terhubung ke internet. Periksa koneksi lalu tekan "Coba Kirim Kembali".';
+    }
+    if (error && error.code === '23505') {
+        return 'Nomor pengajuan bentrok dengan data yang sudah ada. Tekan "Coba Kirim Kembali" — nomor baru akan dibuat otomatis.';
+    }
+    if (/Failed to fetch|NetworkError|network|load failed/i.test(msg)) {
+        return 'Koneksi ke server database terputus. Periksa koneksi internet Anda lalu tekan "Coba Kirim Kembali".';
+    }
+    if (error && (error.code === '42501' || /row-level security|permission denied/i.test(msg))) {
+        return 'Server menolak penyimpanan data (izin database). Silakan hubungi admin melalui kontak resmi.';
+    }
+    if (error && error.code === '23502') {
+        return 'Ada data wajib yang belum terisi. Periksa kembali formulir lalu coba lagi.';
+    }
+    return 'Pengajuan belum dapat dikirim. Terjadi kendala saat menyimpan data. Silakan coba kembali.';
+}
+
+/**
+ * [Task9e] Handler submit form asli (spesifikasi poin 2).
+ * form#form-ajukan memakai onsubmit="handleFormSubmit(event)" dan tombol
+ * "Kirim Pengajuan" bertipe type="submit" — klik ATAU tombol Enter masuk
+ * lewat jalur submit form yang sama & konsisten.
+ */
+function handleFormSubmit(e) {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    showConfirmation();
+    return false;
+}
+
+window.validateSubmission = validateSubmission;
+window.handleFormSubmit = handleFormSubmit;
+window.ensureUniqueRegNumber = ensureUniqueRegNumber;
+window.generateRegNumber = generateRegNumber;
 
 // Helper to get client IP (browser tidak bisa akses IP langsung)
 // Mengembalikan '-' karena browser memblokir akses IP untuk privacy
@@ -1048,6 +1291,11 @@ function saveToLocal(data) {
 }
 
 function resetForm() {
+    // [Task9e] Pulihkan state pengiriman & tombol submit saat form di-reset
+    __submitInProgress = false;
+    var finalBtn = document.getElementById('btn-submit-final');
+    if (finalBtn) setSubmitBtnState(finalBtn, 'normal');
+
     document.getElementById('form-ajukan').reset();
     
     // Reset file variables

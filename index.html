@@ -7,12 +7,12 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>SIMBAKES - Beasiswa Tematik Bidang Kesehatan</title>
-    <link rel="stylesheet" href="css/styles-base.css?v=20260910d">
+    <link rel="stylesheet" href="css/styles-base.css?v=20260911a">
 
     <!-- ===== ADDITIONAL CSS FOR DATA PENETAPAN ADMIN TABLE ===== -->
-    <link rel="stylesheet" href="css/styles-tables.css?v=20260910d">
+    <link rel="stylesheet" href="css/styles-tables.css?v=20260911a">
     <!-- ===== UI OVERHAUL STYLES (Auto-injected) ===== -->
-    <link rel="stylesheet" href="css/ui-overhaul.css?v=20260910d">
+    <link rel="stylesheet" href="css/ui-overhaul.css?v=20260911a">
 
     <!-- [Task9c] Stub awal: cegah "handlePreviewError is not defined" bila
          preview gambar/iframe error sebelum modul JS (01-core.js) termuat.
@@ -22,7 +22,7 @@
         try { if (el && el.style) el.style.display = 'none'; } catch (e) {}
     };
     </script>
-    <script src="js/crud-lightbox.js?v=20260910d"></script>
+    <script src="js/crud-lightbox.js?v=20260911a"></script>
     </head>
 
 <body>
@@ -141,8 +141,8 @@
 
     <!-- ===== SIMBAKES ADMIN FINAL SYSTEM ===== -->
     <!-- Sistem FINAL: Tanpa Fallback, Tanpa Simple Modal, Tanpa Polling -->
-    <script src="js/admin-crud.js?v=20260910d"></script>
-    <script src="js/system-check.js?v=20260910d"></script>
+    <script src="js/admin-crud.js?v=20260911a"></script>
+    <script src="js/system-check.js?v=20260911a"></script>
 
 
 <!-- ===== LANDING PAGE ===== -->
@@ -890,7 +890,7 @@
                 <p>Formulir pengajuan beasiswa tematik bidang kesehatan</p>
             </div>
 
-            <form id="form-ajukan" onsubmit="return false;">
+            <form id="form-ajukan" onsubmit="handleFormSubmit(event);" novalidate>
                 
                 <!-- Section 1: Informasi Registrasi -->
                 <div class="form-section">
@@ -1342,7 +1342,7 @@
 
                 <!-- Submit Button -->
                 <div style="margin-top:2rem;text-align:center;">
-                    <button type="submit" class="btn btn-primary" style="padding:1rem 3rem;font-size:1.125rem;" onclick="showConfirmation()">
+                    <button type="submit" class="btn btn-primary" id="btn-kirim-pengajuan" style="padding:1rem 3rem;font-size:1.125rem;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9 22,2"/></svg>
                         Kirim Pengajuan
                     </button>
@@ -2791,9 +2791,14 @@
             <div class="success-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg>
             </div>
-            <h2 class="success-title">Pengajuan Berhasil!</h2>
-            <p class="success-message">Data pengajuan beasiswa Anda telah berhasil dikirim dan sedang diproses.</p>
+            <h2 class="success-title">Pengajuan Berhasil Dikirim</h2>
+            <p class="success-message">Data dan dokumen pengajuan Anda telah berhasil diterima dan tersimpan dalam sistem.</p>
             <div class="reg-number-display" id="success-reg-number">REG-SIMBAKES-XXXXXXXXXX</div>
+            <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:0.75rem 0 0.25rem;font-size:0.9rem;color:#334155;">
+                <span>Tanggal: <b id="success-tanggal">-</b></span>
+                <span style="color:#cbd5e1;">|</span>
+                <span>Status: <b id="success-status" style="color:#d97706;">Diajukan</b></span>
+            </div>
             <p style="color:#64748b;font-size:0.875rem;margin-bottom:1.5rem;">Simpan nomor register ini untuk mengecek status pengajuan Anda.</p>
             <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
                 <button class="btn btn-primary" onclick="printBuktiFromSuccess()">🧾 Unduh Bukti Pendaftaran</button>
@@ -2871,23 +2876,23 @@
 
 
 
-    <script src="js/01-core.js?v=20260910d"></script>
-    <script src="js/02-auth-navigation.js?v=20260910d"></script>
-    <script src="js/03-admin-data.js?v=20260910d"></script>
-    <script src="js/04-form.js?v=20260910d"></script>
-    <script src="js/05-database.js?v=20260910d"></script>
-    <script src="js/06-image-handler.js?v=20260910d"></script>
-    <script src="js/07-dashboard.js?v=20260910d"></script>
-    <script src="js/08-roadmap.js?v=20260910d"></script>
-    <script src="js/09-cek-status.js?v=20260910d"></script>
-    <script src="js/10-admin-pengusul.js?v=20260910d"></script>
-    <script src="js/11-topbar-session.js?v=20260910d"></script>
-    <script src="js/12-multiuser-init.js?v=20260910d"></script>
+    <script src="js/01-core.js?v=20260911a"></script>
+    <script src="js/02-auth-navigation.js?v=20260911a"></script>
+    <script src="js/03-admin-data.js?v=20260911a"></script>
+    <script src="js/04-form.js?v=20260911a"></script>
+    <script src="js/05-database.js?v=20260911a"></script>
+    <script src="js/06-image-handler.js?v=20260911a"></script>
+    <script src="js/07-dashboard.js?v=20260911a"></script>
+    <script src="js/08-roadmap.js?v=20260911a"></script>
+    <script src="js/09-cek-status.js?v=20260911a"></script>
+    <script src="js/10-admin-pengusul.js?v=20260911a"></script>
+    <script src="js/11-topbar-session.js?v=20260911a"></script>
+    <script src="js/12-multiuser-init.js?v=20260911a"></script>
     <!-- ===== PANEL ADMIN FIX (sesi tahan refresh + pulihkan menu admin) ===== -->
-    <script src="js/14-panel-admin-fix.js?v=20260910d"></script>
+    <script src="js/14-panel-admin-fix.js?v=20260911a"></script>
     <!-- ===== DATA AKUN PESERTA (Fitur Baru - CRUD tabel akun_peserta) ===== -->
-    <script src="js/13-akun-peserta.js?v=20260910d"></script>
-    <script src="js/15-bukti-pendaftaran.js?v=20260910d"></script>
+    <script src="js/13-akun-peserta.js?v=20260911a"></script>
+    <script src="js/15-bukti-pendaftaran.js?v=20260911a"></script>
 
 <!-- 
 ======================================================
@@ -2924,13 +2929,13 @@ SIMBAKES SUPABASE INTEGRATION
 </script>
 
 <!-- Supabase Configuration & Client Initialization -->
-    <script src="js/supabase-config.js?v=20260910d"></script>
+    <script src="js/supabase-config.js?v=20260911a"></script>
 
 
     
     <!-- ===== UI OVERHAUL SCRIPTS (Auto-injected) ===== -->
     <!-- Font: Tahoma | Design: Glassmorphism | Lightbox: Full-screen -->
-    <script src="js/ui-overhaul.js?v=20260910d"></script>
+    <script src="js/ui-overhaul.js?v=20260911a"></script>
 
     
     <!-- ===== CRUD LIGHTBOX SYSTEM (Auto-injected) ===== -->
