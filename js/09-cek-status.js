@@ -411,7 +411,11 @@ function displayPenetapanResult(data) {
         
         // Dokumen / Foto
         link_foto: getField(data, 'link_foto', 'linkFoto', 'foto_drive_link', ''),
-        link_sk: getField(data, 'link_sk', 'linkSk', 'sk_drive_link', '')
+        link_sk: getField(data, 'link_sk', 'linkSk', 'sk_drive_link', ''),
+        
+        // Catatan admin untuk peserta [Task9i]
+        // NB: getField global = (data, snake, camel, defaultValue) — default harus '', bukan kunci ke-4.
+        catatan_penetapan: getField(data, 'catatan_penetapan', 'catatanPenetapan', (data && data.catatan) || '')
     };
     
     // Format tanggal helper
@@ -464,6 +468,20 @@ function displayPenetapanResult(data) {
     // Baris 5: status_penetapan & tanggal_penetapan
     setPenetapanStatusBadge(penetapanData.status_penetapan);
     document.getElementById('penetapan-tanggal-penetapan').textContent = formatDate(penetapanData.tanggal_penetapan);
+    
+    // Baris 5b: catatan admin (tampil hanya bila ada) [Task9i]
+    const catatanRow = document.getElementById('penetapan-catatan-row');
+    const catatanText = document.getElementById('penetapan-catatan-text');
+    const catatanVal = String(penetapanData.catatan_penetapan || '').trim();
+    if (catatanRow && catatanText) {
+        if (catatanVal && catatanVal !== '-' ) {
+            catatanText.textContent = catatanVal;
+            catatanRow.style.display = 'block';
+        } else {
+            catatanText.textContent = '';
+            catatanRow.style.display = 'none';
+        }
+    }
     
     // Baris 6: Action Buttons untuk link_foto & link_sk
     const btnFoto = document.getElementById('penetapan-btn-foto');

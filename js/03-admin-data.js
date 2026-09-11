@@ -291,6 +291,18 @@ function showPesertaDetailModal(peserta) {
                         </div>
                     </div>
                     ` : ''}
+                    ${(() => {
+                        const kat = getField(peserta, 'catatan_penetapan', 'catatanPenetapan', 'catatan');
+                        return (kat && kat !== '-') ? `
+                    <div class="peserta-modal-field" style="grid-column:1 / -1;">
+                        <span class="peserta-modal-field-label">Catatan untuk Peserta</span>
+                        <div class="peserta-modal-field-value">
+                            <span class="peserta-modal-field-icon">🗒️</span>
+                            ${escapeHtml(kat)}
+                        </div>
+                    </div>
+                    ` : '';
+                    })()}
                 </div>
             </div>
         </div>
@@ -1044,10 +1056,11 @@ async function openEditPenetapanModal(recordId) {
                         </div>
                         
                         <div class="form-group-edit" style="grid-column: span 2;">
-                            <label class="form-label-edit">Catatan (tidak tersimpan ke server — hanya tampilan)</label>
-                            <div class="form-input-edit" style="background:#f8fafc;color:#64748b;border:1px dashed #cbd5e1;border-radius:8px;padding:0.7rem;font-size:0.85rem;">
-                                Kolom catatan belum tersedia pada tabel penetapan. Gunakan kolom lain atau tambahkan kolom 'catatan_penetapan' di Supabase jika diperlukan.
-                            </div>
+                            <label class="form-label-edit">Catatan untuk Peserta</label>
+                            <textarea name="catatan_penetapan" class="form-input-edit" rows="3"
+                                      placeholder="Contoh: SK sudah terbit, silakan ambil di sekretariat Dinkes (opsional)"
+                                      style="resize:vertical;min-height:70px;">${escapeHtml(getField(record, 'catatan_penetapan', 'catatanPenetapan', 'catatan'))}</textarea>
+                            <small style="display:block;margin-top:4px;color:#64748b;font-size:0.75rem;">Tampil di halaman "Cek Status Penetapan" peserta. Kosongkan bila tidak ada. <span id="penetapan-catatan-db-hint" style="display:none;color:#b45309;">⚠️ Kolom belum tersedia di database — jalankan sql/penetapan-catatan-status.sql.</span></small>
                         </div>
                     </div>
                     
@@ -1104,6 +1117,18 @@ async function savePenetapanChanges() {
             updated_at: new Date().toISOString()
         };
         
+        // [Task9i] Catatan untuk peserta — hanya dikirim bila terisi,
+        // ATAU bila sebelumnya ada isinya dan admin mengosongkannya (agar bisa dihapus).
+        const catatanInput = (formData.get('catatan_penetapan') || '').trim();
+        const existingCatatan = (() => {
+            const rec = (typeof penetapanAllData !== 'undefined' ? penetapanAllData : [])
+                .find(item => item.id === penetapanEditingId);
+            return rec ? (rec.catatan_penetapan || '') : '';
+        })();
+        if (catatanInput || existingCatatan) {
+            updateData.catatan_penetapan = catatanInput || null;
+        }
+        
         console.log('💾 Saving changes to Supabase:', updateData);
         
         // Show loading state on save button
@@ -1115,11 +1140,50 @@ async function savePenetapanChanges() {
         // Update via Supabase - TANPA .single() ⭐
         console.log('[PENETAPAN] Updating record ID:', penetapanEditingId);
         
-        const { data: updatedRecordArray, error: updateError } = await supabaseClient
-            .from('penetapan')
-            .update(updateData)
-            .eq('id', penetapanEditingId)
-            .select('*');  // TANPA .single()
+        let updatedRecordArray, updateError;
+        
+        // [Task9i] Flag: kolom catatan_penetapan belum ada di database?
+        if (typeof window.__penetapanCatatanColMissing === 'undefined') {
+            window.__penetapanCatatanColMissing = false;
+        }
+        
+        if (window.__penetapanCatatanColMissing && 'catatan_penetapan' in updateData) {
+            // Sudah pernah diketahui kolomnya belum ada — jangan kirim catatan lagi
+            const { catatan_penetapan, ...rest } = updateData;
+            ({ data: updatedRecordArray, error: updateError } = await supabaseClient
+                .from('penetapan')
+                .update(rest)
+                .eq('id', penetapanEditingId)
+                .select('*'));
+        } else {
+            ({ data: updatedRecordArray, error: updateError } = await supabaseClient
+                .from('penetapan')
+                .update(updateData)
+                .eq('id', penetapanEditingId)
+                .select('*'));
+            
+            // Fallback: kolom catatan_penetapan belum ada di DB (SQL belum dijalankan)
+            if (updateError && updateError.code === 'PGRST204' &&
+                (updateError.message || '').includes('catatan_penetapan')) {
+                console.warn('[PENETAPAN] Kolom catatan_penetapan belum ada — retry tanpa catatan');
+                window.__penetapanCatatanColMissing = true;
+                const { catatan_penetapan, ...rest } = updateData;
+                ({ data: updatedRecordArray, error: updateError } = await supabaseClient
+                    .from('penetapan')
+                    .update(rest)
+                    .eq('id', penetapanEditingId)
+                    .select('*'));
+                // Tampilkan hint di form (bila masih terbuka) + info toast
+                const hint = document.getElementById('penetapan-catatan-db-hint');
+                if (hint) hint.style.display = 'inline';
+                showToast('ℹ️ Perubahan lain tersimpan. Kolom catatan belum ada di database — jalankan sql/penetapan-catatan-status.sql agar catatan bisa tersimpan.', 'info', 6000);
+            }
+        }
+        
+        // [Task9i] Constraint status: nilai baru (Lulus/Ditolak/Dalam Proses) ditolak DB
+        if (updateError && updateError.code === '23514') {
+            throw new Error('Status "' + updateData.status_penetapan + '" belum diterima database. Jalankan sql/penetapan-catatan-status.sql di Supabase untuk mengaktifkan status Lulus/Ditolak/Dalam Proses.');
+        }
         
         if (updateError) {
             console.error('[PENETAPAN] Update error:', updateError);

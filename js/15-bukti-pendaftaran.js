@@ -212,9 +212,10 @@ function buildBuktiHTML(rec) {
 
     <div class="catatan">
         <b>Penting:</b> Simpan bukti pendaftaran ini. Gunakan Nomor Register untuk
-        memantau status pengajuan melalui menu <b>Cek Status Pengajuan</b> di
-        simbakes.mukminnasri.com. Peserta yang lolos seleksi akan ditetapkan melalui
-        Surat Keputusan (SK) resmi.
+        memantau status pengajuan melalui menu <b>Cek Status Pengajuan</b>
+        (login peserta) di simbakes.mukminnasri.com. Peserta yang lolos seleksi
+        akan ditetapkan melalui Surat Keputusan (SK) resmi dan dapat dipantau
+        melalui menu <b>Cek Status Penetapan</b>.
     </div>
 
     <div class="footer">

@@ -2079,7 +2079,11 @@
         }
 
 
-/* ===== MODAL/POPUP ===== */
+/* ===== MODAL/POPUP =====
+           [Task9g] z-index 1000 -> 10600: modal (Konfirmasi, Sukses, dll)
+           WAJIB tampil DI ATAS popup peserta (.peserta-content-popup z=10001).
+           Sebelumnya modal tertutup popup saat form dibuka dari Login Peserta
+           -> tombol "Ya, Kirim Sekarang" tidak bisa dilihat/diklik. */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -2088,7 +2092,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 10600;
             opacity: 0;
             visibility: hidden;
             transition: all 0.2s;
@@ -2264,7 +2268,9 @@
             gap: 0.75rem;
             transform: translateX(120%);
             transition: transform 0.3s ease-out;
-            z-index: 1100;
+            /* [Task9g] 1100 -> 10900: toast harus terlihat di atas popup peserta
+               (mis. notifikasi error upload saat form dibuka dari Login Peserta) */
+            z-index: 10900;
         }
 
         .toast.show { transform: translateX(0); }
