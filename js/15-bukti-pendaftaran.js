@@ -164,7 +164,7 @@ function buildBuktiHTML(rec) {
         <div class="kop-text">
             <h1>SIMBAKES</h1>
             <p>Sistem Informasi Beasiswa Tematik Bidang Kesehatan</p>
-            <p>Dinas Kesehatan Provinsi Kalimantan Timur</p>
+            <p>Dinas Kesehatan Kabupaten Kutai Kartanegara</p>
         </div>
     </div>
 
