@@ -120,6 +120,51 @@ function ensureSupabaseClient() {
     return supabaseClient;
 }
 
+/**
+ * RPC tahan-gagal: lewat supabase-js bila tersedia; bila TIDAK,
+ * fallback ke fetch langsung ke PostgREST (tanpa library CDN).
+ * Dipakai jalur login agar tidak bergantung pada CDN.
+ * Melempar Error dengan .code (mis. PGRST202 = fungsi belum ada).
+ */
+async function simbakesRpc(functionName, params) {
+    // Jalur 1: supabase-js (utama)
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        const { data, error } = await supabaseClient.rpc(functionName, params);
+        if (error) {
+            const e = new Error(error.message || 'Gagal memanggil RPC.');
+            e.code = error.code || '';
+            throw e;
+        }
+        return data;
+    }
+
+    // Jalur 2: fetch langsung (cadangan tanpa library)
+    const cfg = (typeof SUPABASE_CONFIG !== 'undefined') ? SUPABASE_CONFIG : null;
+    if (!cfg || !cfg.url || !cfg.anonKey) {
+        throw Object.assign(new Error('Koneksi database tidak tersedia. Muat ulang halaman.'), { code: 'NOCLIENT' });
+    }
+    const res = await fetch(cfg.url + '/rest/v1/rpc/' + encodeURIComponent(functionName), {
+        method: 'POST',
+        headers: {
+            'apikey': cfg.anonKey,
+            'Authorization': 'Bearer ' + cfg.anonKey,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(params || {})
+    });
+    const text = await res.text();
+    let payload = null;
+    try { payload = text ? JSON.parse(text) : null; } catch (e) { payload = null; }
+    if (!res.ok) {
+        const e = new Error((payload && payload.message) || ('HTTP ' + res.status));
+        e.code = (payload && payload.code) || ('HTTP' + res.status);
+        e.httpStatus = res.status;
+        throw e;
+    }
+    return payload;
+}
+
 // Inisialisasi saat DOM siap
 document.addEventListener('DOMContentLoaded', function() {
     initSupabaseClient();

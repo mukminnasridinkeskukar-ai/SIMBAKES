@@ -176,32 +176,46 @@ async function handlePesertaLoginInModal(event) {
     alertEl.innerHTML = '⏳ Memproses login...';
     
     try {
-        if (!supabaseClient) throw new Error('Koneksi database tidak tersedia.');
-        
         // ══════════════════════════════════════════════════════
         // PRIORITAS: LOGIN PESERTA SERVER-SIDE via RPC app_peserta_login
         // Password diverifikasi di SERVER (bcrypt); kolom password
         // TIDAK PERNAH dibaca browser; kunci akun otomatis di server.
+        // (simbakesRpc: supabase-js bila ada, fetch langsung bila tidak)
         // ══════════════════════════════════════════════════════
-        const rpcRes = await supabaseClient.rpc('app_peserta_login', {
-            p_username: username,
-            p_password: password
-        });
-        
-        if (rpcRes.error) {
-            if (!isPesertaRpcMissing(rpcRes.error)) {
-                // Pesan aman dari server (verifikasi/status/lockout)
-                throw new Error(sanitizePesertaLoginError(rpcRes.error.message));
+        let rpcData = null;
+        try {
+            if (typeof simbakesRpc !== 'function') {
+                throw Object.assign(
+                    new Error('Koneksi database tidak tersedia. Muat ulang halaman.'),
+                    { code: 'NOCLIENT' }
+                );
+            }
+            rpcData = await simbakesRpc('app_peserta_login', {
+                p_username: username,
+                p_password: password
+            });
+        } catch (rpcErr) {
+            if (rpcErr && rpcErr.code === 'NOCLIENT') throw rpcErr;
+            if (!isPesertaRpcMissing(rpcErr)) {
+                // Error internal DB (mis. pgcrypto tidak ditemukan) ->
+                // petunjuk yang bisa ditindaklanjuti, bukan pesan teknis
+                if (rpcErr && (rpcErr.code === '42883' || rpcErr.httpStatus === 404 ||
+                               String(rpcErr.message || '').indexOf('does not exist') !== -1)) {
+                    throw new Error('Server login belum terpasang sempurna. Jalankan ulang sql/PATCH-LOGIN.sql (versi terbaru) di Supabase SQL Editor, lalu coba lagi.');
+                }
+                throw rpcErr;
             }
             // RPC belum ada (SQL hardening belum dijalankan) ->
             // lanjut ke jalur legacy di bawah agar aplikasi tetap jalan.
-            console.error('[PESERTA LOGIN] RPC keamanan belum tersedia. Jalankan sql/SECURITY-HARDENING.sql di Supabase SQL Editor.');
-        } else if (rpcRes.data && rpcRes.data.token) {
-            const prof = rpcRes.data.profile || {};
+            console.error('[PESERTA LOGIN] RPC keamanan belum tersedia. Jalankan sql/PATCH-LOGIN.sql di Supabase SQL Editor.');
+        }
+        
+        if (rpcData && rpcData.token) {
+            const prof = rpcData.profile || {};
             
             // Token sesi server-side (idle 15 menit, revoke saat logout)
             if (window.SecurityGuard) {
-                window.SecurityGuard.setPesertaSession(rpcRes.data.token, prof);
+                window.SecurityGuard.setPesertaSession(rpcData.token, prof);
             }
             
             // Sesi minimal (tanpa password); NIK diperlukan untuk prefill
@@ -238,6 +252,9 @@ async function handlePesertaLoginInModal(event) {
         }
         
         // ===== JALUR LEGACY (sementara, sampai SQL dijalankan) =====
+        if (!supabaseClient) {
+            throw new Error('Koneksi database tidak tersedia. Muat ulang halaman.');
+        }
         // Query ke tabel akun_peserta
         const { data: users, error: queryError } = await supabaseClient
             .from('akun_peserta')

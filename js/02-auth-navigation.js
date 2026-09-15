@@ -261,51 +261,50 @@ async function performAuthentication(username, password, source) {
     // PRIORITAS: AUTENTIKASI SERVER-SIDE via RPC app_login.
     // Password diverifikasi di SERVER; hash TIDAK PERNAH dikirim
     // ke browser; kunci akun otomatis & sesi token server-side.
+    // (simbakesRpc: supabase-js bila ada, fetch langsung bila tidak)
     // ══════════════════════════════════════════════════════════
     try {
-        let clientRpc = supabaseClient;
-        if (!clientRpc && typeof initSupabaseClient === 'function') {
-            initSupabaseClient();
-            clientRpc = supabaseClient;
+        if (typeof simbakesRpc !== 'function') {
+            throw Object.assign(
+                new Error('Koneksi database tidak tersedia. Silakan muat ulang halaman.'),
+                { code: 'NOCLIENT' }
+            );
         }
         
-        if (clientRpc) {
-            const { data: rpcData, error: rpcError } = await clientRpc.rpc('app_login', {
-                p_username: username,
-                p_password: password
-            });
-            
-            if (!rpcError && rpcData && rpcData.token) {
-                return handleRpcAuthSuccess(rpcData, source);
-            }
-            
-            if (rpcError && !isAuthRpcMissing(rpcError)) {
-                // Pesan aman dari server (tanpa detail teknis)
-                let msg = 'Username atau password salah.';
-                const rm = String(rpcError.message || '');
-                if (rm.indexOf('terkunci') !== -1 || rm.indexOf('dinonaktifkan') !== -1 ||
-                    rm.indexOf('diblokir') !== -1 || rm.indexOf('MENUNGGU') !== -1) {
-                    msg = rm;
-                }
-                showError(errorEl, errorTextEl, msg);
-                shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
-                return false;
-            }
-            
-            // RPC belum tersedia -> fallback legacy (jalankan SQL hardening!)
-            if (rpcError) {
-                rpcWasMissing = true;
-                console.error('[SIMBAKES AUTH] RPC keamanan belum tersedia (404). Jalankan sql/PATCH-LOGIN.sql di Supabase SQL Editor.');
-            }
-        } else {
-            showError(errorEl, errorTextEl, 'Koneksi database tidak tersedia. Silakan refresh halaman.');
-            return false;
+        const rpcData = await simbakesRpc('app_login', {
+            p_username: username,
+            p_password: password
+        });
+        
+        if (rpcData && rpcData.token) {
+            return handleRpcAuthSuccess(rpcData, source);
         }
-    } catch (eRpc) {
-        console.error('[SIMBAKES AUTH] Kesalahan saat proses login.');
-        showError(errorEl, errorTextEl, 'Terjadi kesalahan. Silakan coba kembali.');
+        
+        // Respons sukses tanpa token (tak terduga) — perlakukan seperti salah
+        showError(errorEl, errorTextEl, 'Username atau password salah.');
         shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
         return false;
+    } catch (eRpc) {
+        if (isAuthRpcMissing(eRpc)) {
+            // RPC belum tersedia -> jatuh ke jalur legacy di bawah
+            rpcWasMissing = true;
+            console.error('[SIMBAKES AUTH] RPC keamanan belum tersedia (404). Jalankan sql/PATCH-LOGIN.sql di Supabase SQL Editor.');
+        } else if (eRpc && eRpc.code === 'NOCLIENT') {
+            showError(errorEl, errorTextEl, eRpc.message);
+            shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
+            return false;
+        } else {
+            let msg = (eRpc && eRpc.message) ? String(eRpc.message) : 'Username atau password salah.';
+            // Error internal DB (mis. pgcrypto tidak ditemukan) ->
+            // petunjuk yang bisa ditindaklanjuti, bukan pesan teknis
+            if (eRpc && (eRpc.code === '42883' || eRpc.httpStatus === 404 ||
+                         msg.indexOf('does not exist') !== -1)) {
+                msg = 'Server login belum terpasang sempurna. Jalankan ulang sql/PATCH-LOGIN.sql (versi terbaru) di Supabase SQL Editor, lalu coba lagi.';
+            }
+            showError(errorEl, errorTextEl, msg);
+            shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
+            return false;
+        }
     }
     
     // ══════════════════════════════════════════════════════════

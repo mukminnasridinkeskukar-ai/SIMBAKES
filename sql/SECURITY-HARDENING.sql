@@ -72,7 +72,7 @@ alter table public.akun_peserta add column if not exists last_login_at  timestam
 create or replace function public.app_request_token()
 returns text
 language sql stable
-set search_path = public
+set search_path = public, extensions
 as $$
     select nullif(current_setting('request.headers', true)::json ->> 'x-session-token', '');
 $$;
@@ -81,7 +81,7 @@ $$;
 create or replace function public.app_is_valid_session(p_min_role text default null)
 returns boolean
 language plpgsql stable security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
     v_token   text;
@@ -131,7 +131,7 @@ $$;
 create or replace function public.app_purge_expired_sessions()
 returns void
 language sql security definer
-set search_path = public
+set search_path = public, extensions
 as $$
     delete from public.app_sessions
     where expires_at < now() - interval '1 day' or revoked = true;
@@ -144,7 +144,7 @@ $$;
 create or replace function public.app_login(p_username text, p_password text)
 returns jsonb
 language plpgsql security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
     v_user     record;
@@ -293,7 +293,7 @@ $$;
 create or replace function public.app_peserta_login(p_username text, p_password text)
 returns jsonb
 language plpgsql security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
     v_user    record;
@@ -432,7 +432,7 @@ $$;
 create or replace function public.app_validate_session(p_token text)
 returns jsonb
 language plpgsql stable security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
     v_session public.app_sessions%rowtype;
@@ -512,7 +512,7 @@ $$;
 create or replace function public.app_logout(p_token text)
 returns boolean
 language plpgsql security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 begin
     update public.app_sessions set revoked = true
@@ -528,7 +528,7 @@ $$;
 create or replace function public.admin_save_akun_peserta(p_token text, p_record jsonb)
 returns jsonb
 language plpgsql security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
     v_role  text;
@@ -597,7 +597,7 @@ $$;
 create or replace function public.admin_delete_akun_peserta(p_token text, p_id text)
 returns jsonb
 language plpgsql security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
     v_role text;
@@ -628,7 +628,7 @@ $$;
 create or replace function public.trg_akun_peserta_hash_password()
 returns trigger
 language plpgsql security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 begin
     if NEW.password is not null and NEW.password <> '' then

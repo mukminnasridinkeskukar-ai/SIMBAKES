@@ -1,5 +1,5 @@
 -- ============================================================
--- SIMBAKES — PATCH LOGIN CEPAT v2 (perbaiki "gagal login")
+-- SIMBAKES — PATCH LOGIN CEPAT v3 (perbaiki "gagal login")
 -- ============================================================
 -- MASALAH: frontend baru memanggil RPC app_login / app_peserta_login,
 --          tetapi fungsi itu belum ada di Supabase (HTTP 404), sehingga
@@ -7,6 +7,17 @@
 --          masih gagal, versi ini juga MEMBUAT RPC KEBAL SKEMA:
 --          kolom opsional yang tidak ada tidak lagi memicu error —
 --          profil tetap dibangun (field kosong -> null).
+--
+-- BARU v3 (mengatasi "password benar tapi ditolak"):
+--   - KRITIS: search_path kini mencakup schema `extensions` — sebelumnya
+--     digest()/crypt() pgcrypto TIDAK ditemukan saat runtime, sehingga
+--     login dengan password BENAR pun gagal (HTTP 404 / error 42883).
+--   - Status peserta pakai MODEL BLOKIR: hanya status bermasalah
+--     (pending/rejected/suspended/nonaktif/dll) yang ditolak.
+--     Nilai lain (approved, Aktif, active, disetujui, ...) DIBOLEHKAN.
+--   - Tangga verifikasi lebih luas: bcrypt, SHA-256 (huruf besar/kecil),
+--     MD5, plaintext, plus fallback kolom lama `password` di multiusers.
+--   - Status admin dicek case-insensitive.
 --
 -- File ini VERSI MINIMAL dari SECURITY-HARDENING.sql:
 --   - HANYA membuat tabel sesi + 4 fungsi RPC login/validasi/logout
@@ -65,7 +76,7 @@ alter table public.akun_peserta add column if not exists last_login_at  timestam
 create or replace function public.app_login(p_username text, p_password text)
 returns jsonb
 language plpgsql security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
     v_user     record;
@@ -117,8 +128,9 @@ begin
             raise exception 'Akun terkunci sementara karena terlalu banyak percobaan gagal. Coba lagi dalam beberapa menit.';
         end if;
 
-        -- Suspended (kolom opsional)
-        if v_rec->>'status' = 'Suspended' then
+        -- Suspended (kolom opsional; case-insensitive)
+        if lower(coalesce(v_rec->>'status', '')) in
+           ('suspended','ditangguhkan','blocked','diblokir','banned') then
             if v_rec->>'suspended_until' is null
                or (v_rec->>'suspended_until')::timestamptz > now() then
                 raise exception 'Akun Anda sedang diblokir. Hubungi administrator.';
@@ -126,23 +138,34 @@ begin
         end if;
 
         -- ---- Verifikasi password (multi-skema, upgrade ke bcrypt) ----
-        v_hash := v_rec->>'password_hash';
+        -- Sumber: password_hash; bila kosong, jatuh ke kolom lama
+        -- `password` (otomatis null/diabaikan bila kolomnya tidak ada).
+        v_hash := coalesce(v_rec->>'password_hash', v_rec->>'password');
         if v_hash is not null then
             if v_hash like '$2%' then
+                -- bcrypt ($2a / $2b / $2y)
                 v_ok := crypt(p_password, v_hash) = v_hash;
-            elsif length(v_hash) = 64 and v_hash ~ '^[a-f0-9]{64}$' then
+            elsif length(v_hash) = 64 and lower(v_hash) ~ '^[a-f0-9]{64}$' then
+                -- SHA-256 hex (huruf besar/kecil diterima)
                 v_ok := encode(digest(p_password, 'sha256'), 'hex') = lower(v_hash);
+            elsif length(v_hash) = 32 and lower(v_hash) ~ '^[a-f0-9]{32}$' then
+                -- MD5 hex (legacy lama)
+                v_ok := encode(digest(p_password, 'md5'), 'hex') = lower(v_hash);
             else
                 v_ok := p_password = v_hash;   -- legacy plaintext
             end if;
         end if;
 
         if v_ok then
-            -- Upgrade ke bcrypt bila masih skema lama
+            -- Upgrade ke bcrypt bila masih skema lama (hanya bila kolomnya ada)
             if v_hash is null or v_hash not like '$2%' then
-                update public.multiusers
-                   set password_hash = crypt(p_password, gen_salt('bf', 10))
-                 where id::text = v_rec->>'id';
+                if exists (select 1 from information_schema.columns
+                           where table_schema='public' and table_name='multiusers'
+                             and column_name='password_hash') then
+                    update public.multiusers
+                       set password_hash = crypt(p_password, gen_salt('bf', 10))
+                     where id::text = v_rec->>'id';
+                end if;
             end if;
 
             update public.multiusers
@@ -214,12 +237,13 @@ $$;
 create or replace function public.app_peserta_login(p_username text, p_password text)
 returns jsonb
 language plpgsql security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
     v_user    record;
     v_rec     jsonb;
     v_hash    text;
+    v_status  text;
     v_ok      boolean := false;
     v_token   text;
     v_expires timestamptz;
@@ -260,28 +284,32 @@ begin
             raise exception 'Akun terkunci sementara karena terlalu banyak percobaan gagal. Coba lagi dalam beberapa menit.';
         end if;
 
-        -- Status akun (kolom opsional: absen = dianggap approved)
-        if v_rec->>'status' = 'pending' then
+        -- Status akun — MODEL BLOKIR: hanya status bermasalah yang ditolak;
+        -- nilai lain (approved/aktif/active/disetujui/dll) boleh masuk.
+        -- (kolom opsional: absen = dianggap aktif)
+        v_status := lower(coalesce(v_rec->>'status', 'approved'));
+        if v_status in ('pending','menunggu','waiting','review','verifikasi') then
             raise exception 'Akun Anda masih MENUNGGU PERSETUJUAN admin. Silakan tunggu 1-2 hari kerja.';
-        elsif v_rec->>'status' = 'rejected' then
+        elsif v_status in ('rejected','ditolak') then
             raise exception 'Akun Anda DITOLAK. Hubungi admin.';
-        elsif v_rec->>'status' = 'suspended' then
+        elsif v_status in ('suspended','ditangguhkan','blocked','diblokir','banned') then
             raise exception 'Akun Anda DITANGGUHKAN. Hubungi admin.';
-        elsif v_rec->>'status' is not null
-              and v_rec->>'status' <> '' and v_rec->>'status' <> 'approved' then
-            raise exception 'Akun Anda belum aktif. Hubungi admin.';
+        elsif v_status in ('inactive','nonaktif','disabled','dinonaktifkan') then
+            raise exception 'Akun Anda dinonaktifkan. Hubungi administrator.';
         end if;
 
-        -- ---- Verifikasi password (bcrypt -> plaintext, auto-upgrade) ----
-        v_hash := v_rec->>'password_hash';
+        -- ---- Verifikasi password (multi-skema, upgrade ke bcrypt) ----
+        v_hash := coalesce(v_rec->>'password_hash', v_rec->>'password');
         if v_hash is not null then
             if v_hash like '$2%' then
                 v_ok := crypt(p_password, v_hash) = v_hash;
+            elsif length(v_hash) = 64 and lower(v_hash) ~ '^[a-f0-9]{64}$' then
+                v_ok := encode(digest(p_password, 'sha256'), 'hex') = lower(v_hash);
+            elsif length(v_hash) = 32 and lower(v_hash) ~ '^[a-f0-9]{32}$' then
+                v_ok := encode(digest(p_password, 'md5'), 'hex') = lower(v_hash);
             else
-                v_ok := p_password = v_hash;   -- legacy
+                v_ok := p_password = v_hash;   -- legacy plaintext
             end if;
-        elsif v_rec->>'password' is not null then
-            v_ok := p_password = (v_rec->>'password');   -- kolom lama (akan dipensiunkan)
         end if;
 
         if v_ok then
@@ -353,7 +381,7 @@ $$;
 create or replace function public.app_validate_session(p_token text)
 returns jsonb
 language plpgsql stable security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
     v_session public.app_sessions%rowtype;
@@ -408,7 +436,11 @@ begin
         select * into v_profile
         from public.akun_peserta where id::text = v_session.user_id;
         v_rec := to_jsonb(v_profile);
-        if coalesce(v_rec->>'status', 'approved') not in ('approved') then
+        if lower(coalesce(v_rec->>'status', 'approved')) in
+           ('pending','menunggu','waiting','review','verifikasi',
+            'rejected','ditolak','suspended','ditangguhkan','blocked',
+            'diblokir','banned','inactive','nonaktif','disabled',
+            'dinonaktifkan') then
             update public.app_sessions set revoked = true where id = v_session.id;
             return null;
         end if;
@@ -433,7 +465,7 @@ $$;
 create or replace function public.app_logout(p_token text)
 returns boolean
 language plpgsql security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 begin
     update public.app_sessions set revoked = true
