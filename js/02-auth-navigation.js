@@ -249,6 +249,7 @@ async function performAuthentication(username, password, source) {
     // Show error element reference
     const errorEl = document.getElementById('login-error-msg');
     const errorTextEl = document.getElementById('login-error-text');
+    var rpcWasMissing = false; // true bila RPC server belum ada (SQL belum dijalankan)
     
     if (!username || !password) {
         showError(errorEl, errorTextEl, 'Username dan password wajib diisi!');
@@ -293,7 +294,8 @@ async function performAuthentication(username, password, source) {
             
             // RPC belum tersedia -> fallback legacy (jalankan SQL hardening!)
             if (rpcError) {
-                console.error('[SIMBAKES AUTH] RPC keamanan belum tersedia. Jalankan sql/SECURITY-HARDENING.sql di Supabase SQL Editor.');
+                rpcWasMissing = true;
+                console.error('[SIMBAKES AUTH] RPC keamanan belum tersedia (404). Jalankan sql/PATCH-LOGIN.sql di Supabase SQL Editor.');
             }
         } else {
             showError(errorEl, errorTextEl, 'Koneksi database tidak tersedia. Silakan refresh halaman.');
@@ -340,7 +342,9 @@ async function performAuthentication(username, password, source) {
         
         // ===== STEP 2: Cek apakah user ditemukan =====
         if (!dbUsers || dbUsers.length === 0) {
-            showError(errorEl, errorTextEl, 'Username atau password salah.');
+            showError(errorEl, errorTextEl,
+                'Username atau password salah.' +
+                (rpcWasMissing ? ' (Catatan: server login belum aktif — jalankan sql/PATCH-LOGIN.sql di Supabase SQL Editor.)' : ''));
             shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
             return false;
         }
@@ -393,10 +397,13 @@ async function performAuthentication(username, password, source) {
                 .eq('id', dbUser.id);
             
             const remaining = MAX_ATTEMPTS - newAttempts;
+            const rpcHint = rpcWasMissing
+                ? ' (Catatan: verifikasi lama tidak mendukung hash bcrypt — jalankan sql/PATCH-LOGIN.sql di Supabase SQL Editor.)'
+                : '';
             if (remaining > 0) {
-                showError(errorEl, errorTextEl, `Password salah! Percobaan tersisa: ${remaining}`);
+                showError(errorEl, errorTextEl, `Password salah! Percobaan tersisa: ${remaining}${rpcHint}`);
             } else {
-                showError(errorEl, errorTextEl, 'Akun TERKUNCI karena terlalu manyak percobaan gagal.');
+                showError(errorEl, errorTextEl, `Akun TERKUNCI karena terlalu banyak percobaan gagal.${rpcHint}`);
             }
             shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
             return false;
