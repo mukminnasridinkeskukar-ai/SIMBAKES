@@ -18,9 +18,11 @@
 // CONFIGURATION - Supabase Storage Settings
 // ============================================================
 const SUPABASE_CONFIG = {
-    url: window.SUPABASE_URL || 'https://your-project.supabase.co',
-    bucket: 'simbakes', // Nama bucket storage
-    defaultFolder: 'photos',
+    // FIX 404: sebelumnya 'https://your-project.supabase.co' (placeholder,
+    // domain tidak ada) karena window.SUPABASE_URL tidak pernah didefinisikan.
+    url: window.SIMBAKES_SUPABASE_URL || 'https://boeknpvlfamjmddsdopd.supabase.co',
+    bucket: 'photos', // FIX 404: bucket asli aplikasi ('photos'), bukan 'simbakes'
+    defaultFolder: '',
     fallbackAvatar: `data:image/svg+xml,${encodeURIComponent(`
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
             <rect fill="#f1f5f9" width="100" height="100"/>
@@ -74,11 +76,13 @@ async function resolvePhotoUrl(record) {
     
     // Source 3: Construct from ID (Supabase Storage pattern)
     if (record.id) {
+        // FIX 404: path langsung di bawah bucket 'photos' (konsisten dengan
+        // layout baca di 05-database.js: object/public/photos/<file>)
         const possiblePaths = [
-            `/${SUPABASE_CONFIG.defaultFolder}/${record.id}.jpg`,
-            `/${SUPABASE_CONFIG.defaultFolder}/${record.id}.png`,
-            `/${SUPABASE_CONFIG.defaultFolder}/${record.id}.jpeg`,
-            `/photos/submissions/${record.id}.jpg`
+            `/${record.id}.jpg`,
+            `/${record.id}.png`,
+            `/${record.id}.jpeg`,
+            `/submissions/${record.id}.jpg`
         ];
         
         possiblePaths.forEach((path, idx) => {

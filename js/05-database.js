@@ -1026,6 +1026,11 @@ async function tryProxyImage(imgElement, placeholderElement, photoUrl, cacheKey)
     
     try {
         const proxyUrl = getProxyImageUrl(photoUrl);
+        // FIX 404: fetch('') me-request URL halaman sendiri; jika tidak ada
+        // fileId, langsung lompat ke fallback placeholder.
+        if (!proxyUrl) {
+            throw new Error('Tidak ada fileId untuk proxy foto');
+        }
         const response = await fetch(proxyUrl);
         const result = await response.json();
         

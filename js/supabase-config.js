@@ -13,6 +13,10 @@ const SUPABASE_CONFIG = {
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvZWtucHZsZmFtam1kZHNkb3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY0NzYwNjIsImV4cCI6MjEwMjA1MjA2Mn0.kHj7xEY7Wa4zSJwH0rjhiB3Qf0IHriyPlWoh4rdlv3U'
 };
 
+// Ekspos URL agar modul ber-IIFE (mis. ui-overhaul.js) dapat memakai URL asli
+// tanpa mendeklarasikan ulang SUPABASE_CONFIG (yang akan memicu SyntaxError).
+window.SIMBAKES_SUPABASE_URL = SUPABASE_CONFIG.url;
+
 // Global Supabase Client
 let supabaseClient = null;
 let supabaseInitRetries = 0;

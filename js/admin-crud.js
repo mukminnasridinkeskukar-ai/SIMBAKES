@@ -1585,7 +1585,9 @@ async function loadPhotoToLightbox(record) {
     
     // Show loading state
     img.style.opacity = '0.5';
-    img.src = '';
+    // FIX 404: src kosong ('') me-resolve ke URL halaman sendiri dan memicu
+    // error "failed to load resource" di console. Pakai 1x1 px transparan.
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     
     try {
         const photoResult = await resolveSupabaseImage(record);
