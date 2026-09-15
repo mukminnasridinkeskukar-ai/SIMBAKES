@@ -80,7 +80,7 @@ $$;
 -- Helper: apakah request membawa sesi valid dengan salah satu role?
 create or replace function public.app_is_valid_session(p_min_role text default null)
 returns boolean
-language plpgsql stable security definer
+language plpgsql volatile security definer
 set search_path = public, extensions
 as $$
 declare
@@ -364,19 +364,14 @@ begin
         end if;
 
         if v_ok then
-            -- Upgrade: isi password_hash bcrypt & kosongkan plaintext lama
+            -- Upgrade: isi password_hash bcrypt & kosongkan plaintext lama.
+            -- PENTING: kolom password di skema ini NOT NULL -> isi '' (bukan NULL)
+            -- agar tidak memicu error 23502 "violates not-null constraint".
             if coalesce(v_hash, '') not like '$2%' then
-                if exists (select 1 from information_schema.columns
-                           where table_schema='public' and table_name='akun_peserta' and column_name='password') then
-                    update public.akun_peserta
-                       set password_hash = crypt(p_password, gen_salt('bf', 10)),
-                           password      = null
-                     where id::text = v_rec->>'id';
-                else
-                    update public.akun_peserta
-                       set password_hash = crypt(p_password, gen_salt('bf', 10))
-                     where id::text = v_rec->>'id';
-                end if;
+                update public.akun_peserta
+                   set password_hash = crypt(p_password, gen_salt('bf', 10)),
+                       password      = ''
+                 where id::text = v_rec->>'id';
             end if;
 
             update public.akun_peserta
@@ -431,7 +426,7 @@ $$;
 -- ============================================================
 create or replace function public.app_validate_session(p_token text)
 returns jsonb
-language plpgsql stable security definer
+language plpgsql volatile security definer
 set search_path = public, extensions
 as $$
 declare
@@ -557,14 +552,16 @@ begin
             raise exception 'Password minimal 8 karakter';
         end if;
         insert into public.akun_peserta
-            (nama, nik, email, username, jurusan_tujuan, status, status_note, approved_at, password_hash)
+            (nama, nik, email, username, jurusan_tujuan, status, status_note,
+             approved_at, password, password_hash)
         values (
             v_rec->>'nama', v_rec->>'nik', lower(v_rec->>'email'), lower(v_rec->>'username'),
             v_rec->>'jurusan_tujuan',
             coalesce(v_rec->>'status', 'pending'),
             v_rec->>'status_note',
             case when coalesce(v_rec->>'status','pending') = 'approved' then now() else null end,
-            crypt(v_pass, gen_salt('bf', 10))
+            '',                                        -- kolom password NOT NULL: isi ''
+            crypt(v_pass, gen_salt('bf', 10))          -- hash dibuat di server
         )
         returning * into v_out;
     else
@@ -581,7 +578,7 @@ begin
             password_hash   = case
                                 when v_pass is not null then crypt(v_pass, gen_salt('bf', 10))
                                 else password_hash end,
-            password        = case when v_pass is not null then null else password end
+            password        = case when v_pass is not null then '' else password end
         where id::text = v_id
         returning * into v_out;
 
@@ -621,6 +618,55 @@ end;
 $$;
 
 -- ============================================================
+-- 6b) RPC BARU: admin_list_akun_peserta — daftar akun utk panel admin.
+--     Kolom password/password_hash TIDAK PERNAH dikirim ke browser;
+--     menggantikan select(*) langsung yang diblokir grant kolom (401).
+-- ============================================================
+create or replace function public.admin_list_akun_peserta(p_token text)
+returns setof jsonb
+language plpgsql security definer
+set search_path = public, extensions
+as $$
+declare
+    v_role text;
+begin
+    if p_token is null or length(p_token) < 32 then
+        raise exception 'Akses ditolak: sesi tidak valid';
+    end if;
+
+    select role into v_role
+    from public.app_sessions
+    where token_hash = encode(digest(p_token, 'sha256'), 'hex')
+      and revoked = false and expires_at > now()
+    limit 1;
+
+    if v_role is null then
+        raise exception 'Akses ditolak: sesi tidak valid';
+    end if;
+    if v_role not in ('superadmin','admin','operator') then
+        raise exception 'Akses ditolak: role tidak berwenang';
+    end if;
+
+    return query
+    select jsonb_build_object(
+        'id',             a.id::text,
+        'nama',           a.nama,
+        'nik',            a.nik,
+        'email',          a.email,
+        'username',       a.username,
+        'jurusan_tujuan', a.jurusan_tujuan,
+        'status',         a.status,
+        'status_note',    a.status_note,
+        'approved_at',    a.approved_at,
+        'last_login_at',  a.last_login_at,
+        'created_at',     a.created_at
+    )
+    from public.akun_peserta a
+    order by a.created_at desc nulls last;
+end;
+$$;
+
+-- ============================================================
 -- 7) TRIGGER: auto-hash password registrasi akun_peserta
 --    (registrasi publik tetap berjalan, tapi plaintext langsung
 --     diubah menjadi bcrypt di server dan kolom password dikosongkan)
@@ -635,7 +681,7 @@ begin
         if NEW.password_hash is null or NEW.password_hash not like '$2%' then
             NEW.password_hash := crypt(NEW.password, gen_salt('bf', 10));
         end if;
-        NEW.password := null;   -- jangan pernah simpan plaintext
+        NEW.password := '';   -- '' sah untuk kolom NOT NULL; jangan NULL
     end if;
     return NEW;
 end;
@@ -814,6 +860,7 @@ grant execute on function public.app_validate_session(text)               to ano
 grant execute on function public.app_logout(text)                         to anon;
 grant execute on function public.admin_save_akun_peserta(text, jsonb)     to anon;
 grant execute on function public.admin_delete_akun_peserta(text, text)    to anon;
+grant execute on function public.admin_list_akun_peserta(text)            to anon;
 revoke execute on function public.app_purge_expired_sessions()            from public;
 revoke execute on function public.app_purge_expired_sessions()            from anon;
 
@@ -826,6 +873,7 @@ union all select 'app_peserta_login',    'RPC login peserta'
 union all select 'app_validate_session', 'RPC validasi sesi (sliding 15 menit)'
 union all select 'app_logout',           'RPC logout/revoke'
 union all select 'admin_save_akun_peserta',    'RPC simpan akun peserta (admin)'
+union all select 'admin_list_akun_peserta',    'RPC daftar akun peserta (admin)'
 union all select 'admin_delete_akun_peserta',  'RPC hapus akun peserta (admin)';
 
 -- ============================================================

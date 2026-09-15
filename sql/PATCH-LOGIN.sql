@@ -8,6 +8,13 @@
 --          kolom opsional yang tidak ada tidak lagi memicu error —
 --          profil tetap dibangun (field kosong -> null).
 --
+-- BARU v3.1 (fix lanjutan, lihat juga PATCH-FIX-SESSION.sql):
+--   - app_validate_session kini VOLATILE (sebelumnya STABLE padahal
+--     melakukan UPDATE sliding-expiry -> "UPDATE is not allowed in a
+--     non-volatile function").
+--   - Upgrade password peserta mengisi kolom password dengan ''
+--     (kolom NOT NULL; NULL memicu error 23502 saat login peserta).
+--
 -- BARU v3 (mengatasi "password benar tapi ditolak"):
 --   - KRITIS: search_path kini mencakup schema `extensions` — sebelumnya
 --     digest()/crypt() pgcrypto TIDAK ditemukan saat runtime, sehingga
@@ -313,19 +320,13 @@ begin
         end if;
 
         if v_ok then
-            -- Upgrade: isi password_hash bcrypt & kosongkan plaintext lama
+            -- Upgrade: isi password_hash bcrypt & kosongkan plaintext lama.
+            -- Kolom password NOT NULL -> isi '' (bukan NULL).
             if coalesce(v_hash, '') not like '$2%' then
-                if exists (select 1 from information_schema.columns
-                           where table_schema='public' and table_name='akun_peserta' and column_name='password') then
-                    update public.akun_peserta
-                       set password_hash = crypt(p_password, gen_salt('bf', 10)),
-                           password      = null
-                     where id::text = v_rec->>'id';
-                else
-                    update public.akun_peserta
-                       set password_hash = crypt(p_password, gen_salt('bf', 10))
-                     where id::text = v_rec->>'id';
-                end if;
+                update public.akun_peserta
+                   set password_hash = crypt(p_password, gen_salt('bf', 10)),
+                       password      = ''
+                 where id::text = v_rec->>'id';
             end if;
 
             update public.akun_peserta
@@ -380,7 +381,7 @@ $$;
 -- ============================================================
 create or replace function public.app_validate_session(p_token text)
 returns jsonb
-language plpgsql stable security definer
+language plpgsql volatile security definer
 set search_path = public, extensions
 as $$
 declare

@@ -127,24 +127,57 @@
             '<div class="spinner"></div><p style="margin-top:1rem;">Memuat data akun peserta...</p></td></tr>';
 
         try {
-            const { data, error } = await client
-                .from('akun_peserta')
-                .select('*')
-                .order('created_at', { ascending: false });
+            let rows = null;
 
-            if (error) throw error;
+            // PRIORITAS: muat via RPC server-side admin_list_akun_peserta.
+            // (Setelah SECURITY-HARDENING.sql, grant anon pada tabel bersifat
+            //  kolom-aman saja -> select(*) langsung diblokir 401/42501.
+            //  RPC memvalidasi sesi admin di server dan TIDAK PERNAH
+            //  mengirim kolom password/password_hash ke browser.)
+            const sToken = getAkunSessionToken();
+            if (sToken) {
+                const rpcRes = await client.rpc('admin_list_akun_peserta', { p_token: sToken });
+                if (!rpcRes.error) {
+                    rows = Array.isArray(rpcRes.data) ? rpcRes.data : [];
+                } else if (!isAkunRpcMissing(rpcRes.error)) {
+                    throw rpcRes.error;   // error nyata (sesi/role/jaringan)
+                }
+                // RPC belum ada (PGRST202) -> jatuh ke jalur legacy di bawah
+            }
 
-            akunData = Array.isArray(data) ? data : [];
+            if (rows === null) {
+                // JALUR LEGACY (database yang belum menjalankan patch)
+                const { data, error } = await client
+                    .from('akun_peserta')
+                    .select('id,nama,nik,email,username,jurusan_tujuan,status,status_note,approved_at,last_login_at,created_at')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                rows = Array.isArray(data) ? data : [];
+            }
+
+            akunData = rows;
             akunCurrentPage = 1;
             applyAkunFilters();
             console.log('[AKUN PESERTA] ✅ ' + akunData.length + ' akun dimuat dari Supabase');
         } catch (err) {
             console.error('[AKUN PESERTA] Gagal memuat data.');
-            const isNet = !err || !(err.code || err.status);
+            const msgAll = String((err && (err.message || err.code)) || '') + ' ' + String(err && err.httpStatus || '');
+            const isDenied = err && (err.code === '42501' || err.httpStatus === 401 ||
+                             msgAll.indexOf('permission denied') !== -1 || msgAll.indexOf('42501') !== -1);
+            const isNet = !err || !(err.code || err.status || err.httpStatus);
+            let hint;
+            if (isDenied) {
+                hint = '🛡️ Akses diblokir keamanan server (401). Jalankan <strong>sql/PATCH-FIX-SESSION.sql</strong> di Supabase SQL Editor, lalu muat ulang halaman ini (F5).';
+            } else if (isNet) {
+                hint = '❌ Koneksi database tidak tersedia. Periksa internet lalu coba lagi.';
+            } else {
+                hint = '❌ Gagal memuat data. Silakan coba kembali.';
+            }
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2.5rem;color:#ef4444;">' +
-                (isNet ? '❌ Koneksi database tidak tersedia. Periksa internet lalu coba lagi.' : '❌ Gagal memuat data. Silakan coba kembali.') +
+                hint +
                 '<br><button class="btn btn-sm" style="margin-top:1rem;background:#f1f5f9;color:#475569;" onclick="loadAkunPesertaData()">🔄 Coba Lagi</button></td></tr>';
-            if (typeof showToast === 'function') showToast('Gagal memuat data akun', 'error');
+            if (typeof showToast === 'function') showToast(isDenied ? 'Akses ditolak: jalankan PATCH-FIX-SESSION.sql' : 'Gagal memuat data akun', 'error');
         } finally {
             akunLoading = false;
         }
@@ -238,11 +271,13 @@
                     ? akunFormatDate(r.last_login_at)
                     : '<span style="color:#94a3b8;">Belum pernah</span>';
 
-                const btnEdit = '<button class="btn-action-edit" title="Edit akun" onclick="openAkunModal(\'edit\',' + r.id + ')">✏️</button>';
+                // ID SELALU dikutip agar aman untuk id numerik maupun UUID (string)
+                const qid = String(r.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                const btnEdit = '<button class="btn-action-edit" title="Edit akun" onclick="openAkunModal(\'edit\',\'' + qid + '\')">✏️</button>';
                 const btnStatus = (r.status !== 'approved')
-                    ? '<button class="btn-action-status" title="Setujui akun" onclick="akunQuickStatus(' + r.id + ',\'approved\')">✅</button>'
-                    : '<button class="btn-action-status" title="Tangguhkan akun" onclick="akunQuickStatus(' + r.id + ',\'suspended\')">🚫</button>';
-                const btnDelete = '<button class="btn-action-delete" title="Hapus akun" onclick="akunConfirmDelete(' + r.id + ')">🗑️</button>';
+                    ? '<button class="btn-action-status" title="Setujui akun" onclick="akunQuickStatus(\'' + qid + '\',\'approved\')">✅</button>'
+                    : '<button class="btn-action-status" title="Tangguhkan akun" onclick="akunQuickStatus(\'' + qid + '\',\'suspended\')">🚫</button>';
+                const btnDelete = '<button class="btn-action-delete" title="Hapus akun" onclick="akunConfirmDelete(\'' + qid + '\')">🗑️</button>';
 
                 return '<tr>' +
                     '<td style="color:#64748b;">' + no + '</td>' +
@@ -360,7 +395,7 @@
                                     AKUN_JURUSAN_OPTIONS.map(function (j) { return '<option value="' + akunEscapeHtml(j) + '"></option>'; }).join('') +
                                 '</datalist>' +
                                 '<div id="akun-form-alert" style="display:none;margin-top:0.75rem;padding:0.65rem 0.85rem;border-radius:8px;font-size:0.82rem;"></div>' +
-                                '<p style="font-size:0.75rem;color:#64748b;margin-top:0.75rem;">* wajib diisi. Password disimpan apa adanya (sama dengan pola login peserta saat ini). Username akan otomatis diubah ke huruf kecil.</p>' +
+                                '<p style="font-size:0.75rem;color:#64748b;margin-top:0.75rem;">* wajib diisi. Password di-hash bcrypt di server (tidak tersimpan plaintext). Username akan otomatis diubah ke huruf kecil.</p>' +
                             '</form>' +
                         '</div>' +
                         '<div class="modal-footer" style="padding:1rem 1.5rem;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:0.75rem;">' +
@@ -387,7 +422,7 @@
         set('akun-form-nik', isEdit ? row.nik : '');
         set('akun-form-email', isEdit ? row.email : '');
         set('akun-form-username', isEdit ? row.username : '');
-        set('akun-form-password', isEdit ? row.password : '');
+        set('akun-form-password', isEdit ? (row.password || '') : '');
         set('akun-form-jurusan', isEdit ? row.jurusan_tujuan : '');
         set('akun-form-status', isEdit ? (row.status || 'pending') : 'pending');
         set('akun-form-note', isEdit ? (row.status_note || '') : '');
@@ -397,6 +432,17 @@
         if (titleEl) titleEl.textContent = isEdit ? '✏️ Edit Akun: ' + (row.username || '') : '➕ Tambah Akun Peserta';
         const lastLoginInput = document.getElementById('akun-form-lastlogin');
         if (lastLoginInput) lastLoginInput.readOnly = true;
+
+        // Saat EDIT: password OPSIONAL (kosong = password lama tetap dipakai).
+        // Password lama memang tidak pernah dikirim ke browser (di-hash server).
+        const pwInput = document.getElementById('akun-form-password');
+        const pwGroup = pwInput && pwInput.closest ? pwInput.closest('.form-group') : null;
+        const pwLabel = pwGroup ? pwGroup.querySelector('label') : null;
+        if (pwInput) {
+            pwInput.required = !isEdit;
+            pwInput.placeholder = isEdit ? 'biarkan kosong untuk mempertahankan password lama' : 'minimal 8 karakter';
+        }
+        if (pwLabel) pwLabel.textContent = isEdit ? 'Password (kosongkan bila tidak diubah)' : 'Password *';
 
         akunShowFormAlert('');
         document.getElementById(modalId).classList.add('active');
@@ -452,8 +498,14 @@
             status_note: g('akun-form-note') || null
         };
 
+        // Password: WAJIB utk akun BARU; saat EDIT opsional
+        // (kosong = password lama tetap dipakai, hash tidak diubah)
+        if (isEdit && !payload.password) {
+            delete payload.password;   // jangan kirim password kosong ke server
+        }
+
         // Validasi (sesuai aturan registrasi yang sudah ada)
-        if (!payload.nama || !payload.nik || !payload.email || !payload.username || !payload.password || !payload.jurusan_tujuan) {
+        if (!payload.nama || !payload.nik || !payload.email || !payload.username || (!isEdit && !payload.password) || !payload.jurusan_tujuan) {
             akunShowFormAlert('Mohon lengkapi semua field wajib (*)', 'error'); return;
         }
         if (!/^[0-9]{16}$/.test(payload.nik)) {
@@ -462,7 +514,7 @@
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
             akunShowFormAlert('Format email tidak valid', 'error'); return;
         }
-        if (payload.password.length < 8) {
+        if (payload.password && payload.password.length < 8) {
             akunShowFormAlert('Password minimal 8 karakter', 'error'); return;
         }
 
