@@ -463,13 +463,15 @@ $$;
 
 create or replace function public.app_logout(p_token text)
 returns boolean
-language sql security definer
+language plpgsql security definer
 set search_path = public
 as $$
+begin
     update public.app_sessions set revoked = true
     where token_hash = encode(digest(coalesce(p_token,''), 'sha256'), 'hex')
       and revoked = false;
     return true;
+end;
 $$;
 
 -- ============================================================
