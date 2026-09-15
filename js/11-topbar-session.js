@@ -337,7 +337,7 @@ async function handlePesertaLoginInModal(event) {
         }
         
     } catch (error) {
-        console.error('[PESERTA LOGIN] Login gagal.');
+        console.error('[PESERTA LOGIN] Login gagal:', (error && error.message) ? error.message : error);
         alertEl.className = 'peserta-login-alert error show';
         alertEl.innerHTML = `❌ ${escapeHtmlForPeserta(error.message || 'Terjadi kesalahan. Silakan coba kembali.')}`;
         btn.disabled = false;

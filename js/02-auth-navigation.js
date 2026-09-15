@@ -295,6 +295,7 @@ async function performAuthentication(username, password, source) {
             return false;
         } else {
             let msg = (eRpc && eRpc.message) ? String(eRpc.message) : 'Username atau password salah.';
+            console.error('[SIMBAKES AUTH] Login ditolak server:', (eRpc && eRpc.code) ? eRpc.code + ' — ' + msg : msg);
             // Error internal DB (mis. pgcrypto tidak ditemukan) ->
             // petunjuk yang bisa ditindaklanjuti, bukan pesan teknis
             if (eRpc && (eRpc.code === '42883' || eRpc.httpStatus === 404 ||

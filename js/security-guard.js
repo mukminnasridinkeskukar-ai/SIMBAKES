@@ -38,7 +38,8 @@
     var heartbeatTimer  = null;
     var adminValidated  = false;
     var pesertaValidated= false;
-    var validating      = false;
+    var validatingAdmin = false;
+    var inflightAdmin   = null;   // promise validasi admin yang sedang berjalan
     var loggingOut      = false;
     var legacyModeWarned= false;
 
@@ -141,28 +142,43 @@
     }
 
     // ---------------- VALIDASI SERVER ----------------
+    // Hasil validateToken:
+    //   { __legacy:true }  -> RPC belum ada (mode kompatibilitas)
+    //   { __transient:true } -> error sementara (jaringan/server) -> JANGAN logout
+    //   data valid          -> { valid:true, ... }
+    //   null                -> server DEFINITIF menolak token (200 + null)
     function validateToken(token) {
         return new Promise(function (resolve) {
-            if (!token || !clientReady()) { resolve(null); return; }
+            if (!token || !clientReady()) { resolve({ __transient: true }); return; }
             supabaseClient.rpc('app_validate_session', { p_token: token })
                 .then(function (res) {
                     if (res.error) {
                         if (isRpcMissing(res.error)) {
                             resolve({ __legacy: true });   // SQL belum dijalankan
                         } else {
-                            resolve(null);
+                            // Error server lain (mis. 42883/5xx): TIDAK pasti
+                            // token tidak sah -> jangan bunuh sesi.
+                            console.error('[SECURITY] Validasi sesi gagal (transien):', res.error.message || res.error.code || res.error);
+                            resolve({ __transient: true });
                         }
                         return;
                     }
-                    resolve(res.data || null);
+                    resolve(res.data || null);   // 200 + null = token ditolak server
                 })
-                .catch(function () { resolve(null); });
+                .catch(function (e) {
+                    console.error('[SECURITY] Koneksi validasi gagal (transien) — sesi dipertahankan.');
+                    resolve({ __transient: true });   // jaringan error -> JANGAN logout
+                });
         });
     }
 
     function validateAdminSession(force) {
-        if (validating && !force) return Promise.resolve(false);
-        validating = true;
+        // RACE-FIX: bila validasi sudah berjalan, kembalikan promise yang
+        // SAMA (bukan false palsu!) agar pemanggil bersamaan (initAuthState,
+        // initSimbakesAuth, boot guard) tidak menyalipuir hasil -> logout
+        // palsu tepat setelah login.
+        if (validatingAdmin && !force && inflightAdmin) return inflightAdmin;
+        validatingAdmin = true;
         var token = safeGet(TOKEN_KEY_ADMIN);
 
         var p;
@@ -170,45 +186,54 @@
             // Tidak ada token -> tidak boleh percaya sesi localStorage.
             var hadUser = (typeof currentAdminUser !== 'undefined' && currentAdminUser);
             adminValidated = false;
-            p = Promise.resolve(null);
+            validatingAdmin = false;
             if (hadUser) {
-                validating = false;
                 forceLogout('expired');
                 return Promise.resolve(false);
             }
-        } else {
-            p = validateToken(token).then(function (data) {
-                if (data && data.__legacy) {
-                    // RPC belum tersedia (SQL belum dijalankan):
-                    // mode kompatibilitas, jangan merusak aplikasi.
-                    adminValidated = true;
-                    if (!legacyModeWarned) {
-                        legacyModeWarned = true;
-                        console.error('[SECURITY] ⚠️ RPC keamanan belum ditemukan. ' +
-                            'Jalankan sql/SECURITY-HARDENING.sql di Supabase SQL Editor.');
-                    }
-                    return true;
-                }
-                if (data && data.valid) {
-                    adminValidated = true;
-                    // Sinkronkan profil terbaru dari server (sumber kebenaran)
-                    if (typeof currentAdminUser !== 'undefined' && currentAdminUser && data.profile) {
-                        currentAdminUser.role = data.profile.role || currentAdminUser.role;
-                        currentAdminUser.name = data.profile.name || currentAdminUser.name;
-                    }
-                    return true;
-                }
-                return false;
-            });
+            return Promise.resolve(false);
         }
 
+        p = validateToken(token).then(function (data) {
+            if (data && data.__legacy) {
+                // RPC belum tersedia (SQL belum dijalankan):
+                // mode kompatibilitas, jangan merusak aplikasi.
+                adminValidated = true;
+                if (!legacyModeWarned) {
+                    legacyModeWarned = true;
+                    console.error('[SECURITY] ⚠️ RPC keamanan belum ditemukan. ' +
+                        'Jalankan sql/SECURITY-HARDENING.sql di Supabase SQL Editor.');
+                }
+                return true;
+            }
+            if (data && data.__transient) {
+                return null;   // tidak pasti -> JANGAN logout, coba lagi nanti
+            }
+            if (data && data.valid) {
+                adminValidated = true;
+                // Sinkronkan profil terbaru dari server (sumber kebenaran)
+                if (typeof currentAdminUser !== 'undefined' && currentAdminUser && data.profile) {
+                    currentAdminUser.role = data.profile.role || currentAdminUser.role;
+                    currentAdminUser.name = data.profile.name || currentAdminUser.name;
+                }
+                return true;
+            }
+            return false;   // server DEFINITIF menolak token
+        });
+
+        inflightAdmin = p;
         return p.then(function (ok) {
-            validating = false;
+            validatingAdmin = false;
+            inflightAdmin = null;
             if (ok === false) {
                 forceLogout('expired');
             }
-            return ok === true;
-        }).catch(function () { validating = false; return false; });
+            return ok === true ? true : (ok === false ? false : null);
+        }).catch(function () {
+            validatingAdmin = false;
+            inflightAdmin = null;
+            return null;   // transien -> bukan bukti sesi mati
+        });
     }
 
     function validatePesertaSession() {
@@ -222,6 +247,7 @@
         }
         return validateToken(token).then(function (data) {
             if (data && data.__legacy) { pesertaValidated = true; return true; }
+            if (data && data.__transient) { return null; }   // jangan putuskan sesi
             if (data && data.valid) {
                 pesertaValidated = true;
                 if (typeof pesertaSessionData !== 'undefined' && data.profile) {
@@ -321,6 +347,7 @@
     function forceLogout(reason) {
         if (loggingOut) return;
         loggingOut = true;
+        console.error('[SECURITY] 🔒 forceLogout — alasan:', reason);
 
         // 1) Cabut sesi di SERVER (jangan hanya redirect)
         revokeServer(safeGet(TOKEN_KEY_ADMIN));
@@ -412,8 +439,9 @@
         if (loggingOut) return;
         if (hasActiveSession()) {
             validateNow().then(function (results) {
-                var adminOk = results[0], pesertaOk = results[1];
-                if (!adminOk && !pesertaOk && hasActiveSession()) {
+                // Logout HANYA bila server DEFINITIF menolak (false).
+                // null = transien (jaringan/error) -> sesi dipertahankan.
+                if (results[0] === false && results[1] === false && hasActiveSession()) {
                     forceLogout('expired');
                 }
             });
@@ -434,7 +462,7 @@
             // Halaman dipulihkan dari bfcache — sesi WAJIB divalidasi ulang
             if (hasActiveSession()) {
                 validateNow().then(function (results) {
-                    if (!results[0] && !results[1] && hasActiveSession()) {
+                    if (results[0] === false && results[1] === false && hasActiveSession()) {
                         forceLogout('expired');
                     }
                 });
@@ -466,7 +494,9 @@
                 // Sesi ditemukan -> WAJIB divalidasi ke server (tab baru,
                 // refresh, duplicate tab, direct URL, bookmark).
                 validateNow().then(function (results) {
-                    if (!results[0] && !results[1]) {
+                    // Logout HANYA bila server DEFINITIF menolak kedua sesi.
+                    // null (transien/error jaringan) TIDAK merusak sesi.
+                    if (results[0] === false && results[1] === false) {
                         // Token tidak sah / sudah kedaluwarsa di server
                         forceLogout('expired');
                     } else {
