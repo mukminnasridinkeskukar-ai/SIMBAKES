@@ -144,41 +144,34 @@ async function fetchAdminData() {
             details: error.details
         });
         
-        // Tampilkan pesan error yang lebih informatif
-        let errorMsg = error.message || 'Terjadi kesalahan tidak diketahui';
+        // Pesan error ramah pengguna (tanpa detail teknis database)
+        let errorMsg = 'Terjadi kesalahan. Silakan coba kembali.';
         const isNetworkError = !error.status && (error.message?.includes('network') || error.message?.includes('fetch'));
         const isBadRequest = error.status === 400;
         
-        // Berikan pesan spesifik untuk error 400
-        if (isBadRequest) {
-            errorMsg = `Error query database (400). Kemungkinan: kolom tidak ditemukan atau format data salah. Detail: ${error.message || 'Unknown'}`;
-            console.warn('[SIMBAKES] Bad Request - cek nama kolom dan tipe data');
-        } else if (error.status === 401 || error.code === 'PGRST301') {
-            errorMsg = 'Error autentikasi (401). RLS Policy mungkin memblokir akses.';
+        if (isNetworkError) {
+            errorMsg = 'Koneksi internet terputus. Periksa jaringan lalu coba lagi.';
+        } else if (error.status === 401) {
+            errorMsg = 'Sesi tidak valid. Silakan masuk kembali.';
         } else if (error.status === 403) {
-            errorMsg = 'Error izin akses (403). Anda tidak memiliki hak akses ke data ini.';
+            errorMsg = 'Anda tidak memiliki izin untuk mengakses data ini.';
         } else if (error.status === 404) {
-            errorMsg = 'Tabel submissions tidak ditemukan. Pastikan SQL schema sudah dijalankan.';
-        } else if (error.status === 422 || error.code === 'PGRST204') {
-            errorMsg = `Error format query. Detail: ${error.message}`;
+            errorMsg = 'Data tidak ditemukan. Hubungi administrator.';
         }
         
         tbody.innerHTML = `
             <tr>
                 <td colspan="5" style="text-align:center;padding:3rem;color:#dc2626;">
-                    <div style="font-size:2.5rem;margin-bottom:1rem;">${isNetworkError ? '🌐' : (isBadRequest ? '⚙️' : '⚠️')}</div>
+                    <div style="font-size:2.5rem;margin-bottom:1rem;">${isNetworkError ? '🌐' : '⚠️'}</div>
                     <p style="font-weight:600;margin-bottom:0.5rem;">Gagal Memuat Data Pengusul</p>
                     <p style="font-size:0.875rem;color:#64748b;margin-bottom:1rem;max-width:500px;margin-left:auto;margin-right:auto;">
                         ${errorMsg}
-                    </p>
-                    <p style="font-size:0.75rem;color:#94a3b8;margin-bottom:1rem;">
-                        Error Code: ${error.code || error.status || 'Unknown'} | Status: ${error.status || 'N/A'}
                     </p>
                     <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;margin-top:1rem;">
                         <button class="btn btn-primary btn-sm" onclick="loadDataPengusul()" style="margin-top:0.5rem;">
                             🔄 Coba Lagi
                         </button>
-                        <button class="btn btn-sm" onclick="console.log('[SIMBAKES] Debug info:', localStorage.getItem('simbakes_admin_session')); location.reload();" style="background:#e0e7ff;color:#4338ca;margin-top:0.5rem;">
+                        <button class="btn btn-sm" onclick="location.reload();" style="background:#e0e7ff;color:#4338ca;margin-top:0.5rem;">
                             🔃 Refresh Halaman
                         </button>
                     </div>

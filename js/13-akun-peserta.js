@@ -42,6 +42,22 @@
             .replace(/'/g, '&#39;');
     }
 
+    /** RPC admin akun_peserta belum ada? (SQL hardening belum dijalankan) */
+    function isAkunRpcMissing(err) {
+        if (!err) return false;
+        const msg = String(err.message || '') + ' ' + String(err.code || '');
+        return err.code === 'PGRST202' ||
+               msg.indexOf('Could not find the function') !== -1 ||
+               (msg.indexOf('schema cache') !== -1 &&
+                (msg.indexOf('admin_save_akun_peserta') !== -1 || msg.indexOf('admin_delete_akun_peserta') !== -1));
+    }
+
+    /** Token sesi admin (untuk RPC server-side) */
+    function getAkunSessionToken() {
+        try { return (window.SecurityGuard && window.SecurityGuard.getAdminToken()) || null; }
+        catch (e) { return null; }
+    }
+
     /**
      * Resolusi client Supabase (pola yang sama dengan modul registrasi):
      * 1) supabaseClient global  2) simbakesDB.client  3) buat dari SUPABASE_CONFIG
@@ -123,11 +139,12 @@
             applyAkunFilters();
             console.log('[AKUN PESERTA] ✅ ' + akunData.length + ' akun dimuat dari Supabase');
         } catch (err) {
-            console.error('[AKUN PESERTA] Gagal memuat data:', err);
+            console.error('[AKUN PESERTA] Gagal memuat data.');
+            const isNet = !err || !(err.code || err.status);
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2.5rem;color:#ef4444;">' +
-                '❌ Gagal memuat data: ' + akunEscapeHtml(err.message || err) +
+                (isNet ? '❌ Koneksi database tidak tersedia. Periksa internet lalu coba lagi.' : '❌ Gagal memuat data. Silakan coba kembali.') +
                 '<br><button class="btn btn-sm" style="margin-top:1rem;background:#f1f5f9;color:#475569;" onclick="loadAkunPesertaData()">🔄 Coba Lagi</button></td></tr>';
-            if (typeof showToast === 'function') showToast('Gagal memuat data akun: ' + (err.message || ''), 'error');
+            if (typeof showToast === 'function') showToast('Gagal memuat data akun', 'error');
         } finally {
             akunLoading = false;
         }
@@ -458,6 +475,33 @@
         if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Menyimpan...'; }
 
         try {
+            // PRIORITAS: simpan via RPC server-side (password di-hash
+            // menjadi bcrypt di SERVER; kolom password tak pernah tersimpan
+            // plaintext; validasi role superadmin/admin di server).
+            const sToken = getAkunSessionToken();
+            if (sToken) {
+                const rec = { ...payload };
+                if (isEdit) rec.id = String(id);
+                const rpcRes = await client.rpc('admin_save_akun_peserta', {
+                    p_token: sToken,
+                    p_record: rec
+                });
+                if (!rpcRes.error) {
+                    closeAkunModal();
+                    if (typeof showToast === 'function') {
+                        showToast(isEdit ? '✅ Akun berhasil diperbarui' : '✅ Akun baru berhasil ditambahkan', 'success');
+                    }
+                    await loadAkunPesertaData();
+                    return;
+                }
+                if (!isAkunRpcMissing(rpcRes.error)) {
+                    throw rpcRes.error;
+                }
+                // RPC belum ada -> lanjut jalur legacy di bawah
+                console.error('[AKUN PESERTA] RPC keamanan belum tersedia. Jalankan sql/SECURITY-HARDENING.sql di Supabase.');
+            }
+            
+            // ===== JALUR LEGACY (sementara, sampai SQL dijalankan) =====
             let result;
             if (isEdit) {
                 if (payload.status === 'approved') {
@@ -488,14 +532,19 @@
             }
             await loadAkunPesertaData();
         } catch (err) {
-            console.error('[AKUN PESERTA] Gagal menyimpan:', err);
+            console.error('[AKUN PESERTA] Gagal menyimpan.');
             let msg = err.message || 'Terjadi kesalahan';
+            const friendlyKeys = ['sudah terdaftar', 'sudah digunakan', 'Password minimal',
+                                  'Akses ditolak', 'tidak berwenang', 'tidak ditemukan', 'wajib diisi'];
+            const isFriendly = friendlyKeys.some(function (k) { return msg.indexOf(k) !== -1; });
             if (err.code === '23505' || msg.indexOf('duplicate') !== -1) {
                 msg = 'Username, Email, atau NIK sudah terdaftar. Gunakan yang lain.';
             } else if (err.code === '23502') {
                 msg = 'Kolom wajib belum lengkap (mis. Jurusan Tujuan tidak boleh kosong).';
+            } else if (!isFriendly) {
+                msg = 'Terjadi kesalahan. Silakan coba kembali.';
             }
-            akunShowFormAlert('❌ ' + msg, 'error');
+            akunShowFormAlert('❌ ' + akunEscapeHtml(msg), 'error');
         } finally {
             if (btn) { btn.disabled = false; btn.innerHTML = '💾 Simpan'; }
         }
@@ -523,6 +572,29 @@
         if (newStatus === 'approved') payload.approved_at = new Date().toISOString();
 
         try {
+            // PRIORITAS: ubah status via RPC server-side (validasi role di server)
+            const sToken = getAkunSessionToken();
+            if (sToken) {
+                const rpcRes = await client.rpc('admin_save_akun_peserta', {
+                    p_token: sToken,
+                    p_record: { id: String(id), status: newStatus, status_note: payload.status_note }
+                });
+                if (!rpcRes.error) {
+                    if (typeof showToast === 'function') {
+                        showToast(newStatus === 'approved' ? '✅ Akun disetujui' : '🚫 Akun ditangguhkan', 'success');
+                    }
+                    await loadAkunPesertaData();
+                    return;
+                }
+                if (!isAkunRpcMissing(rpcRes.error)) {
+                    if (typeof showToast === 'function') {
+                        showToast('Gagal ubah status: akses ditolak server.', 'error');
+                    }
+                    return;
+                }
+            }
+            
+            // ===== JALUR LEGACY (sementara, sampai SQL dijalankan) =====
             const { data, error } = await client.from('akun_peserta').update(payload).eq('id', id).select();
             if (error) throw error;
             if (!Array.isArray(data) || data.length === 0) {
@@ -534,8 +606,8 @@
             }
             await loadAkunPesertaData();
         } catch (err) {
-            console.error('[AKUN PESERTA] Gagal ubah status:', err);
-            if (typeof showToast === 'function') showToast('Gagal ubah status: ' + (err.message || ''), 'error');
+            console.error('[AKUN PESERTA] Gagal ubah status.');
+            if (typeof showToast === 'function') showToast('Gagal ubah status. Silakan coba kembali.', 'error');
         }
     }
 
@@ -593,6 +665,29 @@
         }
 
         try {
+            // PRIORITAS: hapus via RPC server-side (validasi role di server)
+            const sToken = getAkunSessionToken();
+            if (sToken) {
+                const rpcRes = await client.rpc('admin_delete_akun_peserta', {
+                    p_token: sToken,
+                    p_id: String(id)
+                });
+                if (!rpcRes.error) {
+                    closeModal('akun-delete-modal');
+                    if (typeof showToast === 'function') showToast('🗑️ Akun berhasil dihapus', 'success');
+                    await loadAkunPesertaData();
+                    return;
+                }
+                if (!isAkunRpcMissing(rpcRes.error)) {
+                    closeModal('akun-delete-modal');
+                    if (typeof showToast === 'function') {
+                        showToast('Hapus ditolak server: sesi/role tidak berwenang.', 'error', 6000);
+                    }
+                    return;
+                }
+            }
+            
+            // ===== JALUR LEGACY (sementara, sampai SQL dijalankan) =====
             const { data, error } = await client.from('akun_peserta').delete().eq('id', id).select();
             if (error) throw error;
             const affected = Array.isArray(data) ? data.length : 0;

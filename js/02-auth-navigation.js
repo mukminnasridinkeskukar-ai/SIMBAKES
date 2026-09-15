@@ -182,19 +182,14 @@ function initAuthState() {
             
             // Validate session is not expired
             if (sessionData.timestamp && (Date.now() - sessionData.timestamp) < SESSION_DURATION) {
-                // Restore session
+                // Restore session (UI saja) — Sesi sebenarnya WAJIB lolos
+                // validasi token server-side via SecurityGuard saat boot.
                 let restoredUser = sessionData.user;
                 
-                // 🔧 FIX: Normalisasi role dari session lama
+                // Normalisasi role dari session lama
                 if (restoredUser) {
-                    const originalRole = restoredUser.role;
                     restoredUser.role = mapLegacyRole(restoredUser.role);
                     restoredUser.userRole = restoredUser.userRole || restoredUser.role;
-                    
-                    // Log jika role berubah (untuk debugging)
-                    if (originalRole !== restoredUser.role) {
-                        console.log('[SESSION] Role normalized:', originalRole, '→', restoredUser.role);
-                    }
                 }
                 
                 currentAdminUser = restoredUser;
@@ -202,7 +197,11 @@ function initAuthState() {
                 // Update UI for logged-in state (sidebar admin menu)
                 showLoggedInUI(currentAdminUser);
                 
-                console.log('✅ Session restored for:', currentAdminUser.name, '| Role:', currentAdminUser.role);
+                // Minta validasi server segera (tab baru/refresh/direct URL)
+                if (window.SecurityGuard) {
+                    window.SecurityGuard.validateNow();
+                }
+                
                 return true;
             } else {
                 // Session expired - tapi jangan tampilkan login page
@@ -257,9 +256,61 @@ async function performAuthentication(username, password, source) {
         return false;
     }
     
-    // 🔒 SECURITY: Jangan log password ke console
-    console.log('[SIMBAKES AUTH] Custom login attempt for:', username);
+    // ══════════════════════════════════════════════════════════
+    // PRIORITAS: AUTENTIKASI SERVER-SIDE via RPC app_login.
+    // Password diverifikasi di SERVER; hash TIDAK PERNAH dikirim
+    // ke browser; kunci akun otomatis & sesi token server-side.
+    // ══════════════════════════════════════════════════════════
+    try {
+        let clientRpc = supabaseClient;
+        if (!clientRpc && typeof initSupabaseClient === 'function') {
+            initSupabaseClient();
+            clientRpc = supabaseClient;
+        }
+        
+        if (clientRpc) {
+            const { data: rpcData, error: rpcError } = await clientRpc.rpc('app_login', {
+                p_username: username,
+                p_password: password
+            });
+            
+            if (!rpcError && rpcData && rpcData.token) {
+                return handleRpcAuthSuccess(rpcData, source);
+            }
+            
+            if (rpcError && !isAuthRpcMissing(rpcError)) {
+                // Pesan aman dari server (tanpa detail teknis)
+                let msg = 'Username atau password salah.';
+                const rm = String(rpcError.message || '');
+                if (rm.indexOf('terkunci') !== -1 || rm.indexOf('dinonaktifkan') !== -1 ||
+                    rm.indexOf('diblokir') !== -1 || rm.indexOf('MENUNGGU') !== -1) {
+                    msg = rm;
+                }
+                showError(errorEl, errorTextEl, msg);
+                shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
+                return false;
+            }
+            
+            // RPC belum tersedia -> fallback legacy (jalankan SQL hardening!)
+            if (rpcError) {
+                console.error('[SIMBAKES AUTH] RPC keamanan belum tersedia. Jalankan sql/SECURITY-HARDENING.sql di Supabase SQL Editor.');
+            }
+        } else {
+            showError(errorEl, errorTextEl, 'Koneksi database tidak tersedia. Silakan refresh halaman.');
+            return false;
+        }
+    } catch (eRpc) {
+        console.error('[SIMBAKES AUTH] Kesalahan saat proses login.');
+        showError(errorEl, errorTextEl, 'Terjadi kesalahan. Silakan coba kembali.');
+        shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
+        return false;
+    }
     
+    // ══════════════════════════════════════════════════════════
+    // JALUR LEGACY (kompatibilitas ketika SQL hardening belum
+    // dijalankan di Supabase). Jalur ini TIDAK AMAN dan hanya
+    // sementara — akan otomatis tergantikan oleh RPC di atas.
+    // ══════════════════════════════════════════════════════════
     try {
         // Pastikan Supabase client tersedia
         let client = supabaseClient;
@@ -274,8 +325,6 @@ async function performAuthentication(username, password, source) {
         }
         
         // ===== STEP 1: Cari user di tabel multiusers (by username OR email) =====
-        console.log('[SIMBAKES AUTH] Querying multiusers table...');
-        
         const { data: dbUsers, error: dbError } = await client
             .from('multiusers')
             .select('*')
@@ -283,22 +332,20 @@ async function performAuthentication(username, password, source) {
             .limit(1);
         
         if (dbError) {
-            console.error('[SIMBAKES AUTH] Database error:', dbError);
-            showError(errorEl, errorTextEl, 'Error database. Silakan coba lagi.');
+            console.error('[SIMBAKES AUTH] Database error.');
+            showError(errorEl, errorTextEl, 'Terjadi kesalahan. Silakan coba kembali.');
             shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
             return false;
         }
         
         // ===== STEP 2: Cek apakah user ditemukan =====
         if (!dbUsers || dbUsers.length === 0) {
-            console.warn('[SIMBAKES AUTH] User not found in multiusers');
-            showError(errorEl, errorTextEl, 'Username tidak ditemukan! Silakan daftar terlebih dahulu.');
+            showError(errorEl, errorTextEl, 'Username atau password salah.');
             shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
             return false;
         }
         
         const dbUser = dbUsers[0];
-        console.log('[SIMBAKES AUTH] User found:', dbUser.username, '| Role:', dbUser.role);
         
         // ===== STEP 3: Cek status akun =====
         
@@ -333,7 +380,7 @@ async function performAuthentication(username, password, source) {
         const isPasswordValid = await verifyPassword(password, dbUser.password_hash);
         
         if (!isPasswordValid) {
-            console.warn('[SIMBAKES AUTH] Invalid password for user:', dbUser.username);
+            console.warn('[SIMBAKES AUTH] Password tidak valid.');
             
             // Increment login attempts
             const newAttempts = (dbUser.login_attempts || 0) + 1;
@@ -375,11 +422,80 @@ async function performAuthentication(username, password, source) {
         return handleAuthSuccess(dbUser, source);
         
     } catch (error) {
-        console.error('[SIMBAKES AUTH] Authentication exception:', error);
-        showError(errorEl, errorTextEl, `Error: ${error.message}. Silakan coba lagi.`);
+        console.error('[SIMBAKES AUTH] Kesalahan saat proses login.');
+        showError(errorEl, errorTextEl, 'Terjadi kesalahan. Silakan coba kembali.');
         shakeElement(source === 'main' ? '.login-container' : '#admin-login-form');
         return false;
     }
+}
+
+/**
+ * Deteksi: apakah RPC autentikasi belum dibuat (SQL hardening belum
+ * dijalankan)? Dipakai untuk fallback kompatibilitas.
+ */
+function isAuthRpcMissing(err) {
+    if (!err) return false;
+    const msg = String(err.message || '') + ' ' + String(err.code || '');
+    return err.code === 'PGRST202' ||
+           msg.indexOf('Could not find the function') !== -1 ||
+           (msg.indexOf('schema cache') !== -1 && msg.indexOf('app_login') !== -1);
+}
+
+/**
+ * Handle sukses login via RPC server-side (app_login).
+ * Profil berasal dari server = sumber kebenaran tunggal.
+ */
+function handleRpcAuthSuccess(rpcData, source) {
+    const errorEl = document.getElementById('login-error-msg');
+    const profile = rpcData.profile || {};
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+    
+    // Normalisasi role dari SERVER
+    const role = mapLegacyRole(profile.role || 'viewer');
+    
+    // Bangun objek user minimal (TANPA password/nik/email sensitif)
+    const userData = {
+        id: profile.id,
+        username: profile.username,
+        name: profile.name || profile.username,
+        role: role,
+        avatar: getAvatarForRole(role),
+        institusi: profile.institusi || '',
+        source: 'server_session',
+        loginTime: new Date().toISOString(),
+        userRole: role
+    };
+    
+    // Token sesi server-side disimpan & header request disuntikkan
+    if (window.SecurityGuard) {
+        window.SecurityGuard.setAdminSession(rpcData.token, profile);
+    }
+    
+    currentAdminUser = userData;
+    
+    // Sesi minimal untuk pemulihan UI (divalidasi server saat halaman dibuka)
+    saveSession({ ...userData, timestamp: Date.now() });
+    
+    // Update UI
+    showLoggedInUI(userData);
+    
+    // Sembunyikan form login & bersihkan
+    if (source === 'main') {
+        document.getElementById('login-page')?.classList.add('hidden');
+        document.getElementById('login-username').value = '';
+        document.getElementById('login-password').value = '';
+        hideError(errorEl);
+    } else {
+        document.getElementById('sidebar-username').value = '';
+        document.getElementById('sidebar-password').value = '';
+    }
+    
+    startSessionTimer();
+    
+    showToast(`✅ Selamat datang, ${esc(userData.name)}! (${esc(role.toUpperCase())})`, 'success', 5000);
+    return true;
 }
 
 /**
@@ -459,17 +575,15 @@ async function handleAuthSuccess(profile, source) {
     const role = mapLegacyRole(rawRole);
     console.log('[AUTH] Normalized role:', role, '(from:', rawRole, ')');
     
-    // Build user object untuk session (TANPA PASSWORD!)
+    // Build user object untuk session (TANPA PASSWORD/NIK/EMAIL!)
     const userData = {
         id: profile.id,
         auth_user_id: profile.auth_user_id,
         username: profile.username,
-        email: profile.email,
         name: profile.nama_lengkap || profile.username,
         role: role,  // Gunakan role yang sudah dinormalisasi
         avatar: getAvatarForRole(role),
         institusi: profile.institusi || '',
-        nik: profile.nik,
         source: 'multiusers_custom',
         loginTime: new Date().toISOString(),
         // Tambahkan userRole untuk kompatibilitas dengan sistem baru
@@ -516,8 +630,7 @@ async function handleAuthSuccess(profile, source) {
     startSessionTimer();
     
     const roleDisplay = role.toUpperCase();
-    showToast(`✅ Selamat datang, ${userData.name}! (${roleDisplay})`, 'success', 5000);
-    console.log(`[SIMBAKES AUTH] ✅ Logged in: ${userData.name} [${role}] via Multiusers Table`);
+    showToast('✅ Selamat datang! (' + roleDisplay + ')', 'success', 5000);
     
     return true;
 }
@@ -971,16 +1084,26 @@ function enableFormInputs() {
 }
 
 /**
- * Save session to localStorage
+ * Save session to localStorage — versi MINIMAL & aman.
+ * Hanya data UI (id/username/name/role/avatar); TANPA email, nik,
+ * token, atau user-agent. Sesi sebenarnya = token server-side yang
+ * divalidasi ulang ke server setiap halaman dibuka (SecurityGuard).
  */
 function saveSession(user) {
-    const sessionData = {
-        user: user,
-        timestamp: Date.now(),
-        userAgent: navigator.userAgent
+    const minimal = {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        role: user.role,
+        avatar: user.avatar,
+        userRole: user.userRole || user.role,
+        loginTime: user.loginTime,
+        timestamp: Date.now()
     };
     
-    localStorage.setItem('simbakes_admin_session', JSON.stringify(sessionData));
+    try {
+        localStorage.setItem('simbakes_admin_session', JSON.stringify({ user: minimal, timestamp: Date.now() }));
+    } catch (e) { /* kuota penuh dsb. */ }
 }
 
 /**
@@ -997,41 +1120,30 @@ function clearAuthState() {
 }
 
 /**
- * Logout function - enhanced with cleanup
+ * Logout function — aman & lengkap:
+ * 1. Revoke sesi di SERVER (bukan sekadar hapus localStorage)
+ * 2. Bersihkan state/token/data sensitif
+ * 3. Reset UI & hentikan timer
+ * 4. Redirect ke https://mukminnasri.com/ (history di-replace,
+ *    tombol Back tidak bisa kembali ke halaman protected)
  */
 function adminLogout() {
-    const userName = currentAdminUser?.name || 'Admin';
+    if (window.SecurityGuard) {
+        window.SecurityGuard.logout();   // revoke server + clear + redirect
+        return;
+    }
     
-    // Clear everything
+    // Fallback bila SecurityGuard tidak tersedia
     clearAuthState();
-    
-    // Reset UI sidebar
-    document.getElementById('admin-login-form').style.display = 'block';
-    document.getElementById('admin-menu').style.display = 'none';
-    document.getElementById('admin-info-bar').classList.remove('visible');
-    document.getElementById('admin-status-badge').textContent = 'Login';
-    document.getElementById('admin-status-badge').className = 'badge-login';
-    
-    // JANGAN tampilkan login page overlay - biarkan user di dashboard
-    document.getElementById('login-page')?.classList.add('hidden');
-    
-    // RESET TOPBAR ke kondisi awal (tombol Login muncul lagi)
-    if (typeof resetTopbarAfterLogout === 'function') {
-        resetTopbarAfterLogout();
-    }
-    
-    // Navigate to dashboard (bisa diakses tanpa login)
-    showPage('dashboard');
-    
-    // Tampilkan semua menu yang mungkin disembunyikan (Roadmap untuk operator)
-    const roadmapNav = document.getElementById('nav-data-roadmap');
-    if (roadmapNav) {
-        roadmapNav.style.display = '';
-        roadmapNav.removeAttribute('data-hidden-for');
-    }
-    
-    showToast(`👋 Sampai jumpa, ${userName}!`, 'info');
-    console.log(`👋 Logged out: ${userName}`);
+    try {
+        document.getElementById('admin-login-form').style.display = 'block';
+        document.getElementById('admin-menu').style.display = 'none';
+        document.getElementById('admin-info-bar').classList.remove('visible');
+        document.getElementById('admin-status-badge').textContent = 'Login';
+        document.getElementById('admin-status-badge').className = 'badge-login';
+        if (typeof resetTopbarAfterLogout === 'function') resetTopbarAfterLogout();
+    } catch (e) { /* abaikan */ }
+    window.location.replace('https://mukminnasri.com/');
 }
 
 /**
@@ -1174,17 +1286,15 @@ const isOperator = () => getCurrentUserRole() === "operator";
 const isViewer = () => getCurrentUserRole() === "viewer";
 
 /**
- * Start auto-logout timer
+ * Start session timer — kini ditangani SecurityGuard:
+ * - Idle timeout 15 menit (aktivitas apapun mereset hitungan)
+ * - Validasi ulang ke server tiap 5 menit (heartbeat)
+ * - Kedaluwarsa absolut di sisi server
  */
 function startSessionTimer() {
-    if (adminSessionTimer) clearTimeout(adminSessionTimer);
-    
-    adminSessionTimer = setTimeout(() => {
-        showToast('⏰ Sesi Anda telah berakhir. Silakan login kembali.', 'error', 5000);
-        adminLogout();
-    }, SESSION_DURATION);
-    
-    // Update session info display
+    if (window.SecurityGuard) {
+        window.SecurityGuard.ensureTimers();
+    }
     updateSessionInfo();
 }
 

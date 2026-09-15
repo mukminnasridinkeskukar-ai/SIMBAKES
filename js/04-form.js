@@ -1810,6 +1810,23 @@ function displayStatusResult(found) {
         catatan_admin: getField(found, 'catatan_admin', 'catatanAdmin', '')
     };
     
+    // ═══════════════════════════════════════════════════
+    // KEAMANAN (anti stored-XSS): escape SEMUA nilai teks dari
+    // database sebelum dirender via innerHTML. Kolom dokumen
+    // (foto/dokumen_pdf/rekomendasi) tidak di-escape di sini
+    // karena dirender oleh renderDriveLinks() yang sudah
+    // memvalidasi protokol https dan meng-escape atribut.
+    // ═══════════════════════════════════════════════════
+    const escHtml = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+    const rawStatus = String(data.status == null ? '' : data.status);
+    ['nik', 'nama_lengkap', 'tempat_lahir', 'tanggal_lahir', 'alamat_ktp',
+     'alamat_domisili', 'lama_domisili', 'pekerjaan', 'posisi', 'unit_kerja',
+     'penjelasan', 'jurusan_tujuan', 'jenjang_pendidikan', 'unit_tujuan',
+     'rencana_tahun', 'no_hp', 'no_wa', 'email', 'status', 'catatan_admin'
+    ].forEach((k) => { data[k] = escHtml(data[k]); });
+    
     // Determine status badge based on status value
     const statusLower = String(data.status).toLowerCase();
     let statusBadge = '';
@@ -1977,13 +1994,10 @@ function displayStatusResult(found) {
     `;
     
     // Render tombol aksi status (Bukti Pendaftaran, Lihat Dokumen, Perbaikan, dst.)
-    // FIX: setActionButtons sebelumnya tidak pernah dipanggil -> tombol aksi
-    // tidak pernah muncul di hasil Cek Status.
+    // Gunakan status MENTAH (belum di-escape) agar deteksi kata kunci akurat.
     if (typeof setActionButtons === 'function') {
-        setActionButtons(data.status);
+        setActionButtons(rawStatus);
     }
-    
-    console.log('[SIMBAKES] ✅ Displayed submission data (23 fields):', data);
 }
 
 /**
@@ -2001,7 +2015,7 @@ function displayStatusNotFound(searchValue, searchType) {
                 <line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <p style="color:#64748b;font-weight:600;font-size:1rem;margin-bottom:0.5rem;">Data Tidak Ditemukan</p>
-            <p style="font-size:0.875rem;color:#94a3b8;margin-bottom:1rem;">${searchType} "<strong>${searchValue}</strong>" tidak ditemukan dalam database</p>
+            <p style="font-size:0.875rem;color:#94a3b8;margin-bottom:1rem;">${escapeHtmlValue(searchType)} "<strong>${escapeHtmlValue(searchValue)}</strong>" tidak ditemukan dalam database</p>
             <div style="background:#f8fafc;padding:1rem;border-radius:8px;text-align:left;font-size:0.8rem;max-width:300px;margin:0 auto;">
                 <p style="color:#64748b;margin:0 0 0.5rem 0;font-weight:600;">Kemungkinan penyebab:</p>
                 <ul style="color:#64748b;margin:0;padding-left:1.25rem;">
@@ -2035,7 +2049,9 @@ function renderDriveLinks(value, label) {
     if (!value || value === '-' || String(value).trim().length < 10) {
         return '<span style="color:#94a3b8;">—</span>';
     }
-    const urls = String(value).split(/\s+/).filter(function (v) { return /^https?:\/\//.test(v); });
+    // KEAMANAN: hanya protokol http/https yang diizinkan (blokir
+    // javascript:, data:, dsb.), lalu escape atributnya.
+    const urls = String(value).split(/\s+/).filter(function (v) { return /^https?:\/\//i.test(v); });
     if (urls.length === 0) {
         return escapeHtmlValue(String(value));
     }

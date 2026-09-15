@@ -28,6 +28,7 @@
     'use strict';
 
     var SESSION_KEY = 'simbakes_admin_session';
+    var TOKEN_KEY   = 'simbakes_session_token';   // token sesi server-side
     var SESSION_DURATION = 8 * 60 * 60 * 1000; // 8 jam (sama dengan modul 02)
     var OLD_ADMIN_PAGES = ['data-pengusul', 'data-roadmap', 'data-penetapan'];
 
@@ -41,6 +42,10 @@
         } catch (e) {
             return null;
         }
+    }
+
+    function hasServerToken() {
+        try { return !!localStorage.getItem(TOKEN_KEY); } catch (e) { return false; }
     }
 
     function writeSession(s) {
@@ -57,6 +62,11 @@
     //    -> keduanya bisa membaca sesi yang sama tanpa saling hapus.
     // --------------------------------------------------------
     function normalizeAdminSession() {
+        // KEAMANAN: tanpa token sesi server-side, sesi localStorage
+        // tidak dianggap sah (mencegah pemalsuan role via DevTools).
+        // Validasi token ke server dilakukan oleh SecurityGuard.
+        if (!hasServerToken()) return null;
+
         var s = readRawSession();
         if (!s) return null;
 
@@ -249,7 +259,10 @@
             wrapShowPage();
             injectBadgeCss();
             fixDashboardZeros();
-            console.log('[PANEL FIX] 🛡️ Modul Panel Admin Fix aktif (sesi tahan refresh)');
+            // Validasi ulang sesi ke server (tab baru/refresh/direct URL)
+            if (window.SecurityGuard && hasServerToken()) {
+                window.SecurityGuard.validateNow();
+            }
         }, 0);
     }
     if (document.readyState === 'loading') {

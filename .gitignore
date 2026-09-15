@@ -1,0 +1,42 @@
+# ============================================================
+# SIMBAKES — .gitignore (jangan pernah commit file rahasia)
+# ============================================================
+
+# Environment & secret
+.env
+.env.*
+*.env
+!.env.example
+service-role*
+service_role*
+SECRET*
+*secret*.txt
+
+# Kredensial database / koneksi
+*credentials*.json
+*service_account*.json
+supabase/.temp
+supabase/.branches
+
+# Dependency & build
+node_modules/
+dist/
+build/
+.cache/
+
+# Log & sistem
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backup lokal berisi data
+*.sql.bak
+dump_*.sql
+backup_*.zip

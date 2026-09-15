@@ -44,22 +44,33 @@ const SIMBAKES_USER_STATE = {
 function initSimbakesAuth() {
     console.log('[SIMBAKES AUTH] Initializing authentication system...');
     
-    // Check for existing sessions (priority: admin > peserta)
-    const adminSession = localStorage.getItem('simbakes_admin_session');
-    const pesertaSession = localStorage.getItem('simbakes_peserta_session');
+    // KEAMANAN: sesi localStorage TIDAK dipercaya sebagai bukti login.
+    // Pemulihan UI hanya boleh bila ada TOKEN sesi server-side yang
+    // kemudian divalidasi ulang ke server oleh SecurityGuard.
+    const adminToken   = localStorage.getItem('simbakes_session_token');
+    const pesertaToken = localStorage.getItem('simbakes_peserta_token');
+    const adminSession   = adminToken   ? localStorage.getItem('simbakes_admin_session')   : null;
+    const pesertaSession = pesertaToken ? localStorage.getItem('simbakes_peserta_session') : null;
+    
+    if (!adminToken && localStorage.getItem('simbakes_admin_session')) {
+        // Sesi tanpa token = buatan versi lama / manipulasi -> buang
+        localStorage.removeItem('simbakes_admin_session');
+    }
+    if (!pesertaToken && localStorage.getItem('simbakes_peserta_session')) {
+        localStorage.removeItem('simbakes_peserta_session');
+    }
     
     if (adminSession) {
         try {
             const session = JSON.parse(adminSession);
             if (session.isLoggedIn && new Date(session.expiresAt) > new Date()) {
                 setAdminSession(session);
-                console.log('[SIMBAKES AUTH] Admin session restored:', session.nama, 'as', session.userRole);
             } else {
                 // Session expired
                 clearAdminSession();
             }
         } catch (e) {
-            console.error('[SIMBAKES AUTH] Error parsing admin session:', e);
+            console.error('[SIMBAKES AUTH] Sesi tidak dapat dibaca.');
             clearAdminSession();
         }
     } else if (pesertaSession) {
@@ -67,14 +78,18 @@ function initSimbakesAuth() {
             const session = JSON.parse(pesertaSession);
             if (session.isLoggedIn && new Date(session.expiresAt) > new Date()) {
                 setPesertaSession(session);
-                console.log('[SIMBAKES AUTH] Peserta session restored:', session.nama);
             } else {
                 clearPesertaSession();
             }
         } catch (e) {
-            console.error('[SIMBAKES AUTH] Error parsing peserta session:', e);
+            console.error('[SIMBAKES AUTH] Sesi tidak dapat dibaca.');
             clearPesertaSession();
         }
+    }
+    
+    // Minta validasi server segera (tab baru / refresh / direct URL)
+    if (window.SecurityGuard && (adminToken || pesertaToken)) {
+        window.SecurityGuard.validateNow();
     }
     
     // Listen for messages from login-peserta.html (if opened in popup)
@@ -84,7 +99,7 @@ function initSimbakesAuth() {
     applyRoleBasedUI();
     
     SIMBAKES_USER_STATE.initialized = true;
-    console.log('[SIMBAKES AUTH] Initialization complete. Role:', SIMBAKES_USER_STATE.userRole || 'none');
+    console.log('[SIMBAKES AUTH] Initialization complete.');
 }
 
 /**
@@ -92,10 +107,18 @@ function initSimbakesAuth() {
  */
 function handleCrossOriginMessage(event) {
     if (event.data && event.data.type === 'PESERTA_LOGIN_SUCCESS') {
-        console.log('[SIMBAKES AUTH] Received login success message from popup/tab');
+        console.log('[SIMBAKES AUTH] Menerima pesan login dari tab lain.');
         
         if (event.data.data && event.data.data.success) {
             const sessionData = event.data.data;
+            
+            // KEAMANAN: abaikan pesan lintas-tab tanpa token sesi valid
+            const token = localStorage.getItem('simbakes_session_token') ||
+                          localStorage.getItem('simbakes_peserta_token');
+            if (!token) {
+                console.warn('[SIMBAKES AUTH] Pesan login tanpa token diabaikan.');
+                return;
+            }
             
             // Determine session type based on role
             if (sessionData.userRole === 'peserta' || !sessionData.userRole) {
@@ -103,14 +126,14 @@ function handleCrossOriginMessage(event) {
                 const fullSession = localStorage.getItem('simbakes_peserta_session');
                 if (fullSession) {
                     setPesertaSession(JSON.parse(fullSession));
-                    showToast?.('success', '✅ Login Berhasil', `Selamat datang, ${sessionData.nama}!`);
+                    showToast?.('success', '✅ Login Berhasil', 'Selamat datang kembali!');
                 }
             } else {
                 // Admin session
                 const fullSession = localStorage.getItem('simbakes_admin_session');
                 if (fullSession) {
                     setAdminSession(JSON.parse(fullSession));
-                    showToast?.('success', '✅ Login Admin Berhasil', `Selamat datang, ${sessionData.nama} (${sessionData.userRole})`);
+                    showToast?.('success', '✅ Login Admin Berhasil', 'Selamat datang kembali!');
                 }
             }
             
@@ -882,7 +905,7 @@ async function handleUserRegisterFromModal(event) {
     showRegisterAlert('Memproses pendaftaran...', 'info');
     
     try {
-        console.log('[SIMBAKES] Registering user:', formData.username);
+        console.log('[SIMBAKES] Registering user...');
         
         // Use dynamic Supabase client resolution - PRIORITAS: supabaseClient global
         let client = null;
@@ -975,7 +998,7 @@ async function handleUserRegisterFromModal(event) {
             setTimeout(() => {
                 openPesertaLogin();  // Buka login-peserta.html
                 
-                showToast(`🎉 Akun peserta berhasil dibuat! NIK: ${formData.nik}. Silakan login.`, 'success', 5000);
+                showToast(`🎉 Akun peserta berhasil dibuat! Silakan login.`, 'success', 5000);
             }, 500);
         }, 2000);
         

@@ -190,7 +190,11 @@ function setStatusBadge(status) {
     }
     
     statusEl.className = `status-large-badge ${className}`;
-    statusEl.innerHTML = `${icon} ${text}`;
+    // KEAMANAN: escape teks status (anti-XSS), icon bersifat statis
+    const escText = String(text == null ? '' : text).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+    statusEl.innerHTML = `${icon} ${escText}`;
 }
 
 /**
@@ -211,12 +215,21 @@ function setActionButtons(status) {
     `;
     
     // Common button: View Document Link
+    // KEAMANAN: link TIDAK diinjeksi ke onclick (rentan XSS).
+    // Simpan di data-attribute (ter-escape), validasi protokol,
+    // lalu pasang listener + noopener.
     if (currentSearchResult && currentSearchResult.linkDokumen && currentSearchResult.linkDokumen !== '-') {
-        buttonsHTML += `
-            <button class="btn-secondary-action" onclick="window.open('${currentSearchResult.linkDokumen}', '_blank')">
-                📄 Lihat Dokumen
-            </button>
-        `;
+        const rawLink = String(currentSearchResult.linkDokumen);
+        if (/^https?:\/\//i.test(rawLink.trim())) {
+            const safeLink = rawLink.replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+            buttonsHTML += `
+                <button class="btn-secondary-action" data-doc-link="${safeLink}">
+                    📄 Lihat Dokumen
+                </button>
+            `;
+        }
     }
     
     // Conditional button: Perbaikan (only for "Perbaikan" status)
@@ -259,6 +272,20 @@ function setActionButtons(status) {
     }
     
     actionsContainer.innerHTML = buttonsHTML;
+    
+    // Pasang listener aman untuk tombol Lihat Dokumen (anti-XSS)
+    const docBtn = actionsContainer.querySelector('[data-doc-link]');
+    if (docBtn) {
+        const target = docBtn.getAttribute('data-doc-link') || '';
+        if (/^https?:\/\//i.test(target)) {
+            docBtn.addEventListener('click', function () {
+                window.open(target, '_blank', 'noopener');
+            });
+        } else {
+            docBtn.remove();
+        }
+    }
+    
     actionsContainer.style.display = buttonsHTML.trim() ? 'flex' : 'none';
 }
 

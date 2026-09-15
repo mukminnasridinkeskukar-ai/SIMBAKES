@@ -1,0 +1,22 @@
+# ============================================================
+# SIMBAKES — Security Headers
+# ============================================================
+# File ini BERLAKU jika situs di-deploy lewat Cloudflare Pages,
+# Netlify, atau hosting statis lain yang mendukung file "_headers".
+#
+# GitHub Pages TIDAK mendukung header HTTP kustom. Solusi:
+#   (a) letakkan domain di belakang Cloudflare (free) — aktifkan
+#       "Always Use HTTPS" + HSTS di dashboard Cloudflare, ATAU
+#   (b) biarkan CSP meta di index.html/daftar-peserta.html bekerja
+#       (CSP & Referrer ter-cover; HSTS/XCTO/frame-ancestors tidak).
+#
+# ===================================================================
+
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://drive.google.com https://docs.google.com https://*.googleusercontent.com; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests

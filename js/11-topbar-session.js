@@ -178,8 +178,66 @@ async function handlePesertaLoginInModal(event) {
     try {
         if (!supabaseClient) throw new Error('Koneksi database tidak tersedia.');
         
-        console.log('[PESERTA LOGIN] Authenticating:', username);
+        // ══════════════════════════════════════════════════════
+        // PRIORITAS: LOGIN PESERTA SERVER-SIDE via RPC app_peserta_login
+        // Password diverifikasi di SERVER (bcrypt); kolom password
+        // TIDAK PERNAH dibaca browser; kunci akun otomatis di server.
+        // ══════════════════════════════════════════════════════
+        const rpcRes = await supabaseClient.rpc('app_peserta_login', {
+            p_username: username,
+            p_password: password
+        });
         
+        if (rpcRes.error) {
+            if (!isPesertaRpcMissing(rpcRes.error)) {
+                // Pesan aman dari server (verifikasi/status/lockout)
+                throw new Error(sanitizePesertaLoginError(rpcRes.error.message));
+            }
+            // RPC belum ada (SQL hardening belum dijalankan) ->
+            // lanjut ke jalur legacy di bawah agar aplikasi tetap jalan.
+            console.error('[PESERTA LOGIN] RPC keamanan belum tersedia. Jalankan sql/SECURITY-HARDENING.sql di Supabase SQL Editor.');
+        } else if (rpcRes.data && rpcRes.data.token) {
+            const prof = rpcRes.data.profile || {};
+            
+            // Token sesi server-side (idle 15 menit, revoke saat logout)
+            if (window.SecurityGuard) {
+                window.SecurityGuard.setPesertaSession(rpcRes.data.token, prof);
+            }
+            
+            // Sesi minimal (tanpa password); NIK diperlukan untuk prefill
+            // cek status milik peserta itu sendiri
+            pesertaSessionData = {
+                id: prof.id,
+                nama: prof.nama || 'Peserta',
+                nik: prof.nik || '',
+                email: prof.email || '',
+                username: prof.username || username
+            };
+            try {
+                localStorage.setItem('simbakes_peserta_session', JSON.stringify({
+                    isLoggedIn: true,
+                    ...pesertaSessionData,
+                    loginTime: new Date().toISOString()
+                }));
+            } catch (e) { /* kuota */ }
+            
+            updateUIForLoggedInPeserta(pesertaSessionData);
+            closePesertaLoginModal();
+            showPesertaDashboard(pesertaSessionData);
+            
+            // [Task9h] Lanjutkan tujuan layanan bila ada
+            const pendingLayanan = window.__pesertaPendingLayanan;
+            window.__pesertaPendingLayanan = null;
+            if (pendingLayanan) {
+                setTimeout(function () {
+                    closePesertaDashboard();
+                    openLayananTarget(pendingLayanan);
+                }, 350);
+            }
+            return;
+        }
+        
+        // ===== JALUR LEGACY (sementara, sampai SQL dijalankan) =====
         // Query ke tabel akun_peserta
         const { data: users, error: queryError } = await supabaseClient
             .from('akun_peserta')
@@ -187,7 +245,7 @@ async function handlePesertaLoginInModal(event) {
             .or(`username.eq.${username},email.eq.${username}`)
             .limit(1);
         
-        if (queryError) throw new Error(queryError.message);
+        if (queryError) throw new Error('Terjadi kesalahan. Silakan coba kembali.');
         
         if (!users || users.length === 0) {
             throw new Error('Username atau password tidak sesuai.');
@@ -195,7 +253,7 @@ async function handlePesertaLoginInModal(event) {
         
         const user = users[0];
         
-        // Verifikasi password
+        // Verifikasi password (legacy — akan dipensiunkan oleh RPC)
         if (user.password !== password) {
             throw new Error('Username atau password tidak sesuai.');
         }
@@ -225,7 +283,7 @@ async function handlePesertaLoginInModal(event) {
             return;
         }
         
-        console.log('[PESERTA LOGIN] ✅ Login successful! NIK:', user.nik);
+        console.log('[PESERTA LOGIN] ✅ Login berhasil');
         
         // Update last login
         await supabaseClient
@@ -233,7 +291,7 @@ async function handlePesertaLoginInModal(event) {
             .update({ last_login_at: new Date().toISOString() })
             .eq('id', user.id);
         
-        // Store session
+        // Store session (tanpa password)
         pesertaSessionData = {
             id: user.id,
             nama: user.nama || user.nama_lengkap || 'Peserta',
@@ -262,14 +320,51 @@ async function handlePesertaLoginInModal(event) {
         }
         
     } catch (error) {
-        console.error('[PESERTA LOGIN] Error:', error);
+        console.error('[PESERTA LOGIN] Login gagal.');
         alertEl.className = 'peserta-login-alert error show';
-        alertEl.innerHTML = `❌ ${error.message || 'Terjadi kesalahan.'}`;
+        alertEl.innerHTML = `❌ ${escapeHtmlForPeserta(error.message || 'Terjadi kesalahan. Silakan coba kembali.')}`;
         btn.disabled = false;
         btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg><span>MASUK</span>';
         document.getElementById('peserta-login-password').value = '';
         document.getElementById('peserta-login-password').focus();
     }
+}
+
+/**
+ * Helper: escape teks untuk alert login (anti-XSS)
+ */
+function escapeHtmlForPeserta(str) {
+    return String(str).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+
+/**
+ * Helper: RPC peserta login belum ada? (SQL hardening belum dijalankan)
+ */
+function isPesertaRpcMissing(err) {
+    if (!err) return false;
+    const msg = String(err.message || '') + ' ' + String(err.code || '');
+    return err.code === 'PGRST202' ||
+           msg.indexOf('Could not find the function') !== -1 ||
+           (msg.indexOf('schema cache') !== -1 && msg.indexOf('app_peserta_login') !== -1);
+}
+
+/**
+ * Helper: sanitasi pesan error login peserta — pesan server yang
+ * sudah ramah diteruskan; sisanya jadi pesan umum (tanpa detail teknis).
+ */
+function sanitizePesertaLoginError(rawMsg) {
+    const m = String(rawMsg || '');
+    if (m.indexOf('Username atau password') !== -1 ||
+        m.indexOf('MENUNGGU PERSETUJUAN') !== -1 ||
+        m.indexOf('DITOLAK') !== -1 ||
+        m.indexOf('DITANGGUHKAN') !== -1 ||
+        m.indexOf('belum aktif') !== -1 ||
+        m.indexOf('terkunci') !== -1) {
+        return m;
+    }
+    return 'Terjadi kesalahan. Silakan coba kembali.';
 }
 
 // showPesertaDashboard is defined below (unified version)
@@ -290,32 +385,17 @@ function closePesertaDashboard() {
  */
 function pesertaLogout() {
     if (confirm('Apakah Anda yakin ingin logout?')) {
+        // Logout aman: revoke sesi di server + bersih-bersih + redirect
+        if (window.SecurityGuard) {
+            window.SecurityGuard.logout();
+            return;
+        }
+        
+        // Fallback bila SecurityGuard tidak tersedia
         pesertaSessionData = null;
         localStorage.removeItem('simbakes_peserta_session');
         window.__pesertaPendingLayanan = null;
-        
-        // Close all peserta overlays
-        closePesertaDashboard();
-        closePesertaAjukan();
-        closePesertaCekStatus();
-        closePesertaCekPenetapan();
-        
-        // Reset topbar button
-        const loginBtn = document.getElementById('topbar-peserta-login-btn');
-        if (loginBtn) {
-            loginBtn.innerHTML = `
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                </svg>
-                Login Peserta
-            `;
-            loginBtn.onclick = openPesertaLogin;
-            loginBtn.style.background = '';
-            loginBtn.title = '';
-        }
-        
-        showToast?.('info', '👋 Logout Berhasil', 'Anda telah keluar dari akun peserta');
+        window.location.replace('https://mukminnasri.com/');
     }
 }
 
@@ -701,13 +781,17 @@ function updateUIForLoggedInPeserta(loginData) {
     // Update tombol login peserta menjadi info akun
     const loginBtn = document.getElementById('topbar-peserta-login-btn');
     if (loginBtn) {
-        const nama = loginData?.nama || loginData?.nama_lengkap || 'Peserta';
+        // Escape nama (anti-XSS) sebelum masuk template HTML
+        const rawNama = String(loginData?.nama || loginData?.nama_lengkap || 'Peserta');
+        const safeNama = rawNama.replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
         loginBtn.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                 <circle cx="12" cy="7" r="4"/>
             </svg>
-            ${nama.substring(0, 15)}${nama.length > 15 ? '...' : ''}
+            ${safeNama.substring(0, 15)}${rawNama.length > 15 ? '...' : ''}
         `;
         loginBtn.onclick = showPesertaDashboard;
         loginBtn.style.background = 'linear-gradient(135deg, #059669, #047857)';
