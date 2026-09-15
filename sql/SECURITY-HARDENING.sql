@@ -62,9 +62,11 @@ alter table public.app_sessions enable row level security;
 
 -- Kolom tambahan aman (additif, tidak mengubah struktur lama)
 alter table public.multiusers   add column if not exists locked_until timestamptz;
+alter table public.multiusers   add column if not exists login_attempts int not null default 0;
 alter table public.akun_peserta add column if not exists login_attempts int not null default 0;
 alter table public.akun_peserta add column if not exists locked_until  timestamptz;
 alter table public.akun_peserta add column if not exists password_hash text;
+alter table public.akun_peserta add column if not exists last_login_at  timestamptz;
 
 -- Helper: ambil token sesi dari header request PostgREST
 create or replace function public.app_request_token()
@@ -146,10 +148,12 @@ set search_path = public
 as $$
 declare
     v_user     record;
+    v_rec      jsonb;
+    v_hash     text;
+    v_role     text;
     v_ok       boolean := false;
     v_token    text;
     v_expires  timestamptz;
-    v_name     text;
 begin
     if p_username is null or p_password is null
        or length(trim(p_username)) = 0 or length(p_password) = 0 then
@@ -159,79 +163,98 @@ begin
     select * into v_user
     from public.multiusers
     where lower(username) = lower(trim(p_username))
-       or lower(email)    = lower(trim(p_username))
     limit 1;
 
-    if found then
-        -- Akun nonaktif
-        if v_user.is_active = false then
+    if v_user.id is null then
+        -- Coba lagi via email HANYA bila kolom email ada
+        if exists (select 1 from information_schema.columns
+                   where table_schema='public' and table_name='multiusers' and column_name='email') then
+            select * into v_user
+            from public.multiusers
+            where lower(email) = lower(trim(p_username))
+            limit 1;
+        end if;
+    end if;
+
+    if v_user.id is not null then
+        v_rec := to_jsonb(v_user);
+
+        -- Akun nonaktif (kolom opsional: absen = dianggap aktif)
+        if coalesce(v_rec->>'is_active', 'true') = 'false' then
             raise exception 'Akun Anda telah dinonaktifkan. Hubungi administrator.';
         end if;
 
         -- Terkunci sementara?
-        if v_user.locked_until is not null and v_user.locked_until > now() then
+        if v_rec->>'locked_until' is not null
+           and (v_rec->>'locked_until')::timestamptz > now() then
             raise exception 'Akun terkunci sementara karena terlalu banyak percobaan gagal. Coba lagi dalam beberapa menit.';
         end if;
-        if coalesce(v_user.login_attempts, 0) >= 5 then
-            update public.multiusers set locked_until = now() + interval '15 minutes' where id = v_user.id;
+        if coalesce((v_rec->>'login_attempts')::int, 0) >= 5 then
+            update public.multiusers
+               set locked_until = now() + interval '15 minutes'
+             where id::text = v_rec->>'id';
             raise exception 'Akun terkunci sementara karena terlalu banyak percobaan gagal. Coba lagi dalam beberapa menit.';
         end if;
 
-        -- Suspended?
-        if v_user.status = 'Suspended' then
-            if v_user.suspended_until is null or v_user.suspended_until > now() then
+        -- Suspended (kolom opsional)
+        if v_rec->>'status' = 'Suspended' then
+            if v_rec->>'suspended_until' is null
+               or (v_rec->>'suspended_until')::timestamptz > now() then
                 raise exception 'Akun Anda sedang diblokir. Hubungi administrator.';
             end if;
         end if;
 
         -- ---- Verifikasi password (multi-skema, upgrade ke bcrypt) ----
-        if v_user.password_hash is not null then
-            if v_user.password_hash like '$2%' then
-                v_ok := crypt(p_password, v_user.password_hash) = v_user.password_hash;
-            elsif length(v_user.password_hash) = 64 and v_user.password_hash ~ '^[a-f0-9]{64}$' then
-                v_ok := encode(digest(p_password, 'sha256'), 'hex') = lower(v_user.password_hash);
+        v_hash := v_rec->>'password_hash';
+        if v_hash is not null then
+            if v_hash like '$2%' then
+                v_ok := crypt(p_password, v_hash) = v_hash;
+            elsif length(v_hash) = 64 and v_hash ~ '^[a-f0-9]{64}$' then
+                v_ok := encode(digest(p_password, 'sha256'), 'hex') = lower(v_hash);
             else
-                v_ok := p_password = v_user.password_hash;   -- legacy plaintext
+                v_ok := p_password = v_hash;   -- legacy plaintext
             end if;
         end if;
 
         if v_ok then
             -- Upgrade ke bcrypt bila masih skema lama
-            if v_user.password_hash is null or v_user.password_hash not like '$2%' then
+            if v_hash is null or v_hash not like '$2%' then
                 update public.multiusers
                    set password_hash = crypt(p_password, gen_salt('bf', 10))
-                 where id = v_user.id;
+                 where id::text = v_rec->>'id';
             end if;
 
             update public.multiusers
                set login_attempts = 0,
-                   locked_until   = null,
-                   last_login     = now(),
-                   updated_at     = now()
-             where id = v_user.id;
+                   locked_until   = null
+             where id::text = v_rec->>'id';
+
+            -- last_login hanya bila kolomnya ada (opsional)
+            if exists (select 1 from information_schema.columns
+                       where table_schema='public' and table_name='multiusers' and column_name='last_login') then
+                update public.multiusers set last_login = now() where id::text = v_rec->>'id';
+            end if;
         else
             update public.multiusers
-               set login_attempts = coalesce(login_attempts,0) + 1,
-                   locked_until   = case when coalesce(login_attempts,0) + 1 >= 5
-                                         then now() + interval '15 minutes' else locked_until end,
-                   updated_at     = now()
-             where id = v_user.id;
+               set login_attempts = coalesce(login_attempts, 0) + 1,
+                   locked_until   = case when coalesce(login_attempts, 0) + 1 >= 5
+                                         then now() + interval '15 minutes' else locked_until end
+             where id::text = v_rec->>'id';
             raise exception 'Username atau password salah';
         end if;
     else
         raise exception 'Username atau password salah';
     end if;
 
-    -- Normalisasi role (map legacy -> standar)
-    v_name := coalesce(v_user.nama_lengkap, v_user.username);
-    if v_user.role in ('administrator','super_admin','super-admin','admin') then
-        v_user.role := 'superadmin';
-    elsif v_user.role in ('op','data_entry') then
-        v_user.role := 'operator';
-    elsif v_user.role in ('read_only','read-only','user') then
-        v_user.role := 'viewer';
+    -- Normalisasi role (map legacy -> standar; kolom opsional)
+    v_role := lower(coalesce(v_rec->>'role', 'viewer'));
+    if v_role in ('administrator','super_admin','super-admin','admin') then
+        v_role := 'superadmin';
+    elsif v_role in ('op','data_entry') then
+        v_role := 'operator';
+    elsif v_role in ('read_only','read-only','user') then
+        v_role := 'viewer';
     end if;
-    v_user.role := lower(coalesce(v_user.role, 'viewer'));
 
     -- Buat sesi server-side
     v_token   := encode(gen_random_bytes(32), 'hex');
@@ -241,9 +264,9 @@ begin
     values (
         encode(digest(v_token, 'sha256'), 'hex'),
         'admin',
-        v_user.id::text,
-        v_user.username,
-        v_user.role,
+        v_rec->>'id',
+        v_rec->>'username',
+        v_role,
         v_expires,
         nullif(current_setting('request.headers', true)::json ->> 'user-agent', '')
     );
@@ -252,12 +275,12 @@ begin
         'token',      v_token,
         'expires_at', v_expires,
         'profile', jsonb_build_object(
-            'id',        v_user.id,
-            'username',  v_user.username,
-            'email',     v_user.email,
-            'name',      v_name,
-            'role',      v_user.role,
-            'institusi', v_user.institusi,
+            'id',        v_rec->>'id',
+            'username',  v_rec->>'username',
+            'email',     v_rec->>'email',
+            'name',      coalesce(nullif(v_rec->>'nama_lengkap', ''), v_rec->>'username'),
+            'role',      v_role,
+            'institusi', coalesce(v_rec->>'institusi', ''),
             'user_type', 'admin'
         )
     );
@@ -274,6 +297,8 @@ set search_path = public
 as $$
 declare
     v_user    record;
+    v_rec     jsonb;
+    v_hash    text;
     v_ok      boolean := false;
     v_token   text;
     v_expires timestamptz;
@@ -283,66 +308,88 @@ begin
         raise exception 'Username dan password wajib diisi';
     end if;
 
-    select id, username, password, password_hash, nik, email, nama,
-           status, locked_until, login_attempts
-    into v_user
+    select * into v_user
     from public.akun_peserta
     where lower(username) = lower(trim(p_username))
-       or lower(email)    = lower(trim(p_username))
     limit 1;
 
-    if found then
+    if v_user.id is null then
+        -- Coba lagi via email HANYA bila kolom email ada
+        if exists (select 1 from information_schema.columns
+                   where table_schema='public' and table_name='akun_peserta' and column_name='email') then
+            select * into v_user
+            from public.akun_peserta
+            where lower(email) = lower(trim(p_username))
+            limit 1;
+        end if;
+    end if;
+
+    if v_user.id is not null then
+        v_rec := to_jsonb(v_user);
+
         -- Terkunci sementara?
-        if v_user.locked_until is not null and v_user.locked_until > now() then
+        if v_rec->>'locked_until' is not null
+           and (v_rec->>'locked_until')::timestamptz > now() then
             raise exception 'Akun terkunci sementara karena terlalu banyak percobaan gagal. Coba lagi dalam beberapa menit.';
         end if;
-        if coalesce(v_user.login_attempts, 0) >= 5 then
-            update public.akun_peserta set locked_until = now() + interval '15 minutes' where id = v_user.id;
+        if coalesce((v_rec->>'login_attempts')::int, 0) >= 5 then
+            update public.akun_peserta
+               set locked_until = now() + interval '15 minutes'
+             where id::text = v_rec->>'id';
             raise exception 'Akun terkunci sementara karena terlalu banyak percobaan gagal. Coba lagi dalam beberapa menit.';
         end if;
 
-        -- Status akun
-        if v_user.status = 'pending' then
+        -- Status akun (kolom opsional: absen = dianggap approved)
+        if v_rec->>'status' = 'pending' then
             raise exception 'Akun Anda masih MENUNGGU PERSETUJUAN admin. Silakan tunggu 1-2 hari kerja.';
-        elsif v_user.status = 'rejected' then
+        elsif v_rec->>'status' = 'rejected' then
             raise exception 'Akun Anda DITOLAK. Hubungi admin.';
-        elsif v_user.status = 'suspended' then
+        elsif v_rec->>'status' = 'suspended' then
             raise exception 'Akun Anda DITANGGUHKAN. Hubungi admin.';
-        elsif v_user.status is not null and v_user.status <> 'approved' then
+        elsif v_rec->>'status' is not null
+              and v_rec->>'status' <> '' and v_rec->>'status' <> 'approved' then
             raise exception 'Akun Anda belum aktif. Hubungi admin.';
         end if;
 
         -- ---- Verifikasi password (bcrypt -> plaintext, auto-upgrade) ----
-        if v_user.password_hash is not null then
-            if v_user.password_hash like '$2%' then
-                v_ok := crypt(p_password, v_user.password_hash) = v_user.password_hash;
+        v_hash := v_rec->>'password_hash';
+        if v_hash is not null then
+            if v_hash like '$2%' then
+                v_ok := crypt(p_password, v_hash) = v_hash;
             else
-                v_ok := p_password = v_user.password_hash;   -- legacy
+                v_ok := p_password = v_hash;   -- legacy
             end if;
-        elsif v_user.password is not null then
-            v_ok := p_password = v_user.password;            -- kolom lama (akan dipensiunkan)
+        elsif v_rec->>'password' is not null then
+            v_ok := p_password = (v_rec->>'password');   -- kolom lama (akan dipensiunkan)
         end if;
 
         if v_ok then
             -- Upgrade: isi password_hash bcrypt & kosongkan plaintext lama
-            if coalesce(v_user.password_hash, '') not like '$2%' then
-                update public.akun_peserta
-                   set password_hash = crypt(p_password, gen_salt('bf', 10)),
-                       password      = null
-                 where id = v_user.id;
+            if coalesce(v_hash, '') not like '$2%' then
+                if exists (select 1 from information_schema.columns
+                           where table_schema='public' and table_name='akun_peserta' and column_name='password') then
+                    update public.akun_peserta
+                       set password_hash = crypt(p_password, gen_salt('bf', 10)),
+                           password      = null
+                     where id::text = v_rec->>'id';
+                else
+                    update public.akun_peserta
+                       set password_hash = crypt(p_password, gen_salt('bf', 10))
+                     where id::text = v_rec->>'id';
+                end if;
             end if;
 
             update public.akun_peserta
                set login_attempts = 0,
                    locked_until   = null,
                    last_login_at  = now()
-             where id = v_user.id;
+             where id::text = v_rec->>'id';
         else
             update public.akun_peserta
-               set login_attempts = coalesce(login_attempts,0) + 1,
-                   locked_until   = case when coalesce(login_attempts,0) + 1 >= 5
+               set login_attempts = coalesce(login_attempts, 0) + 1,
+                   locked_until   = case when coalesce(login_attempts, 0) + 1 >= 5
                                          then now() + interval '15 minutes' else locked_until end
-             where id = v_user.id;
+             where id::text = v_rec->>'id';
             raise exception 'Username atau password salah';
         end if;
     else
@@ -356,8 +403,8 @@ begin
     values (
         encode(digest(v_token, 'sha256'), 'hex'),
         'peserta',
-        v_user.id::text,
-        v_user.username,
+        v_rec->>'id',
+        v_rec->>'username',
         'peserta',
         v_expires,
         nullif(current_setting('request.headers', true)::json ->> 'user-agent', '')
@@ -367,12 +414,12 @@ begin
         'token',      v_token,
         'expires_at', v_expires,
         'profile', jsonb_build_object(
-            'id',       v_user.id,
-            'nama',     coalesce(nullif(v_user.nama, ''), v_user.username),
-            'nik',      v_user.nik,
-            'email',    v_user.email,
-            'username', v_user.username,
-            'status',   v_user.status,
+            'id',       v_rec->>'id',
+            'nama',     coalesce(nullif(v_rec->>'nama', ''), v_rec->>'username'),
+            'nik',      v_rec->>'nik',
+            'email',    v_rec->>'email',
+            'username', v_rec->>'username',
+            'status',   v_rec->>'status',
             'user_type','peserta'
         )
     );
@@ -390,6 +437,7 @@ as $$
 declare
     v_session public.app_sessions%rowtype;
     v_profile record;
+    v_rec     jsonb;
 begin
     if p_token is null or length(p_token) < 32 then
         return null;
@@ -413,11 +461,11 @@ begin
      where id = v_session.id;
 
     if v_session.user_type = 'admin' then
-        select id, username, email, nama_lengkap, institusi, is_active
-        into v_profile
+        select * into v_profile
         from public.multiusers where id::text = v_session.user_id;
+        v_rec := to_jsonb(v_profile);
         -- Jika akun dinonaktifkan setelah login -> sesi batal
-        if found and v_profile.is_active = false then
+        if v_rec->>'is_active' = 'false' then
             update public.app_sessions set revoked = true where id = v_session.id;
             return null;
         end if;
@@ -427,19 +475,19 @@ begin
             'role', v_session.role,
             'expires_at', v_session.expires_at,
             'profile', jsonb_build_object(
-                'id',       v_profile.id,
-                'username', v_profile.username,
-                'email',    v_profile.email,
-                'name',     coalesce(v_profile.nama_lengkap, v_profile.username),
+                'id',       v_rec->>'id',
+                'username', v_rec->>'username',
+                'email',    v_rec->>'email',
+                'name',     coalesce(nullif(v_rec->>'nama_lengkap', ''), v_rec->>'username'),
                 'role',     v_session.role,
-                'institusi',v_profile.institusi
+                'institusi',coalesce(v_rec->>'institusi', '')
             )
         );
     else
-        select id, username, nik, email, nama, status
-        into v_profile
+        select * into v_profile
         from public.akun_peserta where id::text = v_session.user_id;
-        if found and v_profile.status <> 'approved' then
+        v_rec := to_jsonb(v_profile);
+        if coalesce(v_rec->>'status', 'approved') not in ('approved') then
             update public.app_sessions set revoked = true where id = v_session.id;
             return null;
         end if;
@@ -449,12 +497,12 @@ begin
             'role', 'peserta',
             'expires_at', v_session.expires_at,
             'profile', jsonb_build_object(
-                'id',       v_profile.id,
-                'nama',     coalesce(nullif(v_profile.nama, ''), v_profile.username),
-                'nik',      v_profile.nik,
-                'email',    v_profile.email,
-                'username', v_profile.username,
-                'status',   v_profile.status
+                'id',       v_rec->>'id',
+                'nama',     coalesce(nullif(v_rec->>'nama', ''), v_rec->>'username'),
+                'nik',      v_rec->>'nik',
+                'email',    v_rec->>'email',
+                'username', v_rec->>'username',
+                'status',   v_rec->>'status'
             )
         );
     end if;
