@@ -22,7 +22,7 @@
     'use strict';
 
     /* ============ KONFIGURASI ============ */
-    var V = '20260917a';
+    var V = '20260917b';
     // Setengah kunci dekripsi blob admin (setengah lainnya di panduan/admin-data.js)
     var ADMIN_KEY_PART2 = 'cd007b5f50c68800302ffea9ba9113a6';
     // Role yang berhak membaca Panduan Admin & Operator.

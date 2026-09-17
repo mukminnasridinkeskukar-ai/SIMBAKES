@@ -276,6 +276,26 @@
   padding: 26px 16px 96px;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+/* scrollbar samping yang terlihat jelas agar isi buku dapat digulung sampai bawah
+   (custom ::-webkit-scrollbar memaksa scrollbar klasik di Chrome/Edge/Safari; Firefox via @-moz-document di bawah) */
+.pb-stage::-webkit-scrollbar { width: 12px; height: 12px; }
+.pb-stage::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 8px; }
+.pb-stage::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 8px;
+  border: 3px solid #e2e8f0;
+}
+.pb-stage::-webkit-scrollbar-thumb:hover { background: #64748b; }
+/* Firefox: scrollbar berwarna setara */
+@-moz-document url-prefix() {
+  .pb-stage { scrollbar-width: auto; scrollbar-color: #94a3b8 #e2e8f0; }
+  .pb-drawer-list, .pb-bookbody .main-content { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+}
+.pb-drawer-list::-webkit-scrollbar, .pb-bookbody .main-content::-webkit-scrollbar { width: 9px; height: 9px; }
+.pb-drawer-list::-webkit-scrollbar-thumb, .pb-bookbody .main-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1; border-radius: 8px;
 }
 .pb-sheet {
   width: 100%;
@@ -285,6 +305,7 @@
   box-shadow: 0 3px 12px rgba(15, 23, 42, 0.08), 0 20px 48px rgba(15, 23, 42, 0.10);
   animation: pbPageIn 0.34s ease;
   position: relative;
+  flex: none; /* PENTING: larang flex-shrink memampatkan lembar panjang — panggung yang harus menggulung */
 }
 .pb-sheet--flow { min-height: 60vh; overflow: hidden; }
 
@@ -352,6 +373,7 @@
 .pb-bookbody.pbb {
   width: auto;
   font-size: calc(14.5px * var(--pb-zoom, 1));
+  zoom: var(--pb-zoom, 1); /* zoom nyata: memperbesar seluruh isi buku (px) & ikut memengaruhi tinggi gulir */
   background: #fff;
 }
 .pb-bookbody .main-content {
