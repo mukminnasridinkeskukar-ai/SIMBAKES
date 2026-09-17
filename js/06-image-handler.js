@@ -170,6 +170,210 @@ function getBestImageUrl(photoUrl, size = 'medium') {
     return photoUrl;
 }
 
+// ============================================================
+// ✅ FIX FOTO MULTI-METODE (v3.1)
+// ============================================================
+// Kolom foto aktual tabel submissions: `foto_peserta`.
+// Isian di lapangan berupa: URL publik Supabase Storage
+// (bucket 'pengajuan-files'), link Google Drive, URL langsung,
+// path relatif storage, atau base64. Semua ditangani dengan
+// rantai fallback berurutan agar foto tiap baris selalu tampil.
+// ============================================================
+
+const SIMBAKES_FOTO_BUCKET = 'pengajuan-files';
+
+/**
+ * Ambil nilai foto dari baris data — cek SEMUA kolom yang mungkin
+ * (foto_peserta = kolom aktual, lalu fallback kolom lama).
+ */
+function getFotoFromRow(row) {
+    if (!row) return '';
+    const candidates = [
+        row.foto_peserta, row.fotoPeserta,      // kolom aktual
+        row.link_foto, row.linkFoto,            // kolom lama (drive)
+        row.foto, row.foto_url, row.url_foto,   // varian lain
+        row.pas_foto, row.photo_url, row.avatar_url
+    ];
+    for (const c of candidates) {
+        if (c && typeof c === 'string' && c.trim() !== '' && c.trim() !== '-') {
+            return c.trim();
+        }
+    }
+    return '';
+}
+
+/**
+ * Bangun URL storage Supabase dari path relatif.
+ */
+function buildStoragePublicUrl(path) {
+    if (!path) return '';
+    const base = (typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG.url)
+        ? SUPABASE_CONFIG.url
+        : (window.SIMBAKES_SUPABASE_URL || '');
+    if (!base) return '';
+    const clean = String(path).replace(/^\/+/, '');
+    return `${base}/storage/v1/object/public/${SIMBAKES_FOTO_BUCKET}/${clean}`;
+}
+
+/**
+ * Deteksi apakah nilai adalah URL Supabase Storage publik.
+ */
+function isSupabaseStorageUrl(url) {
+    return typeof url === 'string' && url.includes('/storage/v1/object/public/');
+}
+
+/**
+ * Extract path storage dari URL publik Supabase (untuk signed URL / listing).
+ */
+function extractStoragePath(url) {
+    if (typeof url !== 'string') return '';
+    const marker = `/storage/v1/object/public/${SIMBAKES_FOTO_BUCKET}/`;
+    const idx = url.indexOf(marker);
+    if (idx === -1) return '';
+    return url.substring(idx + marker.length).split('?')[0];
+}
+
+/**
+ * Bangun DAFTAR KANDIDAT URL foto untuk satu baris data (sinkron).
+ * Dipakai sebagai rantai percobaan awal + fallback onerror.
+ *
+ * Urutan (paling mungkin berhasil → terakhir):
+ *  1. data:image (base64)          → langsung
+ *  2. URL publik Supabase Storage  → langsung
+ *  3. URL http(s) bukan Drive      → langsung
+ *  4. Path relatif storage         → dibangun URL publiknya
+ *  5. Link Google Drive            → 7 endpoint Drive (thumbnail/uc/lh3/dll)
+ *  6. URL Supabase via proxy gambar (images.weserv.nl) — anti CORS/403
+ */
+function buildFotoCandidates(rawUrl) {
+    const urls = [];
+    if (!rawUrl || rawUrl === '-' || typeof rawUrl !== 'string') return urls;
+    const v = rawUrl.trim();
+    
+    // 1. Base64
+    if (v.startsWith('data:image/')) {
+        urls.push(v);
+        return urls;
+    }
+    
+    // 4. Path relatif storage (mis. "pengajuan/REG-123/foto-1.jpg")
+    if (!v.startsWith('http') && !v.startsWith('data:')) {
+        const pub = buildStoragePublicUrl(v);
+        if (pub) urls.push(pub);
+    }
+    
+    // 2 & 3. URL langsung
+    if (v.startsWith('http')) {
+        if (isGoogleDriveUrl(v)) {
+            // 5. Google Drive → semua endpoint fallback
+            const fileId = extractFileIdEnhanced(v);
+            if (fileId) {
+                generateDriveImageUrls(fileId, 'small').forEach(u => urls.push(u));
+                generateDriveImageUrls(fileId, 'medium').forEach(u => urls.push(u));
+                // ✅ Proxy gambar untuk Drive yang menolak akses langsung
+                const dlUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                urls.push(`https://images.weserv.nl/?url=${encodeURIComponent(dlUrl.replace(/^https?:\/\//, ''))}&w=200&h=200&fit=cover&a=top`);
+            }
+        } else {
+            urls.push(v);
+            // 6. Proxy gambar untuk URL yang menolak akses langsung
+            if (isSupabaseStorageUrl(v) || /\.(jpe?g|png|webp|gif)(\?|$)/i.test(v)) {
+                urls.push(`https://images.weserv.nl/?url=${encodeURIComponent(v.replace(/^https?:\/\//, ''))}&w=200&h=200&fit=cover&a=top`);
+            }
+        }
+    } else if (v.length > 20) {
+        // Mungkin file ID drive telanjang
+        const fileId = extractFileIdEnhanced(v);
+        if (fileId) {
+            generateDriveImageUrls(fileId, 'small').forEach(u => urls.push(u));
+        }
+    }
+    
+    return urls.filter((u, i, arr) => u && arr.indexOf(u) === i); // unik & valid
+}
+
+/**
+ * Fallback ASINKRON terakhir: cari foto di folder storage berdasarkan
+ * no_register (pola penyimpanan: pengajuan/<no_register>/foto-*.jpg),
+ * termasuk percobaan signed URL bila bucket dibuat privat.
+ * @returns {Promise<string>} URL foto atau '' bila gagal
+ */
+async function findFotoViaStorage(row) {
+    try {
+        if (!supabaseClient || !row) return '';
+        const reg = String(row.no_register || row.noRegister || '').trim();
+        if (!reg) return '';
+        const folder = `pengajuan/${reg.replace(/[^A-Za-z0-9_-]/g, '')}`;
+        const { data: files, error } = await supabaseClient.storage
+            .from(SIMBAKES_FOTO_BUCKET)
+            .list(folder, { limit: 50, sortBy: { column: 'created_at', order: 'desc' } });
+        if (error || !files || !files.length) return '';
+        const fotoFile = files.find(f => /^foto/i.test(f.name) || /\.(jpe?g|png|webp)$/i.test(f.name));
+        if (!fotoFile) return '';
+        return buildStoragePublicUrl(`${folder}/${fotoFile.name}`);
+    } catch (e) {
+        console.warn('[FOTO] Listing storage gagal:', e.message);
+        return '';
+    }
+}
+
+/**
+ * Coba muat satu URL pada <img> dengan validasi dimensi + timeout.
+ */
+function tryLoadImg(url, timeoutMs = 6000) {
+    return new Promise((resolve) => {
+        const test = new Image();
+        const timer = setTimeout(() => resolve(false), timeoutMs);
+        test.onload = () => {
+            clearTimeout(timer);
+            resolve(test.naturalWidth > 5 && test.naturalHeight > 5);
+        };
+        test.onerror = () => { clearTimeout(timer); resolve(false); };
+        test.src = url;
+    });
+}
+
+/**
+ * Muat foto untuk elemen <img> pada container smart-photo dengan
+ * rantai kandidat lengkap + fallback async (storage listing).
+ * Helper global — dipakai oleh handleSmartPhotoError & render tabel.
+ */
+async function loadFotoWithAllMethods(container, img, row) {
+    const rawUrl = getFotoFromRow(row);
+    let candidates = buildFotoCandidates(rawUrl);
+    
+    // Percobaan berurutan kandidat sinkron
+    for (const url of candidates) {
+        if (await tryLoadImg(url)) {
+            img.src = url;
+            img.style.display = 'block';
+            const sk = container.querySelector('.smart-photo-skeleton');
+            if (sk) sk.style.display = 'none';
+            const ph = container.querySelector('.smart-photo-placeholder');
+            if (ph) ph.style.display = 'none';
+            container.setAttribute('data-photo-state', 'loaded');
+            return true;
+        }
+    }
+    
+    // Fallback async: cari di folder storage by no_register
+    const viaList = await findFotoViaStorage(row);
+    if (viaList && await tryLoadImg(viaList)) {
+        img.src = viaList;
+        img.style.display = 'block';
+        const sk = container.querySelector('.smart-photo-skeleton');
+        if (sk) sk.style.display = 'none';
+        const ph = container.querySelector('.smart-photo-placeholder');
+        if (ph) ph.style.display = 'none';
+        container.setAttribute('data-photo-state', 'loaded');
+        return true;
+    }
+    
+    // Semua metode gagal → placeholder
+    showPhotoErrorState(container);
+    return false;
+}
+
 /**
  * Create SMART PHOTO ELEMENT with comprehensive features:
  * - Automatic Google Drive URL conversion
@@ -445,8 +649,35 @@ function closePhotoModal() {
  * @param {string} size - Size: 'thumb', 'small', 'medium', 'large'
  * @returns {string} HTML string
  */
-function generateSmartPhotoHtml(photoUrl, alt = '', size = 'small') {
-    if (!photoUrl || photoUrl === '-' || photoUrl.length < 10) {
+function generateSmartPhotoHtml(photoUrl, alt = '', size = 'small', row = null) {
+    // Size classes (dideklarasikan paling awal — dipakai semua cabang)
+    const sizeClassesMap = {
+        thumb: 'width:44px;height:44px;',
+        small: 'width:60px;height:60px;',
+        medium: 'width:120px;height:120px;',
+        large: 'width:200px;height:200px;'
+    };
+    const inlineStyle = sizeClassesMap[size] || sizeClassesMap.small;
+    
+    // ✅ FIX: terima juga objek baris — bila URL kosong, coba semua kolom foto
+    const effectiveUrl = photoUrl || getFotoFromRow(row);
+    
+    if (!effectiveUrl || effectiveUrl === '-' || effectiveUrl.length < 10) {
+        // Masih ada satu peluang: foto ditemukan lewat listing storage (async)
+        if (row && (row.no_register || row.noRegister)) {
+            const boxStyle = inlineStyle;
+            return `<div class="smart-photo-container smart-photo-${size}" data-photo-state="loading"
+                data-foto-row='${escapeHtml(JSON.stringify({ no_register: row.no_register || row.noRegister || '' }))}'
+                style="${boxStyle}flex-shrink:0;">
+                <div class="smart-photo-skeleton" style="width:100%;height:100%;">
+                    <div class="skeleton-animation"></div>
+                </div>
+                <img class="smart-photo-img" alt="${escapeHtml(alt || 'Foto')}" style="display:none;object-fit:cover;border-radius:8px;">
+                <div class="smart-photo-placeholder smart-photo-error" style="display:none;">
+                    <span class="smart-photo-placeholder-icon">👤</span>
+                </div>
+            </div>`;
+        }
         return `<div class="smart-photo-container smart-photo-${size}" data-photo-state="placeholder">
             <div class="smart-photo-placeholder">
                 <span class="smart-photo-placeholder-icon">👤</span>
@@ -455,24 +686,19 @@ function generateSmartPhotoHtml(photoUrl, alt = '', size = 'small') {
     }
     
     const safeAlt = escapeHtml(alt || 'Foto');
-    const safeUrl = escapeHtml(photoUrl);
-    const bestUrl = getBestImageUrl(photoUrl, size);
+    const safeUrl = escapeHtml(effectiveUrl);
+    // ✅ FIX: kandidat awal = URL terbaik dari rantai multi-metode
+    const candidateList = buildFotoCandidates(effectiveUrl);
+    const bestUrl = candidateList[0] || getBestImageUrl(effectiveUrl, size);
     const safeBestUrl = escapeHtml(bestUrl);
-    
-    // Size classes
-    const sizeClasses = {
-        thumb: 'width:50px;height:50px;',
-        small: 'width:60px;height:60px;',
-        medium: 'width:120px;height:120px;',
-        large: 'width:200px;height:200px;'
-    };
-    
-    const inlineStyle = sizeClasses[size] || sizeClasses.small;
+    const encodedCandidates = escapeHtml(JSON.stringify(candidateList));
     
     return `<div class="smart-photo-container smart-photo-${size}" 
              data-photo-state="loading"
              data-original-url="${safeUrl}"
-             style="${inlineStyle}">
+             data-foto-candidates="${encodedCandidates}"
+             data-foto-row='${row ? escapeHtml(JSON.stringify({ no_register: row.no_register || row.noRegister || '' })) : ''}'
+             style="${inlineStyle}flex-shrink:0;">
         <div class="smart-photo-skeleton" style="${inlineStyle}">
             <div class="skeleton-animation"></div>
         </div>
@@ -481,7 +707,7 @@ function generateSmartPhotoHtml(photoUrl, alt = '', size = 'small') {
              class="smart-photo-img"
              data-original-url="${safeUrl}"
              style="${inlineStyle}object-fit:cover;border-radius:8px;display:none;"
-             onload="this.style.display='block';this.previousElementSibling.style.display='none';this.parentElement.dataset.photoState='loaded';"
+             onload="this.style.display='block';var s=this.parentElement.querySelector('.smart-photo-skeleton');if(s)s.style.display='none';this.parentElement.dataset.photoState='loaded';"
              onerror="handleSmartPhotoError(this)">
         <div class="smart-photo-placeholder smart-photo-error" style="${inlineStyle}display:none;">
             <span class="smart-photo-placeholder-icon">👤</span>
@@ -491,57 +717,71 @@ function generateSmartPhotoHtml(photoUrl, alt = '', size = 'small') {
 
 /**
  * Global error handler untuk Smart Photo images
- * Tries fallback URLs sequentially
+ * ✅ FIX (v3.1): mencoba SEMUA kandidat URL multi-metode secara berurutan
+ * (storage publik → Drive multi-endpoint → proxy), lalu fallback ASINKRON
+ * pencarian file foto di folder storage berdasarkan no_register.
  */
 window.handleSmartPhotoError = function(img) {
     const container = img.closest('.smart-photo-container');
     if (!container) return;
     
-    const originalUrl = img.getAttribute('data-original-url');
-    if (!originalUrl) {
-        showPhotoErrorState(container);
-        return;
+    // Sudah diproses loader async? jangan dobel
+    if (container.getAttribute('data-foto-processing') === '1') return;
+    container.setAttribute('data-foto-processing', '1');
+    
+    const candidateJson = container.getAttribute('data-foto-candidates') || '[]';
+    let candidates = [];
+    try { candidates = JSON.parse(candidateJson); } catch (e) { candidates = []; }
+    
+    const originalUrl = img.getAttribute('data-original-url') || '';
+    if (originalUrl && candidates.length === 0) {
+        candidates = buildFotoCandidates(originalUrl);
     }
     
-    // Get current URL index from data attribute
-    let currentIndex = parseInt(container.getAttribute('data-url-index') || '0');
-    const fileId = extractFileIdEnhanced(originalUrl);
+    // URL saat ini sedang di index ke berapa?
+    const currentSrc = (img.getAttribute('src') || '').split('?')[0];
+    let idx = candidates.findIndex(u => u.split('?')[0] === currentSrc);
     
-    if (!fileId) {
-        showPhotoErrorState(container);
-        return;
-    }
-    
-    // Get all possible URLs
-    const allUrls = generateDriveImageUrls(fileId, 'medium');
-    
-    // Try next URL
-    if (currentIndex < allUrls.length - 1) {
-        currentIndex++;
-        container.setAttribute('data-url-index', currentIndex.toString());
-        
-        const nextUrl = allUrls[currentIndex];
-        console.log(`🔄 Trying fallback URL ${currentIndex + 1}:`, nextUrl.substring(0, 50));
-        
-        // Test URL first
-        const testImg = new Image();
-        testImg.onload = () => {
-            if (testImg.naturalWidth > 20) {
-                img.src = nextUrl;
+    const tryNext = async () => {
+        // 1) Lanjutkan kandidat berikutnya
+        while (idx >= -1 && idx + 1 < candidates.length) {
+            idx++;
+            const url = candidates[idx];
+            if (await tryLoadImg(url)) {
+                img.src = url;
                 img.style.display = 'block';
-                container.querySelector('.smart-photo-skeleton').style.display = 'none';
-                container.querySelector('.smart-photo-placeholder').style.display = 'none';
+                const sk = container.querySelector('.smart-photo-skeleton');
+                if (sk) sk.style.display = 'none';
+                const ph = container.querySelector('.smart-photo-placeholder');
+                if (ph) ph.style.display = 'none';
                 container.setAttribute('data-photo-state', 'loaded');
-            } else {
-                window.handleSmartPhotoError(img); // Try next
+                container.removeAttribute('data-foto-processing');
+                return;
             }
-        };
-        testImg.onerror = () => window.handleSmartPhotoError(img); // Try next
-        testImg.src = nextUrl;
-    } else {
-        // All URLs failed
+        }
+        
+        // 2) Fallback async: listing folder storage by no_register
+        let rowInfo = null;
+        try { rowInfo = JSON.parse(container.getAttribute('data-foto-row') || 'null'); } catch (e) {}
+        const viaList = await findFotoViaStorage(rowInfo);
+        if (viaList && await tryLoadImg(viaList)) {
+            img.src = viaList;
+            img.style.display = 'block';
+            const sk = container.querySelector('.smart-photo-skeleton');
+            if (sk) sk.style.display = 'none';
+            const ph = container.querySelector('.smart-photo-placeholder');
+            if (ph) ph.style.display = 'none';
+            container.setAttribute('data-photo-state', 'loaded');
+            container.removeAttribute('data-foto-processing');
+            return;
+        }
+        
+        // 3) Semua metode gagal
         showPhotoErrorState(container);
-    }
+        container.removeAttribute('data-foto-processing');
+    };
+    
+    tryNext();
 };
 
 /**
@@ -657,9 +897,11 @@ function setPhotoSync(imgElement, placeholderElement, photoUrl) {
  * DEPRECATED: Now delegates to generateSmartPhotoHtml() for better fallback support
  * Kept for backward compatibility
  */
-function generatePhotoCell(linkFoto, nama = '', size = 'small') {
+function generatePhotoCell(linkFoto, nama = '', size = 'small', row = null) {
     // Delegate to new smart photo system with multi-fallback support
-    return generateSmartPhotoHtml(linkFoto, nama || 'Foto', size);
+    // ✅ FIX: baris data ikut diteruskan agar fallback kolom foto_peserta
+    //         & pencarian folder storage tetap bekerja
+    return generateSmartPhotoHtml(linkFoto, nama || 'Foto', size, row);
 }
 
 /**
@@ -747,16 +989,19 @@ async function renderDashboard() {
     // Track visitor saat dashboard dibuka (non-critical)
     trackVisitorSimple().catch(() => {});  // Fire and forget - tidak menunggu
     
+    // ✅ FIX: fetchPenetapanStats ikut dimuat otomatis (sebelumnya hanya saat
+    // tombol Refresh ditekan) sehingga SEMUA kartu terisi tanpa refresh manual.
     // Fetch semua data secara paralel dengan individual error handling
     const results = await Promise.allSettled([
         fetchDashboardStats(),
         fetchRecentSubmissions(),
+        fetchPenetapanStats(),
         fetchVisitorStats()
     ]);
     
     // Log hasil (tanpa menghentukan dashboard)
     results.forEach((result, index) => {
-        const names = ['fetchDashboardStats', 'fetchRecentSubmissions', 'fetchVisitorStats'];
+        const names = ['fetchDashboardStats', 'fetchRecentSubmissions', 'fetchPenetapanStats', 'fetchVisitorStats'];
         if (result.status === 'rejected') {
             console.warn(`⚠️ ${names[index]} failed:`, result.reason);
         }
@@ -837,46 +1082,43 @@ async function fetchDashboardStats() {
         ]);
         
         // Jalankan semua query SECARA PARALEL (bukan berurutan)
+        // ✅ FIX: hitung SEMUA varian status yang ada di data asal
+        // (di lapangan tercatat: 'Disetujui'/'Diterima', 'Perbaikan'/'Revisi',
+        //  'Batal'/'Dibatalkan') lalu jumlahkan, sehingga kartu tidak salah 0.
+        const countBy = (status) => withTimeout(
+            supabaseClient.from('submissions').select('*', { count: 'exact', head: true }).eq('status', status),
+            10000
+        );
+        
         const [
             totalResult,
-            disetujuiResult,
+            disetujuiA, disetujuiB,
             ditolakResult,
-            perbaikanResult,
-            batalResult,
-            prosesResult
+            perbaikanA, perbaikanB,
+            batalA, batalB
         ] = await Promise.allSettled([
             withTimeout(
                 supabaseClient.from('submissions').select('*', { count: 'exact', head: true }),
                 10000
             ),
-            withTimeout(
-                supabaseClient.from('submissions').select('*', { count: 'exact', head: true }).eq('status', 'Disetujui'),
-                10000
-            ),
-            withTimeout(
-                supabaseClient.from('submissions').select('*', { count: 'exact', head: true }).eq('status', 'Ditolak'),
-                10000
-            ),
-            withTimeout(
-                supabaseClient.from('submissions').select('*', { count: 'exact', head: true }).eq('status', 'Perbaikan'),
-                10000
-            ),
-            withTimeout(
-                supabaseClient.from('submissions').select('*', { count: 'exact', head: true }).eq('status', 'Dibatalkan'),
-                10000
-            ),
-            withTimeout(
-                supabaseClient.from('submissions').select('*', { count: 'exact', head: true }).eq('status', 'Proses Verifikasi'),
-                10000
-            )
+            countBy('Disetujui'),
+            countBy('Diterima'),
+            countBy('Ditolak'),
+            countBy('Perbaikan'),
+            countBy('Revisi'),
+            countBy('Batal'),
+            countBy('Dibatalkan')
         ]);
         
+        // Helper: ambil count dari hasil allSettled, fallback 0
+        const cnt = (r) => r.status === 'fulfilled' ? (r.value.count || 0) : 0;
+        
         // Ekstrak hasil dengan fallback ke 0 jika error
-        const total = totalResult.status === 'fulfilled' ? (totalResult.value.count || 0) : 0;
-        const disetujui = disetujuiResult.status === 'fulfilled' ? (disetujuiResult.value.count || 0) : 0;
-        const ditolak = ditolakResult.status === 'fulfilled' ? (ditolakResult.value.count || 0) : 0;
-        const perbaikan = perbaikanResult.status === 'fulfilled' ? (perbaikanResult.value.count || 0) : 0;
-        const batal = batalResult.status === 'fulfilled' ? (batalResult.value.count || 0) : 0;
+        const total = cnt(totalResult);
+        const disetujui = cnt(disetujuiA) + cnt(disetujuiB);
+        const ditolak = cnt(ditolakResult);
+        const perbaikan = cnt(perbaikanA) + cnt(perbaikanB);
+        const batal = cnt(batalA) + cnt(batalB);
         
         // Update card values dengan animasi
         animateValue('stat-total', total);
@@ -1011,16 +1253,17 @@ function renderRecentSubmissions() {
         const rowNum = (paginatedResult.pageInfo.currentPage - 1) * 10 + index + 1;
         
         // Map Supabase snake_case fields to display
-        // Supabase returns: nama_lengkap, jurusan_tujuan, jenjang_pendidikan, unit_tujuan, link_foto
+        // ✅ FIX: kolom foto aktual di tabel submissions adalah foto_peserta
+        // (isian: URL publik Supabase Storage atau link Google Drive)
         const namaLengkap = item.nama_lengkap || item.namaLengkap || '-';
         const jurusanTujuan = item.jurusan_tujuan || item.jurusanTujuan || '-';
         const jenjangPendidikan = item.jenjang_pendidikan || item.jenjangPendidikan || '-';
         const unitTujuan = item.unit_tujuan || item.unitTujuan || '-';
-        const linkFoto = item.link_foto || item.linkFoto || item.foto || '';
+        const linkFoto = getFotoFromRow(item);
         const status = item.status || 'Pending';
         
         // Use generatePhotoCell for consistent image handling with fallback
-        const photoHtml = generatePhotoCell(linkFoto, namaLengkap, 'small');
+        const photoHtml = generatePhotoCell(linkFoto, namaLengkap, 'small', item);
         
         return `
             <tr data-row-number="${rowNum}" data-id="${item.id || ''}">
@@ -1053,13 +1296,15 @@ async function showStatusDetail(statusFilter) {
     const nameEl = document.getElementById('modal-status-name');
     const tbody = document.getElementById('status-detail-body');
     
-    // Map UI status filters to actual Supabase status values
+    // ✅ FIX: cocokkan dengan varian status yang benar-benar ada di data asal.
+    // (Sebelumnya memakai 'Diterima'/'Revisi'/'Dibatalkan' yang tidak ada di
+    //  database sehingga popup sering kosong padahal data ada.)
     const statusMapping = {
         'total': null, // null means no filter (all)
-        'disetujui': 'Diterima',
-        'ditolak': 'Ditolak',
-        'perbaikan': 'Revisi',
-        'batal': 'Dibatalkan'
+        'disetujui': ['Disetujui', 'Diterima', 'Approved', 'disetujui', 'diterima'],
+        'ditolak': ['Ditolak', 'Rejected', 'ditolak'],
+        'perbaikan': ['Perbaikan', 'Revisi', 'Revision', 'perbaikan', 'revisi'],
+        'batal': ['Batal', 'Dibatalkan', 'Cancelled', 'batal', 'dibatalkan']
     };
     
     // Set title dan status name berdasarkan filter
@@ -1090,23 +1335,33 @@ async function showStatusDetail(statusFilter) {
     PaginationManager.reset('status-detail');
     
     try {
-        // Map UI filter to Supabase status value
-        const supabaseStatus = statusMapping[statusFilter];
-        
-        // Using Supabase client with correct status value
-        const result = await fetchDataByStatus(supabaseStatus);
-        
-        if (result.status === 'success') {
-            countEl.textContent = result.total || result.count || 0;
-            
-            // Cache data for pagination
-            cachedStatusDetail = result.data || [];
-            
-            // Render with pagination
-            renderStatusDetailPaginated();
-        } else {
-            throw new Error(result.message || 'Unknown error');
+        // ✅ FIX: ambil data LANGSUNG dari sumber asal (tabel submissions) sekali,
+        // lalu filter di sisi klien dengan pencocokan varian status — popup selalu
+        // menampilkan data apa adanya dari database.
+        if (!supabaseClient) {
+            throw new Error('Supabase client tidak tersedia');
         }
+        
+        const { data: allRows, error: allErr } = await supabaseClient
+            .from('submissions')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(10000);
+        
+        if (allErr) throw allErr;
+        
+        const variants = statusMapping[statusFilter];
+        const filtered = (variants && variants.length)
+            ? (allRows || []).filter(row => variants.includes(String(row.status || '').trim()))
+            : (allRows || []);
+        
+        countEl.textContent = filtered.length;
+        
+        // Cache data for pagination
+        cachedStatusDetail = filtered;
+        
+        // Render with pagination
+        renderStatusDetailPaginated();
     } catch (error) {
         console.error('Error fetching status detail:', error);
         countEl.textContent = '0';
@@ -1155,10 +1410,19 @@ function renderStatusDetailPaginated() {
         const unitTujuan = item.unit_tujuan || item.unitTujuan || '-';
         const rencanaTahunStudi = item.rencana_tahun_studi || item.rencanaTahunStudi || item.tahun_studi || '-';
         
+        // ✅ FIX: foto tiap baris — baca kolom aktual foto_peserta + fallback lain
+        const rowFoto = getFotoFromRow(item);
+        const fotoAvatar = generatePhotoCell(rowFoto, namaLengkap, 'thumb', item);
+        
         return `
             <tr data-id="${item.id || ''}">
                 <td>${rowNum}</td>
-                <td><strong>${namaLengkap}</strong></td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:0.6rem;">
+                        ${fotoAvatar}
+                        <strong>${namaLengkap}</strong>
+                    </div>
+                </td>
                 <td>${jurusanTujuan}</td>
                 <td>${jenjangPendidikan}</td>
                 <td>${unitTujuan}</td>
@@ -1166,6 +1430,10 @@ function renderStatusDetailPaginated() {
             </tr>
         `;
     }).join('');
+    
+    // ✅ FIX: inisialisasi foto yang butuh proses async (src kosong →
+    // pencarian folder storage via no_register)
+    initSmartPhotos(tbody);
     
     // Render pagination controls
     container.innerHTML = PaginationManager.renderControls('status-detail');

@@ -226,7 +226,12 @@ function renderAdminTable(data) {
                         onmouseenter="this.style.transform='scale(1.005)'"
                         onmouseleave="this.style.transform=''">
                 <td style="font-family:monospace;font-weight:700;color:#1e293b;">🔎 ${escapeHtml(row.nik||'-')}</td>
-                <td><strong style="color:#0f172a;">${escapeHtml(row.nama_lengkap||row.nama||'-')}</strong></td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:0.65rem;">
+                        ${typeof generatePhotoCell === 'function' ? generatePhotoCell('', row.nama_lengkap || row.nama || '-', 'thumb', row) : ''}
+                        <strong style="color:#0f172a;">${escapeHtml(row.nama_lengkap||row.nama||'-')}</strong>
+                    </div>
+                </td>
                 <td style="color:#334155;">${escapeHtml(row.jurusan_tujuan||row.jurusan||'-')}</td>
                 <td style="text-align:center;"><span style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;
                             padding:0.4rem 1rem;border-radius:20px;font-weight:700;font-size:0.85rem;">
@@ -387,16 +392,22 @@ async function updateAdminStats(pagination) {
     try {
         const result = await getAllSubmissions(10000);
         
-        if (result.status === 'success' && result.data) {
+        // ✅ FIX: getAllSubmissions mengembalikan { data, total } tanpa field
+        // `status`, sehingga kondisi lama (result.status === 'success') tidak
+        // pernah true dan kartu statistik selalu 0. Sekaligus hitung varian
+        // status yang ada di data asal (Disetujui/Diterima, Perbaikan/Revisi,
+        // Batal/Dibatalkan) agar sesuai dengan database.
+        if (result && Array.isArray(result.data)) {
             const allData = result.data;
+            const isOneOf = (p, variants) => variants.includes(String(p.status || '').trim());
             document.getElementById('stat-approved-pengusul').textContent = 
-                allData.filter(p => p.status === 'Disetujui').length;
+                allData.filter(p => isOneOf(p, ['Disetujui', 'Diterima'])).length;
             document.getElementById('stat-rejected-pengusul').textContent = 
-                allData.filter(p => p.status === 'Ditolak').length;
+                allData.filter(p => isOneOf(p, ['Ditolak'])).length;
             document.getElementById('stat-revision-pengusul').textContent = 
-                allData.filter(p => p.status === 'Perbaikan').length;
+                allData.filter(p => isOneOf(p, ['Perbaikan', 'Revisi'])).length;
             document.getElementById('stat-verify-pengusul').textContent = 
-                allData.filter(p => p.status === 'Proses Verifikasi').length;
+                allData.filter(p => isOneOf(p, ['Proses Verifikasi'])).length;
         }
     } catch (error) {
         console.warn('Could not fetch detailed stats:', error);
@@ -515,8 +526,9 @@ async function viewDetailPengusul(id) {
             namaFile: data.nama_file || '-',
             status: data.status || '-',
             created_at: data.created_at,
-            foto: data.foto || null,
-            dokumen_pdf: data.dokumen_pdf || null
+            // ✅ FIX: kolom aktual foto_peserta (+ fallback kolom lama)
+            foto: data.foto_peserta || data.foto || data.link_foto || null,
+            dokumen_pdf: data.dokumen_kelengkapan || data.dokumen_pdf || null
         };
         
         showDetailModal(formattedData);
@@ -558,7 +570,8 @@ function showDetailModal(data) {
                 <!-- Photo & Basic Info -->
                 <div style="display:flex;gap:1.5rem;margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid #e2e8f0;">
                     <div style="flex-shrink:0;">
-                        ${generatePhotoCell(data.linkFoto, data.namaLengkap || '', 'large')}
+                        <!-- ✅ FIX: pakai data.foto (kolom foto_peserta) + fallback lain -->
+                        ${generatePhotoCell(data.foto || data.linkFoto || '', data.namaLengkap || '', 'large', data)}
                     </div>
                     <div style="flex:1;">
                         <h2 style="font-size:1.5rem;margin-bottom:0.5rem;">${data.namaLengkap || '-'}</h2>
@@ -643,10 +656,12 @@ function showDetailModal(data) {
                 
                 <!-- File Links -->
                 <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid #e2e8f0;display:flex;gap:1rem;flex-wrap:wrap;">
-                    ${data.linkFoto && data.linkFoto !== '-' 
-                        ? `<a href="${data.linkFoto}" target="_blank" class="btn btn-sm" style="background:#dcfce7;color:#166534;">📷 Lihat Foto Pasfoto</a>`
-                        : ''
-                    }
+                    ${(() => {
+                        const fotoVal = data.foto || data.linkFoto || '';
+                        return fotoVal && fotoVal !== '-'
+                            ? `<a href="${fotoVal}" target="_blank" class="btn btn-sm" style="background:#dcfce7;color:#166534;">📷 Lihat Foto Pasfoto</a>`
+                            : '';
+                    })()}
                     ${data.linkDokumen && data.linkDokumen !== '-' 
                         ? `<a href="${data.linkDokumen}" target="_blank" class="btn btn-sm" style="background:#dbeafe;color:#1d4ed8;">📄 Lihat Dokumen PDF</a>`
                         : ''

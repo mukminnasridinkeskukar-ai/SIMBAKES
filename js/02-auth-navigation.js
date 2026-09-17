@@ -46,6 +46,7 @@ const ROLE_CONFIG = {
         menus: {
             dashboard: true,
             dataPengusul: true,
+            dataAkunPeserta: true,    // ✅ FIX: Superadmin dapat akses Data Akun Peserta
             roadmapKebutuhan: true,
             penetapan: true,
             laporan: true,
@@ -74,17 +75,18 @@ const ROLE_CONFIG = {
         id: 'operator',
         name: 'Operator Data',
         label: 'OPERATOR',
-        description: 'Terbatas - Hanya Data Pengusul',
+        description: 'Terbatas - Data Pengusulan & Akun Peserta',
         avatar: '⚙️',
         color: '#2563eb',           // Blue
         gradient: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
         badgeClass: 'role-operator-badge',
         avatarClass: 'admin-operator',
         
-        // Menu Access - HANYA Data Pengusul!
+        // Menu Access - Data Pengusulan + Data Akun Peserta
         menus: {
             dashboard: false,        // Hidden
-            dataPengusul: true,       // VISIBLE & ACCESSIBLE
+            dataPengusul: true,       // ✅ VISIBLE & ACCESSIBLE
+            dataAkunPeserta: true,    // ✅ FIX: VISIBLE & ACCESSIBLE untuk Operator
             roadmapKebutuhan: false,   // Hidden
             penetapan: false,         // Hidden
             laporan: false,           // Hidden
@@ -124,6 +126,7 @@ const ROLE_CONFIG = {
         menus: {
             dashboard: true,         // Visible (read-only)
             dataPengusul: true,      // Visible (read-only)
+            dataAkunPeserta: true,   // ✅ FIX: Visible (read-only)
             roadmapKebutuhan: true,   // Visible (read-only)
             penetapan: true,         // Visible (read-only)
             laporan: true,           // Visible (read-only)
@@ -781,8 +784,10 @@ function applyRoleBasedAccess(role) {
         // Navigation IDs → Config Key
         'nav-dashboard': 'dashboard',
         'nav-data-pengusul': 'dataPengusul',
+        'nav-data-akun-peserta': 'dataAkunPeserta',   // ✅ FIX: menu Data Akun Peserta
         'nav-data-roadmap': 'roadmapKebutuhan',
-        'nav-penetapan': 'penetapan',
+        'nav-data-penetapan': 'penetapan',            // ✅ FIX: ID nav yang benar di template
+        'nav-penetapan': 'penetapan',                 // (kompatibilitas ID lama)
         'nav-laporan': 'laporan',
         'nav-peserta-portal': 'pesertaPortal',
         'nav-user-management': 'userManagement',
@@ -793,8 +798,10 @@ function applyRoleBasedAccess(role) {
         // Page IDs → Config Key
         'page-dashboard': 'dashboard',
         'page-data-pengusul': 'dataPengusul',
+        'page-data-akun-peserta': 'dataAkunPeserta',  // ✅ FIX: halaman Data Akun Peserta
         'page-data-roadmap': 'roadmapKebutuhan',
-        'page-penetapan': 'penetapan',
+        'page-data-penetapan': 'penetapan',           // ✅ FIX: ID halaman yang benar
+        'page-penetapan': 'penetapan',                // (kompatibilitas ID lama)
         'page-laporan': 'laporan'
     };
     
@@ -835,6 +842,7 @@ function applyRoleBasedAccess(role) {
         if (!redirectTarget && roleConfig.menus[configKey]) {
             redirectTarget = configKey === 'dashboard' ? 'dashboard' : 
                            configKey === 'dataPengusul' ? 'data-pengusul' :
+                           configKey === 'dataAkunPeserta' ? 'data-akun-peserta' :
                            configKey === 'roadmapKebutuhan' ? 'data-roadmap' :
                            configKey === 'penetapan' ? 'penetapan' :
                            configKey === 'laporan' ? 'laporan' : 'dashboard';
@@ -1002,16 +1010,17 @@ function restrictActionsByRole(role, roleConfig) {
         restrictedForOperator.forEach(selector => {
             try {
                 document.querySelectorAll(selector).forEach(el => {
-                    // Only hide if NOT in data pengusul section
-                    const isInPengusulSection = el.closest('#page-data-pengusul') || 
+                    // ✅ FIX: Izinkan juga di section Data Akun Peserta (menu operator)
+                    const isInOperatorSection = el.closest('#page-data-pengusul') || 
+                                              el.closest('#page-data-akun-peserta') ||
                                               el.closest('[data-section="pengusul"]') ||
                                               el.closest('.pengusul-section');
                     
-                    if (!isInPengusulSection) {
+                    if (!isInOperatorSection) {
                         el.style.display = 'none';
                         el.setAttribute('disabled', 'true');
                         el.setAttribute('data-reason', 'operator-restricted');
-                        el.title = '❌ Operator hanya dapat mengelola Data Pengusul';
+                        el.title = '❌ Operator hanya dapat mengelola Data Pengusulan & Data Akun Peserta';
                     }
                 });
             } catch (e) {

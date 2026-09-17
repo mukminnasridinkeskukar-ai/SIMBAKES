@@ -763,11 +763,14 @@ function renderAdminTableFinal(data) {
                     </button>
                 </td>
                 
-                <!-- KOLOM 2: Nama Lengkap -->
+                <!-- KOLOM 2: Nama Lengkap (dengan foto peserta) -->
                 <td class="col-nama" style="padding:1rem;">
-                    <strong style="color:#0f172a;font-size:0.95rem;display:block;">
-                        ${escapeHtml(namaLengkap)}
-                    </strong>
+                    <div style="display:flex;align-items:center;gap:0.65rem;">
+                        ${generatePhotoCell('', namaLengkap, 'thumb', row)}
+                        <strong style="color:#0f172a;font-size:0.95rem;display:block;">
+                            ${escapeHtml(namaLengkap)}
+                        </strong>
+                    </div>
                 </td>
                 
                 <!-- KOLOM 3: Jurusan Tujuan -->

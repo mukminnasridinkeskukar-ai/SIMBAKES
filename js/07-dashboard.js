@@ -829,3 +829,125 @@ function renderRecentVisitors() {
     container.innerHTML = PaginationManager.renderControls('recent-visitors');
 }
 
+
+// ============================================================
+// ✅ FIX: KARTU DASHBOARD — CUKUP JUDUL & ANGKA
+// ============================================================
+// Sesuai permintaan: judul pada setiap kartu cukup judul dan
+// angkanya saja. Badge kecil (TOTAL/OK/NO/REV), deskripsi, dan
+// footer/trend dihilangkan lewat CSS (template HTML tidak diubah).
+// Ikon, judul, dan angka tetap tampil seperti desain aslinya.
+// ============================================================
+(function applyDashboardCardSimplification() {
+    'use strict';
+
+    function injectCardCss() {
+        if (document.getElementById('dash-card-simplify-style')) return;
+        const st = document.createElement('style');
+        st.id = 'dash-card-simplify-style';
+        st.textContent = `
+            /* Kartu dashboard: cukup judul + angka */
+            #page-dashboard .dash-card-badge,
+            #page-dashboard .dash-card-desc,
+            #page-dashboard .dash-card-footer {
+                display: none !important;
+            }
+            /* Jaga kartu tetap rapi & seimbang tanpa elemen tambahan */
+            #page-dashboard .dashboard-card {
+                display: flex;
+                flex-direction: column;
+            }
+            #page-dashboard .dash-card-header {
+                margin-bottom: 0.35rem;
+            }
+            #page-dashboard .dash-card-body {
+                flex: 1;
+            }
+            #page-dashboard .dash-card-value {
+                font-size: 2.1rem;
+                line-height: 1.15;
+            }
+            #page-dashboard .dash-card-label {
+                margin-top: 0.15rem;
+            }
+        `;
+        document.head.appendChild(st);
+        console.log('[DASHBOARD FIX] ✅ Kartu disederhanakan (judul + angka)');
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', injectCardCss);
+    } else {
+        injectCardCss();
+    }
+})();
+
+// ============================================================
+// ✅ FIX: DASHBOARD TANPA REFRESH MANUAL
+// ============================================================
+// Sebelumnya: kartu dashboard terisi 0/"-" saat Supabase client belum
+// siap, dan hanya terisi setelah tombol Refresh ditekan. Kini data
+// dirender ulang OTOMATIS begitu klien siap (sekali saja), plus
+// di-retry ringan bila ada kartu yang masih kosong.
+// ============================================================
+(function ensureDashboardAutoLoad() {
+    'use strict';
+
+    let autoRendered = false;
+
+    function dashboardVisible() {
+        const page = document.getElementById('page-dashboard');
+        return page && page.classList.contains('active');
+    }
+
+    function cardsStillEmpty() {
+        const ids = ['stat-total', 'stat-lulus-pt', 'stat-penerima-beasiswa'];
+        return ids.some((id) => {
+            const el = document.getElementById(id);
+            if (!el) return false;
+            const v = (el.textContent || '').trim();
+            return v === '' || v === '-' || v === '0';
+        });
+    }
+
+    function tryRender() {
+        if (autoRendered) return;
+        const clientReady = (typeof supabaseClient !== 'undefined') && !!supabaseClient;
+        if (!clientReady) return;
+        if (!dashboardVisible()) return;
+        if (typeof renderDashboard !== 'function') return;
+        autoRendered = true;
+        clearInterval(pollTimer);
+        try {
+            renderDashboard();
+            console.log('[DASHBOARD FIX] 📊 Dashboard dirender otomatis tanpa refresh');
+        } catch (e) { /* abaikan */ }
+    }
+
+    const pollTimer = setInterval(tryRender, 500);
+    setTimeout(() => { clearInterval(pollTimer); }, 20000); // stop setelah 20 detik
+
+    // Bila user berpindah ke tab dashboard dan kartu masih kosong,
+    // render ulang sekali (tanpa perlu tombol Refresh).
+    let rechecked = false;
+    const origShowPage = window.showPage;
+    if (typeof origShowPage === 'function') {
+        window.showPage = function (pageId) {
+            const result = origShowPage.apply(this, arguments);
+            if (pageId === 'dashboard' && !rechecked) {
+                rechecked = true;
+                setTimeout(function () {
+                    const clientReady = (typeof supabaseClient !== 'undefined') && !!supabaseClient;
+                    if (clientReady && dashboardVisible() && cardsStillEmpty() &&
+                        typeof renderDashboard === 'function') {
+                        try {
+                            renderDashboard();
+                            console.log('[DASHBOARD FIX] 📊 Dashboard dilengkapi otomatis saat dibuka');
+                        } catch (e) { /* abaikan */ }
+                    }
+                }, 1200);
+            }
+            return result;
+        };
+    }
+})();

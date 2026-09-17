@@ -21,7 +21,7 @@ const SUPABASE_CONFIG = {
     // FIX 404: sebelumnya 'https://your-project.supabase.co' (placeholder,
     // domain tidak ada) karena window.SUPABASE_URL tidak pernah didefinisikan.
     url: window.SIMBAKES_SUPABASE_URL || 'https://boeknpvlfamjmddsdopd.supabase.co',
-    bucket: 'photos', // FIX 404: bucket asli aplikasi ('photos'), bukan 'simbakes'
+    bucket: 'pengajuan-files', // ✅ FIX: bucket aktual aplikasi (setup-storage-pengajuan.sql)
     defaultFolder: '',
     fallbackAvatar: `data:image/svg+xml,${encodeURIComponent(`
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
@@ -51,6 +51,13 @@ async function resolvePhotoUrl(record) {
     }
     
     const sources = [];
+    
+    // ✅ FIX: Source 0 — kolom AKTUAL foto_peserta (URL publik Supabase Storage
+    // atau link Google Drive). Sebelumnya kolom ini tidak pernah dibaca sehingga
+    // foto peserta tidak muncul di lightbox.
+    if (record.foto_peserta && typeof record.foto_peserta === 'string' && record.foto_peserta.trim().length > 10) {
+        sources.push({ url: record.foto_peserta.trim(), source: 'foto_peserta', priority: 0 });
+    }
     
     // Source 1: link_foto field (URL langsung)
     if (record.link_foto && typeof record.link_foto === 'string' && record.link_foto.trim().length > 10) {
@@ -833,8 +840,7 @@ function updateTableHeaderTo5Columns() {
         <th class="col-nama">Nama Lengkap</th>
         <th class="col-jurusan">Jurusan Tujuan</th>
         <th class="col-tahun">Rencana Tahun Studi</th>
-        <th class="col-unit">Unit Penempatan</th>
-        <th class="col-aksi" style="border-radius:0 12px 0 0;">AKSI</th>
+        <th class="col-unit" style="border-radius:0 12px 0 0;">Unit Penempatan</th>
     `;
     
     // Add new class to thead

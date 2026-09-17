@@ -689,7 +689,8 @@ const SUBMISSIONS_FIELDS_COMPLETE = [
     { key: 'nama_file', label: 'Nama File Dokumen', icon: '📄', type: 'text' },
     { key: 'status', label: 'Status Pengajuan', icon: '📊', type: 'status' },
     { key: 'created_at', label: 'Tanggal Pengajuan', icon: '🕐', type: 'datetime' },
-    { key: 'link_foto', label: 'Link Foto', icon: '📷', type: 'link', fullWidth: true },
+    { key: 'foto_peserta', label: 'Foto Peserta', icon: '📷', type: 'link', fullWidth: true },
+    { key: 'link_foto', label: 'Link Foto (lama)', icon: '🔗', type: 'link', fullWidth: true },
     { key: 'link_dokumen', label: 'Link Dokumen', icon: '📁', type: 'link', fullWidth: true }
 ];
 
@@ -933,7 +934,8 @@ function generateEditFormFields(record) {
         { key: 'no_hp', label: 'No HP', type: 'tel' },
         { key: 'no_wa', label: 'No WhatsApp', type: 'tel' },
         { key: 'email', label: 'Email', type: 'email' },
-        { key: 'link_foto', label: 'Link Foto URL', type: 'url' },
+        { key: 'foto_peserta', label: 'Foto Peserta URL', type: 'url' },
+        { key: 'link_foto', label: 'Link Foto URL (lama)', type: 'url' },
         { key: 'link_dokumen', label: 'Link Dokumen URL', type: 'url' }
     ];
     

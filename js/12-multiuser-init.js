@@ -188,6 +188,7 @@ function getDefaultPermissions(role) {
         superadmin: {
             canAccessDashboard: true,
             canAccessDataPengusul: true,
+            canAccessAkunPeserta: true,   // ✅ FIX: akses Data Akun Peserta
             canAccessRoadmap: true,
             canAccessPenetapan: true,
             canAccessUserManagement: true,
@@ -197,6 +198,7 @@ function getDefaultPermissions(role) {
         operator: {
             canAccessDashboard: false,
             canAccessDataPengusul: true,
+            canAccessAkunPeserta: true,   // ✅ FIX: Operator dapat akses Data Akun Peserta
             canAccessRoadmap: false,
             canAccessPenetapan: false,
             canAccessUserManagement: false,
