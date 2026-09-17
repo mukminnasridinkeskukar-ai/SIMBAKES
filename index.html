@@ -1961,52 +1961,50 @@
             </div>
         </div>
 
-        <!-- ===== PETUNJUK PAGE ===== -->
+        <!-- ===== PETUNJUK PENGGUNAAN (Hub Buku Panduan + E-Book Reader) ===== -->
         <div class="page" id="page-petunjuk">
             <div class="page-header">
                 <h2>Petunjuk Penggunaan</h2>
-                <p>Panduan lengkap menggunakan platform SIMBAKES</p>
+                <p>Panduan resmi platform SIMBAKES dalam bentuk buku digital</p>
             </div>
-            <div style="max-width: 800px;">
-                <div class="card petunjuk-card">
-                    <div class="card-header">
-                        <div class="petunjuk-title">
-                            <div class="petunjuk-icon icon-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg></div>
-                            1. Mengakses Platform
-                        </div>
-                    </div>
-                    <div class="card-body"><p class="petunjuk-content">Buka browser dan akses URL platform SIMBAKES. Tunggu landing page selesai (3 detik) untuk masuk ke dashboard utama.</p></div>
+            <div class="ph-wrap">
+                <p class="ph-lede">&ldquo;Pilih panduan sesuai dengan akses dan kebutuhan Anda.&rdquo;</p>
+
+                <div class="ph-grid">
+                    <!-- Kartu: Panduan Peserta (publik, tanpa login) -->
+                    <article class="ph-card" id="ph-card-peserta">
+                        <div class="ph-cover" id="ph-cover-peserta"></div>
+                        <div class="ph-kicker">📘 Untuk semua pengguna</div>
+                        <h3 class="ph-title">Panduan Peserta</h3>
+                        <p class="ph-desc">Panduan lengkap penggunaan aplikasi bagi peserta/pengguna: membuat akun, mengajukan rekomendasi, memantau status, hingga melihat hasil penetapan.</p>
+                        <div class="ph-chip ph-chip-open">✓ Terbuka — dapat dibaca tanpa login</div>
+                        <button class="ph-btn" id="ph-btn-peserta">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="flex:none;"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+                            Baca Panduan
+                        </button>
+                    </article>
+
+                    <!-- Kartu: Panduan Admin & Operator (login admin/operator) -->
+                    <article class="ph-card" id="ph-card-admin">
+                        <div class="ph-cover" id="ph-cover-admin"></div>
+                        <div class="ph-kicker">📕 Khusus Admin &amp; Operator</div>
+                        <h3 class="ph-title">Panduan Admin &amp; Operator</h3>
+                        <p class="ph-desc">Panduan pengelolaan aplikasi bagi Admin dan Operator: verifikasi pengajuan, penetapan, akun peserta, dan pengelolaan data platform.</p>
+                        <div class="ph-chip ph-chip-wait" id="ph-chip-admin">⏳ Memeriksa akses…</div>
+                        <button class="ph-btn" id="ph-btn-admin">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="flex:none;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            Baca Panduan
+                        </button>
+                    </article>
                 </div>
-                <div class="card petunjuk-card">
-                    <div class="card-header">
-                        <div class="petunjuk-title">
-                            <div class="petunjuk-icon icon-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg></div>
-                            2. Mengajukan Rekomendasi
-                        </div>
-                    </div>
-                    <div class="card-body"><p class="petunjuk-content">Ketiga menu di bagian <strong>Layanan</strong> khusus untuk peserta yang sudah login. Pilih menu <strong>Layanan → Ajukan Rekomendasi</strong> (login peserta dulu bila diminta), lalu isi formulir dengan lengkap termasuk foto pasfoto, data pribadi, dan upload dokumen dalam format PDF.</p></div>
-                </div>
-                <div class="card petunjuk-card">
-                    <div class="card-header">
-                        <div class="petunjuk-title">
-                            <div class="petunjuk-icon" style="background:#fae8ff;color:#a21caf;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
-                            3. Mendaftar Akun Peserta
-                        </div>
-                    </div>
-                    <div class="card-body"><p class="petunjuk-content">Klik tombol <strong>Daftar Akun Peserta</strong>, isi semua data dengan lengkap dan benar, lalu klik <strong>Daftarkan</strong>. Setelah berhasil, tunggu akun Anda diverifikasi dan disetujui admin Dinas Kesehatan sebelum bisa login.</p></div>
-                </div>
-                <div class="card petunjuk-card">
-                    <div class="card-header">
-                        <div class="petunjuk-title">
-                            <div class="petunjuk-icon icon-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div>
-                            4. Cek Status & Penetapan
-                        </div>
-                    </div>
-                    <div class="card-body"><p class="petunjuk-content">Setelah login peserta, pantau pengajuan Anda melalui menu <strong>Layanan → Cek Status Pengajuan</strong> atau <strong>Cek Status Penetapan</strong> untuk melihat hasil akhir (status kelulusan dan SK). Pertanyaan? Hubungi PIC: 0821-3027-5800 (Mukmin Nasri) atau 0821-5758-0022 (Syarifah Putri).</p></div>
+
+                <div class="ph-note">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                    <span>Panduan dibaca langsung di dalam aplikasi dengan tampilan buku digital (e-book) — tanpa tautan unduh berkas.
+                    <b>Panduan Admin &amp; Operator</b> hanya dapat dibuka oleh <b>admin</b> dan <b>operator</b> yang sedang login; hak akses diverifikasi ke server, bukan hanya di layar.</span>
                 </div>
             </div>
         </div>
-
         <!-- ===== CEK STATUS PENETAPAN PAGE v2.0 ===== -->
         <div class="page" id="page-cek-penetapan">
             <div class="page-header">
@@ -2947,6 +2945,8 @@ SIMBAKES SUPABASE INTEGRATION
     <!-- ===== UI OVERHAUL SCRIPTS (Auto-injected) ===== -->
     <!-- Font: Tahoma | Design: Glassmorphism | Lightbox: Full-screen -->
     <script src="js/ui-overhaul.js?v=20260915v"></script>
+    <!-- Petunjuk Penggunaan: hub buku panduan + e-book reader -->
+    <script src="js/16-panduan.js?v=20260917a"></script>
 
     
     <!-- ===== CRUD LIGHTBOX SYSTEM (Auto-injected) ===== -->

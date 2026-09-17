@@ -20,3 +20,13 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
   Cross-Origin-Opener-Policy: same-origin
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src https://drive.google.com https://docs.google.com https://*.googleusercontent.com; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+
+# ============================================================
+# Panduan Admin & Operator — data isi buku internal
+# Jangan disimpan cache publik & tidak diindeks mesin pencari.
+# (Hardening penuh: jalankan sql/PANDUAN-ADMIN-BACKEND.sql, lalu
+#  berkas ini boleh dihapus dari hosting.)
+# ============================================================
+/panduan/admin-data.js
+  Cache-Control: no-store, private
+  X-Robots-Tag: noindex, nofollow
