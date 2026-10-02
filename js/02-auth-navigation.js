@@ -149,6 +149,86 @@ const ROLE_CONFIG = {
         // Special Permissions
         fullAccess: false,
         viewOnly: true
+    },
+    
+    observer: {
+        id: 'observer',
+        name: 'Observer',
+        label: 'OBSERVER',
+        description: 'Pengamat - Lihat Data Pengusulan, Roadmap & Penetapan Saja',
+        avatar: '🔭',
+        color: '#d97706',           // Amber
+        gradient: 'linear-gradient(135deg, #d97706, #b45309)',
+        badgeClass: 'role-observer-badge',
+        avatarClass: 'admin-observer',
+        
+        // Menu Access - HANYA 3 bagian data: Pengusulan, Roadmap, Penetapan
+        menus: {
+            dashboard: false,         // Hidden
+            dataPengusul: true,       // Visible (lihat saja)
+            dataAkunPeserta: false,   // Hidden
+            roadmapKebutuhan: true,   // Visible (lihat saja)
+            penetapan: true,          // Visible (lihat saja)
+            laporan: false,           // Hidden
+            pesertaPortal: false,     // Hidden
+            userManagement: false,    // Hidden
+            settings: false           // Hidden
+        },
+        
+        // Action Permissions - LIHAT SAJA, TANPA download/edit apapun
+        canCreate: false,
+        canRead: true,
+        canUpdate: false,
+        canDelete: false,
+        canExport: false,           // TIDAK BISA download/ekspor
+        canImport: false,
+        canApprove: false,
+        canManageUsers: false,
+        canChangeSettings: false,
+        
+        // Special Permissions
+        fullAccess: false,
+        viewOnly: true
+    },
+    
+    observer: {
+        id: 'observer',
+        name: 'Observer',
+        label: 'OBSERVER',
+        description: 'Pengamat - Lihat Data Pengusulan, Roadmap & Penetapan Saja',
+        avatar: '🔭',
+        color: '#d97706',           // Amber
+        gradient: 'linear-gradient(135deg, #d97706, #b45309)',
+        badgeClass: 'role-observer-badge',
+        avatarClass: 'admin-observer',
+        
+        // Menu Access - HANYA 3 bagian data: Pengusulan, Roadmap, Penetapan
+        menus: {
+            dashboard: false,         // Hidden
+            dataPengusul: true,       // Visible (lihat saja)
+            dataAkunPeserta: false,   // Hidden
+            roadmapKebutuhan: true,   // Visible (lihat saja)
+            penetapan: true,          // Visible (lihat saja)
+            laporan: false,           // Hidden
+            pesertaPortal: false,     // Hidden
+            userManagement: false,    // Hidden
+            settings: false           // Hidden
+        },
+        
+        // Action Permissions - LIHAT SAJA, TANPA download/edit apapun
+        canCreate: false,
+        canRead: true,
+        canUpdate: false,
+        canDelete: false,
+        canExport: false,           // TIDAK BISA download/ekspor
+        canImport: false,
+        canApprove: false,
+        canManageUsers: false,
+        canChangeSettings: false,
+        
+        // Special Permissions
+        fullAccess: false,
+        viewOnly: true
     }
 };
 
@@ -736,6 +816,7 @@ function showLoggedInUI(user) {
             admin: '👑 Administrator',
             operator: '⚙️ Operator',
             viewer: '👁️ Viewer',
+            observer: '🔭 Observer',
             peserta: '📋 Peserta'
         };
         statusBadge.textContent = roleLabels[user.role] || user.role?.toUpperCase() || 'User';
@@ -844,7 +925,7 @@ function applyRoleBasedAccess(role) {
                            configKey === 'dataPengusul' ? 'data-pengusul' :
                            configKey === 'dataAkunPeserta' ? 'data-akun-peserta' :
                            configKey === 'roadmapKebutuhan' ? 'data-roadmap' :
-                           configKey === 'penetapan' ? 'penetapan' :
+                           configKey === 'penetapan' ? 'data-penetapan' :
                            configKey === 'laporan' ? 'laporan' : 'dashboard';
         }
     });
@@ -919,6 +1000,9 @@ function restrictActionsByRole(role, roleConfig) {
             '.btn-edit',
             '.btn-update',
             '.btn-edit-data',
+            '.btn-action-edit',            // tombol edit kartu roadmap
+            '.fs-btn-edit',                // tombol edit lightbox data pengusulan
+            '.fs-btn-status',              // tombol ubah status lightbox
             'button[id*="edit"]',
             'button[id*="ubah"]',
             'button[id*="update"]',
@@ -931,6 +1015,8 @@ function restrictActionsByRole(role, roleConfig) {
             '.btn-delete',
             '.btn-hapus',
             '.btn-remove',
+            '.btn-action-delete',          // tombol hapus kartu roadmap & baris penetapan
+            '.fs-btn-delete',              // tombol hapus lightbox data pengusulan
             'button[id*="delete"]',
             'button[id*="hapus"]',
             'button[id*="remove"]',
@@ -980,7 +1066,7 @@ function restrictActionsByRole(role, roleConfig) {
                     el.style.display = 'none';           // Hide button
                     el.setAttribute('disabled', 'true');   // Disable
                     el.setAttribute('data-reason', 'view-only-access');
-                    el.title = '❌ Dilarang: Akun Viewer hanya bisa melihat';
+                    el.title = '❌ Dilarang: Akun Anda hanya bisa melihat data (tanpa mengubah/mengunduh)';
                 });
             } catch (e) {
                 // Selector might be invalid, ignore
@@ -1239,7 +1325,8 @@ function getAvatarForRole(role) {
     const avatars = {
         superadmin: "👑",
         operator: "⚙️",
-        viewer: "👁️"
+        viewer: "👁️",
+        observer: "🔭"
     };
     return avatars[role] || "👤";
 }
@@ -1269,7 +1356,7 @@ function debugRBAC() {
 function mapLegacyRole(dbRole) {
     // Jika role sudah valid, langsung return
     const validRoles = ['superadmin', 'admin', 'viewer', 'operator', 'peserta', 
-                       'admin_sekolah', 'admin_dinkes', 'reviewer'];
+                       'admin_sekolah', 'admin_dinkes', 'reviewer', 'observer'];
     
     if (validRoles.includes(dbRole?.toLowerCase())) {
         return dbRole.toLowerCase();
@@ -1473,7 +1560,7 @@ function showPage(pageId) {
     
     // Cek autentikasi menggunakan SISTEM BARU (RBAC)
     // Hanya Panel Admin yang perlu login!
-    const adminProtectedPages = ['data-pengusul', 'data-roadmap'];
+    const adminProtectedPages = ['data-pengusul', 'data-roadmap', 'data-penetapan', 'data-akun-peserta'];
     if (adminProtectedPages.includes(pageId)) {
         // Gunakan isAdminAuthenticated() dari sistem RBAC, bukan variabel lama!
         if (typeof isAdminAuthenticated === 'function' && !isAdminAuthenticated()) {
@@ -1513,6 +1600,7 @@ function showPage(pageId) {
         const protectedPages = {
             'data-roadmap': 'roadmapKebutuhan',
             'data-penetapan': 'penetapan',
+            'data-akun-peserta': 'dataAkunPeserta',
             'laporan': 'laporan',
             'user-management': 'userManagement',
             'settings': 'settings'

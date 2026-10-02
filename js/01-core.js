@@ -5,6 +5,26 @@
 // Tabel yang dibutuhkan: submissions, roadmap, multiusers
 // ============================================================
 
+// ===== PRIVASI NIK (masking) =====
+// NIK tidak boleh tampil utuh pada menu yang dapat diakses pembaca umum.
+// Hanya sesi Panel Admin (admin/operator/viewer/observer yang login) yang
+// berhak melihat NIK utuh; pengunjung publik & peserta melihat versi mask.
+// Contoh hasil: 6402**********0002
+function maskNik(value) {
+    const s = String(value == null ? '' : value).trim();
+    if (!s || s === '-') return '-';
+    const digits = s.replace(/\D/g, '');
+    if (digits.length < 8) return '••••••••';
+    return digits.substring(0, 4) + '••••••••' + digits.substring(digits.length - 4);
+}
+
+/** True bila pengguna saat ini adalah sesi Panel Admin yang sah (lihat NIK utuh) */
+function canSeeFullNik() {
+    try {
+        return typeof isAdminAuthenticated === 'function' && isAdminAuthenticated();
+    } catch (e) { return false; }
+}
+
 // ===== EARLY FUNCTION DEFINITIONS (Sebelum DOM ready) =====
 // Fungsi ini dipanggil oleh elemen HTML via onerror attribute
 // Harus didefinisikan SEBELUM elemen HTML dirender

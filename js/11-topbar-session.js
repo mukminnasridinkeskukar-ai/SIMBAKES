@@ -219,13 +219,14 @@ async function handlePesertaLoginInModal(event) {
             }
             
             // Sesi minimal (tanpa password); NIK diperlukan untuk prefill
-            // cek status milik peserta itu sendiri
+            // cek status milik peserta itu sendiri; foto_url untuk avatar
             pesertaSessionData = {
                 id: prof.id,
                 nama: prof.nama || 'Peserta',
                 nik: prof.nik || '',
                 email: prof.email || '',
-                username: prof.username || username
+                username: prof.username || username,
+                foto_url: prof.foto_url || ''
             };
             try {
                 localStorage.setItem('simbakes_peserta_session', JSON.stringify({
@@ -818,13 +819,34 @@ function updateUIForLoggedInPeserta(loginData) {
     console.log('[SIMBAKES] UI updated for logged-in peserta');
 }
 
+/**
+ * Render avatar dashboard peserta: foto profil (bila ada) atau inisial nama.
+ * Foto diambil dari pesertaSessionData.foto_url (set oleh modul profil).
+ */
+function renderPesertaAvatar(avatarEl, session) {
+    if (!avatarEl) return;
+    const fotoUrl = (session && (session.foto_url || session.fotoUrl)) || '';
+    const initial = ((session && session.nama) || 'P').charAt(0).toUpperCase();
+    if (fotoUrl) {
+        avatarEl.textContent = '';
+        avatarEl.style.backgroundImage = `url('${String(fotoUrl).replace(/["'()]/g, '')}')`;
+        avatarEl.style.backgroundSize = 'cover';
+        avatarEl.style.backgroundPosition = 'center';
+        avatarEl.style.color = 'transparent';
+    } else {
+        avatarEl.style.backgroundImage = '';
+        avatarEl.style.color = '';
+        avatarEl.textContent = initial;
+    }
+}
+
 function showPesertaDashboard(sessionOrUndefined) {
     const session = sessionOrUndefined || pesertaSessionData;
     if (session) {
         // Update dashboard UI
         const avatar = document.getElementById('peserta-dash-avatar');
         const username = document.getElementById('peserta-dash-username');
-        if (avatar) avatar.textContent = (session.nama || 'P').charAt(0).toUpperCase();
+        renderPesertaAvatar(avatar, session);
         if (username) username.textContent = session.nama || 'Peserta';
         // Show dashboard overlay
         const dashboard = document.getElementById('peserta-dashboard-overlay');
@@ -845,7 +867,7 @@ function showPesertaDashboard(sessionOrUndefined) {
     // Call self with session data
     const avatar = document.getElementById('peserta-dash-avatar');
     const username = document.getElementById('peserta-dash-username');
-    if (avatar) avatar.textContent = (stored.nama || 'P').charAt(0).toUpperCase();
+    renderPesertaAvatar(avatar, stored);
     if (username) username.textContent = stored.nama || 'Peserta';
     const dashboard = document.getElementById('peserta-dashboard-overlay');
     if (dashboard) {
@@ -882,7 +904,7 @@ function showModalPesertaInfo(session) {
             
             <div style="padding:1.5rem;">
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:1.5rem;">
-                    ${session.nik ? `<div style="background:#f9fafb; padding:12px; border-radius:10px;"><small style="color:#6b7280; display:block; margin-bottom:4px;">NIK</small><strong>${escapeHtml(session.nik)}</strong></div>` : ''}
+                    ${session.nik ? `<div style="background:#f9fafb; padding:12px; border-radius:10px;"><small style="color:#6b7280; display:block; margin-bottom:4px;">NIK</small><strong>${escapeHtml(typeof maskNik === 'function' ? maskNik(session.nik) : '••••••••')}</strong></div>` : ''}
                     ${session.email ? `<div style="background:#f9fafb; padding:12px; border-radius:10px;"><small style="color:#6b7280; display:block; margin-bottom:4px;">Email</small><strong>${escapeHtml(session.email)}</strong></div>` : ''}
                 </div>
                 
@@ -892,6 +914,11 @@ function showModalPesertaInfo(session) {
                     </span>
                 </div>
                 
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <button onclick="openProfilPeserta()" style="flex:1; padding:12px; background:linear-gradient(135deg,#059669,#047857); color:white; border:none; border-radius:10px; font-weight:600; cursor:pointer;">
+                        👤 Edit Profil Akun
+                    </button>
+                </div>
                 <div style="display:flex; gap:10px;">
                     <button onclick="closePesertaInfoModal()" style="flex:1; padding:12px; background:#f3f4f6; color:#374151; border:none; border-radius:10px; font-weight:600; cursor:pointer;">
                         Tutup

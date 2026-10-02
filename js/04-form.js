@@ -1851,7 +1851,7 @@ function displayStatusResult(found) {
                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
                     <div>
                         <h4 style="font-size:1.25rem;font-weight:700;margin:0 0 0.25rem 0;">${data.nama_lengkap}</h4>
-                        <p style="font-family:monospace;font-size:0.85rem;margin:0;opacity:0.9;">nik: ${data.nik}</p>
+                        <p style="font-family:monospace;font-size:0.85rem;margin:0;opacity:0.9;">nik: ${typeof maskNik === 'function' ? maskNik(found?.nik) : '••••••••'}</p>
                     </div>
                     ${statusBadge}
                 </div>

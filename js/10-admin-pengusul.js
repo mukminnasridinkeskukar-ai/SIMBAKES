@@ -1303,6 +1303,12 @@ async function deletePengusul() {
  * Export data to CSV
  */
 function exportDataPengusul() {
+    // ===== KEAMANAN: role lihat-saja (viewer/observer) TIDAK boleh unduh =====
+    if (typeof hasPermission === 'function' && !hasPermission('canExport')) {
+        showToast('🚫 Akun Anda hanya dapat MELIHAT data — unduh/ekspor tidak diizinkan.', 'error', 4000);
+        console.warn('[SECURITY] Export pengusulan diblokir (role tanpa canExport)');
+        return;
+    }
     showToast('📥 Mempersiapkan export data...', 'info');
     
     // Create CSV content

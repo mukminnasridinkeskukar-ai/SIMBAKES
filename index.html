@@ -131,6 +131,17 @@
                         Lihat Penetapan
                     </button>
                 </div>
+
+                <!-- KARTU 4: PROFIL & KEAMANAN AKUN (edit profil, foto, username & password) -->
+                <div class="peserta-action-card card-profil" onclick="openProfilPeserta()" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);">
+                    <div class="peserta-card-icon">👤</div>
+                    <h3 class="peserta-card-title">Profil & Keamanan Akun</h3>
+                    <p class="peserta-card-desc">Perbarui foto profil, nama, username, dan ganti password akun Anda secara mandiri.</p>
+                    <button class="peserta-card-btn" type="button">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        Kelola Akun Saya
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -471,6 +482,7 @@
                         <option value="admin">🏫 Admin Institusi Pendidikan</option>
                         <option value="admin">🏥 Admin Dinas Kesehatan</option>
                         <option value="viewer">📋 Reviewer/Penilai Proposal</option>
+                        <option value="observer">🔭 Observer/Pengamat (Lihat Data Saja)</option>
                     </select>
                 </div>
                 
@@ -2190,7 +2202,7 @@
                     <p>Kelola seluruh data pengajuan beasiswa tematik kesehatan</p>
                 </div>
                 <div style="display:flex;gap:0.5rem;">
-                    <button class="btn btn-primary btn-sm" onclick="exportDataPengusul()">
+                    <button class="btn btn-primary btn-sm" onclick="exportDataPengusul()" data-action="export">
                         📥 Export Data
                     </button>
                     <button class="btn btn-sm" style="background:#f1f5f9;color:#475569;" onclick="refreshDataPengusul()">
@@ -2338,7 +2350,7 @@
                     <p>Kelola data roadmap kebutuhan beasiswa</p>
                 </div>
                 <div style="display:flex;gap:0.5rem;">
-                    <button class="btn btn-primary btn-sm" onclick="exportDataRoadmap()">
+                    <button class="btn btn-primary btn-sm" onclick="exportDataRoadmap()" data-action="export">
                         📥 Export Data
                     </button>
                     <button class="btn btn-sm" style="background:#f1f5f9;color:#475569;" onclick="refreshDataRoadmap()">
@@ -2482,7 +2494,7 @@
                     </div>
                 </div>
                 <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                    <button class="btn btn-primary btn-sm" onclick="exportDataPenetapan()" style="background:white;color:#7c3aed;border:none;">
+                    <button class="btn btn-primary btn-sm" onclick="exportDataPenetapan()" data-action="export" style="background:white;color:#7c3aed;border:none;">
                         📥 Export
                     </button>
                     <button class="btn btn-sm" onclick="refreshDataPenetapan()" style="background:rgba(255,255,255,0.2);color:white;border:none;">
@@ -2895,7 +2907,8 @@
     <script src="js/14-panel-admin-fix.js?v=20260915v"></script>
     <!-- ===== DATA AKUN PESERTA (Fitur Baru - CRUD tabel akun_peserta) ===== -->
     <script src="js/13-akun-peserta.js?v=20260915v"></script>
-    <script src="js/15-bukti-pendaftaran.js?v=20260915v"></script>
+    <script src="js/15-bukti-pendaftaran.js?v=20261002a"></script>
+    <script src="js/17-profil-peserta.js?v=20261002a"></script>
 
 <!-- 
 ======================================================

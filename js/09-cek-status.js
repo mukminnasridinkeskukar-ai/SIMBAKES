@@ -470,7 +470,11 @@ function displayPenetapanResult(data) {
     // SET HEADER INFO (Right side - top)
     // =====================================================
     document.getElementById('penetapan-nama-lengkap').textContent = penetapanData.nama_lengkap || '-';
-    document.getElementById('penetapan-nik-display').textContent = `NIK: ${penetapanData.nik || '-'}`;
+    // PRIVASI NIK: tampil versi disamarkan (6402••••••••0002) — menu ini bisa
+    // dilihat pembaca selain pemilik data; NIK utuh hanya di Panel Admin.
+    const rawNikTampil = penetapanData.nik || '';
+    const nikAman = (typeof maskNik === 'function') ? maskNik(rawNikTampil) : '••••••••';
+    document.getElementById('penetapan-nik-display').textContent = rawNikTampil ? `NIK: ${nikAman}` : 'NIK: -';
     
     // =====================================================
     // SET DATA GRID - 14 FIELDS SESUAI KOLOM SUPABASE

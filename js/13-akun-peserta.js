@@ -784,6 +784,15 @@
                 if (loginPage) loginPage.classList.remove('hidden');
                 return;
             }
+            // KEAMANAN: Data Akun Peserta hanya untuk superadmin/admin/operator.
+            // Role lihat-saja (viewer/observer) tidak boleh membuka halaman ini.
+            const akunRole = (typeof getCurrentUserRole === 'function') ? getCurrentUserRole() : null;
+            if (akunRole && ['superadmin', 'admin', 'operator'].indexOf(akunRole) === -1) {
+                if (typeof showToast === 'function') {
+                    showToast('🚫 Akses ditolak. Halaman Data Akun Peserta tidak tersedia untuk role Anda.', 'error', 4000);
+                }
+                return;
+            }
         }
         if (typeof akunOriginalShowPage === 'function') {
             akunOriginalShowPage(pageId);

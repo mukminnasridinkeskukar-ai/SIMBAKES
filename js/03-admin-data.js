@@ -25,18 +25,38 @@ async function loadLulusTesData() {
     try {
         console.log('📡 Mengambil data penetapan dari Supabase...');
         
-        // Fetch ALL data from penetapan table via Supabase
-        const { data: penetapanData, error: supabaseError } = await supabaseClient
-            .from('penetapan')
-            .select('*')
-            .order('nama_lengkap', { ascending: true });
+        // ===== PRIVASI NIK =====
+        // Halaman ini PUBLIK (dapat diakses tanpa login). NIK TIDAK BOLEH
+        // ikut terkirim ke browser pembaca. Prioritas: RPC server-side
+        // app_get_lulus_tes() yang hanya mengembalikan kolom aman.
+        // Fallback (SQL patch belum dijalankan): select('*') lalu kolom
+        // nik/no_ktp dihapus sebelum data dipakai/dirender.
+        let penetapanData = null;
+        let rpcErr = null;
+        try {
+            penetapanData = await simbakesRpc('app_get_lulus_tes', {});
+        } catch (e) {
+            rpcErr = e;
+        }
+        
+        if (!penetapanData) {
+            if (rpcErr && rpcErr.code && rpcErr.code !== 'PGRST202' &&
+                String(rpcErr.message || '').indexOf('Could not find the function') === -1) {
+                throw new Error('Gagal mengambil data dari server');
+            }
+            // Fallback jalur lama + SANITASI kolom NIK
+            const { data: rows, error: supabaseError } = await supabaseClient
+                .from('penetapan')
+                .select('*')
+                .order('nama_lengkap', { ascending: true });
+            if (supabaseError) {
+                throw new Error(supabaseError.message || 'Gagal mengambil data dari server');
+            }
+            penetapanData = sanitizePenetapanPublik(rows);
+        }
         
         // Hide loading
         loading.style.display = 'none';
-        
-        if (supabaseError) {
-            throw new Error(supabaseError.message || 'Gagal mengambil data dari server');
-        }
         
         console.log('✅ Data penetapan diterima:', penetapanData?.length, 'records');
         
@@ -69,11 +89,28 @@ async function loadLulusTesData() {
 }
 
 /**
+ * PRIVASI NIK: buang kolom identitas sensitif (nik/no_ktp) dari seluruh
+ * baris sebelum data publik dipakai/dirender di browser pembaca.
+ */
+function sanitizePenetapanPublik(rows) {
+    return (rows || []).map(row => {
+        const clean = { ...row };
+        delete clean.nik;
+        delete clean.no_ktp;
+        delete clean.noKtp;
+        return clean;
+    });
+}
+
+/**
  * Render Individual Cards untuk setiap Peserta
  * Setiap kartu menampilkan foto dan info singkat dengan warna berbeda
  * @param {Array} data - Array of peserta records from penetapan table
  */
 function renderPesertaCards(data) {
+    // Simpan salinan data (SUDAH tanpa NIK) untuk popup detail via index —
+    // jangan lagi serialize record utuh ke atribut onclick (membocorkan data)
+    window.__lulusTesData = data || [];
     const container = document.getElementById('lulus-tes-container');
     container.innerHTML = '';
     
@@ -118,7 +155,8 @@ function renderPesertaCards(data) {
         // Create card element
         const card = document.createElement('div');
         card.className = `peserta-card ${colorClass}`;
-        card.onclick = () => showPesertaDetailModal(peserta);
+        // PRIVASI: kirim INDEX (bukan record utuh) ke popup detail
+        card.onclick = () => showPesertaDetailModal(index);
         
         card.innerHTML = `
             <div class="peserta-card-photo-wrapper">
@@ -159,7 +197,7 @@ function renderPesertaCards(data) {
                         </span>
                     </div>
                 </div>
-                <button class="peserta-card-view-btn" onclick="event.stopPropagation(); showPesertaDetailModal(${JSON.stringify(peserta).replace(/"/g, '&quot;')})">
+                <button type="button" class="peserta-card-view-btn" onclick="event.stopPropagation(); showPesertaDetailModal(${index})">
                     👁️ Lihat Detail
                 </button>
             </div>
@@ -173,7 +211,11 @@ function renderPesertaCards(data) {
 
 /**
  * Show Popup Modal with Photo and Complete Data
- * @param {Object} peserta - Single peserta record from penetapan table
+ * @param {Object|number} peserta - Record penetapan ATAU index pada daftar
+ *   kartu Lulus Tes (data publik yang sudah tanpa NIK).
+ * PRIVASI NIK: baris NIK hanya dirender untuk sesi Panel Admin yang login
+ * (mis. dipakai admin dari menu Data Penetapan). Pembaca umum tidak melihat
+ * NIK sama sekali.
  */
 function showPesertaDetailModal(peserta) {
     // Remove existing modal if any
@@ -181,6 +223,16 @@ function showPesertaDetailModal(peserta) {
     if (existingModal) {
         existingModal.remove();
     }
+
+    // Dukungan pemanggilan via index (halaman publik Lulus Tes)
+    if (typeof peserta === 'number' || typeof peserta === 'string') {
+        const idx = parseInt(peserta, 10);
+        peserta = (window.__lulusTesData && window.__lulusTesData[idx]) || null;
+    }
+    if (!peserta) return;
+    
+    // Sesi Panel Admin boleh melihat NIK utuh; publik tidak sama sekali
+    const bolehLihatNik = (typeof canSeeFullNik === 'function') ? canSeeFullNik() : false;
 
     // Field mapping helper
     const getField = (item, ...keys) => {
@@ -238,6 +290,7 @@ function showPesertaDetailModal(peserta) {
                             ${escapeHtml(namaLengkap)}
                         </div>
                     </div>
+                    ${bolehLihatNik ? `
                     <div class="peserta-modal-field">
                         <span class="peserta-modal-field-label">NIK</span>
                         <div class="peserta-modal-field-value">
@@ -245,6 +298,7 @@ function showPesertaDetailModal(peserta) {
                             <span style="font-family:monospace;">${escapeHtml(nik)}</span>
                         </div>
                     </div>
+                    ` : ''}
                     <div class="peserta-modal-field">
                         <span class="peserta-modal-field-label">Jurusan</span>
                         <div class="peserta-modal-field-value">
@@ -1493,6 +1547,12 @@ function closeDeleteConfirmModal() {
  */
 function exportDataPenetapan() {
     try {
+        // ===== KEAMANAN: role lihat-saja (viewer/observer) TIDAK boleh unduh =====
+        if (typeof hasPermission === 'function' && !hasPermission('canExport')) {
+            showToast('🚫 Akun Anda hanya dapat MELIHAT data — unduh/ekspor tidak diizinkan.', 'error', 4000);
+            console.warn('[SECURITY] Export penetapan diblokir (role tanpa canExport)');
+            return;
+        }
         if (penetapanFilteredData.length === 0) {
             showToast('⚠️ Tidak ada data untuk diekspor', 'warning');
             return;

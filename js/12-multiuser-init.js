@@ -222,6 +222,19 @@ function getDefaultPermissions(role) {
             canAccessUserManagement: false,
             canAccessSettings: false,
             canAccessPesertaPortal: true
+        },
+        observer: {
+            // OBSERVER: hanya MELIHAT 3 bagian data panel admin —
+            // Data Pengusulan, Roadmap, dan Data Penetapan. Tanpa dashboard,
+            // tanpa akun peserta, tanpa unduh (canExport dikontrol ROLE_CONFIG).
+            canAccessDashboard: false,
+            canAccessDataPengusul: true,
+            canAccessAkunPeserta: false,
+            canAccessRoadmap: true,
+            canAccessPenetapan: true,
+            canAccessUserManagement: false,
+            canAccessSettings: false,
+            canAccessPesertaPortal: false
         }
     };
     
@@ -250,13 +263,17 @@ function updateUIForLoggedInAdmin(session) {
         const roleColors = {
             superadmin: 'linear-gradient(135deg, #7c3aed, #6d28d9)',   // Purple
             operator: 'linear-gradient(135deg, #2563eb, #1d4ed8)',     // Blue
-            admin: 'linear-gradient(135deg, #0891b2, #0e7490)'         // Cyan
+            admin: 'linear-gradient(135deg, #0891b2, #0e7490)',        // Cyan
+            viewer: 'linear-gradient(135deg, #059669, #047857)',       // Teal
+            observer: 'linear-gradient(135deg, #d97706, #b45309)'      // Amber
         };
         
         const roleLabels = {
             superadmin: 'Superadmin',
             operator: 'Operator',
-            admin: 'Administrator'
+            admin: 'Administrator',
+            viewer: 'Viewer',
+            observer: 'Observer'
         };
         
         const nama = session.nama || session.nama_lengkap || 'User';
@@ -273,6 +290,7 @@ function updateUIForLoggedInAdmin(session) {
             'operator': 'operator',
             'op': 'operator',
             'viewer': 'viewer',
+            'observer': 'observer',
             'peserta': 'peserta'
         };
         role = roleNormalizationMap[role?.toLowerCase()] || role || 'superadmin';
@@ -1109,7 +1127,8 @@ function updateTopbarAfterLogin(user) {
             'superadmin': 'Super Administrator',
             'admin': 'Super Administrator',
             'operator': 'Operator Data',
-            'viewer': 'Peserta Beasiswa',
+            'viewer': 'Viewer (Baca Saja)',
+            'observer': 'Observer (Pengamat)',
             'peserta': 'Peserta Beasiswa'
         };
         
@@ -1192,7 +1211,8 @@ function updateTopbarAfterLogin(user) {
             'superadmin': 'Full Access - Superadmin',
             'admin': 'Full Access - Admin',
             'operator': 'Limited Access - Operator',
-            'viewer': 'Peserta Beasiswa - Limited Access',
+            'viewer': 'Baca Saja - Viewer (tanpa unduh)',
+            'observer': 'Lihat Data Saja - Observer (tanpa unduh)',
             'peserta': 'Peserta Beasiswa - Limited Access'
         };
         dropdownRole.textContent = dropdownRoleMap[user.role] || `${user.role || 'User'} - Limited Access`;

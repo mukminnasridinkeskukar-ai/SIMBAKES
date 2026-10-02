@@ -186,7 +186,7 @@ function buildBuktiHTML(rec) {
     <div class="section-title">Data Pribadi</div>
     <table class="data">
         ${row('Nama Lengkap', rec.nama_lengkap)}
-        ${row('NIK', rec.nik)}
+        ${row('NIK', (typeof maskNik === 'function') ? maskNik(rec.nik) : '••••••••')}
         ${row('Tempat, Tanggal Lahir', (rec.tempat_lahir ? rec.tempat_lahir + ', ' : '') + formatTanggalIndo(rec.tanggal_lahir))}
         ${row('Pekerjaan / Posisi', [rec.pekerjaan, rec.posisi].filter(Boolean).join(' — '))}
         ${row('Alamat Domisili', rec.alamat_domisili)}

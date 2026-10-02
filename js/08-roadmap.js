@@ -1197,6 +1197,12 @@ function refreshDataRoadmap() {
  * Menggunakan header dan field mapping yang sesuai SQL schema
  */
 function exportDataRoadmap() {
+    // ===== KEAMANAN: role lihat-saja (viewer/observer) TIDAK boleh unduh =====
+    if (typeof hasPermission === 'function' && !hasPermission('canExport')) {
+        showToast('🚫 Akun Anda hanya dapat MELIHAT data — unduh/ekspor tidak diizinkan.', 'error', 4000);
+        console.warn('[SECURITY] Export roadmap diblokir (role tanpa canExport)');
+        return;
+    }
     console.log('[Roadmap] Starting export...');
     console.log('[Roadmap] Total records to export:', roadmapAdminData?.length || 0);
     

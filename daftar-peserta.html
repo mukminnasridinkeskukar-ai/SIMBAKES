@@ -486,17 +486,41 @@
                     if (!client) throw new Error('Koneksi database belum siap. Periksa internet lalu muat ulang halaman (F5).');
 
                     // 1) Cek duplikat (username / email / NIK) supaya pesan error ramah
-                    var orFilter = 'username.eq.' + payload.username + ',email.eq.' + payload.email + ',nik.eq.' + payload.nik;
-                    var dup = await client.from('akun_peserta').select('username,email,nik').or(orFilter).limit(3);
-                    if (dup.error) throw new Error(dup.error.message);
-                    if (dup.data && dup.data.length) {
-                        var msgs = dup.data.map(function (r) {
-                            if (r.username && r.username.toLowerCase() === payload.username) return 'Username <b>' + escapeHtml(payload.username) + '</b> sudah terdaftar';
-                            if (r.email && r.email.toLowerCase() === payload.email) return 'Email <b>' + escapeHtml(payload.email) + '</b> sudah terdaftar';
-                            if (r.nik === payload.nik) return 'NIK <b>' + escapeHtml(payload.nik) + '</b> sudah pernah mendaftar';
-                            return null;
-                        }).filter(Boolean);
-                        throw new Error((msgs[0] || 'Data sudah terdaftar') + '. Gunakan data yang lain atau login bila akun sudah aktif.');
+                    // PRIVASI: gunakan RPC app_check_registrasi (hanya mengembalikan
+                    // penanda true/false — TIDAK membuka baris data pengguna lain).
+                    // Fallback ke select lama hanya bila RPC belum terpasang.
+                    var msgs = [];
+                    var rpcOk = false;
+                    try {
+                        var chk = await client.rpc('app_check_registrasi', {
+                            p_username: payload.username,
+                            p_email: payload.email,
+                            p_nik: payload.nik
+                        });
+                        if (chk.error) throw chk.error;
+                        var r = (chk.data && (Array.isArray(chk.data) ? chk.data[0] : chk.data)) || {};
+                        if (r.username_taken) msgs.push('Username <b>' + escapeHtml(payload.username) + '</b> sudah terdaftar');
+                        if (r.email_taken) msgs.push('Email <b>' + escapeHtml(payload.email) + '</b> sudah terdaftar');
+                        if (r.nik_taken) msgs.push('NIK sudah pernah mendaftar');
+                        rpcOk = true;
+                    } catch (rpcCheckErr) {
+                        rpcOk = false; // RPC belum ada -> jalur lama di bawah
+                    }
+                    if (!rpcOk) {
+                        var orFilter = 'username.eq.' + payload.username + ',email.eq.' + payload.email + ',nik.eq.' + payload.nik;
+                        var dup = await client.from('akun_peserta').select('username,email,nik').or(orFilter).limit(3);
+                        if (dup.error) throw new Error(dup.error.message);
+                        if (dup.data && dup.data.length) {
+                            msgs = dup.data.map(function (r2) {
+                                if (r2.username && r2.username.toLowerCase() === payload.username) return 'Username <b>' + escapeHtml(payload.username) + '</b> sudah terdaftar';
+                                if (r2.email && r2.email.toLowerCase() === payload.email) return 'Email <b>' + escapeHtml(payload.email) + '</b> sudah terdaftar';
+                                if (r2.nik === payload.nik) return 'NIK sudah pernah mendaftar';
+                                return null;
+                            }).filter(Boolean);
+                        }
+                    }
+                    if (msgs.length) {
+                        throw new Error(msgs[0] + '. Gunakan data yang lain atau login bila akun sudah aktif.');
                     }
 
                     // 2) INSERT akun baru (status pending -> diverifikasi admin)

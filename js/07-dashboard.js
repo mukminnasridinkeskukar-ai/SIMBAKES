@@ -434,10 +434,18 @@ async function showPenetapanDetail(type) {
 
         if (error) throw error;
 
+        // PRIVASI NIK: modal dashboard dapat dibuka pembaca umum —
+        // pastikan kolom identitas sensitif tidak ikut ke browser
+        const safeData = (data || []).map(r => {
+            const c = { ...r };
+            delete c.nik; delete c.no_ktp; delete c.noKtp;
+            return c;
+        });
+
         const title = type === 'lulus_pt' ? '🎓 Data Lulus Tes PT (Penetapan)' : '📜 Penerima Beasiswa (Ada SK)';
         
         // Tampilkan modal dengan data
-        showModalPenetapanDetail(title, data || [], type);
+        showModalPenetapanDetail(title, safeData, type);
 
     } catch (error) {
         console.error('❌ Error showing penetapan detail:', error);
