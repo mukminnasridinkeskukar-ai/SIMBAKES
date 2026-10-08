@@ -1746,12 +1746,191 @@ function navigateRecord(direction) {
 // CRUD OPERATIONS - REAL SUPABASE OPERATIONS
 // ============================================================
 
+// ============================================================
+// [REVISI] REKOMENDASI DINKES = UPLOAD FILE KE SUPABASE STORAGE
+// ============================================================
+// Kolom `rekomendasi_dinkes` kini diisi URL publik file hasil upload
+// ke bucket 'pengajuan-files' (folder rekomendasi/). URL tersimpan
+// otomatis ke tabel submissions saat form edit disimpan.
+var SIMBAKES_REKOM_BUCKET = 'pengajuan-files';
+var MAX_REKOM_BYTES = 10 * 1024 * 1024;   // 10 MB (senada limit bucket)
+
+/**
+ * Gerbang cepat: hanya superadmin/operator/admin yang boleh
+ * melakukan aksi CRUD pada data pengusulan (viewer/observer
+ * tidak boleh meskipun tombol berhasil dipanggil via console).
+ */
+function canDoCrudOnPengusulan() {
+    var role = (typeof getCurrentUserRole === 'function') ? getCurrentUserRole() : null;
+    if (!role) return false;                       // tidak ada sesi admin
+    return ['superadmin', 'operator', 'admin'].indexOf(role) !== -1;
+}
+
+/** Format ukuran file utk tampilan (self-contained). */
+function adminFormatFileSize(bytes) {
+    if (bytes === null || bytes === undefined) return '';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+/**
+ * Validasi file rekomendasi: PDF/JPG/PNG/WEBP, maks 10 MB.
+ * @returns null jika valid, atau pesan error (string)
+ */
+function validateRekomFile(file) {
+    if (!file) return 'File rekomendasi belum dipilih.';
+    var name = String(file.name || '').toLowerCase();
+    var okType = file.type === 'application/pdf' || /\.pdf$/.test(name) ||
+                 /image\/(jpeg|jpg|png|webp)/.test(file.type) || /\.(jpe?g|png|webp)$/.test(name);
+    if (!okType) return 'File rekomendasi harus PDF/JPG/PNG/WEBP (terpilih: "' + file.name + '")';
+    if (file.size > MAX_REKOM_BYTES) return 'File rekomendasi terlalu besar (' + adminFormatFileSize(file.size) + ') — maksimal 10 MB';
+    if (file.size === 0) return 'File rekomendasi kosong (0 byte) — file rusak, pilih ulang file-nya';
+    return null;
+}
+
+/**
+ * Handler onchange input file rekomendasi di form edit:
+ * validasi instan + tampilkan info file (+ thumbnail utk gambar).
+ */
+function handleRekomFileSelected(input) {
+    try {
+        var infoBox = document.getElementById('edit-rekom-file-info');
+        var file = (input && input.files && input.files.length) ? input.files[0] : null;
+        var err = validateRekomFile(file);
+        if (err) {
+            if (input) input.value = '';
+            if (infoBox) infoBox.style.display = 'none';
+            ToastManager.error(err);
+            return;
+        }
+        var nameEl = document.getElementById('edit-rekom-file-name');
+        var sizeEl = document.getElementById('edit-rekom-file-size');
+        if (nameEl) nameEl.textContent = file.name;
+        if (sizeEl) sizeEl.textContent = adminFormatFileSize(file.size);
+        var thumb = document.getElementById('edit-rekom-file-thumb');
+        if (thumb) {
+            if (thumb.dataset.objectUrl) { try { URL.revokeObjectURL(thumb.dataset.objectUrl); } catch (e) {} }
+            if (/^image\//.test(file.type)) {
+                var objUrl = URL.createObjectURL(file);
+                thumb.src = objUrl;
+                thumb.dataset.objectUrl = objUrl;
+                thumb.style.display = '';
+            } else {
+                thumb.removeAttribute('src');
+                thumb.style.display = 'none';
+            }
+        }
+        if (infoBox) infoBox.style.display = '';
+        // Mengganti file → opsi "hapus file saat ini" tidak relevan
+        var hapusChk = document.getElementById('edit-rekom-hapus');
+        if (hapusChk) { hapusChk.checked = false; hapusChk.disabled = true; }
+        console.log('[EDIT] 📎 File rekomendasi dipilih:', file.name, adminFormatFileSize(file.size));
+    } catch (e) {
+        console.error('[EDIT] handleRekomFileSelected error:', e);
+    }
+}
+
+/** Bersihkan pilihan file rekomendasi. */
+function clearRekomFileSelection() {
+    try {
+        var input = document.getElementById('edit-rekomendasi_dinkes-file');
+        if (input) input.value = '';
+        var infoBox = document.getElementById('edit-rekom-file-info');
+        if (infoBox) infoBox.style.display = 'none';
+        var thumb = document.getElementById('edit-rekom-file-thumb');
+        if (thumb) {
+            if (thumb.dataset.objectUrl) { try { URL.revokeObjectURL(thumb.dataset.objectUrl); } catch (e) {} }
+            thumb.removeAttribute('src');
+            delete thumb.dataset.objectUrl;
+        }
+        var hapusChk = document.getElementById('edit-rekom-hapus');
+        if (hapusChk) hapusChk.disabled = false;
+    } catch (e) {
+        console.error('[EDIT] clearRekomFileSelection error:', e);
+    }
+}
+
+/** Path storage: rekomendasi/<no_register>/rekomendasi-<ts>-<rand>.<ext> */
+function buildRekomStoragePath(record, file) {
+    var ext = 'bin';
+    var m = String(file.name || '').match(/\.([A-Za-z0-9]{2,5})$/);
+    if (m) ext = m[1].toLowerCase();
+    var safeReg = String((record && (record.no_register || record.id)) || 'tanpa-nomor')
+                      .replace(/[^A-Za-z0-9_-]/g, '');
+    return 'rekomendasi/' + safeReg + '/rekomendasi-' + Date.now() + '-' + Math.floor(Math.random() * 9000 + 1000) + '.' + ext;
+}
+
+/**
+ * Upload file rekomendasi ke Supabase Storage → kembalikan URL publik.
+ * Self-contained (tidak bergantung modul form peserta). Error dilempar.
+ */
+async function uploadRekomFileToStorage(file, storagePath) {
+    if (!supabaseClient) {
+        throw new Error('Supabase tidak terhubung — periksa koneksi internet lalu coba lagi.');
+    }
+    var result = await supabaseClient.storage
+        .from(SIMBAKES_REKOM_BUCKET)
+        .upload(storagePath, file, {
+            contentType: file.type || 'application/octet-stream',
+            cacheControl: '3600',
+            upsert: false
+        });
+    if (result && result.error) {
+        console.error('[EDIT] ❌ Upload rekomendasi gagal (' + storagePath + '):', result.error.message);
+        var msg = result.error.message || 'unknown';
+        if (/Bucket not found/i.test(msg)) {
+            throw new Error('Penyimpanan belum disiapkan (bucket "' + SIMBAKES_REKOM_BUCKET + '" belum ada). Jalankan sekali sql/setup-storage-pengajuan.sql di Supabase SQL Editor.');
+        }
+        if (/row-level security|Unauthorized|AccessDenied|Forbidden/i.test(msg)) {
+            throw new Error('Server menolak upload (kebijakan keamanan storage). Jalankan sql/setup-storage-pengajuan.sql di Supabase SQL Editor.');
+        }
+        throw new Error('Upload "' + file.name + '" gagal: ' + msg);
+    }
+    var pub = supabaseClient.storage.from(SIMBAKES_REKOM_BUCKET).getPublicUrl(storagePath);
+    var publicUrl = pub && pub.data && pub.data.publicUrl;
+    if (!publicUrl) throw new Error('URL publik file tidak diperoleh setelah upload.');
+    console.log('[EDIT] ✅ Rekomendasi terupload:', storagePath);
+    return publicUrl;
+}
+
+/**
+ * Ambil path objek storage dari URL publik bucket pengajuan-files.
+ * @returns path (string) atau null bila bukan URL bucket ini.
+ */
+function extractPengajuanStoragePath(url) {
+    try {
+        var s = String(url || '');
+        var marker = '/storage/v1/object/public/pengajuan-files/';
+        var idx = s.indexOf(marker);
+        if (idx === -1) return null;
+        return decodeURIComponent(s.substring(idx + marker.length).split('?')[0]);
+    } catch (e) { return null; }
+}
+
+/** Hapus file lama di storage (best-effort, gagal diabaikan). */
+async function removeRekomFileBestEffort(url) {
+    try {
+        var path = extractPengajuanStoragePath(url);
+        if (!path || !supabaseClient) return;
+        await supabaseClient.storage.from(SIMBAKES_REKOM_BUCKET).remove([path]);
+        console.log('[EDIT] 🧹 File rekomendasi lama dihapus dari storage:', path);
+    } catch (e) {
+        console.warn('[EDIT] File lama tidak terhapus (diabaikan):', e && e.message);
+    }
+}
+
 /**
  * openEditMode() - Buka form edit
  */
 function openEditMode() {
     if (!window.activeRecord) {
         ToastManager.error('Tidak ada record aktif');
+        return;
+    }
+    // KEAMANAN: hanya superadmin/operator/admin boleh edit data pengusulan
+    if (!canDoCrudOnPengusulan()) {
+        ToastManager.error('🚫 Akses ditolak. Role Anda tidak berwenang mengedit data ini.');
         return;
     }
     
@@ -1784,6 +1963,50 @@ function openEditMode() {
                             `<option value="${opt}" ${opt === currentValue ? 'selected' : ''}>${opt}</option>`
                         ).join('')}
                     </select>
+                </div>
+            `;
+        } else if (key === 'rekomendasi_dinkes') {
+            // ================================================================
+            // [REVISI] REKOMENDASI DINKES = UPLOAD FILE (bukan input teks).
+            // File diupload ke Supabase Storage saat form disimpan; URL
+            // publiknya otomatis tersimpan ke kolom rekomendasi_dinkes.
+            // Input file SENGAJA tanpa atribut name agar FormData tidak
+            // mengirim teks — payload diatur khusus di handleEditSubmit().
+            // ================================================================
+            const hasExisting = /^https?:\/\//i.test(currentValue);
+            formHtml += `
+                <div class="fs-form-group" style="grid-column:1/-1;">
+                    <label>📜 ${label} — Upload File</label>
+                    ${hasExisting ? `
+                    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;padding:0.5rem 0.75rem;margin-bottom:0.5rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:0.85rem;">
+                        <span>📄 File saat ini:</span>
+                        <a href="${escapeHtml(currentValue)}" target="_blank" rel="noopener" style="color:#059669;font-weight:600;text-decoration:underline;">Buka / unduh file rekomendasi</a>
+                    </div>` : `
+                    <div style="padding:0.5rem 0.75rem;margin-bottom:0.5rem;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;font-size:0.85rem;color:#64748b;">
+                        Belum ada file rekomendasi tersimpan.
+                    </div>`}
+                    <input type="file"
+                           id="edit-rekomendasi_dinkes-file"
+                           accept="application/pdf,image/jpeg,image/png,image/webp"
+                           onchange="handleRekomFileSelected(this)"
+                           style="padding:0.5rem;border:1px solid #cbd5e1;border-radius:8px;width:100%;background:#fff;" />
+                    <div id="edit-rekom-file-info" style="display:none;margin-top:0.5rem;padding:0.5rem 0.75rem;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;align-items:center;gap:0.6rem;">
+                        <img id="edit-rekom-file-thumb" src="" alt="" style="display:none;width:42px;height:42px;object-fit:cover;border-radius:6px;border:1px solid #bfdbfe;" />
+                        <div style="flex:1;min-width:0;">
+                            <div id="edit-rekom-file-name" style="font-size:0.85rem;font-weight:600;color:#1e40af;word-break:break-all;"></div>
+                            <div id="edit-rekom-file-size" style="font-size:0.75rem;color:#64748b;"></div>
+                        </div>
+                        <button type="button" onclick="clearRekomFileSelection()" title="Batalkan pilihan file" style="border:none;background:#fee2e2;color:#dc2626;border-radius:6px;padding:0.3rem 0.6rem;cursor:pointer;font-weight:700;">×</button>
+                    </div>
+                    ${hasExisting ? `
+                    <label style="display:flex;align-items:center;gap:0.45rem;margin-top:0.5rem;font-size:0.82rem;color:#334155;cursor:pointer;">
+                        <input type="checkbox" id="edit-rekom-hapus" style="width:auto;" />
+                        Hapus file rekomendasi saat ini (kosongkan kolom)
+                    </label>` : ''}
+                    <p style="font-size:0.75rem;color:#6b7280;margin-top:0.4rem;">
+                        💡 Format PDF/JPG/PNG/WEBP, maks 10 MB — tersimpan otomatis di Supabase Storage.<br>
+                        Biarkan kosong bila tidak ingin mengubah file rekomendasi.
+                    </p>
                 </div>
             `;
         } else if (key.toLowerCase().includes('tanggal') && currentValue) {
@@ -1834,6 +2057,9 @@ function closeEditMode() {
     const overlay = document.getElementById('fs-edit-overlay');
     if (overlay) overlay.classList.remove('active');
     window.lightboxState.isEditing = false;
+    // [REVISI] Bersihkan pilihan file rekomendasi agar tidak tersisa
+    // untuk record berikutnya yang dibuka.
+    if (typeof clearRekomFileSelection === 'function') clearRekomFileSelection();
 }
 
 /**
@@ -1923,6 +2149,48 @@ async function handleEditSubmit(event) {
     // Tambahkan timestamp
     updatedData.updated_at = new Date().toISOString();
     
+    // ============================================================
+    // [REVISI] REKOMENDASI DINKES: PROSES UPLOAD FILE
+    // ============================================================
+    // - File terpilih  -> upload ke Supabase Storage, URL publiknya
+    //   otomatis disimpan ke kolom rekomendasi_dinkes.
+    // - Centang hapus  -> kolom dikosongkan (null).
+    // - Tidak keduanya -> kolom TIDAK disentuh (nilai lama tetap).
+    // ============================================================
+    let oldRekomUrl = record.rekomendasi_dinkes || null;
+    let newRekomUrl = null;
+    try {
+        const rekomInput = document.getElementById('edit-rekomendasi_dinkes-file');
+        const rekomHapus = document.getElementById('edit-rekom-hapus');
+        const rekomFile = (rekomInput && rekomInput.files && rekomInput.files.length) ? rekomInput.files[0] : null;
+        
+        if (rekomFile) {
+            const vErr = validateRekomFile(rekomFile);
+            if (vErr) {
+                ToastManager.error(vErr);
+                const saveBtnErr = event.target.querySelector('.fs-btn-save');
+                if (saveBtnErr) { saveBtnErr.disabled = false; saveBtnErr.textContent = '💾 SIMPAN PERUBAHAN'; saveBtnErr.style.opacity = ''; }
+                return;
+            }
+            console.log('[EDIT] 📤 Mengupload file rekomendasi dinkes...');
+            const rekomPath = buildRekomStoragePath(record, rekomFile);
+            newRekomUrl = await uploadRekomFileToStorage(rekomFile, rekomPath);
+            updatedData.rekomendasi_dinkes = newRekomUrl;
+            console.log('[EDIT] ✅ Rekomendasi dinkes ->', newRekomUrl);
+        } else if (rekomHapus && rekomHapus.checked) {
+            updatedData.rekomendasi_dinkes = null;
+            console.log('[EDIT] 🗑️ Rekomendasi dinkes dikosongkan (opsi hapus dicentang)');
+        }
+        // Kalau tidak ada file baru & tidak centang hapus:
+        // updatedData.rekomendasi_dinkes tidak diset -> nilai lama tetap.
+    } catch (rekomErr) {
+        console.error('[EDIT] ❌ Gagal proses file rekomendasi:', rekomErr);
+        ToastManager.error('❌ ' + (rekomErr && rekomErr.message ? rekomErr.message : 'Gagal mengupload file rekomendasi.'));
+        const saveBtnErr2 = event.target.querySelector('.fs-btn-save');
+        if (saveBtnErr2) { saveBtnErr2.disabled = false; saveBtnErr2.textContent = '💾 SIMPAN PERUBAHAN'; saveBtnErr2.style.opacity = ''; }
+        return;
+    }
+    
     console.log('[EDIT] 📦 Final Update Payload:', updatedData);
     console.log('[EDIT] 🔑 Payload keys:', Object.keys(updatedData));
     
@@ -1945,6 +2213,12 @@ async function handleEditSubmit(event) {
         
         console.log('[EDIT] ✅ updateSubmission() returned successfully!');
         console.log('[EDIT] ✅ Updated Record:', updatedRecord);
+        
+        // [REVISI] File rekomendasi lama di storage dihapus (best-effort)
+        // agar tidak menumpuk sampah file setiap kali diganti.
+        if (newRekomUrl && oldRekomUrl && oldRekomUrl !== newRekomUrl) {
+            await removeRekomFileBestEffort(oldRekomUrl);
+        }
         
         // ============================================================
         // VERIFY DATABASE RECORD (opsional, untuk debugging)
@@ -2078,6 +2352,11 @@ function openStatusMode() {
         ToastManager.error('Tidak ada record aktif');
         return;
     }
+    // KEAMANAN: hanya superadmin/operator/admin boleh ubah status
+    if (!canDoCrudOnPengusulan()) {
+        ToastManager.error('🚫 Akses ditolak. Role Anda tidak berwenang mengubah status data ini.');
+        return;
+    }
     
     const overlay = document.getElementById('fs-status-overlay');
     const optionsContainer = document.getElementById('fs-status-options');
@@ -2209,6 +2488,11 @@ async function confirmStatusChange() {
 function openDeleteMode() {
     if (!window.activeRecord) {
         ToastManager.error('Tidak ada record aktif');
+        return;
+    }
+    // KEAMANAN: hanya superadmin/operator/admin boleh hapus data pengusulan
+    if (!canDoCrudOnPengusulan()) {
+        ToastManager.error('🚫 Akses ditolak. Role Anda tidak berwenang menghapus data ini.');
         return;
     }
     
@@ -2360,6 +2644,10 @@ window.closeDeleteMode = closeDeleteMode;
 window.confirmDeleteAction = confirmDeleteAction;
 window.navigateRecord = navigateRecord;
 window.viewPhotoFullscreen = viewPhotoFullscreen;
+
+// [REVISI] Upload file Rekomendasi Dinkes (form edit)
+window.handleRekomFileSelected = handleRekomFileSelected;
+window.clearRekomFileSelection = clearRekomFileSelection;
 
 // Utility
 window.resolveSupabaseImage = resolveSupabaseImage;

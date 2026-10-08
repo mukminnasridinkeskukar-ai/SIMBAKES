@@ -27,6 +27,7 @@ const SIMBAKES_USER_STATE = {
     permissions: {
         canAccessDashboard: false,
         canAccessDataPengusul: false,
+        canAccessAkunPeserta: false,
         canAccessRoadmap: false,
         canAccessPenetapan: false,
         canAccessUserManagement: false,
@@ -205,6 +206,18 @@ function getDefaultPermissions(role) {
             canAccessSettings: false,
             canAccessPesertaPortal: false
         },
+        viewer: {
+            // VIEWER: lihat data umum saja. Data Pengusulan & Data Akun
+            // Peserta EKSKLUSIF operator/superadmin (akses penuh operator).
+            canAccessDashboard: true,
+            canAccessDataPengusul: false,
+            canAccessAkunPeserta: false,
+            canAccessRoadmap: true,
+            canAccessPenetapan: true,
+            canAccessUserManagement: false,
+            canAccessSettings: false,
+            canAccessPesertaPortal: true
+        },
         admin: {
             canAccessDashboard: true,
             canAccessDataPengusul: false,
@@ -224,11 +237,11 @@ function getDefaultPermissions(role) {
             canAccessPesertaPortal: true
         },
         observer: {
-            // OBSERVER: hanya MELIHAT 3 bagian data panel admin —
-            // Data Pengusulan, Roadmap, dan Data Penetapan. Tanpa dashboard,
-            // tanpa akun peserta, tanpa unduh (canExport dikontrol ROLE_CONFIG).
+            // OBSERVER: hanya MELIHAT Roadmap & Penetapan. Data Pengusulan
+            // & Data Akun Peserta eksklusif operator/superadmin. Tanpa
+            // dashboard, tanpa unduh (canExport dikontrol ROLE_CONFIG).
             canAccessDashboard: false,
-            canAccessDataPengusul: true,
+            canAccessDataPengusul: false,
             canAccessAkunPeserta: false,
             canAccessRoadmap: true,
             canAccessPenetapan: true,

@@ -1469,9 +1469,22 @@
                                 
                                 <div style="display:flex;gap:2rem;align-items:flex-start;">
                                     <div style="flex:1;min-width:260px;">
-                                        <label>Foto Pasfoto - Link Google Drive (ubah bila perlu)</label>
-                                        <input type="url" class="form-input" id="rev-foto-link" placeholder="Paste link Google Drive foto pasfoto terbaru...">
-                                        <p style="font-size:0.75rem;color:#6b7280;margin-top:0.3rem;">Biarkan kosong bila foto sudah sesuai.</p>
+                                        <label>Foto Pasfoto - Upload File (ubah bila perlu)</label>
+                                        <input type="file"
+                                               class="form-input file-input"
+                                               id="rev-foto-file"
+                                               accept="image/jpeg,image/png,image/webp"
+                                               onchange="handleFileSelected(this, 'rev-foto')">
+                                        <div id="rev-foto-file-info" class="file-info-box hidden">
+                                            <img id="rev-foto-file-thumb" class="file-thumb" src="" alt="Preview">
+                                            <div class="file-meta">
+                                                <span id="rev-foto-file-name" class="file-name"></span>
+                                                <span id="rev-foto-file-size" class="file-size"></span>
+                                            </div>
+                                            <button type="button" class="btn-remove-file" onclick="clearSelectedFile('rev-foto')" title="Hapus file">×</button>
+                                        </div>
+                                        <p id="rev-foto-current" style="font-size:0.75rem;color:#6b7280;margin-top:0.3rem;"></p>
+                                        <p style="font-size:0.75rem;color:#6b7280;margin-top:0.3rem;">Biarkan kosong bila foto sudah sesuai. Format JPG/PNG/WEBP, maks 5 MB — tersimpan otomatis di server SIMBAKES.</p>
                                     </div>
                                 </div>
                             </div>
@@ -1762,9 +1775,24 @@
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label>Dokumen Kelengkapan - Link Google Drive (ubah bila perlu)</label>
-                                    <input type="url" class="form-input" id="rev-dokumen-link" placeholder="Paste link Google Drive: file PDF gabungan atau folder dokumen terbaru...">
-                                    <p style="font-size:0.75rem;color:#6b7280;margin-top:0.3rem;">Biarkan kosong bila dokumen sudah sesuai. Pastikan link di-share "Anyone with the link".</p>
+                                    <label>Dokumen Kelengkapan - Upload File (ubah bila perlu)</label>
+                                    <input type="file"
+                                           class="form-input file-input"
+                                           id="rev-dokumen-file"
+                                           accept="application/pdf"
+                                           onchange="handleFileSelected(this, 'rev-dokumen')">
+                                    <div id="rev-dokumen-file-info" class="file-info-box hidden">
+                                        <div class="file-thumb file-thumb-pdf">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="26" height="26"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/></svg>
+                                        </div>
+                                        <div class="file-meta">
+                                            <span id="rev-dokumen-file-name" class="file-name"></span>
+                                            <span id="rev-dokumen-file-size" class="file-size"></span>
+                                        </div>
+                                        <button type="button" class="btn-remove-file" onclick="clearSelectedFile('rev-dokumen')" title="Hapus file">×</button>
+                                    </div>
+                                    <p id="rev-dokumen-current" style="font-size:0.75rem;color:#6b7280;margin-top:0.3rem;"></p>
+                                    <p style="font-size:0.75rem;color:#6b7280;margin-top:0.3rem;">Biarkan kosong bila dokumen sudah sesuai. 1 file PDF gabungan, maks 10 MB — tersimpan otomatis di server SIMBAKES.</p>
                                 </div>
                             </div>
 

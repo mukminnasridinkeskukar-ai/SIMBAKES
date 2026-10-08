@@ -75,7 +75,7 @@ const ROLE_CONFIG = {
         id: 'operator',
         name: 'Operator Data',
         label: 'OPERATOR',
-        description: 'Terbatas - Data Pengusulan & Akun Peserta',
+        description: 'Akses Penuh - Hanya Data Pengusulan & Data Akun Peserta',
         avatar: '⚙️',
         color: '#2563eb',           // Blue
         gradient: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
@@ -95,14 +95,16 @@ const ROLE_CONFIG = {
             settings: false            // Hidden
         },
         
-        // Action Permissions - CRUD hanya di Data Pengusul
-        canCreate: true,             // Bisa tambah data pengusul
+        // Action Permissions - AKSES PENUH di 2 menu miliknya:
+        // Data Pengusulan + Data Akun Peserta (lihat, tambah, edit, hapus,
+        // ubah status, upload file rekomendasi, export).
+        canCreate: true,             // Bisa tambah data (2 menu miliknya)
         canRead: true,
-        canUpdate: true,             // Bisa edit data pengusul
-        canDelete: true,             // Bisa hapus data pengusul
-        canExport: true,             // Bisa export data pengusul
+        canUpdate: true,             // Bisa edit data (2 menu miliknya)
+        canDelete: true,             // Bisa hapus data (2 menu miliknya)
+        canExport: true,             // Bisa export data (2 menu miliknya)
         canImport: false,
-        canApprove: false,
+        canApprove: true,            // ✅ AKSES PENUH: ubah status/setujui di 2 menu miliknya
         canManageUsers: false,
         canChangeSettings: false,
         
@@ -115,18 +117,19 @@ const ROLE_CONFIG = {
         id: 'viewer',
         name: 'Viewer',
         label: 'VIEWER',
-        description: 'Read-Only - Melihat Saja',
+        description: 'Read-Only - Tanpa Data Pengusulan & Akun Peserta',
         avatar: '👁️',
         color: '#059669',           // Green/Teal
         gradient: 'linear-gradient(135deg, #059669, #047857)',
         badgeClass: 'role-viewer-badge',
         avatarClass: 'admin-viewer',
         
-        // Menu Access - Bisa lihat SEMUA (kecuali Settings/User Mgmt)
+        // Menu Access - Bisa lihat umum, TANPA Data Pengusulan & Akun Peserta
+        // (2 menu tersebut eksklusif untuk operator + superadmin)
         menus: {
             dashboard: true,         // Visible (read-only)
-            dataPengusul: true,      // Visible (read-only)
-            dataAkunPeserta: true,   // ✅ FIX: Visible (read-only)
+            dataPengusul: false,     // ❌ DIBLOKIR: hanya operator/superadmin
+            dataAkunPeserta: false,  // ❌ DIBLOKIR: hanya operator/superadmin
             roadmapKebutuhan: true,   // Visible (read-only)
             penetapan: true,         // Visible (read-only)
             laporan: true,           // Visible (read-only)
@@ -155,58 +158,20 @@ const ROLE_CONFIG = {
         id: 'observer',
         name: 'Observer',
         label: 'OBSERVER',
-        description: 'Pengamat - Lihat Data Pengusulan, Roadmap & Penetapan Saja',
+        description: 'Pengamat - Lihat Roadmap & Penetapan Saja',
         avatar: '🔭',
         color: '#d97706',           // Amber
         gradient: 'linear-gradient(135deg, #d97706, #b45309)',
         badgeClass: 'role-observer-badge',
         avatarClass: 'admin-observer',
         
-        // Menu Access - HANYA 3 bagian data: Pengusulan, Roadmap, Penetapan
+        // Menu Access - HANYA Roadmap & Penetapan (lihat saja).
+        // Data Pengusulan & Data Akun Peserta EKSKLUSIF operator/superadmin.
+        // (Definisi observer yang duplikat sudah dirapikan menjadi satu.)
         menus: {
             dashboard: false,         // Hidden
-            dataPengusul: true,       // Visible (lihat saja)
-            dataAkunPeserta: false,   // Hidden
-            roadmapKebutuhan: true,   // Visible (lihat saja)
-            penetapan: true,          // Visible (lihat saja)
-            laporan: false,           // Hidden
-            pesertaPortal: false,     // Hidden
-            userManagement: false,    // Hidden
-            settings: false           // Hidden
-        },
-        
-        // Action Permissions - LIHAT SAJA, TANPA download/edit apapun
-        canCreate: false,
-        canRead: true,
-        canUpdate: false,
-        canDelete: false,
-        canExport: false,           // TIDAK BISA download/ekspor
-        canImport: false,
-        canApprove: false,
-        canManageUsers: false,
-        canChangeSettings: false,
-        
-        // Special Permissions
-        fullAccess: false,
-        viewOnly: true
-    },
-    
-    observer: {
-        id: 'observer',
-        name: 'Observer',
-        label: 'OBSERVER',
-        description: 'Pengamat - Lihat Data Pengusulan, Roadmap & Penetapan Saja',
-        avatar: '🔭',
-        color: '#d97706',           // Amber
-        gradient: 'linear-gradient(135deg, #d97706, #b45309)',
-        badgeClass: 'role-observer-badge',
-        avatarClass: 'admin-observer',
-        
-        // Menu Access - HANYA 3 bagian data: Pengusulan, Roadmap, Penetapan
-        menus: {
-            dashboard: false,         // Hidden
-            dataPengusul: true,       // Visible (lihat saja)
-            dataAkunPeserta: false,   // Hidden
+            dataPengusul: false,      // ❌ DIBLOKIR: hanya operator/superadmin
+            dataAkunPeserta: false,   // ❌ DIBLOKIR: hanya operator/superadmin
             roadmapKebutuhan: true,   // Visible (lihat saja)
             penetapan: true,          // Visible (lihat saja)
             laporan: false,           // Hidden
@@ -1597,7 +1562,10 @@ function showPage(pageId) {
         }
         
         // Cek role-based access untuk halaman admin lainnya
+        // 'data-pengusul' ditambahkan: Data Pengusulan eksklusif
+        // operator/superadmin (viewer/observer ditolak di sini).
         const protectedPages = {
+            'data-pengusul': 'dataPengusul',
             'data-roadmap': 'roadmapKebutuhan',
             'data-penetapan': 'penetapan',
             'data-akun-peserta': 'dataAkunPeserta',
@@ -1612,6 +1580,14 @@ function showPage(pageId) {
                 showToast(`🚫 Akses ditolak. Anda tidak memiliki izin untuk mengakses halaman ini.`, 'error', 4000);
             }
             console.warn(`[RBAC] 🔒 Access denied for page '${pageId}' - requires '${requiredPerm}'`);
+            // RAPIKAN: jangan biarkan halaman terlarang tetap aktif —
+            // kembalikan ke halaman pertama yang memang boleh diakses role ini.
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const roleCfg = (typeof getCurrentRoleConfig === 'function') ? getCurrentRoleConfig() : null;
+            const fallbackPage = (roleCfg && roleCfg.menus && roleCfg.menus.dashboard) ? 'dashboard' :
+                                 (roleCfg && roleCfg.menus && roleCfg.menus.dataPengusul) ? 'data-pengusul' : 'dashboard';
+            const fallbackEl = document.getElementById('page-' + fallbackPage);
+            if (fallbackEl) fallbackEl.classList.add('active');
             return;
         }
     }

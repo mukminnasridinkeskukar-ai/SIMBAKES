@@ -575,8 +575,9 @@ function handleFileSelected(input, kind) {
     try {
         var infoBox = document.getElementById(kind + '-file-info');
         var file = (input && input.files && input.files.length) ? input.files[0] : null;
-        var labelMap = { foto: 'Foto Pasfoto', dokumen: 'Dokumen Kelengkapan (PDF)', surat: 'Surat Pernyataan (PDF)' };
-        var kindMap = { foto: 'image', dokumen: 'pdf', surat: 'pdf' };
+        var labelMap = { foto: 'Foto Pasfoto', dokumen: 'Dokumen Kelengkapan (PDF)', surat: 'Surat Pernyataan (PDF)',
+                         'rev-foto': 'Foto Pasfoto (Perbaikan)', 'rev-dokumen': 'Dokumen Kelengkapan (Perbaikan)' };
+        var kindMap = { foto: 'image', dokumen: 'pdf', surat: 'pdf', 'rev-foto': 'image', 'rev-dokumen': 'pdf' };
         var err = validateLocalFile(file, labelMap[kind] || 'File', kindMap[kind] || 'pdf');
         if (err) {
             if (input) input.value = '';
@@ -589,8 +590,8 @@ function handleFileSelected(input, kind) {
         var sizeEl = document.getElementById(kind + '-file-size');
         if (nameEl) nameEl.textContent = file.name;
         if (sizeEl) sizeEl.textContent = formatFileSize(file.size);
-        if (kind === 'foto') {
-            var thumb = document.getElementById('foto-file-thumb');
+        if (kind === 'foto' || kind === 'rev-foto') {
+            var thumb = document.getElementById(kind + '-file-thumb');
             if (thumb) {
                 if (thumb.dataset.objectUrl) { try { URL.revokeObjectURL(thumb.dataset.objectUrl); } catch (e) {} }
                 var objUrl = URL.createObjectURL(file);
@@ -614,8 +615,8 @@ function clearSelectedFile(kind) {
         if (input) input.value = '';
         var infoBox = document.getElementById(kind + '-file-info');
         if (infoBox) infoBox.classList.add('hidden');
-        if (kind === 'foto') {
-            var thumb = document.getElementById('foto-file-thumb');
+        if (kind === 'foto' || kind === 'rev-foto') {
+            var thumb = document.getElementById(kind + '-file-thumb');
             if (thumb && thumb.dataset.objectUrl) {
                 try { URL.revokeObjectURL(thumb.dataset.objectUrl); } catch (e) {}
                 thumb.src = '';

@@ -632,11 +632,11 @@ function openRevisionForm() {
     document.getElementById('rev-no-wa').value = data.no_wa || '';
     document.getElementById('rev-email').value = data.email || '';
     
-    // Link Drive saat ini (kolom aktual foto_peserta & dokumen_kelengkapan)
-    const revFotoLink = document.getElementById('rev-foto-link');
-    const revDokLink = document.getElementById('rev-dokumen-link');
-    if (revFotoLink) revFotoLink.value = data.foto_peserta || '';
-    if (revDokLink) revDokLink.value = (data.dokumen_kelengkapan || '').split(/\s+/)[0] || '';
+    // Info file SAAT INI (kolom aktual foto_peserta & dokumen_kelengkapan).
+    // [REVISI] Input link Google Drive diganti UPLOAD FILE — nilai lama
+    // hanya ditampilkan sebagai tautan info, tidak lagi diedit manual.
+    renderRevCurrentFile('rev-foto-current', data.foto_peserta, 'foto');
+    renderRevCurrentFile('rev-dokumen-current', data.dokumen_kelengkapan, 'dokumen');
     
     // Show revision form container
     document.getElementById('revision-form-container').classList.add('active');
@@ -646,16 +646,45 @@ function openRevisionForm() {
 }
 
 /**
+ * [REVISI] Tampilkan tautan "file saat ini" pada form revisi.
+ * Nilai kolom bisa berisi 1 URL (foto) atau 2 URL dipisah baris
+ * (dokumen + surat pernyataan). Dibangun via DOM agar aman dari XSS.
+ */
+function renderRevCurrentFile(elementId, rawValue, jenis) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.innerHTML = '';
+    const urls = String(rawValue || '').split(/\s+/).map(s => s.trim()).filter(u => /^https?:\/\//i.test(u));
+    if (!urls.length) {
+        el.textContent = '📁 Belum ada file ' + (jenis === 'foto' ? 'foto' : 'dokumen') + ' tersimpan.';
+        return;
+    }
+    el.appendChild(document.createTextNode('📎 File saat ini: '));
+    urls.forEach((u, i) => {
+        if (i > 0) el.appendChild(document.createTextNode(' · '));
+        const a = document.createElement('a');
+        a.href = u;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = 'Lihat ' + (urls.length > 1 ? ('File ' + (i + 1)) : 'file') + (jenis === 'foto' ? ' foto' : ' dokumen');
+        a.style.cssText = 'color:#059669;font-weight:600;text-decoration:underline;';
+        el.appendChild(a);
+    });
+}
+
+/**
  * Close revision form
  */
 function closeRevisionForm() {
     document.getElementById('revision-form-container').classList.remove('active');
     
-    // Kosongkan input link Drive revisi
-    const revFotoLink = document.getElementById('rev-foto-link');
-    const revDokLink = document.getElementById('rev-dokumen-link');
-    if (revFotoLink) revFotoLink.value = '';
-    if (revDokLink) revDokLink.value = '';
+    // [REVISI] Kosongkan pilihan file upload revisi
+    if (typeof clearSelectedFile === 'function') {
+        clearSelectedFile('rev-foto');
+        clearSelectedFile('rev-dokumen');
+    }
+    renderRevCurrentFile('rev-foto-current', '', 'foto');
+    renderRevCurrentFile('rev-dokumen-current', '', 'dokumen');
 }
 
 /**
@@ -684,9 +713,7 @@ async function saveRevisionData() {
         rencanaTahun: document.getElementById('rev-rencana-tahun').value,
         noHP: document.getElementById('rev-no-hp').value,
         noWA: document.getElementById('rev-no-wa').value,
-        email: document.getElementById('rev-email').value,
-        fotoPeserta: document.getElementById('rev-foto-link')?.value?.trim() || '',
-        dokumenKelengkapan: document.getElementById('rev-dokumen-link')?.value?.trim() || ''
+        email: document.getElementById('rev-email').value
     };
 
     // Basic validation
@@ -703,6 +730,18 @@ async function saveRevisionData() {
     const confirmSave = confirm('Apakah Anda yakin ingin menyimpan perbaikan data?\n\nStatus akan kembali ke "Proses Verifikasi".');
     if (!confirmSave) return;
 
+    // [REVISI] Validasi file revisi (bila dipilih) SEBELUM proses simpan
+    const revFotoFile = (typeof getSelectedFile === 'function') ? getSelectedFile('rev-foto') : null;
+    const revDokFile  = (typeof getSelectedFile === 'function') ? getSelectedFile('rev-dokumen') : null;
+    if (revFotoFile) {
+        const errF = validateLocalFile(revFotoFile, 'Foto Pasfoto (Perbaikan)', 'image');
+        if (errF) { showToast('❌ ' + errF, 'error'); return; }
+    }
+    if (revDokFile) {
+        const errD = validateLocalFile(revDokFile, 'Dokumen Kelengkapan (Perbaikan)', 'pdf');
+        if (errD) { showToast('❌ ' + errD, 'error'); return; }
+    }
+
     // Disable button and show loading
     const btn = event.target;
     const originalText = btn.innerHTML;
@@ -710,6 +749,41 @@ async function saveRevisionData() {
     btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px;"></div> Menyimpan...';
 
     try {
+        // ========================================================
+        // [REVISI] Upload file baru ke Supabase Storage (bila dipilih).
+        // URL publiknya otomatis tersimpan ke kolom foto_peserta /
+        // dokumen_kelengkapan. Bila tidak ada file baru, nilai kolom
+        // lama DIPERTAHANKAN (tidak di-null-kan).
+        // ========================================================
+        let revFotoUrl = null;
+        let revDokUrl = null;
+        if (revFotoFile) {
+            console.log('[REVISI] 📤 Upload foto perbaikan...');
+            revFotoUrl = await uploadFileToStorage(
+                revFotoFile,
+                buildStoragePath(formData.noRegister, 'revisi-foto', revFotoFile)
+            );
+            console.log('[REVISI] ✅ Foto perbaikan terupload:', revFotoUrl);
+        }
+        if (revDokFile) {
+            console.log('[REVISI] 📤 Upload dokumen perbaikan...');
+            revDokUrl = await uploadFileToStorage(
+                revDokFile,
+                buildStoragePath(formData.noRegister, 'revisi-dokumen', revDokFile)
+            );
+            console.log('[REVISI] ✅ Dokumen perbaikan terupload:', revDokUrl);
+        }
+
+        // dokumen_kelengkapan bisa berisi URL dokumen + URL surat pernyataan
+        // (dipisah baris baru). Saat dokumen baru diupload, ganti HANYA URL
+        // dokumen (entri pertama) dan pertahankan URL surat.
+        const existingDokUrls = String((currentSearchResult && currentSearchResult.dokumen_kelengkapan) || '')
+            .split(/\s+/).map(s => s.trim()).filter(u => /^https?:\/\//i.test(u));
+        let newDokValue = existingDokUrls.join('\n') || null;
+        if (revDokUrl) {
+            newDokValue = [revDokUrl].concat(existingDokUrls.slice(1)).join('\n');
+        }
+
         // Map ke kolom aktual tabel submissions (snake_case)
         const updates = {
             nik: formData.nik,
@@ -730,8 +804,8 @@ async function saveRevisionData() {
             no_hp: formData.noHP,
             no_wa: formData.noWA,
             email: formData.email,
-            foto_peserta: formData.fotoPeserta || null,
-            dokumen_kelengkapan: formData.dokumenKelengkapan || null,
+            foto_peserta: revFotoUrl || (currentSearchResult && currentSearchResult.foto_peserta) || null,
+            dokumen_kelengkapan: newDokValue,
             status: 'Proses Verifikasi',
             updated_at: new Date().toISOString()
         };
