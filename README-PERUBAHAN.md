@@ -307,3 +307,49 @@ Kini setiap layar punya tombol jelas **"← Kembali ke Portal"**:
 | `css/ui-overhaul.css` | Style baru `.peserta-popup-back`, `.peserta-popup-topbar-actions`, aturan responsif ≤640px |
 
 Tidak ada perubahan SQL/Supabase untuk revisi ini (murni tampilan & navigasi).
+
+---
+
+# REVISI: KONFIRMASI SEBELUM KELUAR DARI FORM PENGAJUAN YANG SUDAH TERISI
+
+Tanggal: 14 Oktober 2026
+
+## Permintaan
+
+Saat pengguna menutup form "Ajukan Rekomendasi" yang **sudah terisi**
+(lewat tombol "← Kembali ke Portal", tombol ×, atau ESC), tampilkan
+konfirmasi dulu agar data isian tidak hilang tanpa sengaja.
+
+## Perilaku baru
+
+| Kondisi form | Saat keluar dari popup |
+|---|---|
+| Kosong (hanya prefill otomatis NIK/nama/email/nomor register) | Langsung tertutup, **tanpa** konfirmasi |
+| Sudah diisi pengguna (teks, pilihan, atau file terpilih) | Modal konfirmasi **"Keluar dari Formulir?"** |
+| Pengajuan sudah berhasil terkirim (modal sukses tampil) | Langsung tertutup, tanpa konfirmasi |
+
+Modal konfirmasi:
+- **"Lanjut Mengisi"** (tombol abu) — kembali ke form, data tetap utuh.
+  Klik di luar modal dan tombol ESC juga berperilaku sama (aman).
+- **"Ya, Keluar"** (tombol merah) — menutup popup dan kembali ke Portal
+  Peserta; data isian memang diabaikan.
+
+Catatan teknis deteksi "sudah terisi": nilai field dibandingkan dengan
+`defaultValue`/`defaultChecked` (nilai awal di HTML), sehingga prefill
+otomatis dari sesi (NIK, nama, email) dan nomor register/tanggal yang
+dibuat sistem **tidak** dianggap isian pengguna. File yang sudah dipilih
+juga dihitung. Setelah pengajuan sukses, tanda `__ajukanSubmitted`
+mencegah konfirmasi muncul lagi.
+
+Jalur yang TIDAK diubah: setelah submit sukses, tombol "Cek Status
+Pengajuan" pada modal sukses tetap langsung pindah tanpa konfirmasi.
+
+## File yang berubah
+
+| File | Perubahan |
+|---|---|
+| `js/11-topbar-session.js` | Fungsi baru `isAjukanFormDirty()`, `requestClosePesertaAjukan()`, `showAjukanExitConfirm()`, `closeAjukanExitConfirm()`; ESC popup ajukan lewat gerbang konfirmasi; tanda `__ajukanSubmitted` saat submit sukses |
+| `index.html` | Tombol × dan "← Kembali ke Portal" popup ajukan memanggil `requestClosePesertaAjukan()`; versi cache `11-topbar-session.js` → `?v=20261014a` |
+
+Tidak ada perubahan SQL/Supabase. Popup Cek Status & Penetapan tidak
+memakai konfirmasi ini (formulirnya bukan isian panjang).

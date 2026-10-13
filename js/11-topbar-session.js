@@ -472,6 +472,9 @@ function openPesertaAjukan() {
             setTimeout(() => {
                 const successModal = document.getElementById('success-modal');
                 if (successModal && successModal.classList.contains('active')) {
+                    // [Pengembangan] Pengajuan sudah berhasil terkirim — keluar dari
+                    // popup TIDAK PERLU konfirmasi (tidak ada data yang hilang).
+                    window.__ajukanSubmitted = true;
                     // Modify the cek status button to close popup instead
                     const cekBtn = successModal.querySelector('button[onclick*="cek-status"]');
                     if (cekBtn) {
@@ -584,6 +587,112 @@ function closePesertaCekStatus() {
     }
 }
 
+/**
+ * [Pengembangan] Deteksi form pengajuan "sudah terisi" oleh pengguna.
+ * Membandingkan nilai saat ini dgn defaultValue (nilai awal di HTML):
+ * - Prefill otomatis (NIK/nama/email dari sesi, nomor register & tanggal
+ *   dari initializeForm) TIDAK dihitung terisi — tidak memicu konfirmasi.
+ * - Input pengguna apa pun (teks, pilihan, file terpilih) = terisi.
+ * Bila pengajuan sudah berhasil terkirim (__ajukanSubmitted), form dianggap
+ * bersih karena tidak ada lagi data yang bisa hilang.
+ */
+function isAjukanFormDirty() {
+    if (window.__ajukanSubmitted) return false;
+    const form = document.getElementById('form-ajukan');
+    if (!form) return false;
+    const els = form.querySelectorAll('input, select, textarea');
+    let changed = false;
+    els.forEach(function (el) {
+        if (changed) return;
+        if (el.type === 'file') {
+            if (el.files && el.files.length) changed = true;
+        } else if (el.type === 'checkbox' || el.type === 'radio') {
+            if (el.checked !== el.defaultChecked) changed = true;
+        } else {
+            if ((el.value || '') !== (el.defaultValue || '')) changed = true;
+        }
+    });
+    return changed;
+}
+
+/**
+ * [Pengembangan] Tutup modal konfirmasi keluar (tanpa menyentuh overflow
+ * body — popup ajukan masih terbuka di belakangnya).
+ */
+function closeAjukanExitConfirm() {
+    const m = document.getElementById('ajukan-exit-confirm');
+    if (m) {
+        if (m.__escHandler) {
+            document.removeEventListener('keydown', m.__escHandler, true);
+            m.__escHandler = null;
+        }
+        m.classList.remove('active');
+        setTimeout(() => m.remove(), 200);
+    }
+}
+
+/**
+ * [Pengembangan] Modal konfirmasi keluar dari form pengajuan yang sudah
+ * terisi. "Lanjut Mengisi" (default aman, juga untuk klik backdrop & ESC)
+ * tetap di form; "Ya, Keluar" menutup popup dan kembali ke Portal.
+ */
+function showAjukanExitConfirm() {
+    closeAjukanExitConfirm(); // bersihkan sisa bila ada
+    const m = document.createElement('div');
+    m.id = 'ajukan-exit-confirm';
+    m.className = 'modal-overlay';
+    m.innerHTML = `
+        <div class="modal-content" style="max-width:430px; width:calc(100% - 32px); border-radius:20px; background:white; text-align:center; padding:2rem 1.75rem;">
+            <div style="width:64px; height:64px; border-radius:50%; background:#fef3c7; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:1.8rem;">⚠️</div>
+            <h3 style="margin:0 0 0.5rem; font-size:1.15rem; color:#0f172a;">Keluar dari Formulir?</h3>
+            <p style="margin:0 0 1.4rem; color:#64748b; font-size:0.92rem; line-height:1.55;">Formulir pengajuan sudah terisi sebagian. Bila keluar sekarang, <b style="color:#334155;">data yang sudah Anda isi akan hilang</b>.</p>
+            <div style="display:flex; gap:10px;">
+                <button type="button" id="ajukan-exit-batal" style="flex:1; padding:12px; background:#f1f5f9; color:#475569; border:none; border-radius:10px; font-weight:700; font-size:0.9rem; cursor:pointer; transition:background 0.2s;">Lanjut Mengisi</button>
+                <button type="button" id="ajukan-exit-ya" style="flex:1; padding:12px; background:linear-gradient(135deg,#dc2626,#b91c1c); color:white; border:none; border-radius:10px; font-weight:700; font-size:0.9rem; cursor:pointer; transition:opacity 0.2s;">Ya, Keluar</button>
+            </div>
+        </div>`;
+    document.body.appendChild(m);
+    requestAnimationFrame(() => m.classList.add('active'));
+    // Klik backdrop = batal (tetap di form)
+    m.addEventListener('click', function (e) { if (e.target === m) closeAjukanExitConfirm(); });
+    m.querySelector('#ajukan-exit-batal').addEventListener('click', closeAjukanExitConfirm);
+    m.querySelector('#ajukan-exit-ya').addEventListener('click', function () {
+        closeAjukanExitConfirm();
+        closePesertaAjukan();
+    });
+    // ESC pada modal ini = batal (tetap di form), jangan biarkan handler
+    // global menutup popup di belakangnya.
+    m.__escHandler = function (ev) {
+        if (ev.key === 'Escape') {
+            ev.stopPropagation();
+            closeAjukanExitConfirm();
+        }
+    };
+    document.addEventListener('keydown', m.__escHandler, true);
+}
+
+/**
+ * [Pengembangan] Gerbang tutup popup Ajukan Rekomendasi:
+ * form kosong / sudah terkirim -> langsung tutup;
+ * form sudah terisi -> tampilkan konfirmasi dulu.
+ * Dipakai tombol "← Kembali ke Portal", tombol ×, dan tombol ESC.
+ */
+function requestClosePesertaAjukan() {
+    const popup = document.getElementById('peserta-ajukan-popup');
+    if (!popup || !popup.classList.contains('show')) {
+        closePesertaAjukan();
+        return;
+    }
+    // Bila modal lain (sukses / konfirmasi kirim) sedang aktif, jangan
+    // menutup apa pun di belakangnya — biarkan modal itu selesai dulu.
+    if (document.querySelector('.modal-overlay.active')) return;
+    if (!isAjukanFormDirty()) {
+        closePesertaAjukan();
+        return;
+    }
+    showAjukanExitConfirm();
+}
+
 // ESC key handler for peserta overlays
 // [Task9g] Jika ada modal konfirmasi/sukses aktif, ESC harus menutup MODAL
 // dulu (bukan popup peserta di belakangnya) — konsisten dgn perilaku menu publik.
@@ -593,7 +702,7 @@ document.addEventListener('keydown', function(e) {
             return; // biarkan handler modal (closeModal) yang menutup
         }
         if (document.getElementById('peserta-ajukan-popup')?.classList.contains('show')) {
-            closePesertaAjukan();
+            requestClosePesertaAjukan();
         } else if (document.getElementById('peserta-cekstatus-popup')?.classList.contains('show')) {
             closePesertaCekStatus();
         } else if (document.getElementById('peserta-penetapan-popup')?.classList.contains('show')) {
