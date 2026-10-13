@@ -1287,6 +1287,30 @@ body {
         color: #64748b; font-size: 1.25rem; transition: all 0.2s;
     }
     .peserta-popup-close:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+    /* [Pengembangan Akun Peserta] Tombol "Kembali ke Portal" pada topbar popup */
+    .peserta-popup-topbar-actions {
+        display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    }
+    .peserta-popup-back {
+        display: inline-flex; align-items: center; gap: 7px;
+        height: 38px; padding: 0 14px; border-radius: 10px;
+        border: 1px solid #e2e8f0; background: white; cursor: pointer;
+        color: #475569; font-size: 0.85rem; font-weight: 600;
+        font-family: inherit; line-height: 1; white-space: nowrap;
+        transition: all 0.2s;
+    }
+    .peserta-popup-back:hover { background: #f0fdf4; color: #059669; border-color: #a7f3d0; }
+    .peserta-popup-back:active { transform: scale(0.97); }
+    .peserta-popup-back svg { flex-shrink: 0; }
+    .peserta-popup-back-ext { display: inline; }
+    @media (max-width: 640px) {
+        .peserta-popup-topbar { padding: 0.75rem 1rem; gap: 8px; }
+        .peserta-popup-topbar-actions { gap: 8px; }
+        .peserta-popup-title { font-size: 0.95rem; }
+        .peserta-popup-back { height: 34px; padding: 0 10px; font-size: 0.78rem; }
+        .peserta-popup-back-ext { display: none; }
+        #profil-back-ext { display: none; }
+    }
     .peserta-popup-body {
         flex: 1; overflow-y: auto; padding: 2rem;
     }

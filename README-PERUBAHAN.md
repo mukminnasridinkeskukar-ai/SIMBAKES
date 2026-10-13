@@ -262,3 +262,48 @@ Skrip storage lama ditulis ulang menjadi **satu skrip lengkap & idempotent**:
    login viewer/observer → pastikan 2 menu hilang & halaman ditolak;
    edit data pengusulan → upload file Rekomendasi Dinkes; cek status
    pengajuan berstatus "Perbaikan" → perbaiki dengan upload foto/dokumen.
+
+---
+
+# REVISI: TOMBOL "KEMBALI KE PORTAL" PADA 4 LAYANAN PESERTA
+
+Tanggal: 14 Oktober 2026
+
+## Permintaan
+
+Pada Portal Peserta, setelah masuk ke salah satu pilihan kartu, sediakan
+menu/tombol untuk **kembali ke Portal Peserta** di keempat layanan.
+
+## Yang ditambahkan
+
+Portal Peserta punya 4 kartu. Setiap kartu membuka layar layanan penuh
+(popup/modal) yang sebelumnya hanya punya tombol "×" kecil tanpa label.
+Kini setiap layar punya tombol jelas **"← Kembali ke Portal"**:
+
+| Kartu | Layar tujuan | Tombol kembali |
+|---|---|---|
+| 1. Ajukan Rekomendasi | Popup `#peserta-ajukan-popup` | `← Kembali ke Portal` di topbar (dekat tombol ×) |
+| 2. Cek Status Pengajuan | Popup `#peserta-cekstatus-popup` | `← Kembali ke Portal` di topbar |
+| 3. Cek Status Penetapan | Popup `#peserta-penetapan-popup` | `← Kembali ke Portal` di topbar |
+| 4. Profil & Keamanan Akun | Modal `#peserta-profil-modal` | `← Kembali ke Portal` di header hijau |
+
+## Perilaku
+
+- Klik tombol = menutup layar layanan dan kembali ke daftar kartu Portal
+  Peserta (fungsi tutup yang sama dengan tombol × / tombol Batal, sehingga
+  semua pembersihan state tetap berjalan — node form dikembalikan ke
+  posisi aslinya, overflow body dipulihkan).
+- Tombol × tetap ada; tombol Kembali hanyalah pintasan yang lebih jelas.
+- **Responsif**: pada layar ≤ 640px label memendek otomatis menjadi
+  "← Kembali" agar topbar tidak sempit; di header Profil, baris tombol
+  turun rapi di bawah judul (flex-wrap).
+
+## File yang berubah
+
+| File | Perubahan |
+|---|---|
+| `index.html` | 3 topbar popup: tombol `.peserta-popup-back` + wadah `.peserta-popup-topbar-actions`; versi cache CSS/JS dinaikkan (`?v=20261014a`) |
+| `js/17-profil-peserta.js` | Header modal profil: tombol `#profil-kembali-portal` + listener (klik = `closeProfilPeserta`, hover menerang) |
+| `css/ui-overhaul.css` | Style baru `.peserta-popup-back`, `.peserta-popup-topbar-actions`, aturan responsif ≤640px |
+
+Tidak ada perubahan SQL/Supabase untuk revisi ini (murni tampilan & navigasi).

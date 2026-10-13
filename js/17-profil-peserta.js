@@ -119,9 +119,16 @@
         modal.className = 'modal-overlay';
         modal.innerHTML = `
         <div class="modal-content" style="max-width:560px; max-height:92vh; overflow-y:auto; border-radius:20px; background:white;">
-            <div style="background:linear-gradient(135deg,#059669,#047857); padding:1.5rem 2rem; display:flex; align-items:center; justify-content:space-between;">
-                <h2 style="color:white; font-size:1.25rem; font-weight:700; margin:0;">👤 Profil & Keamanan Akun</h2>
-                <button type="button" id="profil-close-x" style="background:rgba(255,255,255,0.2); border:none; color:white; width:34px; height:34px; border-radius:50%; font-size:1.1rem; cursor:pointer;">✕</button>
+            <div style="background:linear-gradient(135deg,#059669,#047857); padding:1.5rem 2rem; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                <h2 style="color:white; font-size:1.25rem; font-weight:700; margin:0; flex:1; min-width:0;">👤 Profil & Keamanan Akun</h2>
+                <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+                    <button type="button" id="profil-kembali-portal" title="Kembali ke Portal Peserta"
+                        style="display:inline-flex; align-items:center; gap:7px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.45); color:white; padding:8px 14px; border-radius:10px; font-size:0.85rem; font-weight:600; cursor:pointer; transition:background 0.2s, border-color 0.2s; white-space:nowrap;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="15" height="15"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+                        <span>Kembali<span id="profil-back-ext"> ke Portal</span></span>
+                    </button>
+                    <button type="button" id="profil-close-x" style="background:rgba(255,255,255,0.2); border:none; color:white; width:34px; height:34px; border-radius:50%; font-size:1.1rem; cursor:pointer; flex-shrink:0;">✕</button>
+                </div>
             </div>
             <form id="profil-form" novalidate>
                 <div style="padding:1.5rem 2rem;">
@@ -253,6 +260,20 @@
         // --- Tutup / batal ---
         modal.querySelector('#profil-close-x').addEventListener('click', closeProfilPeserta);
         modal.querySelector('#profil-batal').addEventListener('click', closeProfilPeserta);
+
+        // --- Tombol kembali ke Portal Peserta ---
+        const kembaliBtn = modal.querySelector('#profil-kembali-portal');
+        if (kembaliBtn) {
+            kembaliBtn.addEventListener('click', closeProfilPeserta);
+            kembaliBtn.addEventListener('mouseenter', function () {
+                kembaliBtn.style.background = 'rgba(255,255,255,0.32)';
+                kembaliBtn.style.borderColor = 'rgba(255,255,255,0.7)';
+            });
+            kembaliBtn.addEventListener('mouseleave', function () {
+                kembaliBtn.style.background = 'rgba(255,255,255,0.15)';
+                kembaliBtn.style.borderColor = 'rgba(255,255,255,0.45)';
+            });
+        }
 
         // --- Submit ---
         modal.querySelector('#profil-form').addEventListener('submit', async function (e) {

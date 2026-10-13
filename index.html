@@ -25,7 +25,7 @@
     <!-- ===== ADDITIONAL CSS FOR DATA PENETAPAN ADMIN TABLE ===== -->
     <link rel="stylesheet" href="css/styles-tables.css?v=20260915v">
     <!-- ===== UI OVERHAUL STYLES (Auto-injected) ===== -->
-    <link rel="stylesheet" href="css/ui-overhaul.css?v=20260915v">
+    <link rel="stylesheet" href="css/ui-overhaul.css?v=20261014a">
 
     <!-- [Task9c] Stub awal: cegah "handlePreviewError is not defined" bila
          preview gambar/iframe error sebelum modul JS (01-core.js) termuat.
@@ -153,7 +153,13 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
                 Ajukan Rekomendasi Beasiswa
             </div>
-            <button class="peserta-popup-close" onclick="closePesertaAjukan()" title="Tutup">×</button>
+            <div class="peserta-popup-topbar-actions">
+                <button class="peserta-popup-back" onclick="closePesertaAjukan()" title="Kembali ke Portal Peserta">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+                    <span>Kembali<span class="peserta-popup-back-ext"> ke Portal</span></span>
+                </button>
+                <button class="peserta-popup-close" onclick="closePesertaAjukan()" title="Tutup">×</button>
+            </div>
         </div>
         <div class="peserta-popup-body" id="peserta-ajukan-body">
             <!-- Content will be dynamically moved here from page-ajukan -->
@@ -167,7 +173,13 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" width="22" height="22"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 Cek Status Pengajuan
             </div>
-            <button class="peserta-popup-close" onclick="closePesertaCekStatus()" title="Tutup">×</button>
+            <div class="peserta-popup-topbar-actions">
+                <button class="peserta-popup-back" onclick="closePesertaCekStatus()" title="Kembali ke Portal Peserta">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+                    <span>Kembali<span class="peserta-popup-back-ext"> ke Portal</span></span>
+                </button>
+                <button class="peserta-popup-close" onclick="closePesertaCekStatus()" title="Tutup">×</button>
+            </div>
         </div>
         <div class="peserta-popup-body" id="peserta-cekstatus-body">
             <!-- Content will be dynamically moved here from page-cek-status -->
@@ -181,7 +193,13 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" width="22" height="22"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
                 Cek Status Penetapan
             </div>
-            <button class="peserta-popup-close" onclick="closePesertaCekPenetapan()" title="Tutup">×</button>
+            <div class="peserta-popup-topbar-actions">
+                <button class="peserta-popup-back" onclick="closePesertaCekPenetapan()" title="Kembali ke Portal Peserta">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+                    <span>Kembali<span class="peserta-popup-back-ext"> ke Portal</span></span>
+                </button>
+                <button class="peserta-popup-close" onclick="closePesertaCekPenetapan()" title="Tutup">×</button>
+            </div>
         </div>
         <div class="peserta-popup-body" id="peserta-penetapan-body">
             <!-- Content will be dynamically moved here from page-cek-penetapan -->
@@ -2936,7 +2954,7 @@
     <!-- ===== DATA AKUN PESERTA (Fitur Baru - CRUD tabel akun_peserta) ===== -->
     <script src="js/13-akun-peserta.js?v=20260915v"></script>
     <script src="js/15-bukti-pendaftaran.js?v=20261002a"></script>
-    <script src="js/17-profil-peserta.js?v=20261002a"></script>
+    <script src="js/17-profil-peserta.js?v=20261014a"></script>
 
 <!-- 
 ======================================================
