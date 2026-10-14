@@ -1866,10 +1866,15 @@ function buildRekomStoragePath(record, file) {
 }
 
 /**
- * Upload file rekomendasi ke Supabase Storage → kembalikan URL publik.
- * Self-contained (tidak bergantung modul form peserta). Error dilempar.
+ * Upload file rekomendasi ke penyimpanan → kembalikan URL publik.
+ * [Revisi 15 Okt] Driver Cloudflare R2 bila aktif (js/r2-config.js);
+ * selain itu Supabase Storage. Self-contained (tidak bergantung modul
+ * form peserta). Error dilempar.
  */
 async function uploadRekomFileToStorage(file, storagePath) {
+    if (window.r2Enabled && window.r2Enabled()) {
+        return await window.r2UploadPublicUrl(file, storagePath);
+    }
     if (!supabaseClient) {
         throw new Error('Supabase tidak terhubung — periksa koneksi internet lalu coba lagi.');
     }
@@ -1912,9 +1917,19 @@ function extractPengajuanStoragePath(url) {
     } catch (e) { return null; }
 }
 
-/** Hapus file lama di storage (best-effort, gagal diabaikan). */
+/** Hapus file lama di storage (best-effort, gagal diabaikan).
+ * [Revisi 15 Okt] Mendukung URL R2 (hapus via Worker) DAN URL Supabase. */
 async function removeRekomFileBestEffort(url) {
     try {
+        // [Revisi 15 Okt] URL publik R2 → hapus lewat Worker R2
+        if (window.r2Enabled && window.r2Enabled() && window.r2ExtractPath) {
+            var r2Path = window.r2ExtractPath(url);
+            if (r2Path) {
+                await window.r2DeleteByPath(r2Path);
+                console.log('[EDIT] 🧹 File rekomendasi lama dihapus dari R2:', r2Path);
+                return;
+            }
+        }
         var path = extractPengajuanStoragePath(url);
         if (!path || !supabaseClient) return;
         await supabaseClient.storage.from(SIMBAKES_REKOM_BUCKET).remove([path]);

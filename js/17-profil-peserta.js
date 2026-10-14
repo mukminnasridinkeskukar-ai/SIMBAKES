@@ -344,21 +344,27 @@
                 const ext = extMatch ? extMatch[1].toLowerCase() : 'jpg';
                 const path = 'profil/' + String(session.id).replace(/[^A-Za-z0-9_-]/g, '') +
                              '/foto-' + Date.now() + '-' + Math.floor(Math.random() * 9000 + 1000) + '.' + ext;
-                const up = await client.storage.from(PROFIL_BUCKET).upload(path, fotoBaruFile, {
-                    contentType: fotoBaruFile.type || 'image/jpeg',
-                    cacheControl: '3600',
-                    upsert: true
-                });
-                if (up && up.error) {
-                    const msgUp = up.error.message || '';
-                    if (/Bucket not found/i.test(msgUp)) {
-                        throw new Error('Penyimpanan foto belum disiapkan. Admin perlu menjalankan sekali sql/PATCH-PROFIL-OBSERVER-PRIVASI.sql di Supabase SQL Editor.');
+                // [Revisi 15 Okt] Driver Cloudflare R2 bila aktif (js/r2-config.js) —
+                // database profil tetap disimpan via RPC Supabase seperti biasa.
+                if (window.r2Enabled && window.r2Enabled()) {
+                    fotoUrl = await window.r2UploadPublicUrl(fotoBaruFile, path);
+                } else {
+                    const up = await client.storage.from(PROFIL_BUCKET).upload(path, fotoBaruFile, {
+                        contentType: fotoBaruFile.type || 'image/jpeg',
+                        cacheControl: '3600',
+                        upsert: true
+                    });
+                    if (up && up.error) {
+                        const msgUp = up.error.message || '';
+                        if (/Bucket not found/i.test(msgUp)) {
+                            throw new Error('Penyimpanan foto belum disiapkan. Admin perlu menjalankan sekali sql/PATCH-PROFIL-OBSERVER-PRIVASI.sql di Supabase SQL Editor.');
+                        }
+                        throw new Error('Upload foto gagal: ' + msgUp);
                     }
-                    throw new Error('Upload foto gagal: ' + msgUp);
+                    const pub = client.storage.from(PROFIL_BUCKET).getPublicUrl(path);
+                    fotoUrl = (pub && pub.data && pub.data.publicUrl) || '';
+                    if (!fotoUrl) throw new Error('URL foto tidak diperoleh setelah upload.');
                 }
-                const pub = client.storage.from(PROFIL_BUCKET).getPublicUrl(path);
-                fotoUrl = (pub && pub.data && pub.data.publicUrl) || '';
-                if (!fotoUrl) throw new Error('URL foto tidak diperoleh setelah upload.');
             }
 
             // 2) Simpan profil via RPC (server memvalidasi pemilik akun)

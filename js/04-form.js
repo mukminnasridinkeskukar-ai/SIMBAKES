@@ -641,10 +641,15 @@ function buildStoragePath(regNumber, kind, file) {
 }
 
 /**
- * [Task9f] Upload 1 file ke Supabase Storage → kembalikan URL publik.
+ * [Task9f] Upload 1 file ke penyimpanan → kembalikan URL publik.
+ * [Revisi 15 Okt] Driver Cloudflare R2 bila diaktifkan di js/r2-config.js
+ * (database TETAP Supabase); selain itu Supabase Storage seperti sebelumnya.
  * Error APAPUN dilempar (throw) — TIDAK ada sukses palsu.
  */
 async function uploadFileToStorage(file, storagePath) {
+    if (window.r2Enabled && window.r2Enabled()) {
+        return await window.r2UploadPublicUrl(file, storagePath);
+    }
     if (!supabaseClient) {
         throw new Error('Supabase tidak terhubung — periksa koneksi internet lalu coba lagi.');
     }
@@ -1225,9 +1230,16 @@ async function submitForm() {
             }
         } catch (upErr) {
             // Bersihkan file yang sempat terupload (best-effort — kegagalan diabaikan)
-            if (uploadedPaths.length && supabaseClient) {
+            if (uploadedPaths.length) {
                 try {
-                    await supabaseClient.storage.from(STORAGE_BUCKET).remove(uploadedPaths);
+                    // [Revisi 15 Okt] R2 aktif → hapus via Worker; bila tidak, API Supabase
+                    if (window.r2Enabled && window.r2Enabled() && window.r2DeleteByPath) {
+                        for (var ri = 0; ri < uploadedPaths.length; ri++) {
+                            await window.r2DeleteByPath(uploadedPaths[ri]);
+                        }
+                    } else if (supabaseClient) {
+                        await supabaseClient.storage.from(STORAGE_BUCKET).remove(uploadedPaths);
+                    }
                     console.info('[FORM] ' + uploadedPaths.length + ' file sisa upload dibersihkan.');
                 } catch (rmErr) {
                     console.warn('[FORM] Cleanup storage gagal (diabaikan):', rmErr);

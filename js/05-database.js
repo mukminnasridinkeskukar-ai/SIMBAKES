@@ -521,6 +521,25 @@ window.retryPendingSubmissions = retryPendingSubmissions;
 window.getPendingSubmissions = getPendingSubmissions;
 
 /**
+ * [Revisi 15 Okt] Pengirim-ulang BERKALA: selama halaman terbuka dan
+ * masih ada pengajuan tertunda di perangkat, coba kirim ulang setiap
+ * 2 menit. Dulu kirim ulang hanya terjadi saat aplikasi dibuka / portal
+ * tampil — pengguna yang membiarkan halaman terbuka harus buka-tutup
+ * halaman dulu. Kini pengajuan masuk ke tabel submissions segera
+ * setelah server normal kembali, tanpa tindakan apa pun.
+ * (No-op saat antrean kosong; aman terhadap tabungannya lewat
+ *  __pendingSyncBusy di retryPendingSubmissions.)
+ */
+setInterval(function () {
+    try {
+        if (!supabaseClient) return;
+        if (getPendingSubmissions().length > 0) {
+            retryPendingSubmissions().catch(function () { /* dicoba lagi di tick berikutnya */ });
+        }
+    } catch (e) { /* abaikan */ }
+}, 120000);
+
+/**
  * Update Submission Status/Data
  */
 async function updateSubmissionStatus(id, updates) {

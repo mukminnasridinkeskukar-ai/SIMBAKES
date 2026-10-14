@@ -511,3 +511,154 @@ mendekati batas kuota (~95%). Akibatnya:
      "Pengajuan tertunda berhasil dikirim"),
    - File yatim dari kejadian sebelumnya dipulihkan lewat **"🛟 Pulihkan Data"**
      di panel admin → Data Pengusulan.
+
+---
+
+# REVISI 15 OKT — PENYIMPANAN FILE KE CLOUDFLARE R2 (DATABASE TETAP SUPABASE)
+
+## Ringkasan
+
+File dokumen/foto (foto pasfoto, dokumen kelengkapan, surat pernyataan,
+rekomendasi dinkes, foto profil) kini dapat diupload ke **Cloudflare R2**
+(gratis 10 GB + traffic unduh gratis), sementara **database tetap 100%
+Supabase** — tanpa perubahan tabel, tanpa SQL baru, tanpa migrasi data.
+File lama yang sudah ada di Supabase Storage tetap tampil normal.
+
+## File baru / berubah
+
+| File | Keterangan |
+|---|---|
+| `js/r2-config.js` | **Baru** — driver R2: konfigurasi 4 baris, upload/hapus/ekstrak-URL, saklar `enabled` (false = mode Supabase seperti biasa) |
+| `cloudflare/worker-simbakes-upload.js` | **Baru** — kode Worker Cloudflare (tempel di dashboard; endpoint upload/delete/list/health, token, whitelist folder & tipe, maks 10 MB, anti-path-traversal) |
+| `cloudflare/migrate-supabase-to-r2.mjs` | **Baru (opsional)** — skrip Node memindahkan file lama Supabase → R2 + mencetak SQL pengganti URL |
+| `README-CLOUDFLARE-R2.md` | **Baru** — panduan pemasangan lengkap (±20 menit, semua lewat dashboard, tanpa CLI) |
+| `js/04-form.js` | `uploadFileToStorage()` otomatis memilih driver R2 bila aktif; rollback file sisa upload mendukung R2 |
+| `js/admin-crud.js` | Upload rekomendasi dinkes mendukung R2; hapus file lama mendukung URL R2 & URL Supabase sekaligus |
+| `js/17-profil-peserta.js` | Foto profil mendukung R2 (penyimpanan profil tetap via RPC Supabase) |
+| `index.html` | Muat `r2-config.js` sebelum admin-crud; versi cache 3 file → `?v=20261015a` |
+
+## Yang perlu dilakukan pengguna
+
+1. Ikuti **README-CLOUDFLARE-R2.md** (buat bucket R2 + Worker + isi
+   `js/r2-config.js`).
+2. Tidak ingin pindah? Abaikan saja — `enabled: false` membuat aplikasi
+   berperilaku persis seperti sebelumnya (default).
+
+## QA
+
+- `node --check` lulus untuk semua file yang berubah + Worker + skrip migrasi.
+- Uji RBAC 18 kasus lulus (tidak ada perubahan hak akses).
+- Uji logika driver: 19 kasus (gate, sanitasi path/anti-`..`, ekstrak URL,
+  upload sukses/401/413/ekstensi/jaringan, delete via URL).
+- Uji integrasi `uploadFileToStorage`: R2 nonaktif → Supabase terpanggil,
+  Worker tidak; R2 aktif → Worker terpanggil, Supabase tidak (6 kasus lulus).
+
+---
+
+# REVISI 15 OKT b — JALUR TANPA KARTU KREDIT: BACKBLAZE B2
+
+## Latar
+
+Aktivasi Cloudflare R2 meminta data pembayaran (kartu) walau paketnya
+gratis — pengguna terhalang di langkah itu. Solusi: Worker yang sama kini
+mendukung **Backblaze B2** sebagai backend penyimpanan file (10 GB gratis,
+pendaftaran **tanpa kartu kredit**, unduhan gratis s.d. 3× kapasitas/bulan).
+Database tetap 100% Supabase; kode aplikasi & konfigurasi `r2-config.js`
+TIDAK berubah sama sekali.
+
+## Perubahan
+
+| File | Keterangan |
+|---|---|
+| `cloudflare/worker-simbakes-upload.js` | Kini mendukung 2 backend via variable `STORAGE_BACKEND`: `b2` (default baru yang direkomendasikan untuk pengguna tanpa kartu) dan `r2`. Backend B2 memakai native API B2 (authorize + get_upload_url di-cache 23 jam, checksum SHA-1 via Web Crypto, retry token expired, duplikat → 409, URL publik dari downloadUrl hasil authorize — bukan hardcode) |
+| `README-BACKBLAZE-B2.md` | **Baru** — panduan lengkap tanpa kartu: daftar B2 → bucket Public → App Key → URL baca publik → Worker (tanpa kartu) → isi variable → konfigurasi 4 baris → uji |
+| `README-CLOUDFLARE-R2.md` | Ditambah petunjuk ke jalur B2 di bagian atas |
+| `js/r2-config.js` | Hanya komentar diperbarui (kontrak konfigurasi identik untuk R2 & B2) |
+
+## QA
+
+- Uji Worker (Node, mock API B2): 14/14 lulus — /health, 401, urutan
+  authorize→get_upload_url→upload, header X-Bz-File-Name & SHA-1 cocok,
+  cache token antar-request, duplicate→409, delete via list+delete_file_version,
+  list terpetakan, petunjuk konfigurasi, whitelist prefix.
+- Uji r2-config 19/19, uji integrasi driver 6/6, RBAC lulus, node --check lulus.
+
+---
+
+# REVISI 15 OKT c — PENGAKUAN FAKTA: R2 SELALU MINTA KARTU + PENGAMAN JEBAKAN DAFTAR BACKBLAZE
+
+## Latar
+
+Pengguna melaporkan *"tetap diminta bayaran"* setelah mencoba beberapa
+kali. Telusuran & verifikasi (dokumentasi resmi Backblaze + forum resmi
+Cloudflare, 15 Okt) mengonfirmasi:
+
+1. **Cloudflare R2 wajib kartu kredit/debit untuk aktivasi — tanpa
+   kecuali, termasuk kuota gratis 10 GB.** R2 adalah layanan *metered*
+   (pemakaian tak dibatasi, ditagih bila melewati kuota), sehingga
+   Cloudflare selalu meminta metode pembayaran saat menekan
+   "Purchase R2". **Tidak ada cara mengaktifkan R2 tanpa kartu.**
+   Jangan mencoba ulang — hasilnya pasti sama.
+2. **Backblaze B2 resmi "No credit card required"** untuk 10 GB gratis.
+   Jebakan yang paling mungkin terjadi: halaman depan Backblaze
+   menonjolkan produk **"Computer Backup" (~$9/bulan, berbayar)** —
+   mendaftar di produk itu memang diminta pembayaran, padahal yang
+   dibutuhkan SIMBAKES adalah produk **B2 Cloud Storage** (gratis).
+
+## Perubahan (hanya dokumentasi — kode aplikasi tidak tersentuh)
+
+| File | Keterangan |
+|---|---|
+| `README-CLOUDFLARE-R2.md` | Peringatan besar di bagian atas: R2 TIDAK BISA diaktifkan tanpa kartu (kebijakan Cloudflare) — jangan ulangi mencoba; arahkan ke jalur B2 / mode Supabase murni. Langkah 1 diberi catatan tepat di titik permintaan kartu |
+| `README-BACKBLAZE-B2.md` | Bagian baru di paling atas: "MASIH DIMINTA PEMBAYARAN? Periksa 3 hal ini" — (1) tabel pembeda produk Computer Backup (berbayar ❌) vs B2 Cloud Storage (gratis ✅) + tautan pendaftaran yang tepat `backblaze.com/sign-up/cloud-storage`; (2) abaikan banner upgrade di dashboard B2; (3) jangan campuri panduan R2. Langkah 1 ditulis ulang memakai tautan pendaftaran langsung |
+
+## Keputusan untuk pengguna tanpa kartu
+
+| Pilihan | Yang dilakukan |
+|---|---|
+| **A. Jalur B2 (disarankan bila ingin kapasitas file besar)** | Ikuti `README-BACKBLAZE-B2.md` mulai dari tautan pendaftaran yang benar — tanpa kartu dari awal sampai akhir |
+| **B. Tetap Supabase murni (tanpa layanan baru sama sekali)** | Biarkan `js/r2-config.js` → `enabled: false` (kondisi default sekarang). Aplikasi 100% berfungsi; bila database terkunci baca-saja, jalankan `sql/DIAG-READ-ONLY.sql` lalu bebaskan kuota via Dashboard |
+| **C. R2 (hanya bila ada kartu)** | Ikuti `README-CLOUDFLARE-R2.md`; kuota gratis tidak ditagih selama tidak terlampaui |
+
+---
+
+# REVISI 15 OKT d — AUDIT PENUH JALUR SUBMISI + SQL PEMELIHARAAN KUOTA
+
+## Latar
+
+Setelah pengguna memastikan kuota Supabase masih sangat lega
+(Database 6%, Storage 3% — screenshot Usage 15 Okt), keputusan final:
+**tetap 100% Supabase**. Atas permintaan pengguna — *"buatkan dan
+rapikan kembali seluruhnya agar data yang terinput bisa masuk ke tabel
+submissions dengan lancar"* — dilakukan audit menyeluruh jalur simpan
+dan dibuatkan SQL pemeliharaan berkala.
+
+## Hasil audit jalur submit (kesimpulan: SEHAT, tidak ada bug penghalang)
+
+| Titik | Hasil pemeriksaan |
+|---|---|
+| `04-form.js` submitForm | ✅ Guard klik-ganda, validasi ulang seluruh isian, nomor register dijamin unik, 3 file diupload dengan pembersihan sisa bila gagal, hasil insert diverifikasi eksplisit sebelum modal sukses |
+| `04-form.js` uploadFileToStorage | ✅ Gerbang R2 dinonaktifkan dengan benar (default Supabase); pesan error upload dipetakan ramah (bucket belum ada / RLS / jaringan) |
+| `05-database.js` submitCleanDataToSupabase | ✅ Jalur 1 RPC `app_submit_pengajuan` (security definer, idempotent, identitas peserta distempel server) → Jalur 2 insert langsung bila RPC belum terpasang → tangani duplikat 23505 → verifikasi row terbaca |
+| Antrean pemulihan | ✅ Payload gagal kirim disimpan perangkat (maks 20, unik per nomor); kirim ulang otomatis saat koneksi siap & portal dibuka; dihapus dari antrean hanya setelah terverifikasi tersimpan |
+| Deteksi baca-saja | ✅ SQLSTATE 25006 / HTTP 405 / "read-only transaction" → pesan khusus "data Anda AMAN, server baca-saja" |
+| Server (PATCH-SUBMIT-PENGAJUAN.sql) | ✅ RPC submit + RLS select/insert `authenticated` + RPC pemulihan file yatim — semua idempotent |
+| Pemetaan payload | ✅ Whitelist kolom bersih; tanggal dinormalisasi ISO (termasuk format Indonesia "16 Agustus 2026"); kolom tak dikenal tidak ikut terkirim |
+
+## Perubahan
+
+| File | Keterangan |
+|---|---|
+| `sql/CLEANUP-QUOTA.sql` | **Baru** — pemeliharaan berkala 1 menit: (A) laporan read-only/ukuran DB/tabel terbesar+baris mati/Storage/sesi; (B) hapus HANYA sesi login mati (kadaluarsa & dicabut — predikat sama dengan `app_purge_expired_sessions`) dengan pengaman otomatis bila database masih read-only; (C) daftar kandidat file yatim Storage TANPA menghapus (diarahkan ke tombol "🛟 Pulihkan Data" dulu); (D) instruksi `VACUUM (analyze)` yang sengaja dijalankan terpisah (VACUUM tidak boleh dalam transaksi). Idempotent, aman diulang, tidak pernah menyentuh submissions/akun_peserta |
+| `js/05-database.js` | Pengirim-ulang BERKALA: selama halaman terbuka dan masih ada pengajuan tertunda, coba kirim ulang tiap 2 menit — pengajuan masuk ke `submissions` segera setelah server normal, tanpa perlu buka-tutup halaman (no-op saat antrean kosong; antre-tabungan dijamin `__pendingSyncBusy`) |
+| `index.html` | Cache-bust `05-database.js` → `?v=20261015c` |
+
+## Langkah admin (opsional tapi disarankan)
+
+1. Jalankan `sql/CLEANUP-QUOTA.sql` di SQL Editor (aman, 1 menit) —
+   rutinkan 1–2 minggu sekali atau saat Usage → Database Size > 60%.
+2. Ikuti instruksi Bagian D di skrip itu: jalankan `vacuum (analyze)
+   public.app_sessions;` di tab Run terpisah bila pembersihan menghapus
+   baris (agar ruang disk benar-benar bebas).
+3. Tidak ada SQL wajib baru untuk jalur submit — PATCH-SUBMIT-PENGAJUAN.sql
+   yang sudah pernah dijalankan tetap berlaku.
