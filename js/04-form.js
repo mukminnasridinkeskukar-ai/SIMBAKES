@@ -497,6 +497,160 @@ var __invalidFieldEls = [];
 // [Task9e] Flag anti double-submit — klik ganda / klik beruntun diabaikan
 var __submitInProgress = false;
 
+// ============================================================
+// [Revisi 15 Okt g] SATU PESERTA SATU PENGAJUAN
+// NIK yang sudah punya pengajuan di tabel submissions TIDAK boleh
+// mengirim lagi — notifikasi tampil tepat di bawah isian NIK, tombol
+// kirim diblokir, dan server (app_submit_pengajuan) menolak juga.
+// ============================================================
+var __nikSudahDiajukan = null;   // null = belum ditemukan/belum dicek
+var __nikCheckTimer = null;
+
+function escNikText(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function getClientSafe() {
+    try {
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) return supabaseClient;
+    } catch (e) { /* belum siap */ }
+    return null;
+}
+
+function pesertaNikAktif() {
+    try {
+        if (typeof pesertaSessionData !== 'undefined' && pesertaSessionData && pesertaSessionData.nik) {
+            return String(pesertaSessionData.nik).replace(/\D/g, '');
+        }
+    } catch (e) { /* abaikan */ }
+    return '';
+}
+
+function pastikanNikNoticeEl() {
+    const nikEl = document.getElementById('nik');
+    if (!nikEl) return null;
+    const grup = nikEl.closest ? nikEl.closest('.form-group') : null;
+    const wadah = grup || nikEl.parentNode;
+    let el = document.getElementById('nik-sudah-notice');
+    if (!el && wadah) {
+        el = document.createElement('div');
+        el.id = 'nik-sudah-notice';
+        el.style.cssText = 'display:none; margin-top:9px; padding:11px 14px; border-radius:12px; font-size:0.85rem; line-height:1.65; font-weight:600;';
+        wadah.appendChild(el);
+    }
+    return el;
+}
+
+function fmtTglSingkatNilai(value) {
+    const s = String(value == null ? '' : value).trim();
+    if (!s) return '';
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) {
+        try { return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { /* lanjut */ }
+    }
+    return s;
+}
+
+function renderNikNotice(row) {
+    const el = pastikanNikNoticeEl();
+    if (!el) return;
+    if (row) {
+        el.style.display = 'block';
+        el.style.background = '#f0fdf4';
+        el.style.border = '1.5px solid #86efac';
+        el.style.color = '#166534';
+        el.innerHTML = '✅ <b>Data dengan NIK ini sudah pernah diinput.</b> Pengajuan Anda sudah tercatat di sistem' +
+            (row.no_register ? ' dengan <b>No. Register ' + escNikText(row.no_register) + '</b>' : '') +
+            (row.created_at ? ' pada ' + escNikText(fmtTglSingkatNilai(row.created_at)) : '') +
+            '. Satu peserta hanya dapat mengisi formulir <b>satu kali</b> — untuk perubahan data hubungi admin/operator. Progres dapat dipantau lewat kartu <b>Cek Status Pengajuan</b>.';
+    } else {
+        el.style.display = 'none';
+        el.innerHTML = '';
+    }
+}
+
+function setNikSubmitBlock(blokir) {
+    if (blokir) {
+        const btn = document.getElementById('btn-submit-final');
+        if (btn) {
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.style.cursor = 'not-allowed';
+            btn.title = 'NIK sudah pernah diinput — satu peserta hanya boleh satu pengajuan';
+        }
+    } else {
+        if (__submitInProgress) return; // jangan ganggu proses kirim yang berjalan
+        const btn = document.getElementById('btn-submit-final');
+        if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '';
+            btn.style.cursor = '';
+            btn.title = '';
+        }
+    }
+}
+
+/** Cek ke server: apakah NIK ini sudah punya pengajuan? (mengembalikan row atau null) */
+async function cekNikSudahDiajukan(nikRaw) {
+    const nik = String(nikRaw || '').replace(/\D/g, '');
+    if (!/^\d{16}$/.test(nik)) { __nikSudahDiajukan = null; renderNikNotice(null); setNikSubmitBlock(false); return null; }
+    const client = getClientSafe();
+    if (!client) return null;
+    try {
+        const q = await client.from('submissions')
+            .select('no_register, nik, nama_lengkap, created_at, status')
+            .eq('nik', nik)
+            .order('created_at', { ascending: false })
+            .limit(1);
+        const row = (!q.error && q.data && q.data[0]) ? q.data[0] : null;
+        __nikSudahDiajukan = row;
+        renderNikNotice(row);
+        setNikSubmitBlock(!!row);
+        if (row) console.info('[FORM] NIK sudah pernah diinput:', row.no_register);
+        return row;
+    } catch (e) {
+        // Gagal cek -> tidak memblokir (fail-open); penjaga akhir ada di server
+        console.warn('[FORM] Cek NIK gagal (dilanjutkan tanpa blokir):', e);
+        return null;
+    }
+}
+
+/** Dipanggil openPesertaAjukan(): cek NIK milik sesi peserta aktif */
+window.pesertaAjukanGuard = function () {
+    try {
+        const nik = pesertaNikAktif();
+        if (nik) {
+            cekNikSudahDiajukan(nik);
+        } else {
+            __nikSudahDiajukan = null;
+            renderNikNotice(null);
+            setNikSubmitBlock(false);
+        }
+    } catch (e) { console.warn('[FORM] pesertaAjukanGuard gagal:', e); }
+};
+
+// Pantau isian NIK: cek otomatis saat 16 digit lengkap / saat keluar field
+document.addEventListener('input', function (e) {
+    if (!e.target || e.target.id !== 'nik') return;
+    const v = String(e.target.value || '').replace(/\D/g, '');
+    if (/^\d{16}$/.test(v)) {
+        if (__nikCheckTimer) clearTimeout(__nikCheckTimer);
+        __nikCheckTimer = setTimeout(function () { cekNikSudahDiajukan(v); }, 700);
+    } else if (!v) {
+        if (__nikCheckTimer) clearTimeout(__nikCheckTimer);
+        __nikSudahDiajukan = null;
+        renderNikNotice(null);
+        setNikSubmitBlock(false);
+    }
+});
+document.addEventListener('change', function (e) {
+    if (!e.target || e.target.id !== 'nik') return;
+    if (__nikCheckTimer) clearTimeout(__nikCheckTimer);
+    cekNikSudahDiajukan(e.target.value);
+});
+
 function getFieldEl(id) {
     return document.getElementById(id);
 }
@@ -1133,6 +1287,14 @@ async function submitForm() {
         return;
     }
 
+    // [Revisi 15 Okt g] Pengaman kedua: NIK yang sudah pernah diinput diblokir
+    if (__nikSudahDiajukan) {
+        closeModal('confirm-modal');
+        showToast('⚠️ NIK ini sudah pernah diinput' + (__nikSudahDiajukan.no_register ? ' (No. Register ' + __nikSudahDiajukan.no_register + ')' : '') + '. Satu peserta hanya boleh satu pengajuan.', 'error', 7000);
+        renderNikNotice(__nikSudahDiajukan);
+        return;
+    }
+
     clearFormErrors();
 
     // DEFENSE-IN-DEPTH [Task9e]: validasi ulang SELURUH form sebelum kirim
@@ -1263,6 +1425,16 @@ async function submitForm() {
         // Simpan record utk penerbitan Bukti Pendaftaran (module 15)
         window.__buktiLastRecord = savedRecord;
 
+        // [Revisi 15 Okt g] NIK kini SUDAH punya pengajuan — sekalian
+        // pasang state agar buka berikutnya langsung muncul notifikasi.
+        __nikSudahDiajukan = {
+            no_register: savedRecord.no_register || formData.noRegister,
+            nik: formData.nik,
+            nama_lengkap: formData.namaLengkap,
+            created_at: new Date().toISOString(),
+            status: savedRecord.status || 'Proses Verifikasi'
+        };
+
         // [Revisi 14 Okt] Data sudah TERVERIFIKASI di server — hapus dari
         // antrean pemulihan bila sebelumnya sempat gagal kirim.
         if (typeof removePendingSubmission === 'function') {
@@ -1384,6 +1556,12 @@ function friendlySubmitErrorMessage(error) {
  */
 function handleFormSubmit(e) {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    // [Revisi 15 Okt g] NIK yang sudah pernah diinput tidak boleh mengirim lagi
+    if (__nikSudahDiajukan) {
+        showToast('⚠️ NIK ini sudah pernah diinput' + (__nikSudahDiajukan.no_register ? ' (No. Register ' + __nikSudahDiajukan.no_register + ')' : '') + '. Satu peserta hanya boleh satu pengajuan — pantau progres lewat kartu Cek Status Pengajuan.', 'error', 7000);
+        renderNikNotice(__nikSudahDiajukan);
+        return false;
+    }
     showConfirmation();
     return false;
 }

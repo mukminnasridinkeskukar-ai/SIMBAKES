@@ -462,6 +462,10 @@ function openPesertaAjukan() {
         });
     }
     
+    // [Revisi 15 Okt g] Cek "sudah pernah diinput" untuk NIK sesi peserta:
+    // notifikasi tampil di bawah isian NIK + tombol kirim diblokir bila sudah.
+    if (typeof window.pesertaAjukanGuard === 'function') window.pesertaAjukanGuard();
+    
     // Override submitForm to close popup on success (hanya sekali, cegah nesting)
     if (!window.__ajukanSubmitWrapped) {
         window.__ajukanSubmitWrapped = true;
@@ -703,6 +707,9 @@ document.addEventListener('keydown', function(e) {
         }
         if (document.getElementById('peserta-ajukan-popup')?.classList.contains('show')) {
             requestClosePesertaAjukan();
+        } else if (document.getElementById('peserta-biodata-popup')?.classList.contains('show')) {
+            // [Revisi 15 Okt g] popup Biodata (view-only) — tutup langsung
+            if (typeof closePesertaBiodata === 'function') closePesertaBiodata();
         } else if (document.getElementById('peserta-cekstatus-popup')?.classList.contains('show')) {
             closePesertaCekStatus();
         } else if (document.getElementById('peserta-penetapan-popup')?.classList.contains('show')) {

@@ -789,3 +789,74 @@ Tidak ada perubahan SQL/tabel/Supabase — murni perilaku halaman profil.
 
 Tidak ada yang perlu dijalankan — cukup **refresh halaman** (Ctrl+F5) agar
 file JS baru terload.
+
+---
+
+# REVISI 15 OKT g — KARTU BIODATA (VIEW-ONLY) + AJUKAN HANYA SEKALI PER NIK
+
+## Permintaan
+
+> "1. tambahkan kartu disebelah Ajukan Formulir dengan nama Biodata.
+> 2. kartu biodata akan menampilkan seluruh data pribadi peserta yang sama
+>    dengan data yang ada di menu data pengajuan, dengan tampilan data yang
+>    sangat cantik, tetapi semuanya hanya bisa dilihat (view) saja oleh peserta.
+> 3. kartu ajukan formulir hanya bisa diisi satu kali oleh peserta (pastikan
+>    ada notifikasi di bagian NIK bahwa data sudah pernah diinput)."
+
+## 1) Kartu Biodata (tepat di sebelah kartu Ajukan Rekomendasi)
+
+Portal Peserta kini punya 5 kartu: **Ajukan Rekomendasi → 🪪 Biodata → Cek
+Status Pengajuan → Cek Status Penetapan → Profil & Keamanan Akun** (grid
+desktop diubah 4→3 kolom agar tersusun seimbang 3+2).
+
+Isi halaman Biodata (dari tabel `submissions` — sama persis dengan menu
+Data Pengajuan, hanya TAMPIL):
+
+| Bagian | Isi |
+|---|---|
+| Hero hijau | Foto pasfoto, nama, chip NIK, chip No. Register, badge status, tanggal pengajuan |
+| 🧑 Data Pribadi | NIK, nama lengkap, tempat/tanggal lahir, alamat KTP, alamat domisili, lama domisili |
+| 💼 Data Pekerjaan | Pekerjaan, posisi, unit kerja, penjelasan/narasi |
+| 🎓 Rencana Studi | Jurusan tujuan, jenjang, unit tujuan, tahun studi |
+| 📞 Kontak | HP, WhatsApp, email |
+| 📎 Dokumen Terlampir | Tombol buka: Foto Pasfoto / Dokumen Kelengkapan (PDF) / Rekomendasi Dinkes |
+
+Belum ada pengajuan → tampil empty state ramah. Footer: catatan view-only.
+Sumber data: RPC `peserta_get_biodata(p_token)` — sesi divalidasi server,
+peserta hanya dapat melihat biodatanya SENDIRI (fallback baca langsung bila
+RPC belum terpasang).
+
+## 2) Ajukan Formulir hanya sekali per peserta
+
+| Lapisan | Perilaku |
+|---|---|
+| Buka form (login peserta) | NIK sesi dicek otomatis → bila sudah ada pengajuan: **notifikasi hijau tepat di bawah isian NIK** ("✅ Data dengan NIK ini sudah pernah diinput — No. Register ...") + tombol Kirim diblokir |
+| Saat mengetik NIK | Cek otomatis saat 16 digit lengkap (juga untuk jalur publik) |
+| Klik Kirim | Ditahan di `handleFormSubmit` & `submitForm` dengan peringatan |
+| Server (final) | `app_submit_pengajuan` menolak NIK yang sudah punya pengajuan dengan nomor register BERBEDA — kirim-ulang antrean (nomor SAMA) tetap lolos lewat jalur idempotent |
+
+## File yang berubah
+
+| File | Perubahan |
+|---|---|
+| `index.html` | Kartu Biodata baru (amber) setelah kartu Ajukan + muat `18-biodata-peserta.js` + cache-bust (ui-overhaul.css, 04-form.js, 11-topbar-session.js → v=20261015g) |
+| `js/18-biodata-peserta.js` (BARU) | Popup Biodata full-screen (Kembali ke Portal + ×, ESC), render cantik view-only, RPC + fallback, empty state |
+| `js/04-form.js` | Cek NIK otomatis (buka form + saat mengetik), notifikasi di bawah NIK, blokir Kirim 2 lapis, state terpasang otomatis setelah sukses kirim |
+| `js/11-topbar-session.js` | `openPesertaAjukan()` memanggil `pesertaAjukanGuard()`; ESC menutup popup Biodata |
+| `css/ui-overhaul.css` | Grid kartu portal 4→3 kolom (5 kartu) |
+| `sql/PATCH-BIODATA-AJUKAN-SEKALI.sql` (BARU) | RPC `peserta_get_biodata` + penjaga "satu NIK satu pengajuan" di `app_submit_pengajuan` (idempotent, tanpa ubah skema) |
+
+## Langkah admin (WAJIB, ±1 menit)
+
+1. Supabase Dashboard → SQL Editor → jalankan
+   **`sql/PATCH-BIODATA-AJUKAN-SEKALI.sql`** (idempotent, aman diulang).
+2. Upload file revisi ini + refresh halaman (Ctrl+F5).
+
+## Hasil pengujian
+
+| Uji | Hasil |
+|---|---|
+| `scripts/test-biodata-ajukan.js` (baru) | **34/34 PASS** — popup, RPC + fallback + empty state + error, semua bagian data, view-only murni, notifikasi NIK, blokir 2 lapis, listener 16 digit, ESC & guard |
+| Uji browser nyata (harness) | Biodata desktop cantik, NIK notice + tombol terblokir, kartu 3+2 desktop & mobile rapi |
+| Regresi: RBAC / r2-config / driver-switch / password / foto-profil / worker-b2 | SEMUA LULUS (18, 19, 6, 35, 52, 14) |
+| `node --check` semua JS tersentuh | LULUS |
