@@ -1290,7 +1290,16 @@ async function submitForm() {
 
         // [Revisi 14 Okt] Bila payload masuk antrean pemulihan, beri tahu
         // pengguna bahwa datanya AMAN dan akan terkirim otomatis.
-        if (error && error.pendingQueued) {
+        if (error && error.pendingQueued && error.dbReadOnly) {
+            // [Revisi 14 Okt b] Penyebab khusus: database read-only
+            // (kuota disk Supabase penuh) — server menolak semua tulisan.
+            showSubmitError('Data Anda AMAN — server sedang mode baca-saja',
+                'Data isian dan tautan dokumen yang sudah terupload tersimpan di perangkat ini ' +
+                '(' + (error.pendingCount || 1) + ' pengajuan menunggu) dan AKAN OTOMATIS terkirim ' +
+                'begitu database normal kembali. Server sedang tidak menerima penyimpanan data ' +
+                '(kuota penyimpanan penuh) — petugas hanya perlu membebaskan/memperbesar kuota ' +
+                'Supabase, lalu pengajuan Anda masuk tanpa perlu mengisi ulang.');
+        } else if (error && error.pendingQueued) {
             showSubmitError('Koneksi ke server terkendali — data Anda AMAN',
                 'Data isian dan tautan dokumen yang sudah terupload tersimpan sementara di perangkat ini ' +
                 '(' + (error.pendingCount || 1) + ' pengajuan menunggu). Sistem akan MENGIRIMKANNYA OTOMATIS ' +
@@ -1332,6 +1341,13 @@ function friendlySubmitErrorMessage(error) {
     // apa adanya — jangan ditimpa pesan generik yang kehilangan instruksi.
     if (/setup-storage-pengajuan\.sql|Penyimpanan dokumen belum disiapkan|^Upload "|Supabase tidak terhubung/.test(msg)) {
         return msg;
+    }
+    // [Revisi 14 Okt b] Database read-only (kuota disk penuh) — jelaskan
+    // bahwa ini kendala server, bukan kesalahan isian pengguna.
+    if (typeof simbakesIsDbReadOnly === 'function' && simbakesIsDbReadOnly(error)) {
+        return 'Server database sedang mode baca-saja (kuota penyimpanan penuh). ' +
+            'Pengajuan belum dapat disimpan untuk sementara — silakan coba beberapa saat lagi ' +
+            'setelah petugas membebaskan kuota server. Isian Anda masih ada di formulir.';
     }
     if (error && error.code === '23505') {
         return 'Nomor pengajuan bentrok dengan data yang sudah ada. Tekan "Coba Kirim Kembali" — nomor baru akan dibuat otomatis.';

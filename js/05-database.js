@@ -469,6 +469,11 @@ async function submitToSupabase(formData) {
             if (cleanData.no_register) queuePendingSubmission(cleanData);
             error.pendingQueued = true;
             error.pendingCount = getPendingSubmissions().length;
+            // [Revisi 14 Okt b] Tandai penyebab khusus: database read-only
+            // (kuota disk Supabase penuh) — pesan form menyesuaikan.
+            if (typeof simbakesIsDbReadOnly === 'function' && simbakesIsDbReadOnly(error)) {
+                error.dbReadOnly = true;
+            }
         } catch (qErr) { /* abaikan — error asal tetap dilempar */ }
         console.error('[SIMBAKES] Error submitting data:', error);
         throw error;

@@ -76,6 +76,25 @@ function initSupabaseClient() {
 }
 
 /**
+ * [Revisi 14 Okt b] Deteksi database READ-ONLY (SQLSTATE 25006).
+ * Supabase otomatis mengubah database ke mode baca-saja saat kuota disk
+ * penuh (~95%). Semua INSERT/UPDATE/DELETE gagal — termasuk simpan
+ * pengajuan — sementara SELECT tetap normal. Dikenali dari:
+ *  - kode '25006' / 'PGRST' + 25006
+ *  - pesan "cannot execute ... in a read-only transaction"
+ *  - HTTP 405 dari endpoint rpc (PostgREST memetakan 25006 → 405)
+ */
+function simbakesIsDbReadOnly(err) {
+    try {
+        var code = String((err && (err.code || err.httpCode)) || '');
+        var msg  = String((err && err.message) || err || '');
+        if (code === '25006' || code === 'HTTP405' || code === '405') return true;
+        return /read-only transaction/i.test(msg);
+    } catch (e) { return false; }
+}
+window.simbakesIsDbReadOnly = simbakesIsDbReadOnly;
+
+/**
  * Handler error Supabase — pesan untuk PENGGUNA selalu umum
  * (tidak membocorkan struktur DB, kode internal, atau stack trace).
  * Detail teknis hanya dicatat internal (tanpa data pribadi).
@@ -90,7 +109,11 @@ function handleSupabaseError(error, operation, tableName) {
     const code = error && (error.code || '');
     const rawMsg = (error && error.message) || '';
 
-    if (code === '42501' || code === '403' || rawMsg.includes('row-level security')) {
+    if (simbakesIsDbReadOnly(error)) {
+        userMessage = 'Database sedang mode baca-saja (kuota penyimpanan penuh). ' +
+            'Data tidak dapat disimpan sementara waktu — hubungi administrator untuk ' +
+            'membebaskan/memperbesar kuota Supabase, lalu coba lagi.';
+    } else if (code === '42501' || code === '403' || rawMsg.includes('row-level security')) {
         userMessage = 'Anda tidak memiliki izin untuk operasi ini. Silakan masuk kembali atau hubungi administrator.';
     } else if (code === '23505' || rawMsg.includes('duplicate key')) {
         userMessage = 'Data sudah terdaftar. Gunakan nilai yang berbeda.';

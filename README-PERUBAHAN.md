@@ -448,3 +448,66 @@ Hasil audit alur kode (`04-form.js` → `05-database.js`):
 > tetap aman di Storage — gunakan "🛟 Pulihkan Data" untuk mengembalikan
 > barisnya, atau minta peserta membuka ulang situs (antrean otomatis
 > mengirim ulang bila tersimpan di perangkatnya).
+
+---
+
+# HASIL PENELUSURAN AKAR MASALAH — DATA PENGAJUAN GAGAL TERSIMPAN
+## (Revisi 14 Okt b) Penyebab pasti: database Supabase terkunci MODE BACA-SAJA
+
+## Temuan
+
+Gejala yang dilaporkan — "data & dokumen dari form Ajukan Rekomendasi gagal
+tersimpan di tabel `submissions`, sementara bukti daftar tetap terbit" —
+**bukan bug kode aplikasi**. Alur simpan di klien sudah benar dan ketat:
+validasi → upload 3 file ke Storage → INSERT ke `submissions` melalui RPC →
+verifikasi baris → baru modal sukses + bukti. Bukti tidak mungkin terbit
+dari INSERT yang gagal di klien.
+
+Penyebab sesungguhnya ditemukan dari pesan error server:
+
+```
+cannot execute UPDATE in a read-only transaction  (SQLSTATE 25006 / HTTP 405)
+```
+
+Supabase **otomatis mengunci database menjadi baca-saja** saat pemakaian disk
+mendekati batas kuota (~95%). Akibatnya:
+
+| Operasi | Status saat read-only |
+|---|---|
+| Upload file dokumen ke Storage | ✅ Berhasil (di luar database) |
+| INSERT/UPDATE baris ke tabel `submissions` | ❌ Ditolak server (25006) |
+| SELECT / tampilan daftar / login | ✅ Normal |
+| Bukti daftar (dibuat di browser dari isian form) | ✅ Tetap terbit — inilah yang membuat kesannya "berhasil" |
+
+**Tidak ada data yang hilang permanen:**
+1. **File dokumen** tetap utuh di bucket Storage (`pengajuan-files`) —
+   dapat dikembalikan ke tabel lewat tombol admin **"🛟 Pulihkan Data"**.
+2. **Isian form** di perangkat pelapor tersimpan di **antrean pemulihan
+   otomatis** (localStorage) dan **terkirim sendiri** begitu database normal.
+
+## Perbaikan yang ditambahkan (Revisi 14 Okt b)
+
+| File | Perubahan |
+|---|---|
+| `sql/DIAG-READ-ONLY.sql` | **Baru** — skrip diagnostik (aman dijalankan walau read-only): cek status read-only, pemakaian disk, tabel/storage terbesar, pembersihan aman, langkah membebaskan kuota |
+| `js/supabase-config.js` | Deteksi `simbakesIsDbReadOnly()` (25006 / HTTP 405 / pesan read-only) + pesan ramah khusus |
+| `js/04-form.js` | Pesan gagal-kirim khusus read-only: "Data Anda AMAN — server baca-saja, otomatis terkirim setelah kuota normal" |
+| `js/05-database.js` | Tandai `error.dbReadOnly` saat antrean dibuat agar pesan form tepat |
+| `js/admin-crud.js` | Modal "🛟 Pulihkan Data" memberi panduan bebas-kuota saat read-only; **perbaikan bug hover baris admin** (SyntaxError `Unexpected token ':'` di console akibat atribut onmouseenter lama tidak valid) |
+| `js/13-akun-peserta.js` | Client cadangan di-cache — menghilangkan warning "Multiple GoTrueClient instances detected" |
+| `index.html` | Versi cache 6 file → `?v=20261014c` |
+
+## Yang harus dilakukan admin (sekali, di Dashboard Supabase)
+
+1. Jalankan **`sql/DIAG-READ-ONLY.sql`** di SQL Editor → lihat hasil butir 1 & 2
+   (status read-only + pemakaian disk).
+2. Bebaskan kuota di **Dashboard** (bukan lewat SQL):
+   hapus backup/data lama yang tak terpakai, bersihkan sesi kadaluarsa
+   (`select public.app_purge_expired_sessions();`), hapus file Storage tak
+   terpakai, atau upgrade paket.
+3. Tunggu 1–5 menit sampai banner "read-only" di Dashboard hilang sendiri.
+4. Muat ulang SIMBAKES:
+   - Pengajuan tertunda di perangkat peserta **terkirim otomatis** (toast
+     "Pengajuan tertunda berhasil dikirim"),
+   - File yatim dari kejadian sebelumnya dipulihkan lewat **"🛟 Pulihkan Data"**
+     di panel admin → Data Pengusulan.

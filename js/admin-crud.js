@@ -714,15 +714,19 @@ function renderAdminTableFinal(data) {
     }
     
     // 8 Warna gradient untuk baris (cerah & modern)
+    // [Revisi 14 Okt b] `shadow` dipisah agar atribut onmouseenter valid —
+    // versi lama menyuntik "transform:scale(1.01);box-shadow:..." mentah ke
+    // "this.style.<...>" sehingga SETIAP hover baris melempar SyntaxError
+    // "Unexpected token ':'" di console.
     const rowColors = [
-        { bg: 'linear-gradient(135deg, #dbeafe, #bfdbfe)', border: '#93c5fd', hover: 'transform:scale(1.01);box-shadow:0 8px 25px rgba(59,130,246,0.25)' },      // Biru muda
-        { bg: 'linear-gradient(135deg, #d1fae5, #a7f3d0)', border: '#6ee7b7', hover: 'transform:scale(1.01);box-shadow:0 8px 25px rgba(16,185,129,0.25)' },     // Hijau mint
-        { bg: 'linear-gradient(135deg, #ede9fe, #ddd6fe)', border: '#c4b5fd', hover: 'transform:scale(1.01);box-shadow:0 8px 25px rgba(139,92,246,0.25)' },     // Ungu muda
-        { bg: 'linear-gradient(135deg, #ffedd5, #fed7aa)', border: '#fdba74', hover: 'transform:scale(1.01);box-shadow:0 8px 25px rgba(245,158,11,0.25)' },     // Orange muda
-        { bg: 'linear-gradient(135deg, #cffafe, #a5f3fc)', border: '#67e8f9', hover: 'transform:scale(1.01);box-shadow:0 8px 25px rgba(6,182,212,0.25)' },       // Cyan muda
-        { bg: 'linear-gradient(135deg, #fce7f3, #fbcfe8)', border: '#f9a8d4', hover: 'transform:scale(1.01);box-shadow:0 8px 25px rgba(236,72,153,0.25)' },     // Pink muda
-        { bg: 'linear-gradient(135deg, #fef9c3, #fef08a)', border: '#fde047', hover: 'transform:scale(1.01);box-shadow:0 8px 25px rgba(234,179,8,0.25)' },     // Kuning muda
-        { bg: 'linear-gradient(135deg, #e0e7ff, #c7d2fe)', border: '#a5b4fc', hover: 'transform:scale(1.01);box-shadow:0 8px 25px(rgba(99,102,241,0.25)' }    // Biru lavender
+        { bg: 'linear-gradient(135deg, #dbeafe, #bfdbfe)', border: '#93c5fd', shadow: 'rgba(59,130,246,0.25)' },  // Biru muda
+        { bg: 'linear-gradient(135deg, #d1fae5, #a7f3d0)', border: '#6ee7b7', shadow: 'rgba(16,185,129,0.25)' },  // Hijau mint
+        { bg: 'linear-gradient(135deg, #ede9fe, #ddd6fe)', border: '#c4b5fd', shadow: 'rgba(139,92,246,0.25)' },  // Ungu muda
+        { bg: 'linear-gradient(135deg, #ffedd5, #fed7aa)', border: '#fdba74', shadow: 'rgba(245,158,11,0.25)' },  // Orange muda
+        { bg: 'linear-gradient(135deg, #cffafe, #a5f3fc)', border: '#67e8f9', shadow: 'rgba(6,182,212,0.25)' },   // Cyan muda
+        { bg: 'linear-gradient(135deg, #fce7f3, #fbcfe8)', border: '#f9a8d4', shadow: 'rgba(236,72,153,0.25)' },  // Pink muda
+        { bg: 'linear-gradient(135deg, #fef9c3, #fef08a)', border: '#fde047', shadow: 'rgba(234,179,8,0.25)' },   // Kuning muda
+        { bg: 'linear-gradient(135deg, #e0e7ff, #c7d2fe)', border: '#a5b4fc', shadow: 'rgba(99,102,241,0.25)' }   // Biru lavender
     ];
     
     let html = '';
@@ -749,7 +753,7 @@ function renderAdminTableFinal(data) {
                     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
                     font-family: Tahoma, sans-serif;
                 "
-                onmouseenter="this.style.${colorScheme.hover}"
+                onmouseenter="this.style.transform='scale(1.01)';this.style.boxShadow='0 8px 25px ${colorScheme.shadow}'"
                 onmouseleave="this.style.transform='';this.style.boxShadow=''">
                 
                 <!-- KOLOM 1: NIK (Clickable trigger) -->
@@ -2768,7 +2772,18 @@ async function openRecoveryPengajuanModal() {
     } catch (err) {
         const msg = String((err && err.message) || err || '');
         let hint = 'Muat ulang halaman lalu coba lagi.';
-        if (/hanya admin\/operator/i.test(msg)) {
+        if (window.simbakesIsDbReadOnly ? window.simbakesIsDbReadOnly(err)
+                                        : /read-only transaction|25006/i.test(msg)) {
+            // [Revisi 14 Okt b] Database dimatikan-tulis oleh Supabase
+            // (proteksi disk penuh). Bukan bug aplikasi — file dokumen tetap
+            // aman di Storage; pemindaian bisa diulang setelah kuota normal.
+            hint = '<b>Database Supabase sedang MODE BACA-SAJA</b> — hampir selalu karena ' +
+                   'kuota disk penuh. Solusi di <b>Dashboard Supabase</b>: (1) cek ' +
+                   'Reports/Database → Disk usage, (2) hapus data/lampiran lama yang tak terpakai ' +
+                   'atau perbesar kuota (upgrade), (3) tunggu beberapa menit sampai banner ' +
+                   '"read-only" hilang, lalu muat ulang halaman ini. Tidak ada data yang hilang — ' +
+                   'file dokumen tetap tersimpan di Storage dan bisa dipulihkan setelah mode normal.';
+        } else if (/hanya admin\/operator/i.test(msg)) {
             hint = 'Login ulang sebagai <b>admin/operator</b> di panel ini, lalu buka tombol ini lagi.';
         } else if (/schema cache|does not exist|not found|pgrst202/i.test(msg)) {
             hint = 'RPC pemulihan belum terpasang. Admin perlu menjalankan sekali <b>sql/PATCH-SUBMIT-PENGAJUAN.sql</b> di Supabase SQL Editor.';

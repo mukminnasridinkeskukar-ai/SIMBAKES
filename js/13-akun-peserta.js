@@ -61,6 +61,9 @@
     /**
      * Resolusi client Supabase (pola yang sama dengan modul registrasi):
      * 1) supabaseClient global  2) simbakesDB.client  3) buat dari SUPABASE_CONFIG
+     * [Revisi 14 Okt b] client cadangan di-CACHE — sebelumnya setiap pemanggilan
+     * membuat instance baru (createClient) sehingga console memunculkan
+     * "Multiple GoTrueClient instances detected".
      */
     function getAkunClient() {
         try {
@@ -72,9 +75,11 @@
             }
         } catch (e) { /* abaikan */ }
         try {
+            if (window.__simbakesFallbackClient) return window.__simbakesFallbackClient;
             if (typeof window.supabase !== 'undefined' && typeof SUPABASE_CONFIG !== 'undefined' &&
                 SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey) {
-                return window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+                window.__simbakesFallbackClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+                return window.__simbakesFallbackClient;
             }
         } catch (e) { /* abaikan */ }
         return null;
