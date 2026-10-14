@@ -138,11 +138,12 @@
                             ${session.foto_url ? '' : '👤'}
                         </div>
                         <input type="file" id="profil-foto-input" accept="image/jpeg,image/png,image/webp" style="display:none;">
-                        <div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
+                        <div style="margin-top:10px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
                             <button type="button" id="profil-foto-pilih" style="padding:8px 16px; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:10px; font-size:0.85rem; font-weight:600; cursor:pointer;">📷 Pilih Foto</button>
                             <button type="button" id="profil-foto-hapus" style="padding:8px 16px; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; border-radius:10px; font-size:0.85rem; font-weight:600; cursor:pointer;">🗑️ Hapus Foto</button>
+                            <button type="button" id="profil-foto-simpan" disabled title="Pilih atau ubah foto terlebih dahulu" style="padding:8px 16px; background:linear-gradient(135deg,#059669,#047857); color:white; border:none; border-radius:10px; font-size:0.85rem; font-weight:700; cursor:not-allowed; opacity:0.55; box-shadow:0 2px 8px rgba(5,150,105,0.25);">💾 Simpan Foto</button>
                         </div>
-                        <small style="color:#94a3b8; display:block; margin-top:6px;">JPG/PNG/WebP, maks 2 MB. Foto tampil pada avatar akun Anda.</small>
+                        <small style="color:#94a3b8; display:block; margin-top:6px;">JPG/PNG/WebP, maks 2 MB. Foto tampil pada avatar akun Anda. Tekan <b>💾 Simpan Foto</b> untuk menyimpan foto langsung — tanpa perlu menyentuh data lain.</small>
                     </div>
 
                     <!-- DATA PROFIL -->
@@ -200,9 +201,25 @@
         modal.addEventListener('click', (e) => { if (e.target === modal) closeProfilPeserta(); });
 
         // --- State foto ---
-        let fotoBaruFile = null;      // File baru yang dipilih
-        let hapusFoto = false;        // tandai hapus foto lama
+        // [Revisi 15 Okt f] fotoState dipakai bersama oleh tombol
+        // "💾 Simpan Foto" (tersendiri) & "Simpan Perubahan" (gabungan).
+        const fotoState = { file: null, hapus: false };
         const fotoWrap = modal.querySelector('#profil-foto-wrap');
+        const fotoInput = modal.querySelector('#profil-foto-input');
+        const fotoSimpanBtn = modal.querySelector('#profil-foto-simpan');
+
+        /** Ada perubahan foto yang belum tersimpan? */
+        function fotoSedangTertunda() {
+            return !!(fotoState.file || (fotoState.hapus && (session.foto_url || '')));
+        }
+        /** Aktifkan/matikan tombol "💾 Simpan Foto" sesuai state terkini */
+        function perbaruiStatusSimpanFoto() {
+            const aktif = fotoSedangTertunda();
+            fotoSimpanBtn.disabled = !aktif;
+            fotoSimpanBtn.style.opacity = aktif ? '1' : '0.55';
+            fotoSimpanBtn.style.cursor = aktif ? 'pointer' : 'not-allowed';
+            fotoSimpanBtn.title = aktif ? 'Simpan perubahan foto profil sekarang' : 'Pilih atau ubah foto terlebih dahulu';
+        }
 
         function tampilFotoPreview(url) {
             if (url) {
@@ -216,7 +233,7 @@
         tampilFotoPreview(session.foto_url || '');
 
         modal.querySelector('#profil-foto-pilih').addEventListener('click', () => {
-            modal.querySelector('#profil-foto-input').click();
+            fotoInput.click();
         });
         modal.querySelector('#profil-foto-input').addEventListener('change', function () {
             const f = this.files && this.files[0];
@@ -229,18 +246,29 @@
                 tampilAlert('❌ Ukuran foto maksimal 2 MB.', 'error');
                 this.value = ''; return;
             }
-            fotoBaruFile = f; hapusFoto = false;
+            fotoState.file = f; fotoState.hapus = false;
             const reader = new FileReader();
             reader.onload = (ev) => tampilFotoPreview(ev.target.result);
             reader.readAsDataURL(f);
             tampilAlert('', 'info', true);
+            perbaruiStatusSimpanFoto();
         });
         modal.querySelector('#profil-foto-hapus').addEventListener('click', () => {
-            fotoBaruFile = null; hapusFoto = true;
-            modal.querySelector('#profil-foto-input').value = '';
+            fotoState.file = null; fotoState.hapus = true;
+            fotoInput.value = '';
             tampilFotoPreview('');
-            toast('Foto akan dihapus saat Anda menyimpan.', 'info', 2500);
+            perbaruiStatusSimpanFoto();
+            toast(fotoSedangTertunda()
+                ? 'Foto akan dihapus. Tekan 💾 Simpan Foto untuk menerapkan.'
+                : 'Anda belum memiliki foto profil.', 'info', 3000);
         });
+
+        // [Revisi 15 Okt f] Simpan FOTO SAJA — tidak menyentuh nama/username/
+        // email/password, dan modal tetap terbuka agar penyuntingan bisa lanjut.
+        fotoSimpanBtn.addEventListener('click', () => {
+            simpanFotoProfilSaja(modal, fotoState, { tampilAlert, perbaruiStatusSimpanFoto });
+        });
+        perbaruiStatusSimpanFoto(); // kondisi awal: nonaktif sampai ada perubahan foto
 
         // --- Alert helper ---
         const alertEl = modal.querySelector('#profil-alert');
@@ -278,7 +306,7 @@
         // --- Submit ---
         modal.querySelector('#profil-form').addEventListener('submit', async function (e) {
             e.preventDefault();
-            simpanProfil(modal, { fotoBaruFile, hapusFoto, tampilAlert, tampilFotoPreview });
+            simpanProfil(modal, { fotoState, tampilAlert });
         });
 
         console.log('[PROFIL PESERTA] Modal profil dibuka');
@@ -294,10 +322,140 @@
     }
 
     // ============================================================
+    // [Revisi 15 Okt f] HELPER BERSAMA UPLOAD FOTO PROFIL
+    // Dipakai tombol "💾 Simpan Foto" (tersendiri) maupun
+    // "Simpan Perubahan" (gabungan). Mendukung driver R2/B2.
+    // ============================================================
+    async function uploadFotoProfil(client, file, sesi) {
+        const extMatch = String(file.name || '').match(/\.([A-Za-z0-9]{2,5})$/);
+        const ext = extMatch ? extMatch[1].toLowerCase() : 'jpg';
+        const path = 'profil/' + String(sesi.id).replace(/[^A-Za-z0-9_-]/g, '') +
+                     '/foto-' + Date.now() + '-' + Math.floor(Math.random() * 9000 + 1000) + '.' + ext;
+        // [Revisi 15 Okt] Driver Cloudflare R2/B2 bila aktif (js/r2-config.js) —
+        // database profil tetap disimpan via RPC Supabase seperti biasa.
+        if (window.r2Enabled && window.r2Enabled()) {
+            return await window.r2UploadPublicUrl(file, path);
+        }
+        const up = await client.storage.from(PROFIL_BUCKET).upload(path, file, {
+            contentType: file.type || 'image/jpeg',
+            cacheControl: '3600',
+            upsert: true
+        });
+        if (up && up.error) {
+            const msgUp = up.error.message || '';
+            if (/Bucket not found/i.test(msgUp)) {
+                throw new Error('Penyimpanan foto belum disiapkan. Admin perlu menjalankan sekali sql/PATCH-PROFIL-OBSERVER-PRIVASI.sql di Supabase SQL Editor.');
+            }
+            throw new Error('Upload foto gagal: ' + msgUp);
+        }
+        const pub = client.storage.from(PROFIL_BUCKET).getPublicUrl(path);
+        const fotoUrl = (pub && pub.data && pub.data.publicUrl) || '';
+        if (!fotoUrl) throw new Error('URL foto tidak diperoleh setelah upload.');
+        return fotoUrl;
+    }
+
+    /**
+     * [Revisi 15 Okt f] Bereskkan file foto LAMA setelah URL baru tersimpan.
+     * Best-effort: gagal diabaikan (file yatim tetap terpantau lewat
+     * CLEANUP-QUOTA.sql). R2/B2 terhapus via Worker; URL Supabase di luar
+     * bucket profil-foto diabaikan.
+     */
+    async function bersihkanFotoLama(client, oldUrl) {
+        try {
+            const url = String(oldUrl || '');
+            if (!url) return;
+            // 1) Driver R2/B2 — r2DeleteByPath aman utk URL asing (hasilnya false)
+            if (window.r2Enabled && window.r2Enabled() && typeof window.r2DeleteByPath === 'function') {
+                if (await window.r2DeleteByPath(url)) return;
+            }
+            // 2) Supabase Storage bucket profil-foto
+            const marker = '/object/public/' + PROFIL_BUCKET + '/';
+            const idx = url.indexOf(marker);
+            if (idx !== -1) {
+                const path = decodeURIComponent(url.substring(idx + marker.length).split('?')[0]);
+                if (path) await client.storage.from(PROFIL_BUCKET).remove([path]);
+            }
+        } catch (e) {
+            console.warn('[PROFIL PESERTA] Bersih-bersih file foto lama dilewati:', e);
+        }
+    }
+
+    // ============================================================
+    // [Revisi 15 Okt f] SIMPAN FOTO PROFIL TERSENDIRI
+    // Tombol "💾 Simpan Foto" di area foto: HANYA mengubah foto_url —
+    // TIDAK menyentuh nama/username/email/password. Bila pengguna
+    // sedang mengisi kolom lain, isian itu TIDAK ikut tersimpan.
+    // Modal tetap terbuka agar penyuntingan bisa dilanjutkan.
+    // ============================================================
+    async function simpanFotoProfilSaja(modal, fotoState, helper) {
+        const tampilAlert = helper.tampilAlert;
+        const btn = modal.querySelector('#profil-foto-simpan');
+        const mainBtn = modal.querySelector('#profil-simpan');
+        const token = getPesertaToken();
+        const session = pastikanSesiPeserta();
+
+        if (!token || !session) {
+            tampilAlert('❌ Sesi berakhir. Silakan logout lalu login kembali.', 'error');
+            return;
+        }
+        if (modal.dataset.busy === '1') return;          // sedang simpan lain
+        if (!fotoState.file && !fotoState.hapus) return; // tidak ada yang disimpan
+        const client = getClient();
+        if (!client) {
+            tampilAlert('❌ Koneksi database tidak tersedia. Periksa internet Anda.', 'error');
+            return;
+        }
+
+        modal.dataset.busy = '1';
+        btn.disabled = true;
+        mainBtn.disabled = true; // cegah simpan ganda selama upload berjalan
+        const labelLama = btn.innerHTML;
+        btn.innerHTML = '<div class="spinner" style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:white;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle;"></div> Menyimpan...';
+
+        const fotoLamaUrl = session.foto_url || '';
+        try {
+            // 1) Upload foto baru ATAU tanda hapus ('' = kosongkan foto)
+            let fotoUrl = '';
+            if (fotoState.file) {
+                fotoUrl = await uploadFotoProfil(client, fotoState.file, session);
+            }
+
+            // 2) Simpan HANYA foto via RPC — server mempertahankan kolom lain
+            const res = await client.rpc('peserta_update_profile', {
+                p_token: token,
+                p_record: { id: String(session.id), foto_url: fotoUrl }
+            });
+            if (res && res.error) {
+                if (isRpcMissing(res.error)) {
+                    throw new Error('Fitur profil belum aktif di server. Admin perlu menjalankan sql/PATCH-PROFIL-OBSERVER-PRIVASI.sql di Supabase SQL Editor.');
+                }
+                throw new Error(res.error.message || 'Gagal menyimpan foto profil.');
+            }
+
+            // 3) Sukses: bereskan file lama, reset state, perbarui sesi + avatar
+            if (fotoLamaUrl && fotoLamaUrl !== fotoUrl) bersihkanFotoLama(client, fotoLamaUrl);
+            fotoState.file = null;
+            fotoState.hapus = false;
+            const input = modal.querySelector('#profil-foto-input');
+            if (input) input.value = '';
+            persistPesertaSession({ foto_url: fotoUrl });
+            tampilAlert('', 'info', true);
+            toast('✅ Foto profil berhasil disimpan!', 'success', 3500);
+        } catch (err) {
+            console.error('[PROFIL PESERTA] Gagal simpan foto:', err);
+            tampilAlert('❌ ' + (err && err.message ? err.message : 'Terjadi kesalahan. Coba lagi.'), 'error');
+        }
+        btn.innerHTML = labelLama;
+        mainBtn.disabled = false;
+        modal.dataset.busy = '';
+        if (typeof helper.perbaruiStatusSimpanFoto === 'function') helper.perbaruiStatusSimpanFoto();
+    }
+
+    // ============================================================
     // SIMPAN PROFIL (RPC server-side)
     // ============================================================
     async function simpanProfil(modal, ctx) {
-        const { fotoBaruFile, hapusFoto, tampilAlert } = ctx;
+        const { fotoState, tampilAlert } = ctx;
         const btn = modal.querySelector('#profil-simpan');
         const token = getPesertaToken();
         const session = pastikanSesiPeserta();
@@ -329,6 +487,14 @@
             if (passBaru === passLama) { tampilAlert('❌ Password baru tidak boleh sama dengan password lama.', 'error'); return; }
         }
 
+        // [Revisi 15 Okt f] kunci antre: cegah simpan ganda bareng "Simpan Foto".
+        // Validasi di atas murni sinkron — aman menaruh gerbang di sini.
+        if (modal.dataset.busy === '1') return;
+        modal.dataset.busy = '1';
+        const fotoBtns = ['profil-foto-pilih', 'profil-foto-hapus', 'profil-foto-simpan']
+            .map((id) => modal.querySelector('#' + id)).filter(Boolean);
+        fotoBtns.forEach((b) => { b.disabled = true; });
+
         btn.disabled = true;
         const labelLama = btn.innerHTML;
         btn.innerHTML = '<div class="spinner" style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:white;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle;"></div> Menyimpan...';
@@ -337,34 +503,10 @@
             const client = getClient();
             if (!client) throw new Error('Koneksi database tidak tersedia. Periksa internet Anda.');
 
-            // 1) Upload foto baru (bila dipilih)
-            let fotoUrl = hapusFoto ? '' : (session.foto_url || '');
-            if (fotoBaruFile) {
-                const extMatch = String(fotoBaruFile.name || '').match(/\.([A-Za-z0-9]{2,5})$/);
-                const ext = extMatch ? extMatch[1].toLowerCase() : 'jpg';
-                const path = 'profil/' + String(session.id).replace(/[^A-Za-z0-9_-]/g, '') +
-                             '/foto-' + Date.now() + '-' + Math.floor(Math.random() * 9000 + 1000) + '.' + ext;
-                // [Revisi 15 Okt] Driver Cloudflare R2 bila aktif (js/r2-config.js) —
-                // database profil tetap disimpan via RPC Supabase seperti biasa.
-                if (window.r2Enabled && window.r2Enabled()) {
-                    fotoUrl = await window.r2UploadPublicUrl(fotoBaruFile, path);
-                } else {
-                    const up = await client.storage.from(PROFIL_BUCKET).upload(path, fotoBaruFile, {
-                        contentType: fotoBaruFile.type || 'image/jpeg',
-                        cacheControl: '3600',
-                        upsert: true
-                    });
-                    if (up && up.error) {
-                        const msgUp = up.error.message || '';
-                        if (/Bucket not found/i.test(msgUp)) {
-                            throw new Error('Penyimpanan foto belum disiapkan. Admin perlu menjalankan sekali sql/PATCH-PROFIL-OBSERVER-PRIVASI.sql di Supabase SQL Editor.');
-                        }
-                        throw new Error('Upload foto gagal: ' + msgUp);
-                    }
-                    const pub = client.storage.from(PROFIL_BUCKET).getPublicUrl(path);
-                    fotoUrl = (pub && pub.data && pub.data.publicUrl) || '';
-                    if (!fotoUrl) throw new Error('URL foto tidak diperoleh setelah upload.');
-                }
+            // 1) Upload foto baru (bila ada perubahan foto yang tertunda)
+            let fotoUrl = fotoState.hapus ? '' : (session.foto_url || '');
+            if (fotoState.file) {
+                fotoUrl = await uploadFotoProfil(client, fotoState.file, session);
             }
 
             // 2) Simpan profil via RPC (server memvalidasi pemilik akun)
@@ -411,10 +553,14 @@
             tampilAlert('❌ ' + (err && err.message ? err.message : 'Terjadi kesalahan. Coba lagi.'), 'error');
             btn.disabled = false;
             btn.innerHTML = labelLama;
+            fotoBtns.forEach((b) => { b.disabled = false; });
+            modal.dataset.busy = '';
             return;
         }
         btn.disabled = false;
         btn.innerHTML = labelLama;
+        fotoBtns.forEach((b) => { b.disabled = false; });
+        modal.dataset.busy = '';
     }
 
     // ============================================================

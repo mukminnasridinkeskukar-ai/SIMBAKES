@@ -732,3 +732,60 @@ lalu ditampilkan khusus untuk Superadmin.
 | `test-r2-driver-switch.js` (regresi) | 6/6 PASS |
 | `test-worker-b2.mjs` (regresi) | 14/14 PASS |
 | `node --check` seluruh JS tersentuh | LULUS |
+
+---
+
+# REVISI 15 OKT f — SIMPAN FOTO PROFIL TERSENDIRI (TOMBOL SENDIRI, TANPA PASSWORD)
+
+## Permintaan
+
+> "penyimpanan foto profil tidak tersedia tombol simpannya. terlihat tombol
+> simpan paling bawah apabila password juga diubah. pastikan perubahan atau
+> upload foto profil dapat di simpan tersendiri."
+
+## Penyebab (hasil pemeriksaan)
+
+Modal "👤 Profil & Keamanan Akun" hanya punya SATU tombol simpan di paling
+bawah. Foto yang dipilih baru "menunggu" di browser (`fotoState`) dan baru
+terkirim ketika tombol bawah itu ditekan — sehingga pengguna merasa foto
+tidak bisa disimpan sendiri dan "tergantung" pada perubahan password.
+
+## Solusi
+
+Tombol **💾 Simpan Foto** ditambahkan langsung di area foto (sejajar
+"📷 Pilih Foto" & "🗑️ Hapus Foto"):
+
+| Perilaku baru | Keterangan |
+|---|---|
+| Nonaktif saat belum ada perubahan | Redup + tooltip "Pilih atau ubah foto terlebih dahulu" |
+| Aktif otomatis | Begitu foto dipilih ATAU foto ditandai hapus |
+| Simpan HANYA foto | RPC `peserta_update_profile` dikirim dengan `{id, foto_url}` saja — server (COALESCE) mempertahankan nama/username/email; password tidak tersentuh |
+| Modal tetap terbuka | Bisa lanjut menyunting data lain; avatar di topbar ikut terbarui |
+| File foto lama dibereskan | Best-effort hapus file lama (R2/B2 via Worker; Supabase diabaikan aman — dipantau CLEANUP-QUOTA.sql) |
+| Anti simpan-ganda | Selama upload/simpan berjalan, tombol foto & "Simpan Perubahan" saling mengunci |
+
+Tombol bawah **"💾 Simpan Perubahan"** tetap berfungsi seperti semula untuk
+menyimpan gabungan (data profil + foto + ganti password) sekali klik.
+
+## File yang berubah
+
+| File | Perubahan |
+|---|---|
+| `js/17-profil-peserta.js` | Tombol `#profil-foto-simpan` + state bersama `fotoState`; fungsi baru `simpanFotoProfilSaja()`, `uploadFotoProfil()` (helper bersama), `bersihkanFotoLama()` (best-effort); `simpanProfil()` kini memakai helper yang sama + gerbang antre `dataset.busy`; hint foto diperbarui |
+| `index.html` | Cache-bust `17-profil-peserta.js` → `?v=20261015f` |
+
+Tidak ada perubahan SQL/tabel/Supabase — murni perilaku halaman profil.
+
+## Hasil pengujian
+
+| Uji | Hasil |
+|---|---|
+| `scripts/test-profil-foto-mandiri.js` (baru) | **52/52 PASS** — tombol nonaktif/aktif, RPC tepat `{id, foto_url}`, hapus foto, hapus tanpa foto, simpan gabungan tetap jalan, antrean klik-ganda, PGRST202, driver R2 |
+| Uji browser nyata (harness) | Tombol redup → aktif saat pilih foto → klik → sukses, RPC tercatat benar, modal tetap terbuka; mobile 375px rapi |
+| Regresi: RBAC / r2-config / driver-switch / password-visibility / worker-b2 | SEMUA LULUS (18, 19, 6, 35, 14) |
+| `node --check` | LULUS |
+
+## Langkah admin
+
+Tidak ada yang perlu dijalankan — cukup **refresh halaman** (Ctrl+F5) agar
+file JS baru terload.
