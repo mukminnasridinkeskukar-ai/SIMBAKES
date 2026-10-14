@@ -278,19 +278,163 @@ function mapFormDataToDB(formData) {
 }
 
 /**
- * Submit New Data to Supabase
+ * Submit New Data to Supabase — [Revisi 14 Okt] Jalur tulis DIJAMIN:
+ *   1) RPC `app_submit_pengajuan` (security definer) — kebal pergeseran
+ *      kebijakan RLS, identitas peserta divalidasi server, kirim-ulang
+ *      aman (idempotent per no_register).
+ *   2) Fallback: insert langsung (bila RPC belum terpasang di server).
+ *   3) Bila semua gagal → payload (termasuk URL file yang sudah
+ *      terupload) masuk ANTREAN PEMULIHAN di localStorage dan
+ *      dikirim ulang OTOMATIS oleh retryPendingSubmissions().
  */
+
+var PENDING_QUEUE_KEY = 'simbakes_pending_submissions';
+var PENDING_QUEUE_MAX = 20;
+var __pendingSyncBusy = false;
+
+function getPesertaTokenSafe() {
+    try {
+        if (window.SecurityGuard && typeof window.SecurityGuard.getPesertaToken === 'function') {
+            return window.SecurityGuard.getPesertaToken() || null;
+        }
+    } catch (e) { /* abaikan */ }
+    return null;
+}
+
+/**
+ * Deteksi error "RPC belum terpasang" → boleh fallback ke insert langsung.
+ * Error lain (RLS, validasi, duplikat) harus dilempar apa adanya.
+ */
+function isSubmitRpcMissing(err) {
+    var code = String((err && err.code) || '');
+    var msg  = String((err && err.message) || err || '').toLowerCase();
+    if (code === 'pgrst202' || code === '404') return true;
+    return msg.indexOf('app_submit_pengajuan') !== -1 &&
+           (msg.indexOf('schema cache') !== -1 ||
+            msg.indexOf('does not exist') !== -1 ||
+            msg.indexOf('not found') !== -1);
+}
+
+function getPendingSubmissions() {
+    try {
+        var raw = localStorage.getItem(PENDING_QUEUE_KEY);
+        var arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+}
+
+function savePendingSubmissions(arr) {
+    try {
+        localStorage.setItem(PENDING_QUEUE_KEY, JSON.stringify(arr.slice(-PENDING_QUEUE_MAX)));
+    } catch (e) { console.warn('[SIMBAKES] Gagal menyimpan antrean pemulihan:', e); }
+}
+
+/**
+ * Simpan payload gagal-kirim ke antrean pemulihan (maks 20, unik per
+ * no_register — item lama dengan nomor sama digantikan versi terbaru).
+ */
+function queuePendingSubmission(cleanData) {
+    if (!cleanData || !cleanData.no_register) return;
+    var queue = getPendingSubmissions().filter(function (item) {
+        return item && item.no_register !== cleanData.no_register;
+    });
+    queue.push(cleanData);
+    savePendingSubmissions(queue);
+    console.warn('[SIMBAKES] 📥 Pengajuan ' + cleanData.no_register + ' masuk antrean pemulihan (' + queue.length + ' item). Akan dikirim ulang otomatis.');
+}
+
+function removePendingSubmission(reg) {
+    if (!reg) return;
+    var queue = getPendingSubmissions().filter(function (item) {
+        return item && item.no_register !== reg;
+    });
+    savePendingSubmissions(queue);
+}
+
+function showToastSafe(msg, type, dur) {
+    try {
+        if (typeof showToast === 'function') showToast(msg, type, dur || 4500);
+    } catch (e) { /* abaikan */ }
+}
+
+/**
+ * Inti pengiriman satu payload bersih (snake_case) ke Supabase:
+ * RPC dulu → fallback insert langsung → verifikasi. Mengembalikan
+ * array berisi record tersimpan; melempar error bila gagal total.
+ */
+async function submitCleanDataToSupabase(cleanData) {
+    if (!supabaseClient) {
+        throw new Error('Supabase client tidak tersedia');
+    }
+    if (!cleanData.no_register || !String(cleanData.no_register).trim()) {
+        throw new Error('Nomor pengajuan (no_register) kosong — pengajuan tidak dapat disimpan');
+    }
+
+    // ---- Jalur 1: RPC server-side (security definer) ----
+    try {
+        const { data: rpcData, error: rpcError } = await supabaseClient.rpc('app_submit_pengajuan', {
+            p_payload: cleanData,
+            p_token: getPesertaTokenSafe()
+        });
+        if (!rpcError) {
+            const res = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+            if (res && res.ok !== false && res.record) {
+                console.log('[SIMBAKES] ✅ (RPC) Pengajuan tersimpan:', res.record.no_register,
+                    res.duplicate ? '(nomor sudah ada — pakai record lama)' : '',
+                    res.stamped ? '(identitas dari sesi peserta)' : '');
+                return [res.record];
+            }
+            throw new Error((res && res.error) || 'RPC app_submit_pengajuan mengembalikan hasil tak terduga');
+        }
+        if (!isSubmitRpcMissing(rpcError)) throw rpcError;
+        console.warn('[SIMBAKES] RPC submit belum terpasang di server — memakai insert langsung. Admin dapat menjalankan sql/PATCH-SUBMIT-PENGAJUAN.sql.');
+    } catch (rpcErr) {
+        if (!isSubmitRpcMissing(rpcErr)) throw rpcErr;
+        console.warn('[SIMBAKES] Fallback insert langsung:', rpcErr && rpcErr.message);
+    }
+
+    // ---- Jalur 2: insert langsung (fallback) ----
+    const { data, error } = await supabaseClient
+        .from('submissions')
+        .insert([cleanData])
+        .select();
+
+    if (error) {
+        // Duplikat (constraint unik) → coba pakai row yang sudah ada
+        if (String(error.code || '') === '23505' || /duplicate/i.test(error.message || '')) {
+            const ex = await supabaseClient.from('submissions')
+                .select('*').eq('no_register', cleanData.no_register).limit(1);
+            if (!ex.error && ex.data && ex.data.length) return ex.data;
+        }
+        console.error('[SIMBAKES] ❌ Supabase Insert Error:', {
+            message: error.message, code: error.code,
+            hint: error.hint, details: error.details
+        });
+        throw error;
+    }
+
+    if (!data || data.length === 0) {
+        // Row bisa tercommit tapi tak terbaca oleh role ini (policy select
+        // ketat). Dianggap gagal + masuk antrean — retry via RPC akan
+        // menemukan row lama (idempotent) dan menyelesaikannya.
+        throw new Error('INSERT tidak mengembalikan record — verifikasi server gagal');
+    }
+
+    console.log('[SIMBAKES] ✅ Data submitted successfully:', data);
+    return data;
+}
+
 async function submitToSupabase(formData) {
     if (!supabaseClient) {
         throw new Error('Supabase client tidak tersedia');
     }
-    
+
     try {
         // Map camelCase form data to snake_case DB columns
         const dbData = mapFormDataToDB(formData);
-        
+
         console.log('[SIMBAKES] 📤 Mapped data for Supabase:', dbData);
-        
+
         // Filter out undefined/null values that might cause issues
         const cleanData = {};
         for (const [key, value] of Object.entries(dbData)) {
@@ -298,11 +442,11 @@ async function submitToSupabase(formData) {
                 cleanData[key] = value;
             }
         }
-        
+
         // Add timestamps
         cleanData.created_at = new Date().toISOString();
         cleanData.updated_at = new Date().toISOString();
-        
+
         // [Task9e] Payload WAJIB memiliki no_register sebelum insert (poin 4/6)
         if (!cleanData.no_register || !String(cleanData.no_register).trim()) {
             console.error('[SIMBAKES] ❌ Payload tanpa no_register — insert dibatalkan:', cleanData);
@@ -310,37 +454,66 @@ async function submitToSupabase(formData) {
         }
 
         console.log('[SIMBAKES] 📤 Clean data for insert:', cleanData);
-        
-        const { data, error } = await supabaseClient
-            .from('submissions')
-            .insert([cleanData])
-            .select();
-            
-        if (error) {
-            console.error('[SIMBAKES] ❌ Supabase Insert Error:', {
-                message: error.message,
-                code: error.code,
-                hint: error.hint,
-                details: error.details,
-                fullError: error
-            });
-            throw error;
-        }
-        
-        // [Task9e] Jangan anggap berhasil hanya karena fungsi selesai dijalankan —
-        // hasil insert WAJIB diverifikasi eksplisit (spesifikasi poin 6)
-        if (!data || data.length === 0) {
-            console.error('[SIMBAKES] ❌ INSERT tidak mengembalikan record — dianggap GAGAL');
-            throw new Error('INSERT tidak mengembalikan record pengajuan — data TIDAK tersimpan');
-        }
 
-        console.log('[SIMBAKES] ✅ Data submitted successfully:', data);
-        return data;
+        return await submitCleanDataToSupabase(cleanData);
     } catch (error) {
+        // [Revisi 14 Okt] ANTREAN PEMULIHAN: payload (termasuk URL file
+        // yang sudah terupload ke Storage) disimpan di perangkat dan
+        // dikirim ulang OTOMATIS — data tidak hilang lagi.
+        try {
+            const dbData = mapFormDataToDB(formData);
+            const cleanData = {};
+            for (const [key, value] of Object.entries(dbData)) {
+                if (value !== undefined && value !== 'undefined') cleanData[key] = value;
+            }
+            if (cleanData.no_register) queuePendingSubmission(cleanData);
+            error.pendingQueued = true;
+            error.pendingCount = getPendingSubmissions().length;
+        } catch (qErr) { /* abaikan — error asal tetap dilempar */ }
         console.error('[SIMBAKES] Error submitting data:', error);
         throw error;
     }
 }
+
+/**
+ * [Revisi 14 Okt] Kirim ulang otomatis seluruh antrean pemulihan.
+ * Dipanggil saat aplikasi dibuka, saat portal peserta tampil, dan
+ * setelah koneksi Supabase siap. Berhenti pada kegagalan pertama
+ * (dicoba lagi pada pemicu berikutnya).
+ */
+async function retryPendingSubmissions() {
+    if (__pendingSyncBusy) return { attempted: 0, synced: 0 };
+    const queue = getPendingSubmissions();
+    if (!queue.length || !supabaseClient) return { attempted: 0, synced: 0 };
+
+    __pendingSyncBusy = true;
+    let synced = 0;
+    try {
+        for (let i = 0; i < queue.length; i++) {
+            const item = queue[i];
+            try {
+                await submitCleanDataToSupabase(item);
+                removePendingSubmission(item.no_register);
+                synced++;
+                showToastSafe('📤 Pengajuan tertunda (' + item.no_register + ') berhasil dikirim ke server.', 'success', 5000);
+            } catch (e) {
+                console.warn('[SIMBAKES] Kirim ulang antrean belum berhasil — ditunda:', e && e.message);
+                break;
+            }
+        }
+    } finally {
+        __pendingSyncBusy = false;
+    }
+
+    if (synced > 0) {
+        if (typeof reloadSubmissionsData === 'function') {
+            try { await reloadSubmissionsData(); } catch (e) { /* abaikan */ }
+        }
+    }
+    return { attempted: queue.length, synced: synced };
+}
+window.retryPendingSubmissions = retryPendingSubmissions;
+window.getPendingSubmissions = getPendingSubmissions;
 
 /**
  * Update Submission Status/Data

@@ -1251,6 +1251,12 @@ async function submitForm() {
         // Simpan record utk penerbitan Bukti Pendaftaran (module 15)
         window.__buktiLastRecord = savedRecord;
 
+        // [Revisi 14 Okt] Data sudah TERVERIFIKASI di server — hapus dari
+        // antrean pemulihan bila sebelumnya sempat gagal kirim.
+        if (typeof removePendingSubmission === 'function') {
+            try { removePendingSubmission(savedRecord.no_register); } catch (e) { /* abaikan */ }
+        }
+
         // [Task9e] SUKSES (poin 3, 8, 16): tombol state ✓ + modal sukses
         // berisi Nomor Registrasi, tanggal pengajuan, dan status "Diajukan"
         setSubmitBtnState(submitBtn, 'success');
@@ -1281,7 +1287,18 @@ async function submitForm() {
 
         setSubmitBtnState(submitBtn, 'error'); // "Coba Kirim Kembali" (aktif)
         closeModal('confirm-modal');
-        showSubmitError('Pengajuan belum dapat dikirim', friendlySubmitErrorMessage(error));
+
+        // [Revisi 14 Okt] Bila payload masuk antrean pemulihan, beri tahu
+        // pengguna bahwa datanya AMAN dan akan terkirim otomatis.
+        if (error && error.pendingQueued) {
+            showSubmitError('Koneksi ke server terkendali — data Anda AMAN',
+                'Data isian dan tautan dokumen yang sudah terupload tersimpan sementara di perangkat ini ' +
+                '(' + (error.pendingCount || 1) + ' pengajuan menunggu). Sistem akan MENGIRIMKANNYA OTOMATIS ' +
+                'begitu halaman dibuka lagi atau portal peserta diakses dengan koneksi internet yang stabil. ' +
+                'Anda juga bisa mencoba mengirim sekali lagi sekarang.');
+        } else {
+            showSubmitError('Pengajuan belum dapat dikirim', friendlySubmitErrorMessage(error));
+        }
         __submitInProgress = false; // boleh mencoba lagi
     }
 }

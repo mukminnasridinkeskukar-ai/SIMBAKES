@@ -2657,3 +2657,165 @@ console.log('✅ SIMBAKES ADMIN FINAL SYSTEM LOADED');
 console.log('📦 Features: 5-col table | Full-screen Lightbox | Real CRUD | Photo Resolver');
 console.log('🚀 NO FALLBACKS - NO SIMPLE MODAL - NO POLLING');
 
+
+// ============================================================
+// [REVISI 14 Okt] PEMULIHAN DATA PENGAJUAN DARI STORAGE
+// Menemukan folder file dokumen (pengajuan/<no_register>/) di bucket
+// yang TIDAK punya baris di tabel submissions, lalu memulihkannya.
+// Menyatu dengan sql/PATCH-SUBMIT-PENGAJUAN.sql (2 RPC admin).
+// ============================================================
+
+function buildPengajuanPublicUrl(path) {
+    const base = String(SUPABASE_CONFIG.url || '').replace(/\/+$/, '');
+    return base + '/storage/v1/object/public/pengajuan-files/' + String(path || '').replace(/^\/+/, '');
+}
+
+function formatBuktiBytes(bytes) {
+    const n = Number(bytes || 0);
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+    return (n / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+function adminToastSafe(msg, type, dur) {
+    try {
+        if (typeof showToast === 'function') { showToast(msg, type, dur || 4500); return; }
+    } catch (e) { /* abaikan */ }
+    if (typeof showToastSafe === 'function') {
+        try { showToastSafe(msg, type, dur); } catch (e2) { /* abaikan */ }
+    }
+}
+
+async function openRecoveryPengajuanModal() {
+    // Modal kerangka + loading
+    let modal = document.getElementById('recovery-pengajuan-modal');
+    if (modal) modal.remove();
+    modal = document.createElement('div');
+    modal.id = 'recovery-pengajuan-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content" style="max-width:680px; max-height:88vh; overflow-y:auto; border-radius:20px; background:white;">
+            <div style="background:linear-gradient(135deg,#c2410c,#ea580c); padding:1.25rem 1.75rem; display:flex; align-items:center; justify-content:space-between; gap:10px; border-radius:20px 20px 0 0;">
+                <h2 style="color:white; font-size:1.1rem; font-weight:700; margin:0;">🛟 Pulihkan Pengajuan dari Storage</h2>
+                <button type="button" onclick="closeRecoveryPengajuanModal()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:32px; height:32px; border-radius:50%; font-size:1rem; cursor:pointer; flex-shrink:0;">✕</button>
+            </div>
+            <div id="recovery-pengajuan-body" style="padding:1.5rem 1.75rem;">
+                <div style="text-align:center; padding:2rem 0;">
+                    <div class="spinner" style="margin:0 auto 1rem;"></div>
+                    <p style="color:#64748b;">Memindai folder dokumen di Storage…</p>
+                </div>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+    requestAnimationFrame(() => modal.classList.add('active'));
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeRecoveryPengajuanModal(); });
+
+    const body = document.getElementById('recovery-pengajuan-body');
+    try {
+        const { data, error } = await supabaseClient.rpc('admin_recover_pengajuan_storage');
+        if (error) throw error;
+        const rows = (Array.isArray(data) ? data : (data ? [data] : [])) || [];
+        const perlu = rows.filter(r => !r.ada_di_tabel);
+        const sudah = rows.filter(r => r.ada_di_tabel);
+
+        if (!rows.length) {
+            body.innerHTML = `
+                <div style="text-align:center; padding:1.5rem 0;">
+                    <div style="font-size:2.6rem; margin-bottom:0.5rem;">✅</div>
+                    <p style="color:#334155; font-weight:600; margin:0 0 4px;">Tidak ada file yatim di Storage</p>
+                    <p style="color:#64748b; font-size:0.9rem; margin:0;">Semua folder dokumen pengajuan sudah punya baris di tabel submissions.</p>
+                </div>`;
+            return;
+        }
+
+        const esc = escapeHtml;
+        const fileLinks = (files) => (files || []).map(f =>
+            `<a href="${esc(buildPengajuanPublicUrl(f.path))}" target="_blank" rel="noopener" style="color:#1d4ed8; text-decoration:underline; word-break:break-all;">${esc(f.jenis || f.path)}</a>`
+        ).join(', ');
+
+        const perluHtml = perlu.length ? perlu.map(r => `
+            <div style="border:1.5px solid #fed7aa; background:#fff7ed; border-radius:14px; padding:1rem 1.1rem; margin-bottom:0.8rem;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+                    <div>
+                        <div style="font-weight:700; color:#9a3412;">${esc(r.reg)}</div>
+                        <div style="font-size:0.8rem; color:#9a3412; opacity:0.8;">Terupload: ${esc(formatDate(r.waktu_upload))} • ${r.jumlah_file} file</div>
+                    </div>
+                    <button type="button" onclick="restorePengajuanFromStorage('${esc(r.reg)}', this)"
+                        style="padding:8px 14px; background:linear-gradient(135deg,#ea580c,#c2410c); color:white; border:none; border-radius:10px; font-weight:700; font-size:0.85rem; cursor:pointer; flex-shrink:0;">⬇️ Pulihkan ke Tabel</button>
+                </div>
+                <div style="font-size:0.82rem; color:#7c2d12; margin-top:8px;">File: ${fileLinks(r.files)}</div>
+            </div>`).join('') : `
+            <div style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:14px; padding:1rem; color:#166534; font-weight:600; text-align:center;">
+                ✅ Semua file Storage sudah punya baris di tabel.
+            </div>`;
+
+        const sudahHtml = sudah.length ? `
+            <details style="margin-top:1rem;">
+                <summary style="cursor:pointer; color:#475569; font-weight:600; font-size:0.9rem;">Sudah ada di tabel (${sudah.length}) — klik untuk melihat</summary>
+                <div style="margin-top:0.6rem; display:grid; gap:6px;">
+                    ${sudah.map(r => `<div style="font-size:0.85rem; color:#334155;">• <b>${esc(r.reg)}</b> — ${r.jumlah_file} file</div>`).join('')}
+                </div>
+            </details>` : '';
+
+        body.innerHTML = `
+            <p style="margin:0 0 1rem; color:#64748b; font-size:0.9rem; line-height:1.5;">
+                Berikut folder dokumen di bucket <b>pengajuan-files</b> beserta status barisnya di tabel <b>submissions</b>.
+                Memulihkan akan membuat baris berisi Nomor Register, tanggal, dan tautan semua filenya —
+                lengkapi data teks (nama, NIK, dll.) lewat <b>Edit Data</b> dari bukti daftar pemohon.
+            </p>
+            ${perluHtml}
+            ${sudahHtml}`;
+    } catch (err) {
+        const msg = String((err && err.message) || err || '');
+        let hint = 'Muat ulang halaman lalu coba lagi.';
+        if (/hanya admin\/operator/i.test(msg)) {
+            hint = 'Login ulang sebagai <b>admin/operator</b> di panel ini, lalu buka tombol ini lagi.';
+        } else if (/schema cache|does not exist|not found|pgrst202/i.test(msg)) {
+            hint = 'RPC pemulihan belum terpasang. Admin perlu menjalankan sekali <b>sql/PATCH-SUBMIT-PENGAJUAN.sql</b> di Supabase SQL Editor.';
+        }
+        body.innerHTML = `
+            <div style="background:#fef2f2; border:1.5px solid #fecaca; border-radius:14px; padding:1.2rem;">
+                <div style="font-weight:700; color:#991b1b; margin-bottom:6px;">❌ Gagal memindai Storage</div>
+                <div style="color:#7f1d1d; font-size:0.9rem;">${escapeHtml(msg)}</div>
+                <div style="color:#7f1d1d; font-size:0.9rem; margin-top:8px;">👉 ${hint}</div>
+            </div>`;
+    }
+}
+
+async function restorePengajuanFromStorage(reg, btn) {
+    if (!reg || !supabaseClient) return;
+    if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Memulihkan…'; }
+    try {
+        const { data, error } = await supabaseClient.rpc('admin_restore_pengajuan_dari_storage', { p_reg: reg });
+        if (error) throw error;
+        const res = Array.isArray(data) ? data[0] : data;
+        if (res && res.ok) {
+            adminToastSafe('✅ Pengajuan ' + reg + (res.sudah_ada ? ' sudah ada di tabel.' : ' berhasil dipulihkan ke tabel.'), 'success', 5000);
+            closeRecoveryPengajuanModal();
+            if (typeof refreshDataPengusul === 'function') {
+                try { refreshDataPengusul(); } catch (e) { /* abaikan */ }
+            } else if (typeof reloadSubmissionsData === 'function') {
+                try { await reloadSubmissionsData(); } catch (e) { /* abaikan */ }
+            }
+        } else {
+            throw new Error('Respons pemulihan tidak dikenali');
+        }
+    } catch (err) {
+        adminToastSafe('❌ Gagal memulihkan: ' + String((err && err.message) || err), 'error', 6000);
+        if (btn) { btn.disabled = false; btn.innerHTML = '⬇️ Pulihkan ke Tabel'; }
+    }
+}
+
+function closeRecoveryPengajuanModal() {
+    const modal = document.getElementById('recovery-pengajuan-modal');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => modal.remove(), 200);
+    }
+}
+
+// Ekspor global
+window.openRecoveryPengajuanModal = openRecoveryPengajuanModal;
+window.restorePengajuanFromStorage = restorePengajuanFromStorage;
+window.closeRecoveryPengajuanModal = closeRecoveryPengajuanModal;
+window.buildPengajuanPublicUrl = buildPengajuanPublicUrl;

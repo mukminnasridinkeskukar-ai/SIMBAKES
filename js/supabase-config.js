@@ -56,6 +56,14 @@ function initSupabaseClient() {
             global: { headers: extraHeaders }
         });
 
+        // [Revisi 14 Okt] Koneksi siap → kirim ulang pengajuan yang sempat
+        // gagal tersimpan (antrean pemulihan di localStorage).
+        setTimeout(function () {
+            if (typeof retryPendingSubmissions === 'function') {
+                retryPendingSubmissions().catch(function (e) { /* abaikan */ });
+            }
+        }, 3500);
+
         return true;
 
     } catch (error) {

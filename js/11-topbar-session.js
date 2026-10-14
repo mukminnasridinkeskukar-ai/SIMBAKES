@@ -963,6 +963,12 @@ function showPesertaDashboard(sessionOrUndefined) {
             dashboard.classList.add('show');
             document.body.style.overflow = 'hidden';
         }
+        // [Revisi 14 Okt] Portal terbuka → kirim ulang pengajuan tertunda
+        setTimeout(function () {
+            if (typeof retryPendingSubmissions === 'function') {
+                retryPendingSubmissions().catch(function (e) { /* abaikan */ });
+            }
+        }, 1500);
         return;
     }
     // Fallback: Ambil data session dari localStorage

@@ -353,3 +353,98 @@ Pengajuan" pada modal sukses tetap langsung pindah tanpa konfirmasi.
 
 Tidak ada perubahan SQL/Supabase. Popup Cek Status & Penetapan tidak
 memakai konfirmasi ini (formulirnya bukan isian panjang).
+
+---
+
+# REVISI: PENJAMINAN DATA PENGAJUAN TERSIMPAN + PEMULIHAN DATA HILANG
+
+Tanggal: 14 Oktober 2026
+
+## Latar (hasil penelusuran)
+
+Keluhan: data & dokumen yang diinput lewat kartu **Ajukan Rekomendasi**
+(akun peserta login) gagal tersimpan di tabel `submissions`, padahal
+bukti daftar terbit.
+
+Hasil audit alur kode (`04-form.js` → `05-database.js`):
+
+1. Alur klien terbukti ketat: validasi ketat → 3 file diupload ke Storage
+   → insert → verifikasi record → baru modal sukses → bukti terbit.
+   Klien TIDAK mungkin menerbitkan bukti dari insert yang gagal.
+2. Karena itu kehilangan data terjadi di sisi server; risiko konkret yang
+   ditemukan:
+   - **Kebijakan RLS `submissions` hanya `TO anon`.** Bila request membawa
+     sesi auth lain, `.select()` setelah insert bisa mengembalikan KOSONG:
+     row sebenarnya tercommit tapi aplikasi menganggap gagal (pengguna
+     mengulang, status membingungkan), atau operasi ditolak total.
+   - **File terupload duluan sebelum insert** → bila insert gagal, file
+     jadi "yatim" di bucket `pengajuan-files` (data bisa dipulihkan!).
+3. Dokumen yang sudah terupload tetap ada di Storage — sumber pemulihan.
+
+## Solusi yang dipasang
+
+### A. Jalur tulis dijamin server-side (root fix)
+- **RPC baru `app_submit_pengajuan(payload, token)`** (security definer):
+  insert ke `submissions` tanpa terpengaruh RLS drift; identitas
+  NIK/nama/email peserta diambil dari sesi server (bukan percaya
+  browser); **idempotent** — nomor register yang sudah ada dikembalikan
+  tanpa duplikat (aman untuk kirim ulang).
+- Klien (`05-database.js`): RPC dipakai dulu; bila belum terpasang,
+  fallback ke insert langsung seperti semula — aplikasi tetap jalan
+  sebelum SQL dijalankan.
+
+### B. Antrean pemulihan otomatis (data hilang → kembali ke tabel)
+- Bila seluruh jalur gagal, payload (termasuk URL file yang sudah
+  terupload) disimpan ke `localStorage['simbakes_pending_submissions']`
+  (maks 20) dan pengguna diberi tahu data AMAN.
+- `retryPendingSubmissions()` otomatis berjalan saat: aplikasi dibuka
+  (koneksi siap) dan portal peserta tampil. Berhasil → antrean bersih,
+  toast notifikasi, daftar admin di-refresh.
+- Sukses submit juga menghapus item antrean yang cocok.
+
+### C. Pemulihan file yatim (panel admin)
+- Tombol baru **"🛟 Pulihkan Data"** di header Data Pengusulan:
+  memindai bucket `pengajuan-files`, menampilkan folder dokumen yang
+  TIDAK punya baris di tabel, lengkap tautan filenya; satu klik
+  **"Pulihkan ke Tabel"** membuat barisnya (no_register, tanggal,
+  URL semua file). Admin melengkapi data teks (nama/NIK) lewat Edit Data
+  dari bukti daftar pemohon.
+- RPC pendukung: `admin_recover_pengajuan_storage()` (pindai,
+  gate sesi admin 'write') dan `admin_restore_pengajuan_dari_storage(reg)`.
+
+### D. RLS ditutup untuk semua role
+- Kebijakan select/insert kini juga ada untuk `authenticated`
+  (selain `anon` yang lama). Kebijakan admin update/delete tidak diubah.
+
+## File yang berubah/ditambah
+
+| File | Perubahan |
+|---|---|
+| `sql/PATCH-SUBMIT-PENGAJUAN.sql` | **Baru** — RPC submit + RLS authenticated + 2 RPC pemulihan + verifikasi |
+| `js/05-database.js` | `submitCleanDataToSupabase()` (RPC→fallback→verifikasi), antrean pemulihan, `retryPendingSubmissions()` |
+| `js/04-form.js` | Pesan "data AMAN" saat masuk antrean; bersihkan antrean saat sukses |
+| `js/supabase-config.js` | Pemicu retry saat koneksi siap |
+| `js/11-topbar-session.js` | Pemicu retry saat portal peserta tampil |
+| `js/admin-crud.js` | Modul "🛟 Pulihkan Data" (modal pindai + pulihkan) |
+| `index.html` | Tombol Pulihkan Data; versi cache 5 file JS → `?v=20261014b` |
+
+## Langkah pemasangan (urut)
+
+1. Upload/replace file aplikasi (index.html, js/) ke hosting.
+2. Jalankan **`sql/PATCH-SUBMIT-PENGAJUAN.sql`** di Supabase SQL Editor
+   (aman berulang). Wajib agar jalur RPC & pemulihan aktif.
+3. Uji:
+   - Submit pengajuan dari akun peserta → cek tabel submissions →
+     baris lengkap termasuk URL file.
+   - Panel admin → Data Pengusulan → "🛟 Pulihkan Data" → bila ada file
+     yatim (misal dari kejadian hilang sebelumnya), klik "Pulihkan ke
+     Tabel" → baris muncul → Edit Data untuk melengkapi nama/NIK.
+   - Di perangkat peserta yang pernah gagal kirim: buka ulang situs →
+     toast "Pengajuan tertunda berhasil dikirim" → data masuk tabel.
+
+> Catatan diagnosa: bila bukti daftar terbit tetapi baris tidak ada di
+> tabel, kemungkinan barisnya pernah tercommit lalu terhapus manual/SQL
+> reset, atau bukti dicetak dari hasil Cek Status lama. File dokumennya
+> tetap aman di Storage — gunakan "🛟 Pulihkan Data" untuk mengembalikan
+> barisnya, atau minta peserta membuka ulang situs (antrean otomatis
+> mengirim ulang bila tersimpan di perangkatnya).
