@@ -30,6 +30,10 @@
     let akunPageSize = 10;
     let akunSearchTimer = null;
     let akunLoading = false;
+    // [Revisi 15 Okt e] Password asli akun (KHUSUS superadmin).
+    // Diisi via RPC superadmin_list_password_akun_peserta: { id: password }
+    let akunPasswordMap = {};
+    let akunPasswordLoaded = false;
 
     // ===== HELPER DASAR =====
 
@@ -57,6 +61,33 @@
         try { return (window.SecurityGuard && window.SecurityGuard.getAdminToken()) || null; }
         catch (e) { return null; }
     }
+
+    /**
+     * [Revisi 15 Okt e] Apakah pengguna aktif SUPERADMIN?
+     * Kolom password hanya tampil untuk role ini (server juga
+     * memvalidasi ulang — RPC password menolak role lain).
+     */
+    function akunIsSuperadmin() {
+        try {
+            if (typeof getCurrentUserRole === 'function') {
+                const r = String(getCurrentUserRole() || '').toLowerCase();
+                if (r) return r === 'superadmin';
+            }
+        } catch (e) { /* abaikan */ }
+        try {
+            if (typeof currentAdminUser !== 'undefined' && currentAdminUser && currentAdminUser.role) {
+                return String(currentAdminUser.role).toLowerCase() === 'superadmin';
+            }
+        } catch (e) { /* abaikan */ }
+        try {
+            const st = window.SIMBAKES_USER_STATE;
+            if (st && st.userRole) return String(st.userRole).toLowerCase() === 'superadmin';
+        } catch (e) { /* abaikan */ }
+        return false;
+    }
+
+    /** Jumlah kolom tabel tergantung role (superadmin + kolom password) */
+    function akunColspan() { return akunIsSuperadmin() ? 8 : 7; }
 
     /**
      * Resolusi client Supabase (pola yang sama dengan modul registrasi):
@@ -120,15 +151,16 @@
         const tbody = document.getElementById('akun-peserta-table-body');
         if (!tbody) return;
 
+        const nCol = akunColspan();
         if (!client) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2.5rem;color:#ef4444;">' +
+            tbody.innerHTML = '<tr><td colspan="' + nCol + '" style="text-align:center;padding:2.5rem;color:#ef4444;">' +
                 '❌ Koneksi database tidak tersedia. Periksa internet lalu klik "Ambil Data Terbaru".</td></tr>';
             if (typeof showToast === 'function') showToast('Koneksi Supabase tidak tersedia', 'error');
             return;
         }
 
         akunLoading = true;
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:3rem;color:#64748b;">' +
+        tbody.innerHTML = '<tr><td colspan="' + nCol + '" style="text-align:center;padding:3rem;color:#64748b;">' +
             '<div class="spinner"></div><p style="margin-top:1rem;">Memuat data akun peserta...</p></td></tr>';
 
         try {
@@ -163,6 +195,38 @@
 
             akunData = rows;
             akunCurrentPage = 1;
+
+            // [Revisi 15 Okt e] SUPERADMIN: muat juga password asli
+            // (kolom password terlihat). Role lain tidak memanggil RPC ini.
+            if (akunIsSuperadmin() && sToken) {
+                try {
+                    const pwRes = await client.rpc('superadmin_list_password_akun_peserta', { p_token: sToken });
+                    if (!pwRes.error && Array.isArray(pwRes.data)) {
+                        akunPasswordMap = {};
+                        pwRes.data.forEach(function (r) {
+                            akunPasswordMap[String(r.id)] = String(r.password_visible || '');
+                        });
+                        akunPasswordLoaded = true;
+                    } else if (isAkunRpcMissing(pwRes.error)) {
+                        // Patch SQL belum dijalankan — kolom password tampil "-"
+                        akunPasswordMap = {};
+                        akunPasswordLoaded = false;
+                        console.info('[AKUN PESERTA] RPC password belum ada. Jalankan sql/PATCH-PASSWORD-LIHAT-SUPERADMIN.sql di Supabase.');
+                    } else {
+                        akunPasswordMap = {};
+                        akunPasswordLoaded = false;
+                        console.warn('[AKUN PESERTA] Gagal memuat password:', pwRes.error && pwRes.error.message);
+                    }
+                } catch (ePw) {
+                    akunPasswordMap = {};
+                    akunPasswordLoaded = false;
+                    console.warn('[AKUN PESERTA] Gagal memuat password:', ePw);
+                }
+            } else {
+                akunPasswordMap = {};
+                akunPasswordLoaded = false;
+            }
+
             applyAkunFilters();
             console.log('[AKUN PESERTA] ✅ ' + akunData.length + ' akun dimuat dari Supabase');
         } catch (err) {
@@ -179,7 +243,7 @@
             } else {
                 hint = '❌ Gagal memuat data. Silakan coba kembali.';
             }
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2.5rem;color:#ef4444;">' +
+            tbody.innerHTML = '<tr><td colspan="' + akunColspan() + '" style="text-align:center;padding:2.5rem;color:#ef4444;">' +
                 hint +
                 '<br><button class="btn btn-sm" style="margin-top:1rem;background:#f1f5f9;color:#475569;" onclick="loadAkunPesertaData()">🔄 Coba Lagi</button></td></tr>';
             if (typeof showToast === 'function') showToast(isDenied ? 'Akses ditolak: jalankan PATCH-FIX-SESSION.sql' : 'Gagal memuat data akun', 'error');
@@ -241,9 +305,123 @@
         return Math.max(1, Math.ceil(akunFiltered.length / akunPageSize));
     }
 
+    /**
+     * [Revisi 15 Okt e] Tambah/hapus kolom header "🔑 Password"
+     * (diletakkan sebelum kolom Aksi). Dipanggil setiap render agar
+     * konsisten dengan role aktif.
+     */
+    function akunSyncPasswordColumn() {
+        const table = document.getElementById('akun-peserta-table');
+        if (!table) return;
+        const headRow = table.querySelector('thead tr');
+        if (!headRow) return;
+        const existing = headRow.querySelector('th[data-akun-pw-col]');
+        const want = akunIsSuperadmin();
+        if (want && !existing) {
+            const th = document.createElement('th');
+            th.setAttribute('data-akun-pw-col', '1');
+            th.innerHTML = '🔑 Password';
+            const aksiTh = headRow.querySelector('th:last-child');
+            if (aksiTh && aksiTh.parentNode === headRow) {
+                headRow.insertBefore(th, aksiTh);
+            } else {
+                headRow.appendChild(th);
+            }
+        } else if (!want && existing) {
+            existing.remove();
+        }
+    }
+
+    /**
+     * [Revisi 15 Okt e] Sel password utk 1 baris akun.
+     * - terekam  : titik-titik + tombol 👁 lihat / 📋 salin
+     * - belum    : "- (belum terekam)" — akan terisi otomatis saat peserta login
+     */
+    function akunPasswordCellHtml(r) {
+        if (!akunIsSuperadmin()) return '';
+        if (!Object.prototype.hasOwnProperty.call(akunPasswordMap, String(r.id))) {
+            return '<td style="color:#94a3b8;font-size:0.78rem;">-</td>';
+        }
+        const raw = akunPasswordMap[String(r.id)];
+        if (!raw) {
+            return '<td style="font-size:0.75rem;color:#94a3b8;white-space:nowrap;">' +
+                '<span title="Password belum terekam. Akan otomatis terekam saat peserta login berikutnya, atau atur password baru lewat Edit Akun.">' +
+                '- <em style="font-size:0.68rem;">(belum terekam)</em></span></td>';
+        }
+        const qid = String(r.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        return '<td style="white-space:nowrap;">' +
+            '<span id="akun-pw-mask-' + qid + '" style="font-family:monospace;letter-spacing:2px;color:#334155;">••••••••</span>' +
+            '<span id="akun-pw-text-' + qid + '" style="display:none;font-family:monospace;color:#0f172a;font-weight:600;">' + akunEscapeHtml(raw) + '</span> ' +
+            '<button class="btn-action-edit" title="Tampilkan / sembunyikan password" onclick="akunTogglePw(\'' + qid + '\')">👁</button>' +
+            '<button class="btn-action-status" title="Salin password" onclick="akunCopyPw(\'' + qid + '\')">📋</button>' +
+            '</td>';
+    }
+
+    /** Tampilkan/sembunyikan 1 password di tabel (data diambil dari map) */
+    function akunTogglePw(id) {
+        const mask = document.getElementById('akun-pw-mask-' + id);
+        const text = document.getElementById('akun-pw-text-' + id);
+        if (!mask || !text) return;
+        const showing = text.style.display !== 'none';
+        text.style.display = showing ? 'none' : '';
+        mask.style.display = showing ? '' : 'none';
+    }
+
+    /** Salin password ke clipboard (dengan fallback lama) */
+    function akunCopyPw(id) {
+        const val = akunPasswordMap[String(id)] || '';
+        if (!val) { if (typeof showToast === 'function') showToast('Password belum terekam', 'info'); return; }
+        const ok = function () { if (typeof showToast === 'function') showToast('📋 Password disalin ke clipboard', 'success'); };
+        const fail = function () {
+            // Fallback: textarea sementara (browser lama / non-HTTPS)
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = val;
+                ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                ok();
+            } catch (e) {
+                if (typeof showToast === 'function') showToast('Gagal menyalin — salin manual dari tombol 👁', 'error');
+            }
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(val).then(ok).catch(fail);
+        } else {
+            fail();
+        }
+    }
+
+    /** Info kecil khusus superadmin di bawah toolbar */
+    function akunEnsurePwHint() {
+        const wrap = document.querySelector('#page-data-akun-peserta .admin-table-wrapper');
+        if (!wrap) return;
+        let hint = document.getElementById('akun-pw-hint');
+        if (akunIsSuperadmin()) {
+            if (!hint) {
+                hint = document.createElement('p');
+                hint.id = 'akun-pw-hint';
+                hint.style.cssText = 'font-size:0.75rem;color:#64748b;margin:0.5rem 0 0;';
+                wrap.parentNode.insertBefore(hint, wrap);
+            }
+            hint.innerHTML = '🔑 Kolom <strong>Password</strong> berisi password ASLI akun peserta (bukan hash) dan <strong>hanya terlihat oleh Superadmin</strong>. ' +
+                'Baris "- (belum terekam)" akan terisi otomatis setelah peserta bersangkutan login, atau atur password baru lewat ✏️ Edit Akun.';
+            hint.style.display = '';
+        } else if (hint) {
+            hint.style.display = 'none';
+        }
+    }
+
     function renderAkunPesertaTable() {
         const tbody = document.getElementById('akun-peserta-table-body');
         if (!tbody) return;
+
+        // [Revisi 15 Okt e] sinkronkan kolom password dengan role aktif
+        akunSyncPasswordColumn();
+        akunEnsurePwHint();
+        const nCol = akunColspan();
 
         // clamp halaman
         const totalPages = akunTotalPages();
@@ -256,10 +434,10 @@
         akunUpdateStats();
 
         if (!akunData.length) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:3rem;color:#64748b;">' +
+            tbody.innerHTML = '<tr><td colspan="' + nCol + '" style="text-align:center;padding:3rem;color:#64748b;">' +
                 '📭 Belum ada akun peserta. Klik "➕ Tambah Akun" untuk membuat akun pertama.</td></tr>';
         } else if (!pageRows.length) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:3rem;color:#64748b;">' +
+            tbody.innerHTML = '<tr><td colspan="' + nCol + '" style="text-align:center;padding:3rem;color:#64748b;">' +
                 '🔍 Tidak ada akun yang cocok dengan pencarian/filter.</td></tr>';
         } else {
             const html = pageRows.map(function (r, i) {
@@ -290,6 +468,7 @@
                         '<div style="font-size:0.72rem;color:#64748b;font-family:monospace;">NIK: ' + nik + '</div></td>' +
                     '<td><div style="font-weight:600;">' + username + '</div>' +
                         '<div style="font-size:0.72rem;color:#64748b;">' + email + '</div></td>' +
+                    akunPasswordCellHtml(r) +
                     '<td>' + jurusan + '</td>' +
                     '<td>' + akunStatusBadge(r.status) + note + '</td>' +
                     '<td style="font-size:0.78rem;color:#475569;white-space:nowrap;">' + lastLogin + '</td>' +
@@ -399,8 +578,9 @@
                                 '<datalist id="akun-jurusan-list">' +
                                     AKUN_JURUSAN_OPTIONS.map(function (j) { return '<option value="' + akunEscapeHtml(j) + '"></option>'; }).join('') +
                                 '</datalist>' +
+                                '<div id="akun-pw-current" style="display:none;margin-top:0.75rem;padding:0.65rem 0.85rem;border-radius:8px;font-size:0.8rem;background:#fefce8;color:#854d0e;border:1px solid #fde68a;"></div>' +
                                 '<div id="akun-form-alert" style="display:none;margin-top:0.75rem;padding:0.65rem 0.85rem;border-radius:8px;font-size:0.82rem;"></div>' +
-                                '<p style="font-size:0.75rem;color:#64748b;margin-top:0.75rem;">* wajib diisi. Password di-hash bcrypt di server (tidak tersimpan plaintext). Username akan otomatis diubah ke huruf kecil.</p>' +
+                                '<p style="font-size:0.75rem;color:#64748b;margin-top:0.75rem;">* wajib diisi. Password disimpan sebagai hash bcrypt untuk login, DAN dicatat sebagai teks asli untuk kolom 🔑 Password yang hanya dapat dilihat oleh Superadmin. Username akan otomatis diubah ke huruf kecil.</p>' +
                             '</form>' +
                         '</div>' +
                         '<div class="modal-footer" style="padding:1rem 1.5rem;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:0.75rem;">' +
@@ -448,6 +628,24 @@
             pwInput.placeholder = isEdit ? 'biarkan kosong untuk mempertahankan password lama' : 'minimal 8 karakter';
         }
         if (pwLabel) pwLabel.textContent = isEdit ? 'Password (kosongkan bila tidak diubah)' : 'Password *';
+
+        // [Revisi 15 Okt e] Info password saat ini (khusus SUPERADMIN)
+        const pwCur = document.getElementById('akun-pw-current');
+        if (pwCur) {
+            if (isEdit && akunIsSuperadmin()) {
+                const cur = akunPasswordMap[String(row.id)] || '';
+                if (cur) {
+                    pwCur.innerHTML = '🔑 Password saat ini: <code style="font-family:monospace;font-weight:700;">' + akunEscapeHtml(cur) + '</code> — kosongkan kolom password bila tidak ingin mengubahnya.';
+                    pwCur.style.display = 'block';
+                } else {
+                    pwCur.innerHTML = 'ℹ️ Password saat ini <strong>belum terekam</strong> — akan terekam otomatis saat peserta login. Atau isi kolom password di bawah untuk mengatur password baru (langsung terekam &amp; terlihat di kolom Password).';
+                    pwCur.style.display = 'block';
+                }
+            } else {
+                pwCur.style.display = 'none';
+                pwCur.innerHTML = '';
+            }
+        }
 
         akunShowFormAlert('');
         document.getElementById(modalId).classList.add('active');
@@ -827,6 +1025,10 @@
     window.akunQuickStatus = akunQuickStatus;
     window.akunConfirmDelete = akunConfirmDelete;
     window.akunDoDelete = akunDoDelete;
+    // [Revisi 15 Okt e] password asli akun (superadmin)
+    window.akunTogglePw = akunTogglePw;
+    window.akunCopyPw = akunCopyPw;
+    window.akunIsSuperadmin = akunIsSuperadmin;
 
     console.log('[AKUN PESERTA] 📦 Modul Data Akun Peserta siap (CRUD tabel akun_peserta)');
 

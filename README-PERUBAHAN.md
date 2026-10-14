@@ -662,3 +662,73 @@ dan dibuatkan SQL pemeliharaan berkala.
    baris (agar ruang disk benar-benar bebas).
 3. Tidak ada SQL wajib baru untuk jalur submit — PATCH-SUBMIT-PENGAJUAN.sql
    yang sudah pernah dijalankan tetap berlaku.
+
+---
+
+# REVISI 15 OKT e — SUPERADMIN DAPAT MELIHAT USERNAME & PASSWORD ASLI AKUN PESERTA
+
+## Latar
+
+Permintaan pengguna: *"akun superadmin dapat melihat username dan password
+akun peserta, pastikan password yang digunakan oleh peserta atau diubah
+peserta bisa tampil (bukan hash nya)"*.
+
+Sejak SECURITY-HARDENING.sql, password peserta disimpan sebagai **hash
+bcrypt** dan plaintext dibuang — hash bcrypt sengaja TIDAK BISA dibalik,
+sehingga password lama mustahil ditampilkan. Solusinya: password kini
+**dicatat juga** (kolom baru `password_visible`) di 4 titik otomatis,
+lalu ditampilkan khusus untuk Superadmin.
+
+## Cara kerja (4 titik perekaman otomatis — tanpa reset password)
+
+| Titik | Kapan password terekam |
+|---|---|
+| Registrasi publik (daftar-peserta.html) | Langsung saat pendaftaran (trigger server) |
+| Login peserta | Saat peserta mengetik password yang benar — akun LAMA otomatis terekam pada login pertama setelah patch |
+| Admin tambah/ubah akun | Saat superadmin/admin mengisi kolom password di modal Tambah/Edit Akun |
+| Peserta ganti password sendiri | Saat mengganti lewat kartu Profil & Keamanan Akun |
+
+> Akun lama yang belum login lagi akan berstatus **"- (belum terekam)"**.
+> Superadmin tinggal menunggu peserta login sekali lagi (otomatis terekam),
+> atau langsung mengatur password baru lewat ✏️ Edit Akun.
+
+## Perubahan
+
+| File | Keterangan |
+|---|---|
+| `sql/PATCH-PASSWORD-LIHAT-SUPERADMIN.sql` | **Baru (WAJIB)** — kolom `password_visible`; trigger registrasi kini mencatat plaintext sebelum hash; backfill akun legacy yang masih plaintext; `app_peserta_login` + pencatatan; `admin_save_akun_peserta` + pencatatan; `peserta_change_password` + pencatatan; RPC baru **`superadmin_list_password_akun_peserta`** yang MENOLAK semua role selain superadmin di server. Verifikasi login TETAP memakai bcrypt (tidak berubah) |
+| `js/13-akun-peserta.js` | Kolom **🔑 Password** di tabel Data Akun Peserta (HANYA saat login sebagai superadmin — kolom hilang otomatis untuk admin/operator/viewer); tombol 👁 tampil/sembunyikan per baris; tombol 📋 salin ke clipboard (dengan fallback); baris "- (belum terekam)" + tooltip penjelasan; modal Edit Akun menampilkan "Password saat ini" bagi superadmin; hint penjelasan di bawah toolbar; colspan tabel dinamis 7↔8 |
+| `index.html` | Cache-bust `13-akun-peserta.js` → `?v=20261015d` |
+
+## Keamanan (penting dibaca superadmin)
+
+- Kolom `password_visible` **tidak diberi grant ke anon** — tidak mungkin
+  dibaca langsung dari tabel; satu-satunya pintu adalah RPC yang memvalidasi
+  role superadmin di server (admin/operator/peserta ditolak).
+- Uji otomatis membuktikan: operator/admin TIDAK memanggil RPC password dan
+  password tidak pernah tampil di tabel untuk mereka (35/35 PASS, termasuk
+  kasus "RPC belum terpasang" dan deteksi role).
+- ⚠️ **Risiko yang disadari**: superadmin kini dapat membaca password peserta.
+  Karena itu JANGAN gunakan password yang sama dengan akun penting lain
+  (email/medsos) di sistem ini, dan batasi siapa yang memegang akun superadmin.
+  Ini keputusan kepemilikan sistem — fitur dibuat sesuai permintaan, dengan
+  penjelasan risiko di sini.
+
+## Langkah admin (WAJIB, ±1 menit)
+
+1. Buka Supabase Dashboard → SQL Editor → jalankan
+   **`sql/PATCH-PASSWORD-LIHAT-SUPERADMIN.sql`** (idempotent, aman diulang).
+2. Refresh halaman SIMBAKES (F5 / Ctrl+F5), login sebagai **superadmin**,
+   buka menu **Data Akun Peserta** → kolom 🔑 Password muncul.
+3. Selesai. Tidak ada konfigurasi lain.
+
+## Hasil pengujian
+
+| Uji | Hasil |
+|---|---|
+| `scripts/test-password-visibility.js` (baru) | 35/35 PASS — deteksi role, RPC hanya superadmin, render kolom, toggle 👁, salin 📋, PGRST202 fallback, 9 cek statis SQL |
+| `test-rbac-simbakes.js` (regresi) | SEMUA LULUS |
+| `test-r2-config.js` (regresi) | 19/19 PASS |
+| `test-r2-driver-switch.js` (regresi) | 6/6 PASS |
+| `test-worker-b2.mjs` (regresi) | 14/14 PASS |
+| `node --check` seluruh JS tersentuh | LULUS |
