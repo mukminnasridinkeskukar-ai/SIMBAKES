@@ -1963,6 +1963,213 @@ async function searchStatus() {
     }
 }
 
+// ============================================================
+// [Revisi 15 Okt i] HELPER DOKUMEN: PREVIEW & DOWNLOAD
+// Dipakai kartu Cek Status Pengajuan utk kolom rekomendasi_dinkes,
+// dokumen_kelengkapan & foto_peserta.
+//  - simbakesDetectDocKind  : deteksi jenis file dari URL
+//  - simbakesPreviewDocument: modal pratinjau (iframe/img, Drive embed)
+//  - simbakesDownloadDocument: unduh via fetch→blob, fallback tab baru
+//  - simbakesDocActionButtons: render tombol [👁 Preview] [⬇ Unduh]
+// ============================================================
+
+/** Ambil daftar URL valid (http/https) dari nilai kolom (bisa multi-URL). */
+function simbakesExtractUrls(rawValue) {
+    return String(rawValue == null ? '' : rawValue)
+        .split(/\s+/)
+        .filter(function (u) { return /^https?:\/\//i.test(u); });
+}
+
+/**
+ * [Revisi 15 Okt i] JSON.stringify + escape HTML penuh — aman disematkan
+ * di dalam atribut onclick="...". Browser mengurai entitas kembali menjadi
+ * JSON utuh sebelum dieksekusi JS (nilai kutip/<>/< tetap aman).
+ */
+function simbakesAttrJson(value) {
+    return JSON.stringify(value == null ? '' : value)
+        .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * Deteksi jenis dokumen dari URL.
+ * @returns {'drive'|'pdf'|'image'|'other'}
+ */
+function simbakesDetectDocKind(url) {
+    const u = String(url || '');
+    if (typeof isGoogleDriveUrl === 'function' && isGoogleDriveUrl(u)) return 'drive';
+    if (/\.(pdf)(\?|#|$)/i.test(u) || /storage\/v1\/object\/public\/[^/]+\/.*\.pdf/i.test(u)) return 'pdf';
+    if (/\.(jpe?g|png|gif|webp|bmp|heic|avif)(\?|#|$)/i.test(u)) return 'image';
+    // Supabase Storage tanpa ekstensi jelas → biarkan browser mencoba (iframe)
+    if (/\/storage\/v1\/object\/public\//i.test(u)) return 'other';
+    return 'other';
+}
+
+/** Nama file ramah dari URL (untuk nama unduhan). */
+function simbakesFileNameFromUrl(url, fallbackName) {
+    try {
+        const clean = String(url || '').split('?')[0].split('#')[0];
+        const last = decodeURIComponent(clean.substring(clean.lastIndexOf('/') + 1) || '').trim();
+        return last || (fallbackName || 'dokumen-simbakes');
+    } catch (e) {
+        return (fallbackName || 'dokumen-simbakes');
+    }
+}
+
+/**
+ * Buka modal pratinjau dokumen (full-screen overlay, aman ditumpuk
+ * di atas popup/lightbox manapun — z-index tertinggi).
+ * @param {string} rawUrl - nilai kolom (mendukung multi-URL, dipakai yang pertama)
+ * @param {string} title  - judul pratinjau (mis. "Rekomendasi Dinkes")
+ */
+function simbakesPreviewDocument(rawUrl, title) {
+    const urls = simbakesExtractUrls(rawUrl);
+    if (!urls.length) {
+        if (typeof showToast === 'function') showToast('⚠️ Belum ada file untuk dipratinjau.', 'error');
+        return;
+    }
+    const url = urls[0];
+    const kind = simbakesDetectDocKind(url);
+    const escAttr = escapeHtmlValue(url);
+    const judul = String(title || 'Pratinjau Dokumen');
+
+    let bodyHtml = '';
+    if (kind === 'drive') {
+        const fid = (typeof extractFileIdEnhanced === 'function') ? extractFileIdEnhanced(url) : '';
+        if (fid) {
+            bodyHtml = '<iframe src="https://drive.google.com/file/d/' + escapeHtmlValue(fid) +
+                '/preview" style="width:100%;height:100%;border:0;border-radius:0 0 14px 14px;background:#f8fafc;" ' +
+                'allow="autoplay" title="Pratinjau"></iframe>';
+        } else {
+            bodyHtml = simbakesPreviewFallback(url);
+        }
+    } else if (kind === 'pdf') {
+        bodyHtml = '<iframe src="' + escAttr + '" style="width:100%;height:100%;border:0;border-radius:0 0 14px 14px;background:#f8fafc;" title="Pratinjau PDF"></iframe>';
+    } else if (kind === 'image') {
+        bodyHtml = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f1f5f9;overflow:auto;border-radius:0 0 14px 14px;">' +
+            '<img src="' + escAttr + '" alt="Pratinjau" style="max-width:96%;max-height:94%;object-fit:contain;border-radius:8px;box-shadow:0 4px 18px rgba(15,23,42,0.18);" ' +
+            'onerror="this.parentElement.innerHTML=\'<div style=&quot;text-align:center;padding:2rem;color:#64748b;&quot;><p style=&quot;font-size:2rem;margin-bottom:.5rem;&quot;>🖼️</p><p style=&quot;font-weight:600;&quot;>Pratinjau gambar gagal dimuat.</p><p style=&quot;font-size:.8rem;&quot;>Gunakan tombol ⤴ Buka Tab Baru di atas.</p></div>\'">' +
+            '</div>';
+    } else {
+        // Jenis tak dikenal: coba iframe + sediakan catatan fallback
+        bodyHtml = '<iframe src="' + escAttr + '" style="width:100%;height:100%;border:0;border-radius:0 0 14px 14px;background:#f8fafc;" title="Pratinjau"></iframe>' +
+            '<div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:#0f172ae6;color:#e2e8f0;font-size:0.72rem;padding:0.4rem 0.8rem;border-radius:20px;white-space:nowrap;">Bila tampilan kosong, gunakan tombol ⤴ Buka Tab Baru</div>';
+    }
+
+    let ov = document.getElementById('simbakes-preview-overlay');
+    if (!ov) {
+        ov = document.createElement('div');
+        ov.id = 'simbakes-preview-overlay';
+        document.body.appendChild(ov);
+    }
+    ov.innerHTML =
+        '<div style="position:fixed;inset:0;z-index:2147483000;background:rgba(15,23,42,0.74);display:flex;align-items:center;justify-content:center;padding:1rem;" onclick="if(event.target===this)simbakesClosePreview()">' +
+            '<div style="width:min(960px,94vw);height:min(86vh,860px);background:white;border-radius:14px;box-shadow:0 24px 64px rgba(0,0,0,0.35);display:flex;flex-direction:column;overflow:hidden;position:relative;">' +
+                '<div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;padding:0.8rem 1rem;background:linear-gradient(135deg,#667eea,#764ba2);color:white;">' +
+                    '<div style="display:flex;align-items:center;gap:0.55rem;min-width:0;">' +
+                        '<span style="font-size:1.1rem;">👁️</span>' +
+                        '<strong style="font-size:0.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtmlValue(judul) + '</strong>' +
+                    '</div>' +
+                    '<div style="display:flex;align-items:center;gap:0.5rem;">' +
+                        '<button type="button" onclick="simbakesDownloadDocument(' + simbakesAttrJson(url) + ', ' + simbakesAttrJson(judul) + ')" ' +
+                            'style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(255,255,255,0.16);color:white;border:1px solid rgba(255,255,255,0.35);padding:0.4rem 0.75rem;border-radius:8px;font-size:0.78rem;font-weight:600;cursor:pointer;">⬇ Unduh</button>' +
+                        '<button type="button" onclick="window.open(' + simbakesAttrJson(url) + ', \'_blank\', \'noopener\')" ' +
+                            'style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(255,255,255,0.16);color:white;border:1px solid rgba(255,255,255,0.35);padding:0.4rem 0.75rem;border-radius:8px;font-size:0.78rem;font-weight:600;cursor:pointer;">⤴ Buka Tab Baru</button>' +
+                        '<button type="button" onclick="simbakesClosePreview()" title="Tutup" ' +
+                            'style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,0.35);background:rgba(255,255,255,0.16);color:white;font-size:1.05rem;cursor:pointer;line-height:1;">×</button>' +
+                    '</div>' +
+                '</div>' +
+                '<div style="flex:1;min-height:0;position:relative;">' + bodyHtml + '</div>' +
+            '</div>' +
+        '</div>';
+    ov.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+/** Panel fallback bila pratinjau tertanam tidak memungkinkan. */
+function simbakesPreviewFallback(url) {
+    return '<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.6rem;text-align:center;padding:1.5rem;">' +
+        '<p style="font-size:2.2rem;margin:0;">📄</p>' +
+        '<p style="font-weight:700;color:#334155;margin:0;">Pratinjau tidak dapat ditampilkan tertanam</p>' +
+        '<p style="font-size:0.8rem;color:#64748b;margin:0;max-width:380px;">File ini bisa dibuka lewat tab browser baru, atau diunduh ke perangkat Anda.</p>' +
+        '<button type="button" onclick="window.open(' + simbakesAttrJson(url) + ', \'_blank\', \'noopener\')" ' +
+        'style="margin-top:0.4rem;background:#4f46e5;color:white;border:0;padding:0.55rem 1.1rem;border-radius:10px;font-weight:600;font-size:0.85rem;cursor:pointer;">⤴ Buka di Tab Baru</button>' +
+        '</div>';
+}
+
+/** Tutup modal pratinjau & pulihkan scroll body. */
+function simbakesClosePreview() {
+    const ov = document.getElementById('simbakes-preview-overlay');
+    if (ov) {
+        ov.style.display = 'none';
+        ov.innerHTML = '';
+    }
+    document.body.style.overflow = '';
+}
+
+/**
+ * Unduh file: fetch→blob→simpan (andalan utk Supabase Storage /
+ * URL se-tipe CORS-ramah). Bila gagal (mis. Google Drive memblokir
+ * CORS), file dibuka di tab baru + toast penjelasan.
+ * @param {string} rawUrl      - nilai kolom (multi-URL → dipakai yang pertama)
+ * @param {string} fallbackName - nama file cadangan
+ */
+async function simbakesDownloadDocument(rawUrl, fallbackName) {
+    const urls = simbakesExtractUrls(rawUrl);
+    if (!urls.length) {
+        if (typeof showToast === 'function') showToast('⚠️ Belum ada file yang bisa diunduh.', 'error');
+        return;
+    }
+    const url = urls[0];
+    const namaFile = simbakesFileNameFromUrl(url, fallbackName);
+    try {
+        const resp = await fetch(url, { mode: 'cors', credentials: 'omit' });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const blob = await resp.blob();
+        const objUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objUrl;
+        a.download = namaFile;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(objUrl); }, 4000);
+        if (typeof showToast === 'function') showToast('⬇ Mengunduh ' + namaFile, 'success');
+    } catch (e) {
+        // Fallback: drive/CDN tanpa CORS → buka tab baru (pengguna
+        // bisa menyimpan manual; Drive langsung menawarkan unduhan).
+        window.open(url, '_blank', 'noopener');
+        if (typeof showToast === 'function') showToast('ℹ️ Unduhan dibuka di tab baru — simpan file dari sana.', 'info', 6000);
+    }
+}
+
+/**
+ * Render tombol [👁 Preview] [⬇ Unduh] utk satu kolom dokumen.
+ * @param {string} rawValue - nilai kolom (mendukung multi-URL)
+ * @param {string} label    - nama dokumen (mis. "Rekomendasi Dinkes")
+ * @returns {string} HTML
+ */
+function simbakesDocActionButtons(rawValue, label) {
+    const urls = simbakesExtractUrls(rawValue);
+    if (!urls.length) {
+        return '<span style="display:inline-block;padding:0.4rem 0.7rem;background:#f8fafc;color:#94a3b8;border:1px dashed #e2e8f0;border-radius:8px;font-size:0.75rem;font-weight:600;">Belum ada file</span>';
+    }
+    const lbl = String(label || 'Dokumen');
+    const mk = (i) => {
+        const urlJson = simbakesAttrJson(urls[i]);
+        const suf = urls.length > 1 ? ' ' + (i + 1) : '';
+        return '<span style="display:inline-flex;gap:0.4rem;flex-wrap:wrap;margin:0.15rem 0.5rem 0.15rem 0;">' +
+            '<button type="button" onclick="simbakesPreviewDocument(' + urlJson + ', ' + simbakesAttrJson(lbl) + ')" ' +
+                'style="display:inline-flex;align-items:center;gap:0.3rem;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:0.38rem 0.75rem;border-radius:8px;font-size:0.75rem;font-weight:700;cursor:pointer;">👁 Preview' + suf + '</button>' +
+            '<button type="button" onclick="simbakesDownloadDocument(' + urlJson + ', ' + simbakesAttrJson(lbl) + ')" ' +
+                'style="display:inline-flex;align-items:center;gap:0.3rem;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;padding:0.38rem 0.75rem;border-radius:8px;font-size:0.75rem;font-weight:700;cursor:pointer;">⬇ Unduh' + suf + '</button>' +
+            '</span>';
+    };
+    let html = '';
+    for (let i = 0; i < urls.length; i++) html += mk(i);
+    return html;
+}
+
 /**
  * Display status result for Cek Status Pengajuan
  * Data source: Supabase table 'submissions'
@@ -1974,8 +2181,16 @@ async function searchStatus() {
  * nama_file, status, catatan_admin
  */
 function displayStatusResult(found) {
-    const resultContent = document.getElementById('search-result-content');
-    
+    // [Revisi 15 Okt i] PRIORITAS kontainer inline (#search-result-inline-content)
+    // — inilah yang tampil di popup/lightbox peserta. Kontainer lama
+    // (#search-result-content di modal) hanya fallback bila inline tak ada.
+    let resultContent = document.getElementById('search-result-inline-content');
+    let legacyModalContent = null;
+    if (!resultContent) {
+        resultContent = document.getElementById('search-result-content');
+    } else {
+        legacyModalContent = document.getElementById('search-result-content');
+    }
     if (!resultContent) return;
     
     // Format tanggal helper
@@ -1997,6 +2212,7 @@ function displayStatusResult(found) {
         // Identitas Utama
         nik: getField(found, 'nik', 'nik'),
         nama_lengkap: getField(found, 'nama_lengkap', 'namaLengkap'),
+        no_register: getField(found, 'no_register', 'noRegister'),
         
         // Tempat & Tanggal Lahir
         tempat_lahir: getField(found, 'tempat_lahir', 'tempatLahir'),
@@ -2045,7 +2261,7 @@ function displayStatusResult(found) {
         { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
     ));
     const rawStatus = String(data.status == null ? '' : data.status);
-    ['nik', 'nama_lengkap', 'tempat_lahir', 'tanggal_lahir', 'alamat_ktp',
+    ['nik', 'nama_lengkap', 'no_register', 'tempat_lahir', 'tanggal_lahir', 'alamat_ktp',
      'alamat_domisili', 'lama_domisili', 'pekerjaan', 'posisi', 'unit_kerja',
      'penjelasan', 'jurusan_tujuan', 'jenjang_pendidikan', 'unit_tujuan',
      'rencana_tahun', 'no_hp', 'no_wa', 'email', 'status', 'catatan_admin'
@@ -2081,6 +2297,48 @@ function displayStatusResult(found) {
                 </div>
             </div>
             
+            <!-- [Revisi 15 Okt i] RINGKASAN PENGAJUAN — data inti dari Data Pengajuan -->
+            <div style="background:linear-gradient(135deg,#eef2ff,#faf5ff);border:1px solid #e0e7ff;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1rem;">
+                <div style="display:flex;align-items:center;gap:0.45rem;margin-bottom:0.7rem;">
+                    <span style="font-size:1rem;">📌</span>
+                    <span style="font-size:0.72rem;font-weight:800;color:#4f46e5;text-transform:uppercase;letter-spacing:0.09em;">Ringkasan Pengajuan</span>
+                </div>
+                <div style="background:white;border:1px solid #e0e7ff;border-radius:10px;padding:0.7rem 0.85rem;margin-bottom:0.65rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                    <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;font-weight:700;">No. Register</span>
+                    <strong style="font-family:monospace;color:#4338ca;font-size:0.9rem;word-break:break-all;">${data.no_register || '-'}</strong>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.65rem;margin-bottom:0.65rem;">
+                    <div style="background:white;padding:0.65rem;border-radius:10px;border:1px solid #e0e7ff;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.2rem;font-weight:700;">Jurusan Tujuan</span>
+                        <strong style="color:#334155;font-size:0.9rem;">${data.jurusan_tujuan || '-'}</strong>
+                    </div>
+                    <div style="background:white;padding:0.65rem;border-radius:10px;border:1px solid #e0e7ff;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.2rem;font-weight:700;">Jenjang Pendidikan</span>
+                        <strong style="color:#334155;font-size:0.9rem;">${data.jenjang_pendidikan || '-'}</strong>
+                    </div>
+                    <div style="background:white;padding:0.65rem;border-radius:10px;border:1px solid #e0e7ff;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.2rem;font-weight:700;">Unit Tujuan</span>
+                        <strong style="color:#334155;font-size:0.9rem;">${data.unit_tujuan || '-'}</strong>
+                    </div>
+                    <div style="background:white;padding:0.65rem;border-radius:10px;border:1px solid #e0e7ff;">
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.2rem;font-weight:700;">Rencana Tahun</span>
+                        <strong style="color:#334155;font-size:0.9rem;">${data.rencana_tahun || '-'}</strong>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;background:white;padding:0.65rem 0.85rem;border-radius:10px;border:1px solid #e0e7ff;margin-bottom:0.65rem;">
+                    <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;font-weight:700;">Status</span>
+                    ${statusBadge}
+                </div>
+                <div style="background:${data.catatan_admin && data.catatan_admin !== '' && data.catatan_admin !== '-' ? '#fdf2f8' : 'white'};padding:0.65rem 0.85rem;border-radius:10px;border:1px solid ${data.catatan_admin && data.catatan_admin !== '' && data.catatan_admin !== '-' ? '#fbcfe8' : '#e0e7ff'};margin-bottom:0.65rem;">
+                    <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.2rem;font-weight:700;">Catatan Admin</span>
+                    <p style="font-size:0.85rem;color:${data.catatan_admin && data.catatan_admin !== '' && data.catatan_admin !== '-' ? '#9d174d' : '#94a3b8'};margin:0;line-height:1.5;">${data.catatan_admin && data.catatan_admin !== '' && data.catatan_admin !== '-' ? data.catatan_admin : 'Belum ada catatan dari admin.'}</p>
+                </div>
+                <div style="background:white;padding:0.65rem 0.85rem;border-radius:10px;border:1px solid #e0e7ff;">
+                    <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.35rem;font-weight:700;">Rekomendasi Dinkes</span>
+                    ${simbakesDocActionButtons(data.rekomendasi, 'Rekomendasi Dinkes')}
+                </div>
+            </div>
+            
             <!-- Main Data Grid - 23 Fields from tabel submissions -->
             <div style="background:#f8fafc;border-radius:12px;padding:1.25rem;font-size:0.875rem;">
                 
@@ -2089,11 +2347,11 @@ function displayStatusResult(found) {
                 
                 <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.65rem;margin-bottom:1rem;">
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">tempat_lahir</span>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">Tempat Lahir</span>
                         <strong style="color:#334155;">${data.tempat_lahir || '-'}</strong>
                     </div>
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">tanggal_lahir</span>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">Tanggal Lahir</span>
                         <strong style="color:#334155;">${formatDate(data.tanggal_lahir)}</strong>
                     </div>
                 </div>
@@ -2102,16 +2360,16 @@ function displayStatusResult(found) {
                 <div style="font-size:0.7rem;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.65rem;padding-bottom:0.35rem;border-bottom:2px dashed #a7f3d0;">Alamat</div>
                 
                 <div style="background:white;padding:0.65rem;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:0.5rem;">
-                    <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">alamat_ktp</span>
+                    <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">Alamat (KTP)</span>
                     <strong style="color:#334155;line-height:1.4;">${data.alamat_ktp || '-'}</strong>
                 </div>
                 <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.65rem;margin-bottom:1rem;">
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">alamat_domisili</span>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">Alamat Domisili</span>
                         <strong style="color:#334155;line-height:1.3;">${data.alamat_domisili || '-'}</strong>
                     </div>
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">lama_domisili</span>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">Lama Domisili</span>
                         <strong style="color:#334155;">${data.lama_domisili || '-'}</strong>
                     </div>
                 </div>
@@ -2121,22 +2379,22 @@ function displayStatusResult(found) {
                 
                 <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.65rem;margin-bottom:1rem;">
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">pekerjaan</span>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">Pekerjaan</span>
                         <strong style="color:#334155;">${data.pekerjaan || '-'}</strong>
                     </div>
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">posisi</span>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">Posisi / Jabatan</span>
                         <strong style="color:#334155;">${data.posisi || '-'}</strong>
                     </div>
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">unit_kerja</span>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">Unit Kerja / Institusi Asal</span>
                         <strong style="color:#334155;">${data.unit_kerja || '-'}</strong>
                     </div>
                 </div>
                 
                 ${data.penjelasan && data.penjelasan !== '-' ? `
                 <div style="background:#fefce8;padding:0.65rem;border-radius:8px;border:1px solid #fde047;margin-bottom:1rem;">
-                    <span style="font-size:0.65rem;color:#a16207;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;font-weight:600;">penjelasan</span>
+                    <span style="font-size:0.65rem;color:#a16207;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;font-weight:600;">Penjelasan / Narasi Singkat</span>
                     <p style="font-size:0.85rem;color:#713f12;margin:0;line-height:1.5;">${data.penjelasan}</p>
                 </div>
                 ` : ''}
@@ -2146,19 +2404,19 @@ function displayStatusResult(found) {
                 
                 <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.65rem;margin-bottom:1rem;">
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">jurusan_tujuan</span>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">Jurusan Tujuan</span>
                         <strong style="color:#334155;">${data.jurusan_tujuan || '-'}</strong>
                     </div>
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">jenjang_pendidikan</span>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">Jenjang Pendidikan</span>
                         <strong style="color:#334155;">${data.jenjang_pendidikan || '-'}</strong>
                     </div>
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">unit_tujuan</span>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">Unit Tujuan</span>
                         <strong style="color:#334155;">${data.unit_tujuan || '-'}</strong>
                     </div>
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">rencana_tahun</span>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">Rencana Tahun</span>
                         <strong style="color:#334155;">${data.rencana_tahun || '-'}</strong>
                     </div>
                 </div>
@@ -2168,34 +2426,34 @@ function displayStatusResult(found) {
                 
                 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.65rem;margin-bottom:1rem;">
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">no_hp</span>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">Nomor Handphone</span>
                         <strong style="font-family:monospace;color:#334155;">${data.no_hp || '-'}</strong>
                     </div>
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">no_wa</span>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">Nomor WhatsApp</span>
                         <strong style="font-family:monospace;color:#334155;">${data.no_wa || '-'}</strong>
                     </div>
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">email</span>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">Email Aktif</span>
                         <strong style="color:#334155;word-break:break-all;">${data.email || '-'}</strong>
                     </div>
                 </div>
                 
-                <!-- SECTION 6: DOKUMEN/FILES -->
+                <!-- SECTION 6: DOKUMEN/FILES [Revisi 15 Okt i: tombol Preview & Unduh] -->
                 <div style="font-size:0.7rem;font-weight:700;color:#ea580c;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.65rem;padding-bottom:0.35rem;border-bottom:2px dashed #fed7aa;">Dokumen & File</div>
 
                 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.65rem;margin-bottom:1rem;">
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">foto_peserta</span>
-                        <strong style="color:#334155;font-size:0.8rem;word-break:break-all;">${renderDriveLinks(data.foto, '📷 Buka Foto')}</strong>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.35rem;">Foto Peserta</span>
+                        ${simbakesDocActionButtons(data.foto, 'Foto Pasfoto')}
                     </div>
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">dokumen_kelengkapan</span>
-                        <strong style="color:#334155;font-size:0.8rem;word-break:break-all;">${renderDriveLinks(data.dokumen_pdf, '📄 Buka Dokumen')}</strong>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.35rem;">Dokumen Kelengkapan</span>
+                        ${simbakesDocActionButtons(data.dokumen_pdf, 'Dokumen Kelengkapan')}
                     </div>
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">rekomendasi_dinkes</span>
-                        <strong style="color:#334155;font-size:0.8rem;word-break:break-all;">${renderDriveLinks(data.rekomendasi, '📜 Buka Rekomendasi')}</strong>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.35rem;">Rekomendasi Dinkes</span>
+                        ${simbakesDocActionButtons(data.rekomendasi, 'Rekomendasi Dinkes')}
                     </div>
                 </div>
                 
@@ -2204,11 +2462,11 @@ function displayStatusResult(found) {
                 
                 <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.65rem;">
                     <div style="background:white;padding:0.6rem;border-radius:8px;border:1px solid #e2e8f0;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">status</span>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;">Status Pengajuan</span>
                         <strong style="color:#334155;">${data.status}</strong>
                     </div>
                     <div style="background:${data.catatan_admin && data.catatan_admin !== '' && data.catatan_admin !== '-' ? '#fdf2f8' : 'white'};padding:0.6rem;border-radius:8px;border:1px solid ${data.catatan_admin && data.catatan_admin !== '' && data.catatan_admin !== '-' ? '#fbcfe8' : '#e2e8f0'};grid-column:span 2;">
-                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;font-weight:600;">catatan_admin</span>
+                        <span style="font-size:0.65rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05px;display:block;margin-bottom:0.2rem;font-weight:600;">Catatan Admin</span>
                         <p style="font-size:0.85rem;color:#9d174d;margin:0;line-height:1.5;">${data.catatan_admin && data.catatan_admin !== '' && data.catatan_admin !== '-' ? data.catatan_admin : '<span style="color:#94a3b8;">Tidak ada catatan</span>'}</p>
                     </div>
                 </div>
@@ -2216,6 +2474,12 @@ function displayStatusResult(found) {
             </div>
         </div>
     `;
+    
+    // [Revisi 15 Okt i] Cermin ke kontainer modal lama bila ada (kompatibilitas
+    // jalur legacy yang membuka #search-result-modal).
+    if (legacyModalContent) {
+        legacyModalContent.innerHTML = resultContent.innerHTML;
+    }
     
     // Render tombol aksi status (Bukti Pendaftaran, Lihat Dokumen, Perbaikan, dst.)
     // Gunakan status MENTAH (belum di-escape) agar deteksi kata kunci akurat.

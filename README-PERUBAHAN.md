@@ -904,3 +904,47 @@ RPC belum terpasang).
 | Uji browser nyata (harness) | Modal Tambah Penetapan tampil cantik desktop & mobile; simpan → payload kolom benar (`jurusan/jenjang/unit_pendayaguna/status Lulus/catatan`), toast sukses, refresh; lightbox edit → **Status "Pending" tetap terpilih**, simpan → SATU update (unit berubah, posisi dikosongkan→null, status utuh), "EDIT OPERATION COMPLETED SUCCESSFULLY" |
 | Regresi: RBAC / r2-config / driver-switch / password / foto-profil / biodata | SEMUA LULUS (18, 19, 6, 35, 52, 34) |
 | `node --check` semua JS | LULUS |
+
+---
+
+# REVISI 15 OKT i — Kartu Cek Status Pengajuan: Ringkasan Pengajuan + Tombol Preview & Unduh Dokumen (termasuk Rekomendasi Dinkes)
+
+## Latar belakang (laporan pengguna)
+
+> akun peserta pada kartu status pengajuan — tambahkan data yang diambil dari data pengajuan: **Jurusan tujuan, Jenjang pendidikan, Unit tujuan, Rencana tahun, Status, Catatan admin, Rekomendasi Dinkes** (tampilkan tombol **preview** dan **download**).
+
+## Yang ditambahkan
+
+1. **Blok "Ringkasan Pengajuan"** di bagian atas kartu (di bawah header NIK/Nama) — kartu kecil cantik bernuansa ungu berisi: **No. Register, Jurusan Tujuan, Jenjang Pendidikan, Unit Tujuan, Rencana Tahun, Status (badge warna), Catatan Admin** (kotak merah muda bila ada isi, abu bila kosong) dan baris **Rekomendasi Dinkes** berisi pasangan tombol **[👁 Preview] [⬇ Unduh]**.
+2. **Tombol Preview & Unduh untuk SEMUA dokumen** — bagian "Dokumen & File" (Foto Pasfoto, Dokumen Kelengkapan, Rekomendasi Dinkes) kini memakai tombol yang sama (sebelumnya hanya link teks Google Drive).
+3. **Modal pratinjau dokumen** (`simbakesPreviewDocument`): overlay layar penuh z-index tertinggi (aman di atas popup peserta) — PDF ditampilkan via PDF viewer bawaan browser, gambar via `<img>`, Google Drive via mode embed; tombol header **⬇ Unduh**, **⤴ Buka Tab Baru**, **×**; bila file tidak bisa ditanam ada panel fallback + tombol tab baru. Klik area gelap di luar modal menutup.
+4. **Unduhan andal** (`simbakesDownloadDocument`): fetch → blob → simpan dengan nama file asli; bila CORS menolak (mis. Google Drive) otomatis buka tab baru + toast penjelasan.
+5. **Auto-cek status**: membuka kartu dari Portal Peserta kini **langsung mencari otomatis** memakai NIK sesi — peserta tidak perlu menekan tombol "Cek Status" lagi (tetap bisa mencari manual dgn NIK/Nomor Register lain).
+6. **Perbaikan kolom**: tombol aksi "📄 Lihat Dokumen" selama ini membaca `linkDokumen` (kolom yang TIDAK pernah ada) → kini membaca `dokumen_kelengkapan` yang sebenarnya.
+7. **Label dimanusiakan**: judul field dari nama kolom mentah (`tempat_lahir`, `alamat_ktp`, dst.) → label manusia ("Tempat Lahir", "Alamat (KTP)", …); No. Register kini ikut tampil di header identitas.
+
+## Perubahan
+
+| File | Perubahan |
+|---|---|
+| `js/04-form.js` | Helper dokumen baru (`simbakesExtractUrls/AttrJson/DetectDocKind/FileNameFromUrl`, `simbakesPreviewDocument`, `simbakesPreviewFallback`, `simbakesClosePreview`, `simbakesDownloadDocument`, `simbakesDocActionButtons`); `displayStatusResult`: blok Ringkasan Pengajuan (7 data + Rekomendasi), prioritas kontainer inline `#search-result-inline-content` (popup peserta) dgn cermin ke modal legacy, mapping `no_register`, label manusia, semua kolom dokumen memakai tombol Preview/Unduh |
+| `js/09-cek-status.js` | `setActionButtons`: tombol "Lihat Dokumen" membaca `dokumen_kelengkapan` (validasi URL + escape tetap) |
+| `js/11-topbar-session.js` | `openPesertaCekStatus`: prefill NIK sesi → **auto-panggil `searchSubmissionData()`** 80ms setelah popup terbuka |
+| `index.html` | Cache-bust `04-form.js`, `09-cek-status.js`, `11-topbar-session.js` → `v=20261015i` |
+
+## Database: TIDAK ADA perubahan
+
+Seluruh data yang ditampilkan sudah tersedia di tabel `submissions` (`no_register, jurusan_tujuan, jenjang_pendidikan, unit_tujuan, rencana_tahun, status, catatan_admin, rekomendasi_dinkes`); peserta membacanya lewat query by NIK yang sama seperti sebelumnya — **tidak ada SQL yang perlu dijalankan** untuk revisi ini.
+
+## Hasil pengujian
+
+| Uji | Hasil |
+|---|---|
+| `scripts/test-status-pengajuan-kartu.js` (baru) | **62/62 PASS** — mapping 7 field + no_register, badge status, tombol Preview/Unduh (Rekomendasi Dinkes + 3 dokumen), escape HTML & atribut onclick aman, multi-URL, nama file unduhan, prioritas kontainer inline + cermin legacy, auto-cek NIK sesi, `dokumen_kelengkapan` di tombol aksi, cache-bust |
+| Uji browser nyata (harness) | Kartu dibuka → auto-cek → **Ringkasan tampil** (No. Register/Jurusan/Jenjang/Unit/Tahun/Status/Catatan); klik 👁 Preview Rekomendasi Dinkes → **modal pratinjau PDF terbuka** (viewer bawaan, header Unduh/Buka Tab Baru/tutup); tombol ⬇ Unduh menjalankan alur fetch→blob; tata letak desktop & mobile rapi |
+| Regresi: biodata-ajukan / pengusulan-edit / penetapan-tambah / foto-profil / password / RBAC / r2-config / driver-switch | SEMUA LULUS (34, 24, 48, 52, 35, 18, 19, 6) — total **298 PASS, 0 FAIL** |
+| `node --check` semua JS | LULUS |
+
+## Langkah admin
+
+1. Upload file revisi ini ke hosting + refresh halaman (Ctrl+F5). **Tidak ada SQL baru.**

@@ -557,6 +557,17 @@ function openPesertaCekStatus() {
     if (pesertaSessionData && pesertaSessionData.nik) {
         const nikInput = document.getElementById('search-nik');
         if (nikInput) nikInput.value = pesertaSessionData.nik;
+
+        // [Revisi 15 Okt i] AUTO-CARI: peserta tidak perlu klik "Cek Status"
+        // lagi — begitu kartu dibuka, status pengajuan akunnya langsung
+        // ditampilkan (data diambil dari tabel submissions by NIK sesi).
+        if (typeof searchSubmissionData === 'function') {
+            setTimeout(function () {
+                try { searchSubmissionData(); } catch (e) {
+                    console.warn('[PESERTA] Auto-cek status gagal:', e);
+                }
+            }, 80);
+        }
     }
     
     // Show popup

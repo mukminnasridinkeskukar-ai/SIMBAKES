@@ -218,18 +218,22 @@ function setActionButtons(status) {
     // KEAMANAN: link TIDAK diinjeksi ke onclick (rentan XSS).
     // Simpan di data-attribute (ter-escape), validasi protokol,
     // lalu pasang listener + noopener.
-    if (currentSearchResult && currentSearchResult.linkDokumen && currentSearchResult.linkDokumen !== '-') {
-        const rawLink = String(currentSearchResult.linkDokumen);
-        if (/^https?:\/\//i.test(rawLink.trim())) {
-            const safeLink = rawLink.replace(/[&<>"']/g, function (c) {
-                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-            });
-            buttonsHTML += `
-                <button class="btn-secondary-action" data-doc-link="${safeLink}">
-                    📄 Lihat Dokumen
-                </button>
-            `;
-        }
+    // [Revisi 15 Okt i] kolom sebenarnya = dokumen_kelengkapan
+    // (linkDokumen camelCase tidak pernah ada di tabel submissions).
+    const rawDokValue = currentSearchResult
+        ? (currentSearchResult.dokumen_kelengkapan || currentSearchResult.linkDokumen || '')
+        : '';
+    const firstDokUrl = String(rawDokValue).split(/\s+/)
+        .filter(function (v) { return /^https?:\/\//i.test(v); })[0] || '';
+    if (firstDokUrl) {
+        const safeLink = firstDokUrl.replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+        buttonsHTML += `
+            <button class="btn-secondary-action" data-doc-link="${safeLink}">
+                📄 Lihat Dokumen
+            </button>
+        `;
     }
     
     // Conditional button: Perbaikan (only for "Perbaikan" status)
