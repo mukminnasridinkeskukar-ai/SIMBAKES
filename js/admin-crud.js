@@ -1971,15 +1971,27 @@ function openEditMode() {
         const currentValue = value === null ? '' : String(value);
         
         // Special handling for status field (select dropdown)
+        // [REVISI 15 OKT h] Opsi status DISAMAKAN dengan daftar status resmi
+        // aplikasi (modal "Ubah Status" + form tambah). Sebelumnya daftar
+        // berisi nilai yang tidak pernah dipakai (Draft/Dibatalkan) dan
+        // TIDAK memuat 'Pending'/'Batal' — akibatnya record berstatus
+        // Pending/Batal otomatis terpilih "Draft" saat edit dibuka, dan
+        // SIMPAN mengubah status tanpa disadari admin.
         if (key === 'status') {
-            const statusOptions = ['Draft', 'Proses Verifikasi', 'Disetujui', 'Ditolak', 'Perbaikan', 'Dibatalkan'];
+            const statusOptions = ['Proses Verifikasi', 'Disetujui', 'Ditolak', 'Perbaikan', 'Batal', 'Pending'];
+            
+            // Nilai lama yang tidak ada di daftar resmi tetap ditampilkan
+            // (ditaruh paling awal) agar status TIDAK pernah berubah sendiri.
+            if (currentValue && !statusOptions.includes(currentValue)) {
+                statusOptions.unshift(currentValue);
+            }
             
             formHtml += `
                 <div class="fs-form-group">
                     <label>${label}</label>
                     <select name="${key}" id="edit-${key}">
                         ${statusOptions.map(opt => 
-                            `<option value="${opt}" ${opt === currentValue ? 'selected' : ''}>${opt}</option>`
+                            `<option value="${escapeHtml(opt)}" ${opt === currentValue ? 'selected' : ''}>${escapeHtml(opt)}</option>`
                         ).join('')}
                     </select>
                 </div>
@@ -2091,9 +2103,25 @@ function closeEditMode() {
  * 4. Verify database record
  * 5. Refresh semua views (lightbox, table)
  */
+// [REVISI 15 OKT h] Gerbang anti klik-ganda: proses simpan (termasuk
+// upload file rekomendasi yang bisa lambat) tidak boleh berjalan dua
+// kali bersamaan — klik kedua ditolak sampai proses pertama selesai.
 async function handleEditSubmit(event) {
     event.preventDefault();
     
+    if (window.lightboxState && window.lightboxState.isSaving) {
+        ToastManager.warning('⏳ Penyimpanan sedang berjalan, mohon tunggu...');
+        return;
+    }
+    if (window.lightboxState) window.lightboxState.isSaving = true;
+    try {
+        await handleEditSubmitInner(event);
+    } finally {
+        if (window.lightboxState) window.lightboxState.isSaving = false;
+    }
+}
+
+async function handleEditSubmitInner(event) {
     // ============================================================
     // VALIDASI AWAL
     // ============================================================

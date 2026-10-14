@@ -860,3 +860,47 @@ RPC belum terpasang).
 | Uji browser nyata (harness) | Biodata desktop cantik, NIK notice + tombol terblokir, kartu 3+2 desktop & mobile rapi |
 | Regresi: RBAC / r2-config / driver-switch / password / foto-profil / worker-b2 | SEMUA LULUS (18, 19, 6, 35, 52, 14) |
 | `node --check` semua JS tersentuh | LULUS |
+
+---
+
+# REVISI 15 OKT h — Kerapian CRUD Admin/Operator + Tombol "Tambah Data" Data Penetapan
+
+## Latar belakang (laporan pengguna)
+
+> 1. cek dan rapikan kemampuan admin dan operator pada menu data pengajuan — pastikan setiap bagian CRUD lancar; penyimpanan setelah edit harus berhasil mengubah data di Supabase; data yang diubah di beberapa bagian seharusnya tersimpan sekaligus.
+> 2. pastikan perubahan data di menu lainnya oleh admin/operator lancar.
+> 3. tambahkan tombol tambah data di menu data penetapan, pastikan tersimpan baik di Supabase.
+
+## Hasil audit
+
+| Bagian | Temuan | Tindakan |
+|---|---|---|
+| Data Pengusulan — EDIT (lightbox) | Alur simpan sudah benar: FormData mengumpulkan SEMUA field lalu **satu perintah UPDATE** (kolom dikosongkan → null). Tapi ada 2 cacat: (a) **dropdown Status tidak memuat `Pending`/`Batal`** — record berstatus itu otomatis terpilih `Draft` saat form edit dibuka, dan SIMPAN mengubah status tanpa disadari; (b) tidak ada penahan klik-ganda saat proses simpan (upload rekomendasi lambat → dobel submit) | (a) daftar status disamakan dengan status resmi aplikasi + nilai lama apapun tetap ditampilkan; (b) gerbang `isSaving` |
+| Data Pengusulan — TAMBAH/HAPUS/STATUS | Sudah sehat (kolom valid, guard cukup) | — |
+| Data Akun Peserta | Sudah sehat: RPC `admin_save_akun_peserta` + fallback RLS + pesan ramah | — |
+| Data Roadmap / Penetapan EDIT/HAPUS | Sudah sehat (fallback kolom catatan & constraint status sudah ada) | — |
+| Data Penetapan — TAMBAH | **Tombol TIDAK ADA**; modal add (belum tersambung) memakai nama kolom yang TIDAK ada di tabel (`jurusan_tujuan`, `jenjang_pendidikan`, `unit_kerja`) dan status `Proses` yang DITOLAK constraint DB → INSERT pasti gagal | Tombol ➕ Tambah Data dibuat + modal & payload ditulis ulang memakai kolom sebenarnya |
+
+## Perubahan
+
+| File | Perubahan |
+|---|---|
+| `js/admin-crud.js` | Dropdown Status form edit: daftar resmi (`Proses Verifikasi/Disetujui/Ditolak/Perbaikan/Batal/Pending`) + nilai legacy apapun tetap muncul & terpilih (status TIDAK pernah berubah sendiri); gerbang anti klik-ganda `lightboxState.isSaving` di `handleEditSubmit` |
+| `js/03-admin-data.js` | `openPenetapanAddModal` ditulis ulang: field = kolom tabel penetapan (nama*, nik*, no_register, jurusan*, jenjang (datalist), perguruan tinggi, unit pendayaguna, pekerjaan, tempat/tanggal lahir, tanggal penetapan, status (5 nilai constraint), link foto, link SK, catatan); `saveNewPenetapan` baru: validasi NIK 16 digit, guard klik-ganda, kolom kosong tak dikirim, catatan hanya saat terisi (+lewati bila kolom belum ada), **fallback otomatis PGRST204** ke nama kolom alternatif, pesan ramah 23514, refresh otomatis |
+| `index.html` | Tombol **➕ Tambah Data** di header Data Penetapan; cache-bust `admin-crud.js → v=20261015b`, `03-admin-data.js → v=20261015h` |
+| `sql/PATCH-PENETAPAN-TAMBAH.sql` (BARU) | GRANT DML tabel penetapan utk anon (jaga-jaga), policy tulis `penetapan_write_admin` dinaikkan ke ladder **`write`** (= superadmin/operator/admin, sama seperti submissions; menyembuhkan sesi legacy `admin`), kolom `catatan_penetapan` + constraint 5 status dipastikan ada |
+
+## Langkah admin (WAJIB, ±1 menit)
+
+1. Supabase Dashboard → SQL Editor → jalankan **`sql/PATCH-PENETAPAN-TAMBAH.sql`** (idempotent, aman diulang).
+2. Upload file revisi ini + refresh halaman (Ctrl+F5).
+
+## Hasil pengujian
+
+| Uji | Hasil |
+|---|---|
+| `scripts/test-pengusulan-edit-simpan.js` (baru) | **24/24 PASS** — 1 UPDATE untuk semua bagian sekaligus, kolom dikosongkan → null, status Pending/Batal/legacy tidak berubah sendiri, guard klik-ganda, ekspor fungsi utuh |
+| `scripts/test-penetapan-tambah.js` (baru) | **48/48 PASS** — tombol & cache-bust, kolom canonical + 5 status valid, validasi (wajib/NIK 16 digit), payload sekali kirim, fallback kolom alternatif & catatan, 23514 ramah, guard klik-ganda, isi SQL patch |
+| Uji browser nyata (harness) | Modal Tambah Penetapan tampil cantik desktop & mobile; simpan → payload kolom benar (`jurusan/jenjang/unit_pendayaguna/status Lulus/catatan`), toast sukses, refresh; lightbox edit → **Status "Pending" tetap terpilih**, simpan → SATU update (unit berubah, posisi dikosongkan→null, status utuh), "EDIT OPERATION COMPLETED SUCCESSFULLY" |
+| Regresi: RBAC / r2-config / driver-switch / password / foto-profil / biodata | SEMUA LULUS (18, 19, 6, 35, 52, 34) |
+| `node --check` semua JS | LULUS |

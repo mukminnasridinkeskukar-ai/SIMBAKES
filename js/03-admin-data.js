@@ -1293,6 +1293,13 @@ function closeEditPenetapanModal() {
 /**
  * ===== ADD NEW PENETAPAN =====
  * Open modal untuk tambah data Penetapan baru
+ * [REVISI 15 OKT h] Field & payload disamakan dengan kolom tabel penetapan
+ * YANG SEBENARNYA (sama dengan modal Edit): jurusan, jenjang,
+ * unit_pendayaguna, status_penetapan (5 nilai constraint), tanggal_penetapan,
+ * link_foto, link_sk, catatan_penetapan + pelengkap (no_register,
+ * tempat_lahir, tanggal_lahir, pekerjaan). Modal lama memakai nama kolom
+ * yang tidak ada (jurusan_tujuan / jenjang_pendidikan / unit_kerja) dan
+ * status 'Proses' yang ditolak constraint — sehingga simpan SELALU gagal.
  */
 function openPenetapanAddModal() {
     // SECURITY: Check permission before adding penetapan
@@ -1312,8 +1319,24 @@ function openPenetapanAddModal() {
     modal.className = 'modal-overlay';
     modal.onclick = (e) => { if (e.target === modal) closeModal(modalId); };
     
+    // Datalist jenjang — sama dengan modal Edit
+    let dl = document.getElementById('penetapan-jenjang-datalist-add');
+    if (!dl) {
+        dl = document.createElement('datalist');
+        dl.id = 'penetapan-jenjang-datalist-add';
+        dl.innerHTML = '<option value="D-3"></option>' +
+            '<option value="D-4 Kebidanan + Profesi Bidan"></option>' +
+            '<option value="S-1"></option>' +
+            '<option value="S-1 Kedokteran + Profesi Dokter"></option>' +
+            '<option value="S-2"></option>' +
+            '<option value="Sp-1"></option>' +
+            '<option value="Sp-2"></option>' +
+            '<option value="Sp.Kep"></option>';
+        document.body.appendChild(dl);
+    }
+    
     modal.innerHTML = `
-        <div class="modal-content" style="max-width:700px;">
+        <div class="modal-content" style="max-width:760px;">
             <div class="modal-header" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);color:white;padding:1.25rem;">
                 <h3 class="modal-title">➕ Tambah Data Penetapan Baru</h3>
                 <button class="modal-close" onclick="closeModal('${modalId}')">×</button>
@@ -1327,57 +1350,81 @@ function openPenetapanAddModal() {
                         </div>
                         <div class="form-group">
                             <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">NIK *</label>
-                            <input type="text" id="add-penetapan-nik" required placeholder="16 digit NIK" maxlength="16" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;font-family:monospace;">
+                            <input type="text" id="add-penetapan-nik" required placeholder="16 digit NIK" maxlength="16" inputmode="numeric" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;font-family:monospace;">
                         </div>
                         <div class="form-group">
-                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Jurusan Tujuan *</label>
-                            <select id="add-penetapan-jurusan" required style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
-                                <option value="">Pilih Jurusan</option>
-                                <option value="Keperawatan">Keperawatan</option>
-                                <option value="Kebidanan">Kebidanan</option>
-                                <option value="Kesehatan Masyarakat">Kesehatan Masyarakat</option>
-                                <option value="Gizi">Gizi</option>
-                                <option value="Kesehatan Lingkungan">Kesehatan Lingkungan</option>
-                                <option value="Epidemiologi">Epidemiologi</option>
-                            </select>
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">No. Register</label>
+                            <input type="text" id="add-penetapan-no-register" placeholder="Nomor register peserta (opsional)" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Jurusan *</label>
+                            <input type="text" id="add-penetapan-jurusan" required list="penetapan-jenjang-datalist-jurusan-add" placeholder="Contoh: Keperawatan" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                            <datalist id="penetapan-jenjang-datalist-jurusan-add">
+                                <option value="Keperawatan"></option>
+                                <option value="Kebidanan"></option>
+                                <option value="Kesehatan Masyarakat"></option>
+                                <option value="Gizi"></option>
+                                <option value="Kesehatan Lingkungan"></option>
+                                <option value="Epidemiologi"></option>
+                            </datalist>
                         </div>
                         <div class="form-group">
                             <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Jenjang Pendidikan</label>
-                            <select id="add-penetapan-jenjang" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
-                                <option value="">Pilih Jenjang</option>
-                                <option value="D3">Diploma (D3)</option>
-                                <option value="D4">Diploma (D4)</option>
-                                <option value="S1">Sarjana (S1)</option>
-                                <option value="S2">Magister (S2)</option>
-                            </select>
+                            <input type="text" id="add-penetapan-jenjang" list="penetapan-jenjang-datalist-add" placeholder="Contoh: D-3, S-1, Sp.Kep" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
                         </div>
                         <div class="form-group">
                             <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Perguruan Tinggi</label>
                             <input type="text" id="add-penetapan-pt" placeholder="Nama PT" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
                         </div>
                         <div class="form-group">
-                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Unit Kerja / Tujuan</label>
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Unit Kerja / Pendayagunaan</label>
                             <input type="text" id="add-penetapan-unit" placeholder="Unit penempatan" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
                         </div>
-                        <div class="form-group" style="grid-column: span 2;">
-                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Link Foto (Google Drive URL)</label>
-                            <input type="url" id="add-penetapan-foto" placeholder="https://drive.google.com/..." style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                        <div class="form-group">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Pekerjaan</label>
+                            <input type="text" id="add-penetapan-pekerjaan" placeholder="Pekerjaan saat ini (opsional)" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
                         </div>
-                        <div class="form-group" style="grid-column: span 2;">
+                        <div class="form-group">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Tempat Lahir</label>
+                            <input type="text" id="add-penetapan-tempat-lahir" placeholder="Kota kelahiran (opsional)" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Tanggal Lahir</label>
+                            <input type="date" id="add-penetapan-tanggal-lahir" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Tanggal Penetapan</label>
+                            <input type="text" id="add-penetapan-tanggal" placeholder="Format: DD Month YYYY (contoh: 15 Januari 2026)" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                        </div>
+                        <div class="form-group">
                             <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Status Penetapan</label>
                             <select id="add-penetapan-status" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
                                 <option value="Pending">⏳ Pending</option>
-                                <option value="Proses">🔄 Sedang Diproses</option>
-                                <option value="Lulus">✅ Lulus/Disetujui</option>
+                                <option value="Aktif">🟢 Aktif</option>
+                                <option value="Dalam Proses">🔄 Dalam Proses</option>
+                                <option value="Lulus">✅ Lulus</option>
                                 <option value="Ditolak">❌ Ditolak</option>
                             </select>
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Link Foto (URL)</label>
+                            <input type="url" id="add-penetapan-foto" placeholder="https://drive.google.com/... (opsional)" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Link SK (URL)</label>
+                            <input type="url" id="add-penetapan-sk" placeholder="https://drive.google.com/... (opsional)" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Catatan untuk Peserta</label>
+                            <textarea id="add-penetapan-catatan" rows="2" placeholder="Contoh: SK sudah terbit, silakan ambil di sekretariat Dinkes (opsional)" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;resize:vertical;min-height:60px;"></textarea>
+                            <small style="display:block;margin-top:4px;color:#64748b;font-size:0.75rem;">Tampil di halaman "Cek Status Penetapan" peserta. Kosongkan bila tidak ada.</small>
                         </div>
                     </div>
                     
                     <!-- Action Buttons -->
                     <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1.5rem;padding-top:1rem;border-top:1px solid #e5e7eb;">
                         <button type="button" class="btn" style="background:#f1f5f9;color:#475569;" onclick="closeModal('${modalId}')">Batal</button>
-                        <button type="button" class="btn" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);color:white;" onclick="saveNewPenetapan('${modalId}')">💾 Simpan Data</button>
+                        <button type="button" class="btn" id="add-penetapan-save-btn" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);color:white;" onclick="saveNewPenetapan('${modalId}')">💾 Simpan Data</button>
                     </div>
                 </form>
             </div>
@@ -1391,52 +1438,156 @@ function openPenetapanAddModal() {
 
 /**
  * Save new Penetapan data to Supabase
+ * [REVISI 15 OKT h] Payload memakai nama kolom tabel penetapan yang
+ * sebenarnya (sama dengan jalur Edit). Dilengkapi:
+ *  - guard klik-ganda (busy)
+ *  - validasi NIK 16 digit & field wajib
+ *  - catatan_penetapan hanya dikirim bila terisi (aman utk DB lama,
+ *    sama seperti jalur Edit + retry tanpa catatan bila kolom belum ada)
+ *  - fallback otomatis PGRST204: bila DB memakai nama kolom lama
+ *    (jurusan_tujuan / jenjang_pendidikan / unit_kerja), payload
+ *    diubah-otomatis lalu dicoba lagi — simpan tetap berhasil.
+ *  - pesan ramah utk 23514 (status di luar constraint DB)
  */
 async function saveNewPenetapan(modalId) {
+    const saveBtn = document.getElementById('add-penetapan-save-btn');
+    const modalEl = document.getElementById(modalId);
+    
+    // Guard klik-ganda
+    if (modalEl && modalEl.dataset.busy === '1') return;
+    
+    // Collect form data
+    const val = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : '';
+    };
+    
+    const newData = {
+        nama_lengkap: val('add-penetapan-nama'),
+        nik: val('add-penetapan-nik'),
+        no_register: val('add-penetapan-no-register'),
+        jurusan: val('add-penetapan-jurusan'),
+        jenjang: val('add-penetapan-jenjang'),
+        perguruan_tinggi: val('add-penetapan-pt'),
+        unit_pendayaguna: val('add-penetapan-unit'),
+        pekerjaan: val('add-penetapan-pekerjaan'),
+        tempat_lahir: val('add-penetapan-tempat-lahir'),
+        tanggal_lahir: val('add-penetapan-tanggal-lahir'),
+        tanggal_penetapan: val('add-penetapan-tanggal'),
+        status_penetapan: val('add-penetapan-status') || 'Pending',
+        link_foto: val('add-penetapan-foto'),
+        link_sk: val('add-penetapan-sk')
+    };
+    const catatanInput = val('add-penetapan-catatan');
+    
+    // Kolom kosong tidak dikirim (biarkan NULL di database)
+    Object.keys(newData).forEach(k => {
+        if (newData[k] === '' || newData[k] === null) delete newData[k];
+    });
+    // [Task9i] catatan: hanya bila terisi; lewati bila kolom sudah diketahui
+    // belum ada di database (hindari percobaan insert yang pasti gagal)
+    if (catatanInput && !window.__penetapanCatatanColMissing) {
+        newData.catatan_penetapan = catatanInput;
+    }
+    
+    newData.created_at = new Date().toISOString();
+    newData.updated_at = new Date().toISOString();
+    
+    // Validation
+    if (!newData.nama_lengkap || !newData.nik || !newData.jurusan) {
+        showToast('❌ Nama, NIK, dan Jurusan wajib diisi!', 'error');
+        return;
+    }
+    if (!/^[0-9]{16}$/.test(newData.nik)) {
+        showToast('❌ NIK harus tepat 16 digit angka (sesuai KTP)', 'error');
+        return;
+    }
+    // Status harus termasuk 5 nilai constraint database
+    const STATUS_VALID = ['Pending', 'Aktif', 'Dalam Proses', 'Lulus', 'Ditolak'];
+    if (!STATUS_VALID.includes(newData.status_penetapan)) {
+        newData.status_penetapan = 'Pending';
+    }
+    
+    console.log('[PENETAPAN] Saving new data:', newData);
+    
+    if (!supabaseClient) {
+        showToast('❌ Koneksi database tidak tersedia. Muat ulang halaman.', 'error', 5000);
+        return;
+    }
+    
+    if (modalEl) modalEl.dataset.busy = '1';
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ Menyimpan...'; }
+    
     try {
-        // Collect form data
-        const newData = {
-            nama_lengkap: document.getElementById('add-penetapan-nama').value.trim(),
-            nik: document.getElementById('add-penetapan-nik').value.trim(),
-            jurusan_tujuan: document.getElementById('add-penetapan-jurusan').value,
-            jenjang_pendidikan: document.getElementById('add-penetapan-jenjang').value,
-            perguruan_tinggi: document.getElementById('add-penetapan-pt').value.trim(),
-            unit_kerja: document.getElementById('add-penetapan-unit').value.trim(),
-            link_foto: document.getElementById('add-penetapan-foto').value.trim(),
-            status_penetapan: document.getElementById('add-penetapan-status').value,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+        // [REVISI 15 OKT h] Fallback nama kolom: bila DB ternyata memakai
+        // nama lama, PGRST204 menyebut nama kolomnya — kita ganti kunci
+        // payload sesuai peta lalu mencoba lagi (maks 5 kali).
+        const ALT_COLUMNS = {
+            'jurusan': 'jurusan_tujuan',
+            'jenjang': 'jenjang_pendidikan',
+            'unit_pendayaguna': 'unit_kerja'
         };
         
-        // Validation
-        if (!newData.nama_lengkap || !newData.nik || !newData.jurusan_tujuan) {
-            showToast('❌ Nama, NIK, dan Jurusan wajib diisi!', 'error');
-            return;
+        let payload = { ...newData };
+        let insertResult = null;
+        let lastError = null;
+        
+        for (let attempt = 0; attempt < 5; attempt++) {
+            insertResult = await supabaseClient
+                .from('penetapan')
+                .insert([payload])
+                .select();
+            
+            if (!insertResult.error) { lastError = null; break; }
+            
+            lastError = insertResult.error;
+            const msg = String(insertResult.error.message || '');
+            
+            // Kolom belum ada di DB (mis. catatan_penetapan) → buang kunci tsb, coba lagi
+            if (insertResult.error.code === 'PGRST204') {
+                if (msg.includes('catatan_penetapan')) {
+                    window.__penetapanCatatanColMissing = true;
+                    const { catatan_penetapan, ...rest } = payload;
+                    payload = rest;
+                    console.warn('[PENETAPAN] Kolom catatan_penetapan belum ada — retry tanpa catatan');
+                    showToast('ℹ️ Kolom catatan belum ada di database — jalankan sql/penetapan-catatan-status.sql agar catatan bisa tersimpan.', 'info', 6000);
+                    continue;
+                }
+                // Nama kolom utama tidak dikenal DB → ganti ke nama alternatif
+                const swapped = Object.keys(ALT_COLUMNS).find(k => msg.includes(`'${k}'`));
+                if (swapped && ALT_COLUMNS[swapped] && !(ALT_COLUMNS[swapped] in payload)) {
+                    payload[ALT_COLUMNS[swapped]] = payload[swapped];
+                    delete payload[swapped];
+                    console.warn(`[PENETAPAN] Kolom '${swapped}' tidak ada di DB — pakai '${ALT_COLUMNS[swapped]}'`);
+                    continue;
+                }
+            }
+            break; // error lain: keluar, ditangani di bawah
         }
         
-        console.log('[PENETAPAN] Saving new data:', newData);
+        if (lastError) {
+            // [Task9i] Constraint status: nilai di luar 5 status resmi ditolak DB
+            if (lastError.code === '23514') {
+                throw new Error('Status "' + (payload.status_penetapan || '-') + '" ditolak database. Jalankan sql/penetapan-catatan-status.sql untuk mengaktifkan semua status.');
+            }
+            throw lastError;
+        }
         
-        // Insert ke Supabase
-        const { data, error } = await supabaseClient
-            .from('penetapan')
-            .insert([newData])
-            .select();
-        
-        if (error) throw error;
-        
+        const data = insertResult.data;
         console.log('[PENETAPAN] ✅ Data saved:', data);
         
         showToast(`✅ Data ${newData.nama_lengkap} berhasil ditambahkan!`, 'success');
         closeModal(modalId);
         
         // Refresh table
-        if (typeof loadPenetapanData === 'function') {
-            loadPenetapanData();
-        }
+        await refreshDataPenetapan();
         
     } catch (error) {
         console.error('[PENETAPAN] Error saving:', error);
-        showToast('❌ Gagal menyimpan: ' + error.message, 'error', 5000);
+        showToast('❌ Gagal menyimpan: ' + error.message, 'error', 6000);
+    } finally {
+        if (modalEl) modalEl.dataset.busy = '';
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Simpan Data'; }
     }
 }
 
