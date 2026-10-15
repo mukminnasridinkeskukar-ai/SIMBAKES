@@ -1056,6 +1056,28 @@ async function handleEditSubmit(event) {
         if (!client) {
             throw new Error('Supabase client tidak tersedia');
         }
+
+        // [REVISI 15 OKT l] ANTI DATA GANDA: bila NIK diubah, pastikan NIK
+        // baru belum dipakai record lain (satu peserta = satu pengajuan).
+        const newNik = String(updatedData.nik || '').trim();
+        const oldNik = String((lightboxCRUDState.originalData && lightboxCRUDState.originalData.nik) || (activeRecord && activeRecord.nik) || '').trim();
+        if (newNik && newNik !== oldNik) {
+            const { data: clashRows, error: clashErr } = await client
+                .from('submissions')
+                .select('id, nama_lengkap, no_register')
+                .eq('nik', newNik)
+                .neq('id', activeRecord.id)
+                .limit(1);
+            if (clashErr) {
+                console.warn('[EDIT] Cek duplikat NIK gagal (DB tetap menjaga constraint unik):', clashErr.message);
+            } else if (clashRows && clashRows.length > 0) {
+                const cl = clashRows[0];
+                throw new Error('Data ganda diblokir: NIK ' + newNik + ' sudah dipakai record lain' +
+                    (cl.nama_lengkap ? ' (' + cl.nama_lengkap + ')' : '') +
+                    (cl.no_register ? ' No. Register ' + cl.no_register : '') +
+                    '. Satu peserta hanya boleh satu pengajuan.');
+            }
+        }
         
         // EXECUTE UPDATE - Use actual primary key (usually 'id') - TANPA .single() ⭐
         const primaryKeyField = 'id';

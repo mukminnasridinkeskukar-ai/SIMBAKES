@@ -1038,3 +1038,44 @@ Seluruh data yang ditampilkan sudah tersedia di tabel `submissions` (`no_registe
 | Uji browser nyata (harness markup ASLI index.html) | Skenario **NIK duplikat 2 baris**: baris id=12 (lengkap, No. Register `…583972`, tanggal "14 Oktober 2026") yang terpilih — bukan baris lama tanpa file; **3 blok tampil terpisah** masing-masing dengan 2 tombol; klik Preview bukti → **modal pratinjau terbuka** berjudul "Bukti Lulus PT / Aktif Kuliah"; skenario tanpa file → pesan "Belum ada file" tampil; mobile 390×844 menyusun blok rapi |
 | Regresi penuh | penetapan-tambah 48, pengusulan-edit 24, status-pengajuan 62, kartu-rapi 62, penetapan-bukti 52, biodata 34, foto-profil 52, password 35, RBAC 18, r2-config 19, driver-switch 6 — total **412 PASS, 0 FAIL** |
 | `node --check` semua JS | LULUS |
+
+---
+
+# REVISI 15 OKT l — Anti Data Ganda Menu Pengajuan (1 NIK = 1 Data)
+
+## Latar belakang (laporan pengguna)
+
+> "cek dan rapikan: 1. menu pengajuan. tidak boleh ada data ganda. hanya boleh ada 1 sesuai NIK."
+
+Menu Data Pengajuan/Pengusulan tidak boleh menampilkan data ganda — satu NIK hanya boleh memiliki SATU baris pengajuan.
+
+## Sumber data ganda yang ditemukan
+
+1. **Tambah Data admin** (`saveNewPengusul`) menyimpan langsung **tanpa mengecek** apakah NIK sudah terdaftar → admin bisa tanpa sengaja membuat data ganda.
+2. **Edit admin** (lightbox) memperbolehkan NIK diubah menjadi NIK yang **sudah dipakai record lain** → dua baris dengan NIK sama.
+3. **Database belum punya pengaman** — kolom `nik` tabel `submissions` belum dijaga constraint unik, dan data lama (sebelum pengaman formulir peserta REVISI g) bisa saja sudah mengandung duplikat.
+4. Jalur peserta sendiri sudah aman sejak REVISI g (blokir NIK + RPC idempotent) — masalah ada di jalur admin & level database.
+
+## Yang diubah
+
+1. **Tambah Data admin kini menolak NIK ganda**: sebelum menyimpan, sistem mengecek ke server; bila NIK sudah terdaftar tampil pesan ramah berisi nama & No. Register pemilik data, modal TIDAK ditutup, TIDAK ada insert. Bila pengecekan bermasalah (network), simpan tetap dicoba — database tetap menjaga lewat constraint unik.
+2. **Edit admin menolak NIK yang bentrok**: bila admin mengubah NIK menjadi NIK milik record lain, penyimpanan dibatalkan dengan pesan jelas; bila NIK tidak diubah, tidak ada query tambahan (edit tetap cepat).
+3. **Jaring pengaman tampilan**: tabel Data Pengajuan menyembunyikan baris duplikat per NIK (baris TERBARU yang ditampilkan) dan mencatat peringatan di console agar admin tahu perlu menjalankan SQL pembersihan.
+4. **SQL patch `sql/PATCH-PENGAJUAN-UNIK-NIK.sql` (pembersihan permanen)**:
+   - Normalisasi NIK (trim; NIK kosong → NULL).
+   - Menghapus data ganda yang sudah ada — per NIK disimpan **satu baris terbaru** (`created_at` terbesar; bila sama, `id` terbesar).
+   - Memasang **constraint unik `submissions_nik_unik`** pada kolom `nik` — duplikat baru DITOLAK langsung oleh database (lapisan terakhir).
+   - Idempotent: aman dijalankan berulang; bila masih ada duplikat tersisa, constraint gagal dengan pesan jelas → jalankan ulang (langkah pembersihan berjalan dulu, constraint terpasang otomatis).
+
+## Cara pakai
+
+1. Upload file revisi ini + refresh halaman (Ctrl+F5).
+2. **Penting (sekali saja)**: Supabase Dashboard → SQL Editor → jalankan `sql/PATCH-PENGAJUAN-UNIK-NIK.sql` untuk membersihkan duplikat lama & memasang kunci anti-ganda di database. Bila belum dijalankan, tabel tetap rapi (duplikat disembunyikan) namun data lama belum terhapus permanen.
+
+## Hasil pengujian
+
+| Uji | Hasil |
+|---|---|
+| `scripts/test-pengajuan-unik-nik.js` (baru) | **27/27 PASS** — tambah data: NIK terdaftar ditolak tanpa insert + toast menyebut NIK + modal tetap terbuka; NIK baru tersimpan 1x dgn payload benar; NIK format salah diblokir sebelum cek; cek duplikat gagal → tetap simpan; tampilan: 5 baris (2 duplikat) → 3 tampil, baris terbaru dipertahankan, baris tanpa NIK tetap tampil; guard edit pakai .neq(id) & hanya saat NIK berubah; SQL patch: cleanup per NIK, simpan terbaru, constraint unik, normalisasi, idempotent |
+| Regresi penuh | pengusulan-edit-simpan 24, penetapan-tambah 48, penetapan-bukti 52, status-pengajuan-kartu 62, penetapan-kartu-rapi 62, biodata 34, foto-profil 52, password 35, RBAC lulus, r2-config 19, driver-switch 6 — **semua PASS, 0 FAIL** |
+| `node --check` | js/10-admin-pengusul.js, js/crud-lightbox.js — LULUS |

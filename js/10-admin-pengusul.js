@@ -81,18 +81,37 @@ async function fetchAdminData() {
         
         // Execute query
         const { data, error, count } = await query;
-        
+
         if (error) throw error;
+
+        // [REVISI 15 OKT l] ANTI DATA GANDA (jaring pengaman tampilan):
+        // satu NIK hanya boleh tampil satu kali. Baris pertama (terbaru,
+        // sesuai sorting) yang dipertahankan; duplikat lama disembunyikan.
+        // Pembersihan permanen tetap di DB via sql/PATCH-PENGAJUAN-UNIK-NIK.sql.
+        let displayRows = data || [];
+        const seenNik = new Set();
+        let hiddenDup = 0;
+        displayRows = displayRows.filter((r) => {
+            const k = r && r.nik ? String(r.nik).trim() : '';
+            if (!k) return true; // baris tanpa NIK tetap tampil
+            if (seenNik.has(k)) { hiddenDup++; return false; }
+            seenNik.add(k);
+            return true;
+        });
+        if (hiddenDup > 0) {
+            console.warn('[SIMBAKES] ' + hiddenDup + ' baris data ganda (NIK sama) disembunyikan dari tabel. Jalankan sql/PATCH-PENGAJUAN-UNIK-NIK.sql untuk pembersihan permanen di database.');
+        }
         
         console.log(`✅ Berhasil mengambil ${data?.length || 0} data pengusul`);
         
         // ============================================================
         // KRITIS: Simpan data ke pengusulData DAN submissionsData untuk CRUD Lightbox!
         // Ini memastikan record tersedia saat baris diklik
+        // [REVISI 15 OKT l] yang disimpan = displayRows (bebas duplikat NIK)
         // ============================================================
-        if (data && Array.isArray(data)) {
-            pengusulData = data;  // SIMPAN DATA GLOBAL (legacy)
-            window.submissionsData = data;  // SIMPAN DATA GLOBAL (sistem FINAL)
+        if (displayRows && Array.isArray(displayRows) && displayRows.length > 0) {
+            pengusulData = displayRows;  // SIMPAN DATA GLOBAL (legacy)
+            window.submissionsData = displayRows;  // SIMPAN DATA GLOBAL (sistem FINAL)
             console.group('📦 SIMBAKES DATA STORE');
             console.log('✅ pengusulData diupdate:', pengusulData.length, 'records');
             console.log('✅ submissionsData diupdate:', window.submissionsData.length, 'records');
@@ -105,8 +124,8 @@ async function fetchAdminData() {
         }
         
         // Render table
-        if (data && data.length > 0) {
-            renderAdminTable(data);
+        if (displayRows && displayRows.length > 0) {
+            renderAdminTable(displayRows);
             
             // Update pagination info
             const totalPages = Math.ceil((count || 0) / adminPageSize);
@@ -933,7 +952,29 @@ async function saveNewPengusul(modalId) {
         showToast('⚠️ NIK harus 16 digit angka', 'warning');
         return;
     }
-    
+
+    // [REVISI 15 OKT l] ANTI DATA GANDA: satu NIK hanya boleh satu pengajuan.
+    // Cek dulu ke server — bila NIK sudah terdaftar, tolak dengan pesan ramah.
+    try {
+        const { data: existing, error: dupErr } = await supabaseClient
+            .from('submissions')
+            .select('id, nama_lengkap, no_register')
+            .eq('nik', newData.nik)
+            .limit(1);
+        if (!dupErr && existing && existing.length > 0) {
+            const row = existing[0];
+            showToast('⚠️ Data ganda diblokir: NIK ' + newData.nik + ' sudah terdaftar' +
+                (row.nama_lengkap ? ' atas nama ' + row.nama_lengkap : '') +
+                (row.no_register ? ' (No. Register ' + row.no_register + ')' : '') +
+                '. Satu peserta hanya boleh satu pengajuan — gunakan menu Edit bila perlu memperbarui data.', 'error', 8000);
+            console.warn('[SIMBAKES] Tambah data diblokir — NIK sudah ada:', row);
+            return;
+        }
+        if (dupErr) console.warn('[SIMBAKES] Cek duplikat NIK gagal (lanjut simpan, DB tetap menjaga constraint unik):', dupErr.message);
+    } catch (dupCatch) {
+        console.warn('[SIMBAKES] Cek duplikat NIK bermasalah (lanjut simpan):', dupCatch && dupCatch.message);
+    }
+
     try {
         showToast('🔄 Menyimpan data...', 'info');
         
