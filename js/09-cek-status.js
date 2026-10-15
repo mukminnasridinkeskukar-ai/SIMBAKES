@@ -339,22 +339,44 @@ async function searchPenetapanData() {
         console.log('[SIMBAKES] 📡 Mengquery tabel penetapan di Supabase...');
         
         // Query dari Supabase tabel penetapan
-        const { data: penetapanData, error } = await supabaseClient
+        // [REVISI 15 OKT k] Bila 1 NIK punya lebih dari 1 baris (duplikat),
+        // ambil sampai 10 baris lalu pilih baris TERBAIK (paling banyak
+        // file/kelengkapan). Sebelumnya .limit(1) TANPA urutan bisa
+        // mengambil baris lama tanpa file — file kartu peserta jadi tidak
+        // sesuai dengan yang dilihat admin di menu Data Penetapan.
+        let penetapanRows = null;
+        const q1 = await supabaseClient
             .from('penetapan')
             .select('*')
             .eq('nik', nik)
-            .limit(1);
+            .order('id', { ascending: false })
+            .limit(10);
+        if (q1.error) {
+            // Kolom 'id' mungkin tidak ada di tabel — ulang tanpa urutan
+            const q2 = await supabaseClient
+                .from('penetapan')
+                .select('*')
+                .eq('nik', nik)
+                .limit(10);
+            if (q2.error) throw q2.error;
+            penetapanRows = q2.data;
+        } else {
+            penetapanRows = q1.data;
+        }
         
-        if (error) throw error;
-        
-        console.log('[SIMBAKES] ✅ Hasil pencarian penetapan:', penetapanData);
+        console.log('[SIMBAKES] ✅ Hasil pencarian penetapan:', penetapanRows);
         
         // Hide loading
         document.getElementById('penetapan-loading').style.display = 'none';
         
         // Check if data found
-        if (penetapanData && penetapanData.length > 0) {
-            displayPenetapanResult(penetapanData[0]);
+        if (penetapanRows && penetapanRows.length > 0) {
+            const barisTerpilih = pickPenetapanRow(penetapanRows);
+            if (penetapanRows.length > 1) {
+                console.warn('[SIMBAKES] ⚠️ NIK ini memiliki ' + penetapanRows.length +
+                    ' baris penetapan — kartu memakai baris terpilih otomatis.', barisTerpilih);
+            }
+            displayPenetapanResult(barisTerpilih);
         } else {
             showPenetapanNotFound(`Data penetapan dengan NIK "${nik}" tidak ditemukan`);
         }
@@ -391,8 +413,82 @@ async function searchPenetapanData() {
 }
 
 /**
- * Display Penetapan result in the card (Photo Left, Data Right)
+ * [REVISI 15 OKT k] Pilih baris penetapan terbaik bila 1 NIK punya
+ * lebih dari 1 baris: prioritaskan baris dengan file terbanyak
+ * (link_foto / link_sk / bukti_lulus_pt), lalu kelengkapan data lain.
  */
+function pickPenetapanRow(rows) {
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    if (rows.length === 1) return rows[0];
+    const score = (r) => {
+        let s = 0;
+        ['link_foto', 'link_sk', 'bukti_lulus_pt'].forEach(function (k) {
+            if (String((r && r[k]) || '').trim().length > 10) s += 10;
+        });
+        ['nama_lengkap', 'no_register', 'status_penetapan', 'tanggal_penetapan'].forEach(function (k) {
+            const v = String((r && r[k]) || '').trim();
+            if (v && v !== '-') s += 1;
+        });
+        return s;
+    };
+    let best = rows[0];
+    for (let i = 1; i < rows.length; i++) {
+        if (score(rows[i]) > score(best)) best = rows[i];
+    }
+    return best;
+}
+
+/**
+ * [REVISI 15 OKT k] Parser tanggal tangguh — mendukung format Indonesia
+ * ("15 Januari 2026" — format yang dipakai form admin), ISO
+ * ("2026-01-15" / timestamp penuh), "15/01/2026" dan "15-01-2026".
+ * Mengembalikan Date atau null — TIDAK pernah menghasilkan "Invalid Date".
+ */
+function simbakesParseIdDate(val) {
+    if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+    const str = String(val == null ? '' : val).trim();
+    if (!str || str === '-') return null;
+    let m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) {
+        const d = new Date(+m[1], +m[2] - 1, +m[3]);
+        return isNaN(d.getTime()) ? null : d;
+    }
+    m = str.match(/^(\d{1,2})\s+([A-Za-z\.]+)\s+(\d{4})/);
+    if (m) {
+        const bulan = {
+            januari: 0, februari: 1, maret: 2, april: 3, mei: 4, juni: 5,
+            juli: 6, agustus: 7, september: 8, oktober: 9, november: 10, desember: 11,
+            jan: 0, feb: 1, mar: 2, apr: 3, jun: 5, jul: 6, agu: 7, agt: 7,
+            sep: 8, okt: 9, nov: 10, des: 11,
+            january: 0, february: 1, march: 2, may: 4, august: 7, october: 9, december: 11
+        };
+        const mi = bulan[m[2].toLowerCase().replace(/\./g, '')];
+        if (mi !== undefined) {
+            const d = new Date(+m[3], mi, +m[1]);
+            return isNaN(d.getTime()) ? null : d;
+        }
+    }
+    m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (m) {
+        const d = new Date(+m[3], +m[2] - 1, +m[1]);
+        return isNaN(d.getTime()) ? null : d;
+    }
+    const fallback = new Date(str);
+    return isNaN(fallback.getTime()) ? null : fallback;
+}
+
+/**
+ * [REVISI 15 OKT k] Format tanggal utk kartu penetapan — selalu aman:
+ * bila tanggal tak terbaca, tampil teks aslinya (tidak pernah
+ * "Invalid Date"); kosong → "-".
+ */
+function simbakesFormatTanggal(val) {
+    const d = simbakesParseIdDate(val);
+    if (d) return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    const raw = String(val == null ? '' : val).trim();
+    return raw || '-';
+}
+
 /**
  * Display Penetapan result in the card (Photo Left, Data Right)
  * Data source: Supabase table 'penetapan'
@@ -437,7 +533,7 @@ function displayPenetapanResult(data) {
         pekerjaan: getField(data, 'pekerjaan', 'pekerjaan'),
         
         // Status & Tanggal Penetapan
-        status_penetapan: getField(data, 'status_penetapan', 'statusPenetapan', 'status', 'Pending'),
+        status_penetapan: getField(data, 'status_penetapan', 'statusPenetapan', ''),
         tanggal_penetapan: getField(data, 'tanggal_penetapan', 'tanggalPenetapan', 'tanggal'),
         
         // Dokumen / Foto — default '' (sebelumnya string 'foto_drive_link'
@@ -453,23 +549,20 @@ function displayPenetapanResult(data) {
         catatan_penetapan: getField(data, 'catatan_penetapan', 'catatanPenetapan', (data && data.catatan) || '')
     };
     
-    // Format tanggal helper
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '-';
-        try {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-        } catch {
-            return dateStr;
-        }
-    };
+    // [REVISI 15 OKT k] Tanggal memakai parser tangguh (format Indonesia
+    // dari form admin "15 Januari 2026" ikut terbaca) — tidak pernah lagi
+    // "Invalid Date". Definisi: simbakesFormatTanggal di atas.
     
     // =====================================================
     // SET PHOTO (Left side)
     // =====================================================
     const photoEl = document.getElementById('penetapan-photo');
     const placeholderEl = document.getElementById('penetapan-photo-placeholder');
-    setPhotoWithFallback(photoEl, placeholderEl, penetapanData.link_foto);
+    // Ambil URL pertama bila kolom berisi lebih dari satu URL
+    const fotoUrlPertama = (typeof simbakesExtractUrls === 'function')
+        ? (simbakesExtractUrls(penetapanData.link_foto)[0] || '')
+        : (String(penetapanData.link_foto || '').trim().split(/\s+/)[0] || '');
+    setPhotoWithFallback(photoEl, placeholderEl, fotoUrlPertama);
     
     // Set Register Badge under photo
     document.getElementById('penetapan-register-badge').textContent = penetapanData.no_register || '-';
@@ -490,7 +583,7 @@ function displayPenetapanResult(data) {
     
     // Baris 1: tempat_lahir & tanggal_lahir
     document.getElementById('penetapan-tempat-lahir').textContent = penetapanData.tempat_lahir || '-';
-    document.getElementById('penetapan-tanggal-lahir').textContent = formatDate(penetapanData.tanggal_lahir);
+    document.getElementById('penetapan-tanggal-lahir').textContent = simbakesFormatTanggal(penetapanData.tanggal_lahir);
     
     // Baris 2: no_register & jurusan
     document.getElementById('penetapan-no-register').textContent = penetapanData.no_register || '-';
@@ -506,7 +599,7 @@ function displayPenetapanResult(data) {
     
     // Baris 5: status_penetapan & tanggal_penetapan
     setPenetapanStatusBadge(penetapanData.status_penetapan);
-    document.getElementById('penetapan-tanggal-penetapan').textContent = formatDate(penetapanData.tanggal_penetapan);
+    document.getElementById('penetapan-tanggal-penetapan').textContent = simbakesFormatTanggal(penetapanData.tanggal_penetapan);
     
     // Baris 5b: catatan admin (tampil hanya bila ada) [Task9i]
     const catatanRow = document.getElementById('penetapan-catatan-row');
@@ -522,57 +615,37 @@ function displayPenetapanResult(data) {
         }
     }
     
-    // Baris 6: Action Buttons untuk link_foto, link_sk & bukti_lulus_pt
-    const btnFoto = document.getElementById('penetapan-btn-foto');
-    const btnSK = document.getElementById('penetapan-btn-sk');
-    const btnBukti = document.getElementById('penetapan-btn-bukti');
-    const noLinkMsg = document.getElementById('penetapan-no-link-msg');
-    
-    let hasAnyLink = false;
-    
-    // Handle link_foto
-    if (penetapanData.link_foto && penetapanData.link_foto !== '' && penetapanData.link_foto.length > 10) {
-        btnFoto.style.display = 'flex';
-        btnFoto.onclick = () => window.open(penetapanData.link_foto, '_blank');
-        hasAnyLink = true;
-    } else {
-        btnFoto.style.display = 'none';
-    }
-    
-    // Handle link_sk
-    if (penetapanData.link_sk && penetapanData.link_sk !== '' && penetapanData.link_sk.length > 10) {
-        btnSK.style.display = 'flex';
-        btnSK.onclick = () => window.open(penetapanData.link_sk, '_blank');
-        hasAnyLink = true;
-    } else {
-        btnSK.style.display = 'none';
-    }
-    
-    // [REVISI 15 OKT j] Handle bukti_lulus_pt — Preview modal (berisi tombol
-    // Unduh & Buka Tab Baru di header) atau fallback tab baru.
-    if (btnBukti) {
-        const buktiUrl = String(penetapanData.bukti_lulus_pt || '').trim().split(/\s+/)[0] || '';
-        if (/^https?:\/\//i.test(buktiUrl)) {
-            btnBukti.style.display = 'flex';
-            btnBukti.onclick = () => {
-                if (typeof simbakesPreviewDocument === 'function') {
-                    simbakesPreviewDocument(buktiUrl, 'Bukti Lulus PT / Aktif Kuliah');
-                } else {
-                    window.open(buktiUrl, '_blank', 'noopener');
-                }
-            };
-            hasAnyLink = true;
-        } else {
-            btnBukti.style.display = 'none';
+    // Baris 6a-6c: blok file TERPISAH utk link_foto, link_sk & bukti_lulus_pt
+    // [REVISI 15 OKT k] Setiap file kini punya blok sendiri dengan tombol
+    // [👁 Preview] [⬇ Unduh] (helper yang sama dengan kartu Cek Status
+    // Pengajuan) — file yang dibuka dijamin dari baris penetapan ini.
+    const wireBlokFile = (rowId, boxId, rawVal, judul) => {
+        const rowEl = document.getElementById(rowId);
+        const boxEl = document.getElementById(boxId);
+        if (!rowEl || !boxEl) return false;
+        const urls = (typeof simbakesExtractUrls === 'function')
+            ? simbakesExtractUrls(rawVal)
+            : String(rawVal || '').trim().split(/\s+/);
+        const ok = (urls || []).filter(function (u) { return /^https?:\/\//i.test(u); });
+        if (!ok.length) {
+            rowEl.style.display = 'none';
+            boxEl.innerHTML = '';
+            return false;
         }
-    }
+        boxEl.innerHTML = (typeof simbakesDocActionButtons === 'function')
+            ? simbakesDocActionButtons(ok.join(' '), judul)
+            : '<a href="' + ok[0] + '" target="_blank" rel="noopener" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:0.38rem 0.75rem;border-radius:8px;font-size:0.75rem;font-weight:700;text-decoration:none;">Buka file</a>';
+        rowEl.style.display = 'block';
+        return true;
+    };
+    let hasAnyLink = false;
+    if (wireBlokFile('penetapan-file-row-foto', 'penetapan-link-foto', penetapanData.link_foto, 'Foto Pasfoto')) hasAnyLink = true;
+    if (wireBlokFile('penetapan-file-row-sk', 'penetapan-link-sk', penetapanData.link_sk, 'SK Penetapan')) hasAnyLink = true;
+    if (wireBlokFile('penetapan-file-row-bukti', 'penetapan-link-bukti', penetapanData.bukti_lulus_pt, 'Bukti Lulus PT / Aktif Kuliah')) hasAnyLink = true;
     
-    // Show/hide "no link" message
-    if (hasAnyLink) {
-        noLinkMsg.style.display = 'none';
-    } else {
-        noLinkMsg.style.display = 'flex';
-    }
+    // Pesan "belum ada file" hanya tampil bila tidak ada satu pun file
+    const noLinkMsg = document.getElementById('penetapan-no-link-msg');
+    if (noLinkMsg) noLinkMsg.style.display = hasAnyLink ? 'none' : 'block';
     
     // Set timestamp
     const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });

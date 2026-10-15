@@ -995,3 +995,46 @@ Seluruh data yang ditampilkan sudah tersedia di tabel `submissions` (`no_registe
 | Uji browser nyata (harness) | Modal Tambah: widget tampil cantik; **upload nyata via mock storage** → path `penetapan/3201234567890001/bukti-*.pdf`, URL terisi, status ✅; **file 11 MB ditolak**, **tipe .exe ditolak**, Kosongkan bekerja; modal Edit: URL lama ter-prefill + tombol Ganti/Hapus; **saveNewPenetapan memasukkan bukti ke payload INSERT**; **PGRST204 → 2 percobaan, kedua tanpa bukti**; tabel: tombol 🎓 muncul hanya bila ada file; kartu peserta: hanya tombol yang berlaku (bukti tampil, foto/SK sembunyi bila kosong), klik 🎓 → **modal pratinjau PDF terbuka** |
 | Regresi: penetapan-tambah / pengusulan-edit / status-pengajuan / biodata / foto-profil / password / RBAC / r2-config / driver-switch | SEMUA LULUS (48, 24, 62, 34, 52, 35, 18, 19, 6) — total **346 PASS, 0 FAIL** |
 | `node --check` semua JS | LULUS |
+
+---
+
+# REVISI 15 OKT k — Kartu "Cek Status Penetapan" Dirapikan: Link Foto / SK / Bukti Lulus Terpisah + File Dijamin Sesuai Tabel Penetapan
+
+## Latar belakang (laporan pengguna)
+
+> cek dan rapikan akun peserta — 1. pada cek status penetapan, **link foto, SK dan bukti lulus terpisah masing-masing**, dan pastikan filenya **sudah benar sesuai file yang ada di tabel data penetapan**.
+
+## Masalah yang ditemukan (sesuai screenshot pengguna)
+
+1. Ketiga file (foto pasfoto, SK penetapan, bukti lulus PT) digabung dalam **satu blok** `link_foto / link_sk / bukti_lulus_pt` dengan sekumpulan tombol berdempet — sulit dibedakan mana file apa.
+2. **Tanggal Penetapan tampil "Invalid Date"** — admin mengisi tanggal dengan format teks Indonesia ("14 Oktober 2026", sesuai petunjuk form admin) yang tidak bisa dibaca `new Date()` JavaScript.
+3. **Label masih nama kolom mentah** (`NO_REGISTER`, `PERGURUAN_TINGGI`, `UNIT_PENDAYGUNA`, dst) — tidak ramah peserta.
+4. **Risiko file tidak sesuai**: query kartu memakai `.limit(1)` **tanpa urutan** — bila satu NIK memiliki lebih dari satu baris penetapan (duplikat), kartu bisa mengambil baris LAMA yang tidak berisi file, sementara admin melihat baris lain di menu Data Penetapan.
+
+## Yang diubah
+
+1. **Kartu peserta — 3 blok file TERPISAH** (masing-masing judul + tombol sendiri):
+   - **📷 Foto Pasfoto** → [👁 Preview] [⬇ Unduh]
+   - **📄 SK Penetapan** → [👁 Preview] [⬇ Unduh]
+   - **🎓 Bukti Lulus PT / Aktif Kuliah** → [👁 Preview] [⬇ Unduh]
+   Setiap blok hanya tampil bila filenya ada; bila ketiganya kosong tampil satu pemberitahuan rapi "Belum ada file…". Tombol memakai helper yang sama dengan kartu Cek Status Pengajuan (modal pratinjau PDF/gambar/Drive + unduhan blob, dukungan multi-URL).
+2. **File dijamin sesuai tabel penetapan**:
+   - Query kini mengambil sampai 10 baris per NIK dengan urutan **id terbaru dulu** (fallback otomatis tanpa urutan bila kolom `id` tidak ada), lalu `pickPenetapanRow()` memilih baris **terlengkap** (paling banyak file + data terisi) — duplikat terdeteksi dan dicatat di console untuk tindak lanjut admin.
+   - Foto kiri kartu juga kini memakai URL pertama hasil ekstraksi (aman bila kolom berisi lebih dari satu URL); setiap URL divalidasi `https?://` sebelum tombol dibuat.
+3. **Tanggal tidak pernah lagi "Invalid Date"**: parser tangguh `simbakesParseIdDate()` mendukung format Indonesia ("14 Oktober 2026" — format yang diisi admin), ISO (`2026-10-15`/timestamp penuh), `15/01/2026`, `15-01-2026`; bila tetap tak terbaca, **teks asli ditampilkan apa adanya** (bukan "Invalid Date").
+4. **Label dirapikan menjadi bahasa manusia**: Tempat Lahir, Tanggal Lahir, No. Register, Jurusan, Jenjang, Perguruan Tinggi, Unit Pendayguna, Pekerjaan, Status Penetapan, Tanggal Penetapan.
+
+## Cara pakai
+
+1. Upload file revisi ini + refresh halaman (Ctrl+F5). **Tidak ada perubahan SQL** — memakai tabel penetapan yang sudah ada.
+2. Tidak ada langkah admin baru: file tetap dikelola dari menu Data Penetapan (REVISI j); kartu peserta otomatis menampilkan file dari baris data yang benar.
+
+## Hasil pengujian
+
+| Uji | Hasil |
+|---|---|
+| `scripts/test-penetapan-kartu-rapi.js` (baru) | **62/62 PASS** — 3 blok terpisah + label lama dihapus, 10 label manusiawi, query anti-duplikat + fallback, wiring 3 blok + validasi URL, parser tanggal; uji runtime vm: `pickPenetapanRow` memilih baris berfile, `"15 Januari 2026"`/ISO/`15-01-2026` terbaca, teks acak → teks asli (bukan Invalid Date) |
+| `scripts/test-penetapan-bukti.js` (diperbarui ke struktur baru) | **52/52 PASS** |
+| Uji browser nyata (harness markup ASLI index.html) | Skenario **NIK duplikat 2 baris**: baris id=12 (lengkap, No. Register `…583972`, tanggal "14 Oktober 2026") yang terpilih — bukan baris lama tanpa file; **3 blok tampil terpisah** masing-masing dengan 2 tombol; klik Preview bukti → **modal pratinjau terbuka** berjudul "Bukti Lulus PT / Aktif Kuliah"; skenario tanpa file → pesan "Belum ada file" tampil; mobile 390×844 menyusun blok rapi |
+| Regresi penuh | penetapan-tambah 48, pengusulan-edit 24, status-pengajuan 62, kartu-rapi 62, penetapan-bukti 52, biodata 34, foto-profil 52, password 35, RBAC 18, r2-config 19, driver-switch 6 — total **412 PASS, 0 FAIL** |
+| `node --check` semua JS | LULUS |
