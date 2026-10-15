@@ -357,6 +357,31 @@ function showPesertaDetailModal(peserta) {
                     </div>
                     ` : '';
                     })()}
+                    ${(() => {
+                        // [REVISI 15 OKT j] Bukti Lulus PT / Aktif Kuliah — tombol
+                        // Preview & Unduh (modal pratinjau memakai viewer bawaan
+                        // browser; unduh via blob, fallback tab baru).
+                        const buktiVal = getField(peserta, 'bukti_lulus_pt', 'buktiLulusPt');
+                        if (!buktiVal || buktiVal === '-' || !/^https?:\/\//i.test(String(buktiVal).split(/\s+/)[0] || '')) return '';
+                        const urlBukti = String(buktiVal).split(/\s+/)[0];
+                        const judulBukti = 'Bukti Lulus PT — ' + namaLengkap;
+                        const btnPreview = (typeof simbakesPreviewDocument === 'function')
+                            ? `onclick="simbakesPreviewDocument('${urlBukti.replace(/'/g, '%27')}', '${escapeHtml(judulBukti).replace(/'/g, '%27')}')"`
+                            : `onclick="window.open('${urlBukti.replace(/'/g, '%27')}', '_blank', 'noopener')"`;
+                        const btnUnduh = (typeof simbakesDownloadDocument === 'function')
+                            ? `onclick="simbakesDownloadDocument('${urlBukti.replace(/'/g, '%27')}', '${escapeHtml(judulBukti).replace(/'/g, '%27')}')"`
+                            : `onclick="window.open('${urlBukti.replace(/'/g, '%27')}', '_blank', 'noopener')"`;
+                        return `
+                    <div class="peserta-modal-field" style="grid-column:1 / -1;">
+                        <span class="peserta-modal-field-label">Bukti Lulus PT / Aktif Kuliah</span>
+                        <div class="peserta-modal-field-value" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+                            <span class="peserta-modal-field-icon">🎓</span>
+                            <button type="button" ${btnPreview} style="display:inline-flex;align-items:center;gap:0.3rem;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;padding:0.4rem 0.8rem;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;">👁 Preview</button>
+                            <button type="button" ${btnUnduh} style="display:inline-flex;align-items:center;gap:0.3rem;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;padding:0.4rem 0.8rem;border-radius:8px;font-size:0.78rem;font-weight:700;cursor:pointer;">⬇ Unduh</button>
+                        </div>
+                    </div>
+                    `;
+                    })()}
                 </div>
             </div>
         </div>
@@ -765,6 +790,15 @@ function createPenetapanRow(item, rowNum) {
                         data-action="view" data-id="${id}" title="Lihat Detail">
                     👁️ Lihat
                 </button>
+                ${(() => {
+                    // [REVISI 15 OKT j] tombol 🎓 Bukti — hanya bila file ada
+                    const buktiVal = String(item.bukti_lulus_pt || '').trim();
+                    if (!/^https?:\/\//i.test(buktiVal.split(/\s+/)[0] || '')) return '';
+                    return `<button type="button" class="btn-action btn-view" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);"
+                            data-action="bukti" data-id="${id}" title="Pratinjau Bukti Lulus PT / Aktif Kuliah">
+                        🎓 Bukti
+                    </button>`;
+                })()}
                 <button type="button" class="btn-action btn-edit" 
                         data-action="edit" data-id="${id}" title="Edit Data">
                     ✏️ Edit
@@ -831,6 +865,21 @@ async function handlePenetapanTableClick(event) {
             case 'view':
                 await viewPenetapanDetail(id);
                 break;
+            case 'bukti': {
+                // [REVISI 15 OKT j] Pratinjau file Bukti Lulus PT / Aktif Kuliah
+                const recBukti = penetapanAllData.find(item => item.id === id);
+                const buktiUrl = recBukti ? String(recBukti.bukti_lulus_pt || '').trim() : '';
+                if (!buktiUrl) {
+                    showToast('⚠️ Belum ada file bukti lulus PT untuk data ini.', 'error');
+                    break;
+                }
+                if (typeof simbakesPreviewDocument === 'function') {
+                    simbakesPreviewDocument(buktiUrl, 'Bukti Lulus PT — ' + (recBukti.nama_lengkap || 'Peserta'));
+                } else {
+                    window.open(buktiUrl.split(/\s+/)[0], '_blank', 'noopener');
+                }
+                break;
+            }
             case 'edit':
                 await openEditPenetapanModal(id);
                 break;
@@ -1109,6 +1158,23 @@ async function openEditPenetapanModal(recordId) {
                                    placeholder="https://example.com/foto.jpg">
                         </div>
                         
+                        <!-- [REVISI 15 OKT j] Bukti Lulus PT / Aktif Kuliah — upload file -->
+                        <div class="form-group-edit" style="grid-column: span 2;">
+                            <label class="form-label-edit">🎓 Bukti Lulus PT / Aktif Kuliah (file)</label>
+                            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                                <label style="display:inline-flex;align-items:center;gap:0.4rem;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:white;padding:0.55rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">📎 Ganti / Upload File
+                                    <input type="file" id="edit-penetapan-bukti-file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp" style="display:none;" onchange="handlePenetapanBuktiSelect(this, 'edit-penetapan-bukti', 'edit-penetapan-bukti-status', ${JSON.stringify(String(record.nik || record.id || ''))})">
+                                </label>
+                                <button type="button" onclick="clearPenetapanBukti('edit-penetapan-bukti', 'edit-penetapan-bukti-status', 'edit-penetapan-bukti-file')" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;padding:0.5rem 0.75rem;border-radius:8px;font-size:0.78rem;font-weight:600;cursor:pointer;">✕ Hapus Bukti</button>
+                                <span id="edit-penetapan-bukti-status" style="font-size:0.75rem;"></span>
+                            </div>
+                            <input type="text" name="bukti_lulus_pt" id="edit-penetapan-bukti" class="form-input-edit"
+                                   value="${escapeHtml(getField(record, 'bukti_lulus_pt', 'buktiLulusPt'))}"
+                                   placeholder="URL terisi otomatis setelah upload — atau tempel link di sini (opsional)"
+                                   style="margin-top:0.5rem;font-family:monospace;font-size:0.8rem;">
+                            <small style="display:block;margin-top:4px;color:#64748b;font-size:0.75rem;">PDF atau foto (JPG/PNG/WebP), maks 10 MB. Tombol "Hapus Bukti" mengosongkan file lama saat disimpan.</small>
+                        </div>
+                        
                         <div class="form-group-edit" style="grid-column: span 2;">
                             <label class="form-label-edit">Catatan untuk Peserta</label>
                             <textarea name="catatan_penetapan" class="form-input-edit" rows="3"
@@ -1171,6 +1237,18 @@ async function savePenetapanChanges() {
             updated_at: new Date().toISOString()
         };
         
+        // [REVISI 15 OKT j] Bukti Lulus PT — kirim bila terisi, ATAU bila
+        // sebelumnya ada isinya dan admin mengosongkannya (agar bisa dihapus).
+        const buktiInput = (formData.get('bukti_lulus_pt') || '').trim();
+        const existingBukti = (() => {
+            const rec = (typeof penetapanAllData !== 'undefined' ? penetapanAllData : [])
+                .find(item => item.id === penetapanEditingId);
+            return rec ? (rec.bukti_lulus_pt || '') : '';
+        })();
+        if (buktiInput || existingBukti) {
+            updateData.bukti_lulus_pt = buktiInput || null;
+        }
+        
         // [Task9i] Catatan untuk peserta — hanya dikirim bila terisi,
         // ATAU bila sebelumnya ada isinya dan admin mengosongkannya (agar bisa dihapus).
         const catatanInput = (formData.get('catatan_penetapan') || '').trim();
@@ -1209,6 +1287,14 @@ async function savePenetapanChanges() {
                 .update(rest)
                 .eq('id', penetapanEditingId)
                 .select('*'));
+        } else if (window.__penetapanBuktiColMissing && 'bukti_lulus_pt' in updateData) {
+            // [REVISI 15 OKT j] kolom bukti belum ada — jangan kirim bukti lagi
+            const { bukti_lulus_pt, ...restBukti } = updateData;
+            ({ data: updatedRecordArray, error: updateError } = await supabaseClient
+                .from('penetapan')
+                .update(restBukti)
+                .eq('id', penetapanEditingId)
+                .select('*'));
         } else {
             ({ data: updatedRecordArray, error: updateError } = await supabaseClient
                 .from('penetapan')
@@ -1231,6 +1317,19 @@ async function savePenetapanChanges() {
                 const hint = document.getElementById('penetapan-catatan-db-hint');
                 if (hint) hint.style.display = 'inline';
                 showToast('ℹ️ Perubahan lain tersimpan. Kolom catatan belum ada di database — jalankan sql/penetapan-catatan-status.sql agar catatan bisa tersimpan.', 'info', 6000);
+            }
+            // [REVISI 15 OKT j] Fallback: kolom bukti_lulus_pt belum ada di DB
+            else if (updateError && updateError.code === 'PGRST204' &&
+                (updateError.message || '').includes('bukti_lulus_pt')) {
+                console.warn('[PENETAPAN] Kolom bukti_lulus_pt belum ada — retry tanpa bukti');
+                window.__penetapanBuktiColMissing = true;
+                const { bukti_lulus_pt, ...restBukti } = updateData;
+                ({ data: updatedRecordArray, error: updateError } = await supabaseClient
+                    .from('penetapan')
+                    .update(restBukti)
+                    .eq('id', penetapanEditingId)
+                    .select('*'));
+                showToast('ℹ️ Perubahan lain tersimpan. Kolom bukti lulus PT belum ada di database — jalankan sql/PATCH-PENETAPAN-BUKTI.sql agar file bukti bisa tersimpan.', 'info', 7000);
             }
         }
         
@@ -1414,6 +1513,19 @@ function openPenetapanAddModal() {
                             <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Link SK (URL)</label>
                             <input type="url" id="add-penetapan-sk" placeholder="https://drive.google.com/... (opsional)" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;">
                         </div>
+                        <!-- [REVISI 15 OKT j] Bukti Lulus PT / Aktif Kuliah — upload file -->
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">🎓 Bukti Lulus PT / Aktif Kuliah (file)</label>
+                            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                                <label style="display:inline-flex;align-items:center;gap:0.4rem;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:white;padding:0.55rem 0.9rem;border-radius:8px;font-size:0.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">📎 Upload File
+                                    <input type="file" id="add-penetapan-bukti-file" accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp" style="display:none;" onchange="handlePenetapanBuktiSelect(this, 'add-penetapan-bukti', 'add-penetapan-bukti-status', document.getElementById('add-penetapan-nik') ? document.getElementById('add-penetapan-nik').value : '')">
+                                </label>
+                                <button type="button" onclick="clearPenetapanBukti('add-penetapan-bukti', 'add-penetapan-bukti-status', 'add-penetapan-bukti-file')" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;padding:0.5rem 0.75rem;border-radius:8px;font-size:0.78rem;font-weight:600;cursor:pointer;">✕ Kosongkan</button>
+                                <span id="add-penetapan-bukti-status" style="font-size:0.75rem;"></span>
+                            </div>
+                            <input type="text" id="add-penetapan-bukti" placeholder="URL terisi otomatis setelah upload — atau tempel link di sini (opsional)" style="width:100%;margin-top:0.5rem;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.8rem;font-family:monospace;">
+                            <small style="display:block;margin-top:4px;color:#64748b;font-size:0.75rem;">PDF atau foto (JPG/PNG/WebP), maks 10 MB. Tersimpan di Supabase Storage; bisa dilihat &amp; diunduh peserta.</small>
+                        </div>
                         <div class="form-group" style="grid-column: span 2;">
                             <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.25rem;">Catatan untuk Peserta</label>
                             <textarea id="add-penetapan-catatan" rows="2" placeholder="Contoh: SK sudah terbit, silakan ambil di sekretariat Dinkes (opsional)" style="width:100%;padding:0.65rem;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;resize:vertical;min-height:60px;"></textarea>
@@ -1476,7 +1588,8 @@ async function saveNewPenetapan(modalId) {
         tanggal_penetapan: val('add-penetapan-tanggal'),
         status_penetapan: val('add-penetapan-status') || 'Pending',
         link_foto: val('add-penetapan-foto'),
-        link_sk: val('add-penetapan-sk')
+        link_sk: val('add-penetapan-sk'),
+        bukti_lulus_pt: val('add-penetapan-bukti')  // [REVISI 15 OKT j]
     };
     const catatanInput = val('add-penetapan-catatan');
     
@@ -1553,6 +1666,15 @@ async function saveNewPenetapan(modalId) {
                     showToast('ℹ️ Kolom catatan belum ada di database — jalankan sql/penetapan-catatan-status.sql agar catatan bisa tersimpan.', 'info', 6000);
                     continue;
                 }
+                // [REVISI 15 OKT j] kolom bukti_lulus_pt belum ada → buang & retry
+                if (msg.includes('bukti_lulus_pt')) {
+                    window.__penetapanBuktiColMissing = true;
+                    const { bukti_lulus_pt, ...restBukti } = payload;
+                    payload = restBukti;
+                    console.warn('[PENETAPAN] Kolom bukti_lulus_pt belum ada — retry tanpa bukti');
+                    showToast('ℹ️ Data lain tersimpan. Kolom bukti lulus PT belum ada di database — jalankan sql/PATCH-PENETAPAN-BUKTI.sql agar file bukti bisa tersimpan.', 'info', 7000);
+                    continue;
+                }
                 // Nama kolom utama tidak dikenal DB → ganti ke nama alternatif
                 const swapped = Object.keys(ALT_COLUMNS).find(k => msg.includes(`'${k}'`));
                 if (swapped && ALT_COLUMNS[swapped] && !(ALT_COLUMNS[swapped] in payload)) {
@@ -1594,6 +1716,114 @@ async function saveNewPenetapan(modalId) {
 // Expose functions to global scope
 window.openPenetapanAddModal = openPenetapanAddModal;
 window.saveNewPenetapan = saveNewPenetapan;
+
+// ============================================================
+// [REVISI 15 OKT j] BUKTI LULUS PT / AKTIF KULIAH (UPLOAD FILE)
+// Kolom: penetapan.bukti_lulus_pt (URL publik). File diupload ke
+// bucket 'pengajuan-files' folder 'penetapan/' (driver R2 bila
+// diaktifkan — konsisten dgn jalur upload lain). Widget dipakai
+// di modal Tambah maupun Edit: tombol 📎 Upload mengisi kolom URL;
+// tombol ✕ mengosongkan; admin juga masih bisa tempel link manual.
+// ============================================================
+
+var PENETAPAN_BUKTI_BUCKET = 'pengajuan-files';
+var PENETAPAN_BUKTI_MAX_BYTES = 10 * 1024 * 1024; // 10 MB, sama dgn bucket
+var PENETAPAN_BUKTI_TYPES = /^(image\/(jpeg|png|webp)|application\/pdf)$/i;
+
+/** Path storage: penetapan/<nik-atau-id>/bukti-<ts>-<rand>.<ext> */
+function buildPenetapanBuktiPath(recordKey, file) {
+    var ext = 'bin';
+    var m = String(file.name || '').match(/\.([A-Za-z0-9]{2,5})$/);
+    if (m) ext = m[1].toLowerCase();
+    var safeKey = String(recordKey || 'tanpa-kunci').replace(/[^A-Za-z0-9_-]/g, '') || 'tanpa-kunci';
+    return 'penetapan/' + safeKey + '/bukti-' + Date.now() + '-' + Math.floor(Math.random() * 9000 + 1000) + '.' + ext;
+}
+
+/**
+ * Upload file bukti → URL publik. Driver R2 bila aktif (js/r2-config.js),
+ * selain itu Supabase Storage (bucket pengajuan-files, folder penetapan/).
+ * Error dilempar — TIDAK ada sukses palsu.
+ */
+async function uploadPenetapanBuktiToStorage(file, storagePath) {
+    if (window.r2Enabled && window.r2Enabled()) {
+        return await window.r2UploadPublicUrl(file, storagePath);
+    }
+    if (!supabaseClient) {
+        throw new Error('Supabase tidak terhubung — periksa koneksi internet lalu coba lagi.');
+    }
+    var result = await supabaseClient.storage
+        .from(PENETAPAN_BUKTI_BUCKET)
+        .upload(storagePath, file, {
+            contentType: file.type || 'application/octet-stream',
+            cacheControl: '3600',
+            upsert: false
+        });
+    if (result && result.error) {
+        console.error('[PENETAPAN] ❌ Upload bukti gagal (' + storagePath + '):', result.error.message);
+        var msg = result.error.message || 'unknown';
+        if (/Bucket not found/i.test(msg)) {
+            throw new Error('Penyimpanan belum disiapkan (bucket "' + PENETAPAN_BUKTI_BUCKET + '" belum ada). Jalankan sql/setup-storage-pengajuan.sql dan sql/PATCH-PENETAPAN-BUKTI.sql di Supabase SQL Editor.');
+        }
+        if (/row-level security|Unauthorized|AccessDenied|Forbidden/i.test(msg)) {
+            throw new Error('Server menolak upload (kebijakan storage). Jalankan sql/PATCH-PENETAPAN-BUKTI.sql agar folder penetapan/ boleh ditulisi.');
+        }
+        throw new Error('Upload "' + file.name + '" gagal: ' + msg);
+    }
+    var pub = supabaseClient.storage.from(PENETAPAN_BUKTI_BUCKET).getPublicUrl(storagePath);
+    var publicUrl = pub && pub.data && pub.data.publicUrl;
+    if (!publicUrl) throw new Error('URL publik file tidak diperoleh setelah upload.');
+    console.log('[PENETAPAN] ✅ Bukti lulus PT terupload:', storagePath);
+    return publicUrl;
+}
+
+/**
+ * Handler <input type="file"> widget bukti (Tambah & Edit).
+ * Validasi ukuran/tipe → upload → isi kolom URL + kotak status.
+ * @param {HTMLInputElement} input
+ * @param {string} urlInputId  - id kolom URL widget yg diisi
+ * @param {string} statusBoxId - id kotak status
+ * @param {string} recordKey   - NIK / id utk nama folder storage
+ */
+async function handlePenetapanBuktiSelect(input, urlInputId, statusBoxId, recordKey) {
+    var urlInput = document.getElementById(urlInputId);
+    var statusBox = document.getElementById(statusBoxId);
+    var set_status = function (html) { if (statusBox) statusBox.innerHTML = html; };
+    try {
+        var file = input && input.files && input.files[0];
+        if (!file) return;
+        if (file.size > PENETAPAN_BUKTI_MAX_BYTES) {
+            input.value = '';
+            throw new Error('Ukuran file ' + (file.size / 1048576).toFixed(1) + ' MB melebihi batas 10 MB.');
+        }
+        if (!PENETAPAN_BUKTI_TYPES.test(file.type || '')) {
+            input.value = '';
+            throw new Error('Format harus PDF atau gambar (JPG/PNG/WebP). File Anda: ' + (file.type || 'tidak dikenal') + '.');
+        }
+        set_status('<span style="color:#7c3aed;font-weight:600;">⏳ Mengunggah ' + escapeHtml(file.name) + '...</span>');
+        var url = await uploadPenetapanBuktiToStorage(file, buildPenetapanBuktiPath(recordKey, file));
+        if (urlInput) urlInput.value = url;
+        set_status('<span style="color:#059669;font-weight:600;">✅ ' + escapeHtml(file.name) + ' terupload</span>' +
+            ' <button type="button" onclick="simbakesPreviewDocument(\'' + url.replace(/'/g, '%27') + '\', \'Bukti Lulus PT / Aktif Kuliah\')" style="border:none;background:none;color:#2563eb;font-size:0.75rem;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;">(lihat)</button>');
+        if (typeof showToast === 'function') showToast('✅ File bukti terupload.', 'success');
+    } catch (err) {
+        console.error('[PENETAPAN] Upload bukti error:', err);
+        set_status('<span style="color:#dc2626;font-weight:600;">❌ ' + escapeHtml(err.message || 'Upload gagal') + '</span>');
+        if (typeof showToast === 'function') showToast('❌ ' + (err.message || 'Upload gagal'), 'error', 6000);
+    }
+}
+
+/** Kosongkan pilihan bukti (kolom URL & status) — dipakai tombol ✕ widget. */
+function clearPenetapanBukti(urlInputId, statusBoxId, fileId) {
+    var urlInput = document.getElementById(urlInputId);
+    if (urlInput) urlInput.value = '';
+    var statusBox = document.getElementById(statusBoxId);
+    if (statusBox) statusBox.innerHTML = '';
+    var fileInput = document.getElementById(fileId);
+    if (fileInput) fileInput.value = '';
+}
+
+window.handlePenetapanBuktiSelect = handlePenetapanBuktiSelect;
+window.clearPenetapanBukti = clearPenetapanBukti;
 
 /**
  * ===== DELETE FUNCTIONALITY =====
@@ -1722,7 +1952,8 @@ function exportDataPenetapan() {
             { key: 'no_sk_penetapan', altKeys: ['noSKPenetapan', 'no_sk'], header: 'No SK Penetapan' },
             { key: 'tanggal_penetapan', altKeys: ['tanggalPenetapan', 'tanggal'], header: 'Tanggal Penetapan' },
             { key: 'status_penetapan', altKeys: ['statusPenetapan', 'status'], header: 'Status' },
-            { key: 'link_foto', altKeys: ['linkFoto', 'foto', 'photo'], header: 'Link Foto' }
+            { key: 'link_foto', altKeys: ['linkFoto', 'foto', 'photo'], header: 'Link Foto' },
+            { key: 'bukti_lulus_pt', altKeys: ['buktiLulusPt'], header: 'Bukti Lulus PT' }  // [REVISI 15 OKT j]
         ];
         
         // Create CSV content

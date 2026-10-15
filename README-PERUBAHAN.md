@@ -948,3 +948,50 @@ Seluruh data yang ditampilkan sudah tersedia di tabel `submissions` (`no_registe
 ## Langkah admin
 
 1. Upload file revisi ini ke hosting + refresh halaman (Ctrl+F5). **Tidak ada SQL baru.**
+
+---
+
+# REVISI 15 OKT j — Data Penetapan: Upload "Bukti Lulus PT / Aktif Kuliah" (Tambah & Edit) + Tampil di Semua Titik Pembaca Data
+
+## Latar belakang (laporan pengguna)
+
+> pengembangan: tambahkan data di menu data penetapan — **bukti lulus PT / aktif kuliah (dalam bentuk file)**, bisa diupload oleh **admin dan operator** saat **menambahkan** atau **mengedit** data. Sesuaikan semua bagian yang mengambil data dari menu/tabel Supabase data penetapan.
+
+## Yang ditambahkan
+
+1. **Kolom baru** `penetapan.bukti_lulus_pt` (URL file) + **folder storage** `penetapan/` di bucket `pengajuan-files` (policy tulis anon diperluas — pola keamanan yang sama dengan folder `pengajuan/` dan `rekomendasi/`).
+2. **Widget upload** di modal **Tambah Data Penetapan** dan modal **Edit Data Penetapan**: tombol **📎 Upload File** (PDF/JPG/PNG/WebP, maks 10 MB — divalidasi di sisi aplikasi), URL terisi otomatis setelah upload (atau tempel link manual), tombol **✕ Kosongkan/Hapus Bukti**, kotak status unggahan + link "(lihat)" untuk pratinjau cepat. File tersimpan ke Supabase Storage (`penetapan/<NIK>/bukti-<timestamp>-<rand>.<ext>`), URL publiknya masuk kolom `bukti_lulus_pt` — driver Cloudflare R2 otomatis dipakai bila diaktifkan (konsisten jalur upload lain).
+3. **Tampil di semua titik pembaca tabel penetapan**:
+   - **Tabel admin** — tombol aksi baru **🎓 Bukti** per baris (hanya muncul bila filenya ada) → modal pratinjau dokumen.
+   - **Detail "👁 Lihat"** (modal detail peserta/penetapan) — baris **Bukti Lulus PT / Aktif Kuliah** dengan tombol **👁 Preview** & **⬇ Unduh**.
+   - **Kartu "Cek Status Penetapan" peserta** — tombol baru **🎓 Bukti Lulus PT** di baris dokumen (membuka modal pratinjau berisi tombol Unduh & Buka Tab Baru; ikut mengganti pesan "Tidak ada link tersedia").
+   - **Ekspor CSV** Data Penetapan — kolom baru "Bukti Lulus PT".
+4. **Perbaikan yang ditemukan saat audit**:
+   - **Ekspor CSV Data Penetapan ternyata RUSAK total** (typo `eaders` sejak revisi sebelumnya → klik Ekspor selalu "Gagal mengekspor data: eaders is not defined") — diperbaiki.
+   - Kartu peserta: default `getField` yang salah membuat tombol **📷 Lihat Foto / 📄 Lihat SK tampil palsu** (membuka link matang `foto_drive_link`) bila kolomnya kosong — default diperbaiki ke string kosong.
+5. **Tahan banting SQL**: bila kolom `bukti_lulus_pt` belum ada di database (patch belum dijalankan), simpan Tambah maupun Edit **tetap berhasil** — payload otomatis dicoba ulang tanpa kolom bukti + toast menunjuk file SQL. Validasi file (ukuran/tipe) gagal → pesan jelas, tanpa sukses palsu.
+
+## Perubahan
+
+| File | Perubahan |
+|---|---|
+| `sql/PATCH-PENETAPAN-BUKTI.sql` (BARU) | `alter table penetapan add column if not exists bukti_lulus_pt text` + 3 policy storage (`insert/update/delete`) diperluas dengan folder `penetapan/%` — idempotent |
+| `js/03-admin-data.js` | Helper `buildPenetapanBuktiPath`, `uploadPenetapanBuktiToStorage` (R2-aware), `handlePenetapanBuktiSelect` (validasi 10 MB & tipe), `clearPenetapanBukti`; widget upload di modal Tambah & Edit; payload `bukti_lulus_pt` di `saveNewPenetapan` & `savePenetapanChanges` (+fallback PGRST204 dua jalur); tombol 🎓 Bukti di `createPenetapanRow` + `case 'bukti'` di event delegation; baris Bukti di `showPesertaDetailModal` (Preview/Unduh); ekspor CSV + kolom bukti + **perbaikan typo `eaders`** |
+| `js/09-cek-status.js` | Mapping `bukti_lulus_pt`; tombol `penetapan-btn-bukti` di-wire (Preview modal / fallback tab baru, ikut `hasAnyLink`); **perbaikan default `getField`** foto/SK agar tak tampil palsu |
+| `index.html` | Tombol 🎓 Bukti Lulus PT di kartu Cek Status Penetapan; label baris dokumen; cache-bust `03-admin-data.js → v=20261015j`, `09-cek-status.js → v=20261015j` |
+
+## Langkah admin (WAJIB, ±1 menit)
+
+1. Supabase Dashboard → SQL Editor → jalankan **`sql/PATCH-PENETAPAN-BUKTI.sql`** (idempotent, aman diulang) — menambah kolom + izin folder storage `penetapan/`.
+2. Upload file revisi ini + refresh halaman (Ctrl+F5).
+
+> Tanpa patch SQL pun aplikasi tidak rusak: simpan data tetap berhasil, hanya file bukti yang belum tersimpan (ada toast pengarah).
+
+## Hasil pengujian
+
+| Uji | Hasil |
+|---|---|
+| `scripts/test-penetapan-bukti.js` (baru) | **48/48 PASS** — isi SQL patch, widget Tambah/Edit (id, accept, handler, clear), payload simpan dua jalur + fallback PGRST204, tombol tabel & delegation, detail modal, kartu peserta, ekspor CSV + perbaikan `eaders`, cache-bust; uji runtime vm: path storage `penetapan/<NIK>/bukti-*.pdf`, sanitasi NIK, ekstensi |
+| Uji browser nyata (harness) | Modal Tambah: widget tampil cantik; **upload nyata via mock storage** → path `penetapan/3201234567890001/bukti-*.pdf`, URL terisi, status ✅; **file 11 MB ditolak**, **tipe .exe ditolak**, Kosongkan bekerja; modal Edit: URL lama ter-prefill + tombol Ganti/Hapus; **saveNewPenetapan memasukkan bukti ke payload INSERT**; **PGRST204 → 2 percobaan, kedua tanpa bukti**; tabel: tombol 🎓 muncul hanya bila ada file; kartu peserta: hanya tombol yang berlaku (bukti tampil, foto/SK sembunyi bila kosong), klik 🎓 → **modal pratinjau PDF terbuka** |
+| Regresi: penetapan-tambah / pengusulan-edit / status-pengajuan / biodata / foto-profil / password / RBAC / r2-config / driver-switch | SEMUA LULUS (48, 24, 62, 34, 52, 35, 18, 19, 6) — total **346 PASS, 0 FAIL** |
+| `node --check` semua JS | LULUS |

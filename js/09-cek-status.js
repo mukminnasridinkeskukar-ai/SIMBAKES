@@ -440,9 +440,13 @@ function displayPenetapanResult(data) {
         status_penetapan: getField(data, 'status_penetapan', 'statusPenetapan', 'status', 'Pending'),
         tanggal_penetapan: getField(data, 'tanggal_penetapan', 'tanggalPenetapan', 'tanggal'),
         
-        // Dokumen / Foto
-        link_foto: getField(data, 'link_foto', 'linkFoto', 'foto_drive_link', ''),
-        link_sk: getField(data, 'link_sk', 'linkSk', 'sk_drive_link', ''),
+        // Dokumen / Foto — default '' (sebelumnya string 'foto_drive_link'
+        // menjadi default → tombol tampil palsu saat kolom kosong) [REVISI 15 OKT j]
+        link_foto: getField(data, 'link_foto', 'linkFoto', ''),
+        link_sk: getField(data, 'link_sk', 'linkSk', ''),
+        
+        // [REVISI 15 OKT j] Bukti Lulus PT / Aktif Kuliah (file upload admin)
+        bukti_lulus_pt: getField(data, 'bukti_lulus_pt', 'buktiLulusPt', ''),
         
         // Catatan admin untuk peserta [Task9i]
         // NB: getField global = (data, snake, camel, defaultValue) — default harus '', bukan kunci ke-4.
@@ -518,9 +522,10 @@ function displayPenetapanResult(data) {
         }
     }
     
-    // Baris 6: Action Buttons untuk link_foto & link_sk
+    // Baris 6: Action Buttons untuk link_foto, link_sk & bukti_lulus_pt
     const btnFoto = document.getElementById('penetapan-btn-foto');
     const btnSK = document.getElementById('penetapan-btn-sk');
+    const btnBukti = document.getElementById('penetapan-btn-bukti');
     const noLinkMsg = document.getElementById('penetapan-no-link-msg');
     
     let hasAnyLink = false;
@@ -541,6 +546,25 @@ function displayPenetapanResult(data) {
         hasAnyLink = true;
     } else {
         btnSK.style.display = 'none';
+    }
+    
+    // [REVISI 15 OKT j] Handle bukti_lulus_pt — Preview modal (berisi tombol
+    // Unduh & Buka Tab Baru di header) atau fallback tab baru.
+    if (btnBukti) {
+        const buktiUrl = String(penetapanData.bukti_lulus_pt || '').trim().split(/\s+/)[0] || '';
+        if (/^https?:\/\//i.test(buktiUrl)) {
+            btnBukti.style.display = 'flex';
+            btnBukti.onclick = () => {
+                if (typeof simbakesPreviewDocument === 'function') {
+                    simbakesPreviewDocument(buktiUrl, 'Bukti Lulus PT / Aktif Kuliah');
+                } else {
+                    window.open(buktiUrl, '_blank', 'noopener');
+                }
+            };
+            hasAnyLink = true;
+        } else {
+            btnBukti.style.display = 'none';
+        }
     }
     
     // Show/hide "no link" message
