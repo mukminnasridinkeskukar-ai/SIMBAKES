@@ -532,7 +532,7 @@
         'Ners', 'Keperawatan', 'Kebidanan', 'Kesehatan Masyarakat', 'Gizi',
         'Farmasi', 'Kedokteran', 'Dokter Spesialis Penyakit Dalam',
         'Dokter Spesialis Anak', 'Dokter Spesialis Obstetri & Ginekologi',
-        'Dokter Gigi', 'Fisioterapi', 'Sanitasi Lingkungan'
+        'Dokter Gigi', 'Fisioterapi', 'Sanitasi Lingkungan', 'Psikolog Klinis'
     ];
 
     function akunGetById(id) {

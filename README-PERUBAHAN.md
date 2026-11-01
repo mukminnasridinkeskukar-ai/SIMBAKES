@@ -1079,3 +1079,47 @@ Menu Data Pengajuan/Pengusulan tidak boleh menampilkan data ganda — satu NIK h
 | `scripts/test-pengajuan-unik-nik.js` (baru) | **27/27 PASS** — tambah data: NIK terdaftar ditolak tanpa insert + toast menyebut NIK + modal tetap terbuka; NIK baru tersimpan 1x dgn payload benar; NIK format salah diblokir sebelum cek; cek duplikat gagal → tetap simpan; tampilan: 5 baris (2 duplikat) → 3 tampil, baris terbaru dipertahankan, baris tanpa NIK tetap tampil; guard edit pakai .neq(id) & hanya saat NIK berubah; SQL patch: cleanup per NIK, simpan terbaru, constraint unik, normalisasi, idempotent |
 | Regresi penuh | pengusulan-edit-simpan 24, penetapan-tambah 48, penetapan-bukti 52, status-pengajuan-kartu 62, penetapan-kartu-rapi 62, biodata 34, foto-profil 52, password 35, RBAC lulus, r2-config 19, driver-switch 6 — **semua PASS, 0 FAIL** |
 | `node --check` | js/10-admin-pengusul.js, js/crud-lightbox.js — LULUS |
+
+---
+
+# REVISI — TAMBAH PILIHAN "PSIKOLOG KLINIS" PADA PILIHAN JURUSAN
+
+Tanggal: 1 November 2026
+
+Permintaan: tambahkan **Psikolog Klinis** pada pilihan Jurusan Tujuan di
+Formulir "Ajukan Rekomendasi". Sekaligus merapikan (cek & samakan) semua
+daftar jurusan di seluruh aplikasi.
+
+## Hasil pemeriksaan (cek)
+
+| Lokasi | Fungsi | Sebelum | Sesudah |
+|---|---|---|---|
+| `index.html` — select `#jurusan-tujuan` (Formulir Ajukan Rekomendasi, bagian Rencana Studi) | Pilihan jurusan yang dipilih peserta saat mengajukan rekomendasi | **Psikolog Klinis TIDAK ADA**; ada 1 baris kosong liar di daftar | Ditambahkan pada posisi urut abjad (setelah Nutrisionis, sebelum Radiografer); baris kosong dihapus |
+| `index.html` — select `#rev-jurusan-tujuan` (Form Revisi pada Cek Status) | Dropdown yang diisi admin/verifikator saat merevisi pengajuan | Sudah ada, tetapi urutannya tidak alfabetis (setelah Radiografer) | Digeser ke posisi alfabetis yang sama dengan formulir utama — kedua dropdown kini identik |
+| `daftar-peserta.html` — `JURUSAN_OPTIONS` | Daftar putih (whitelist) validasi pendaftaran akun peserta | Sudah ada (urutan tidak rapikan) | Urutan dirapikan sama seperti di atas |
+| `js/13-akun-peserta.js` — `AKUN_JURUSAN_OPTIONS` | Saran (datalist) kolom Jurusan Tujuan pada modal Tambah/Edit Akun Peserta di Panel Admin | **Psikolog Klinis TIDAK ADA** (daftar lama) | Ditambahkan |
+
+## Yang perlu diketahui
+
+- **Tidak perlu patch SQL apa pun** — kolom `jurusan_tujuan` di tabel
+  `submissions` adalah teks bebas (tanpa constraint daftar), jadi cukup
+  upload file yang direvisi lalu refresh (Ctrl+F5).
+- Tidak ada validasi JavaScript yang membatasi nilai jurusan, sehingga
+  penambahan opsi tidak menyentuh `js/04-form.js` maupun alur simpan.
+- Formulir utama & formulir revisi kini memiliki **daftar jurusan yang
+  100% identik** (urut abjad per grup), mencegah peserta memilih jurusan
+  yang tidak muncul saat admin merevisi pengajuan.
+
+## Cara pakai
+
+Upload `index.html`, `daftar-peserta.html`, dan `js/13-akun-peserta.js`
+yang baru ke hosting (GitHub Pages), lalu hard-refresh browser (Ctrl+F5).
+Selesai — tidak ada langkah database.
+
+## Hasil pengujian
+
+| Uji | Hasil |
+|---|---|
+| Bandingkan daftar opsi `#jurusan-tujuan` vs `#rev-jurusan-tujuan` | Identik 1:1 (77 opsi = 76 jurusan + 1 placeholder "-- Pilih Jurusan --", 3 grup), urutan sama |
+| `node --check` js/13-akun-peserta.js | LULUS (sintaks valid) |
+| Whitelist `daftar-peserta.html` berisi 'Psikolog Klinis' | YA |
